@@ -2,9 +2,10 @@
 
 import { db } from '@/lib/db';
 import { categories } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
+import { getCurrentUser } from './auth';
 
 const categorySchema = z.object({
   name: z.string().min(1, 'Nama kategori wajib diisi'),
@@ -12,7 +13,10 @@ const categorySchema = z.object({
 
 export async function getCategories() {
   try {
-    const data = await db.select().from(categories).orderBy(categories.name);
+    const user = await getCurrentUser();
+    if (!user) return { success: false, error: 'Unauthorized' };
+    
+    const data = await db.select().from(categories).where(eq(categories.dashboardId, user.dashboardId)).orderBy(categories.name);
     return { success: true, data };
   } catch (error) {
     console.error('Error fetching categories:', error);
@@ -22,10 +26,14 @@ export async function getCategories() {
 
 export async function createCategory(formData: z.infer<typeof categorySchema>) {
   try {
+    const user = await getCurrentUser();
+    if (!user) return { success: false, error: 'Unauthorized' };
+    
     const validatedData = categorySchema.parse(formData);
     const slug = validatedData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
     
     await db.insert(categories).values({
+      dashboardId: user.dashboardId,
       name: validatedData.name,
       slug,
     });
@@ -41,6 +49,9 @@ export async function createCategory(formData: z.infer<typeof categorySchema>) {
 
 export async function updateCategory(id: string, formData: z.infer<typeof categorySchema>) {
   try {
+    const user = await getCurrentUser();
+    if (!user) return { success: false, error: 'Unauthorized' };
+    
     const validatedData = categorySchema.parse(formData);
     const slug = validatedData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
     
@@ -50,7 +61,7 @@ export async function updateCategory(id: string, formData: z.infer<typeof catego
         slug,
         updatedAt: new Date(),
       })
-      .where(eq(categories.id, id));
+      .where(and(eq(categories.id, id), eq(categories.dashboardId, user.dashboardId)));
     
     revalidatePath('/categories');
     revalidatePath('/products');
@@ -63,7 +74,10 @@ export async function updateCategory(id: string, formData: z.infer<typeof catego
 
 export async function deleteCategory(id: string) {
   try {
-    await db.delete(categories).where(eq(categories.id, id));
+    const user = await getCurrentUser();
+    if (!user) return { success: false, error: 'Unauthorized' };
+    
+    await db.delete(categories).where(and(eq(categories.id, id), eq(categories.dashboardId, user.dashboardId)));
     
     revalidatePath('/categories');
     revalidatePath('/products');

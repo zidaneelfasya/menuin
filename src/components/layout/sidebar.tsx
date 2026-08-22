@@ -49,24 +49,16 @@ function SidebarContent({ collapsed, setCollapsed, user }: { collapsed: boolean;
     <>
       {/* Logo Area */}
       <div className="h-16 flex items-center justify-center border-b px-4 relative">
-        <div className="relative w-8 h-8 flex-shrink-0">
+        <div className="relative w-24 h-16 flex-shrink-0">
           <Image 
-            src="/logo-bolu-anisa.svg" 
-            alt="Bolu Anisa" 
+            src="/logo-menuin-memanjang.svg" 
+            alt="Logo Menuin" 
             fill 
             className="object-contain" 
             priority
           />
         </div>
-        {!collapsed && (
-          <motion.span 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
-            className="ml-3 font-bold text-lg tracking-tight text-foreground whitespace-nowrap"
-          >
-            Bolu Anisa
-          </motion.span>
-        )}
+        
         {setCollapsed && (
           <button 
             onClick={() => setCollapsed(!collapsed)}
