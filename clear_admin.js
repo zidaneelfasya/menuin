@@ -1,0 +1,1 @@
+const postgres = require('postgres'); const sql = postgres('postgresql://postgres.qfkdmppbazblxtmxmlkz:*bgQ$nj#V#Mh!3N@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres', { prepare: false }); async function clear() { await sql\DELETE FROM produk\; console.log('? Data produk di aplikasi Admin berhasil dihapus!'); process.exit(0); } clear();
