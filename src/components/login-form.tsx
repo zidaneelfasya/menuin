@@ -3,18 +3,12 @@
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import Image from "next/image";
 
 export function LoginForm({
   className,
@@ -38,7 +32,6 @@ export function LoginForm({
         password,
       });
       if (error) throw error;
-      // Update this route to redirect to an authenticated route. The user already has an active session.
       router.push("/pos");
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
@@ -48,97 +41,122 @@ export function LoginForm({
   };
 
   return (
-    <div className={cn("flex flex-col gap-6 w-full max-w-md", className)} {...props}>
-      <div className="relative group">
-        {/* Glow effect backdrop */}
-        <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-        
-        <Card className="relative bg-white/95 backdrop-blur-md border border-slate-100/80 shadow-2xl rounded-2xl overflow-hidden">
-          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500" />
-          
-          <CardHeader className="space-y-2 pt-8 pb-4 px-6 md:px-8">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent font-heading">
-                MENUIN
-              </span>
-              <span className="text-[10px] bg-blue-50 text-blue-600 font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">
-                POS Platform
-              </span>
+    <div
+      className={cn(
+        "min-h-screen w-full flex items-center justify-center bg-[#FAFAFA] p-4 md:p-8",
+        className
+      )}
+      {...props}
+    >
+      <div className="w-full max-w-[960px] min-h-[580px] flex rounded-2xl overflow-hidden border border-[#E5E5E5] bg-white">
+        {/* Brand Panel */}
+        <div className="hidden md:flex flex-1 bg-[#2563EB] flex-col items-center justify-center p-12 relative">
+          <Image
+            src="/logo-nemuin.jpeg"
+            alt="Menuin"
+            width={200}
+            height={60}
+            className="brightness-0 invert mb-8"
+            priority
+          />
+          <p className="text-white/70 text-sm text-center max-w-[240px] leading-relaxed">
+            Sistem POS modern untuk restoran dan bisnis kuliner Anda.
+          </p>
+        </div>
+
+        {/* Form Panel */}
+        <div className="flex-1 flex flex-col justify-center px-8 py-12 md:px-14">
+          {/* Mobile logo */}
+          <div className="md:hidden mb-10">
+            <Image
+              src="/logo-nemuin.jpeg"
+              alt="Menuin"
+              width={140}
+              height={42}
+              className="mb-6"
+              priority
+            />
+          </div>
+
+          <div className="mb-10">
+            <h1 className="text-[28px] font-bold text-[#111] tracking-[-0.02em] mb-2">
+              Selamat datang kembali
+            </h1>
+            <p className="text-[#666] text-[15px]">
+              Masuk ke akun Anda untuk melanjutkan.
+            </p>
+          </div>
+
+          <form onSubmit={handleLogin} className="flex flex-col gap-5">
+            <div className="flex flex-col gap-1.5">
+              <Label
+                htmlFor="email"
+                className="text-[13px] font-medium text-[#111]"
+              >
+                Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="nama@restoran.id"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="h-12 rounded-xl border-[#E5E5E5] bg-[#FAFAFA] px-4 text-[15px] placeholder:text-[#AAAAAA] focus-visible:ring-2 focus-visible:ring-[#2563EB]/20 focus-visible:border-[#2563EB] transition-colors"
+              />
             </div>
-            <CardTitle className="text-2xl font-bold font-rounded text-slate-900">Selamat Datang Kembali</CardTitle>
-            <CardDescription className="text-slate-500 text-sm">
-              Masuk ke akun Anda untuk mulai mengelola transaksi
-            </CardDescription>
-          </CardHeader>
-          
-          <CardContent className="px-6 md:px-8 pb-8">
-            <form onSubmit={handleLogin}>
-              <div className="flex flex-col gap-5">
-                <div className="grid gap-2">
-                  <Label htmlFor="email" className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                    Alamat Email
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="nama@restoran.id"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="h-11 rounded-lg border-slate-200 focus-visible:ring-blue-500/20 focus-visible:border-blue-500/80 transition-all font-sans"
-                  />
-                </div>
-                
-                <div className="grid gap-2">
-                  <div className="flex items-center">
-                    <Label htmlFor="password" className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                      Kata Sandi
-                    </Label>
-                    <Link
-                      href="/auth/forgot-password"
-                      className="ml-auto inline-block text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors"
-                    >
-                      Lupa kata sandi?
-                    </Link>
-                  </div>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="h-11 rounded-lg border-slate-200 focus-visible:ring-blue-500/20 focus-visible:border-blue-500/80 transition-all font-sans"
-                  />
-                </div>
-                
-                {error && (
-                  <div className="bg-red-50 border border-red-100 rounded-lg p-3 text-xs text-red-600 font-medium">
-                    {error}
-                  </div>
-                )}
-                
-                <Button 
-                  type="submit" 
-                  className="w-full h-11 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold rounded-lg transition-all duration-300 shadow-md shadow-blue-500/10 active:scale-[0.98] mt-2" 
-                  disabled={isLoading}
+
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <Label
+                  htmlFor="password"
+                  className="text-[13px] font-medium text-[#111]"
                 >
-                  {isLoading ? "Mengautentikasi..." : "Masuk Akun"}
-                </Button>
-              </div>
-              
-              <div className="mt-6 text-center text-xs text-slate-500 border-t border-slate-100 pt-5">
-                Belum memiliki akun?{" "}
+                  Kata sandi
+                </Label>
                 <Link
-                  href="/auth/signup"
-                  className="font-bold text-blue-600 hover:text-blue-700 transition-colors underline underline-offset-4"
+                  href="/auth/forgot-password"
+                  className="text-[13px] text-[#2563EB] hover:text-[#1D4ED8] transition-colors"
                 >
-                  Daftar Sekarang
+                  Lupa kata sandi?
                 </Link>
               </div>
-            </form>
-          </CardContent>
-        </Card>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="h-12 rounded-xl border-[#E5E5E5] bg-[#FAFAFA] px-4 text-[15px] placeholder:text-[#AAAAAA] focus-visible:ring-2 focus-visible:ring-[#2563EB]/20 focus-visible:border-[#2563EB] transition-colors"
+              />
+            </div>
+
+            {error && (
+              <div className="bg-[#FEF2F2] border border-[#FECACA] rounded-xl px-4 py-3 text-[13px] text-[#DC2626] font-medium">
+                {error}
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              className="w-full h-12 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-[15px] font-semibold transition-colors mt-1"
+              disabled={isLoading}
+            >
+              {isLoading ? "Masuk..." : "Masuk"}
+            </Button>
+          </form>
+
+          <p className="mt-8 text-center text-[14px] text-[#666]">
+            Belum punya akun?{" "}
+            <Link
+              href="/auth/signup"
+              className="font-semibold text-[#2563EB] hover:text-[#1D4ED8] transition-colors"
+            >
+              Daftar
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );
