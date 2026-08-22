@@ -40,12 +40,20 @@ async function main() {
     await db.delete(schema.products);
     await db.delete(schema.categories);
     await db.delete(schema.users);
+    await db.delete(schema.dashboards);
 
-    // 2. Insert Users
-    console.log('Inserting users...');
+    // 2. Insert Dashboard (tenant) + Users
+    console.log('Inserting dashboard and users...');
+    const [dashboard] = await db.insert(schema.dashboards).values({
+      name: 'Bolu Anisa',
+      isPaid: true,
+    }).returning();
+    const dashboardId = dashboard.id;
+
     const userId = uuidv4();
     await db.insert(schema.users).values({
       id: userId,
+      dashboardId,
       name: 'Kasir Utama',
       email: 'kasir@boluanisa.com',
       role: 'CASHIER',
@@ -54,11 +62,11 @@ async function main() {
     // 3. Insert Categories
     console.log('Inserting categories...');
     const categoriesToInsert = [
-      { id: uuidv4(), name: 'Bolu Panggang', slug: 'bolu-panggang' },
-      { id: uuidv4(), name: 'Bolu Kukus', slug: 'bolu-kukus' },
-      { id: uuidv4(), name: 'Kue Kering', slug: 'kue-kering' },
-      { id: uuidv4(), name: 'Roti Manis', slug: 'roti-manis' },
-      { id: uuidv4(), name: 'Minuman', slug: 'minuman' },
+      { id: uuidv4(), dashboardId, name: 'Bolu Panggang', slug: 'bolu-panggang' },
+      { id: uuidv4(), dashboardId, name: 'Bolu Kukus', slug: 'bolu-kukus' },
+      { id: uuidv4(), dashboardId, name: 'Kue Kering', slug: 'kue-kering' },
+      { id: uuidv4(), dashboardId, name: 'Roti Manis', slug: 'roti-manis' },
+      { id: uuidv4(), dashboardId, name: 'Minuman', slug: 'minuman' },
     ];
     await db.insert(schema.categories).values(categoriesToInsert);
 
@@ -92,7 +100,9 @@ async function main() {
       { name: 'Lemon Tea Dingin', sku: 'MNM-003', categoryId: getCategoryId('Minuman'), price: '12000', costPrice: '5000', stock: 80, minStock: 20, imageUrl: 'https://images.unsplash.com/photo-1613478223719-2ab802602423?auto=format&fit=crop&w=400&q=80', barcode: generateBarcode() },
     ];
 
-    const insertedProducts = await db.insert(schema.products).values(productsToInsert).returning();
+    const insertedProducts = await db.insert(schema.products).values(
+      productsToInsert.map((p) => ({ ...p, dashboardId }))
+    ).returning();
 
     // 5. Insert dummy transactions
     console.log('Inserting dummy transactions...');
@@ -125,6 +135,7 @@ async function main() {
       date.setDate(date.getDate() - Math.floor(Math.random() * 7));
 
       const [newTx] = await db.insert(schema.transactions).values({
+        dashboardId,
         totalAmount: grandTotal.toString(),
         discount: '0',
         tax: '0',

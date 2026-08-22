@@ -13,33 +13,47 @@ export type UserProfile = {
   name: string;
   role: UserRole;
   dashboardId: string;
+  restaurantName: string;
+  isPaid: boolean;
 };
 
 export async function getCurrentUser(): Promise<UserProfile | null> {
   const supabase = await createClient();
   const { data: { user }, error } = await supabase.auth.getUser();
 
-  let userProfile;
+  if (!user || !user.email) return null;
+
+  let result;
   try {
-    userProfile = await db.select().from(users).where(eq(users.email, user.email)).limit(1);
+    result = await db
+      .select({
+        user: users,
+        dashboard: dashboards,
+      })
+      .from(users)
+      .innerJoin(dashboards, eq(users.dashboardId, dashboards.id))
+      .where(eq(users.email, user.email))
+      .limit(1);
   } catch (error) {
-    console.error('Failed to query user profile, falling back to null:', error);
+    console.error('Failed to query user profile and dashboard, falling back to null:', error);
     return null;
   }
 
-  if (userProfile.length === 0) {
-    // If user exists in auth but not in db, we have a problem in the multi-tenant architecture
-    // because they don't have a dashboard. We should not auto-create without a dashboard.
-    console.error('User profile not found in database for:', user.email);
+  if (result.length === 0) {
+    console.error('User profile or dashboard not found in database for:', user.email);
     return null;
   }
+
+  const data = result[0];
 
   return {
-    id: userProfile[0].id,
-    email: userProfile[0].email,
-    name: userProfile[0].name,
-    role: userProfile[0].role as UserRole,
-    dashboardId: userProfile[0].dashboardId,
+    id: data.user.id,
+    email: data.user.email,
+    name: data.user.name,
+    role: data.user.role as UserRole,
+    dashboardId: data.user.dashboardId,
+    restaurantName: data.dashboard.name,
+    isPaid: data.dashboard.isPaid,
   };
 }
 
@@ -94,4 +108,49 @@ export async function signUpAction(formData: FormData) {
     return { error: 'Failed to create user profile and dashboard' };
   }
 }
+
+export async function getDashboardDetailsByEmail(email: string) {
+  try {
+    const result = await db
+      .select({
+        user: users,
+        dashboard: dashboards,
+      })
+      .from(users)
+      .innerJoin(dashboards, eq(users.dashboardId, dashboards.id))
+      .where(eq(users.email, email))
+      .limit(1);
+
+    if (result.length === 0) {
+      return null;
+    }
+
+    return {
+      email: result[0].user.email,
+      name: result[0].user.name,
+      restaurantName: result[0].dashboard.name,
+      isPaid: result[0].dashboard.isPaid,
+    };
+  } catch (error) {
+    console.error('Failed to get dashboard details:', error);
+    return null;
+  }
+}
+
+export async function markDashboardAsPaidAction(email: string) {
+  try {
+    const userProfile = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    if (userProfile.length === 0) {
+      return { error: 'User not found' };
+    }
+    const dashboardId = userProfile[0].dashboardId;
+
+    await db.update(dashboards).set({ isPaid: true }).where(eq(dashboards.id, dashboardId));
+    return { success: true };
+  } catch (error: any) {
+    console.error('Failed to mark dashboard as paid:', error);
+    return { error: error.message || 'Database error' };
+  }
+}
+
 

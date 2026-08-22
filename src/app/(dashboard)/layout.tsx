@@ -1,4 +1,5 @@
 import { MainLayout } from '@/components/layout/main-layout';
+import { PaymentGate } from '@/components/payment-gate';
 import { getCurrentUser } from '@/lib/actions/auth';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
@@ -8,6 +9,11 @@ async function AuthWrapper({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser();
   if (!user) {
     redirect('/auth/login');
+  }
+
+  // Dashboard terkunci sampai pembayaran selesai
+  if (!user.isPaid) {
+    return <PaymentGate user={user} />;
   }
 
   return <MainLayout user={user}>{children}</MainLayout>;

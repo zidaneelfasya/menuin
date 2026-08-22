@@ -2,6 +2,7 @@
 
 import { db } from '../db';
 import { products, categories } from '../db/schema';
+import { getCurrentUser } from './auth';
 import * as xlsx from 'xlsx';
 import { eq, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
@@ -43,6 +44,12 @@ function slugify(text: string) {
 
 export async function importProducts(formData: FormData) {
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return { success: false, error: 'Sesi tidak ditemukan. Silakan login kembali.' };
+    }
+    const dashboardId = user.dashboardId;
+
     const file = formData.get('file') as File;
     if (!file) {
       return { success: false, error: 'File tidak ditemukan' };
@@ -99,6 +106,7 @@ export async function importProducts(formData: FormData) {
           const newId = crypto.randomUUID();
           newCategoriesToInsert.set(categoryKey, {
             id: newId,
+            dashboardId,
             name: categoryNameRaw,
             slug: slugify(categoryNameRaw)
           });
@@ -114,6 +122,7 @@ export async function importProducts(formData: FormData) {
       const sku = generateSku(name, i);
 
       productsToInsert.push({
+        dashboardId,
         name,
         categoryId,
         sku,

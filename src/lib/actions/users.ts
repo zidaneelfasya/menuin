@@ -65,6 +65,7 @@ export async function createUser(data: { name: string; email: string; password?:
 
     // Insert user into Drizzle DB (Profile)
     await db.insert(users).values({
+      dashboardId: currentUser.dashboardId,
       name: data.name,
       email: data.email,
       role: data.role || 'CASHIER',

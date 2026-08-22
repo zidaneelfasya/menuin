@@ -21,7 +21,7 @@ import {
   ArrowUpRight 
 } from "lucide-react";
 
-export default function LandingPage() {
+export default function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
   const [activeStep, setActiveStep] = useState(0);
@@ -88,13 +88,24 @@ export default function LandingPage() {
 
           {/* Right Side CTA */}
           <div className="hidden md:flex items-center gap-4">
-            <a href="/auth/login" className="text-sm font-medium text-[#64748B] transition-colors hover:text-[#2563EB]">Login</a>
-            <a 
-              href="/auth/signup" 
-              className="inline-flex h-10 items-center justify-center rounded-lg bg-[#2563EB] px-5 text-sm font-medium text-white transition-all duration-300 hover:bg-[#1D4ED8] hover:shadow-md hover:shadow-blue-500/10 active:scale-95"
-            >
-              Mulai Sekarang
-            </a>
+            {isLoggedIn ? (
+              <a
+                href="/dashboard"
+                className="inline-flex h-10 items-center justify-center rounded-lg bg-[#2563EB] px-5 text-sm font-medium text-white transition-all duration-300 hover:bg-[#1D4ED8] hover:shadow-md hover:shadow-blue-500/10 active:scale-95"
+              >
+                Dashboard
+              </a>
+            ) : (
+              <>
+                <a href="/auth/login" className="text-sm font-medium text-[#64748B] transition-colors hover:text-[#2563EB]">Login</a>
+                <a
+                  href="/auth/signup"
+                  className="inline-flex h-10 items-center justify-center rounded-lg bg-[#2563EB] px-5 text-sm font-medium text-white transition-all duration-300 hover:bg-[#1D4ED8] hover:shadow-md hover:shadow-blue-500/10 active:scale-95"
+                >
+                  Mulai Sekarang
+                </a>
+              </>
+            )}
           </div>
 
           {/* Hamburger Mobile Menu */}
@@ -116,14 +127,20 @@ export default function LandingPage() {
               <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="hover:text-[#2563EB]">FAQ</a>
             </nav>
             <div className="h-px bg-[#E2E8F0] my-4" />
-            <div className="flex flex-col gap-3">
-              <a href="/auth/login" className="flex items-center justify-center h-10 rounded-lg border border-[#E2E8F0] text-sm font-medium text-[#64748B] hover:bg-slate-50">
-                Login
+            {isLoggedIn ? (
+              <a href="/dashboard" className="flex items-center justify-center h-10 rounded-lg bg-[#2563EB] text-sm font-medium text-white hover:bg-[#1D4ED8]">
+                Dashboard
               </a>
-              <a href="/auth/signup" className="flex items-center justify-center h-10 rounded-lg bg-[#2563EB] text-sm font-medium text-white hover:bg-[#1D4ED8]">
-                Mulai Sekarang
-              </a>
-            </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                <a href="/auth/login" className="flex items-center justify-center h-10 rounded-lg border border-[#E2E8F0] text-sm font-medium text-[#64748B] hover:bg-slate-50">
+                  Login
+                </a>
+                <a href="/auth/signup" className="flex items-center justify-center h-10 rounded-lg bg-[#2563EB] text-sm font-medium text-white hover:bg-[#1D4ED8]">
+                  Mulai Sekarang
+                </a>
+              </div>
+            )}
           </div>
         )}
       </header>
@@ -148,12 +165,21 @@ export default function LandingPage() {
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4">
-                <a 
-                  href="/auth/signup" 
-                  className="inline-flex h-12 items-center justify-center rounded-lg bg-[#2563EB] px-7 text-base font-semibold text-white transition-all duration-300 hover:bg-[#1D4ED8] hover:shadow-lg hover:shadow-blue-500/15 active:scale-95"
-                >
-                  Mulai Gratis
-                </a>
+                {isLoggedIn ? (
+                  <a
+                    href="/dashboard"
+                    className="inline-flex h-12 items-center justify-center rounded-lg bg-[#2563EB] px-7 text-base font-semibold text-white transition-all duration-300 hover:bg-[#1D4ED8] hover:shadow-lg hover:shadow-blue-500/15 active:scale-95"
+                  >
+                    Buka Dashboard
+                  </a>
+                ) : (
+                  <a
+                    href="/auth/signup"
+                    className="inline-flex h-12 items-center justify-center rounded-lg bg-[#2563EB] px-7 text-base font-semibold text-white transition-all duration-300 hover:bg-[#1D4ED8] hover:shadow-lg hover:shadow-blue-500/15 active:scale-95"
+                  >
+                    Mulai Gratis
+                  </a>
+                )}
                 <a 
                   href="#how-it-works" 
                   className="inline-flex h-12 items-center justify-center rounded-lg border border-[#E2E8F0] px-7 text-base font-semibold text-[#0F172A] transition-all hover:bg-slate-50"
@@ -827,10 +853,10 @@ export default function LandingPage() {
                 </ul>
               </div>
               <a 
-                href="/auth/signup?plan=starter" 
+                href={isLoggedIn ? "/checkout?plan=starter" : "/auth/signup?plan=starter"} 
                 className="block text-center py-2.5 rounded-lg border border-[#E2E8F0] text-xs font-bold text-[#0F172A] hover:bg-slate-50 transition-colors"
               >
-                Mulai Sekarang
+                {isLoggedIn ? "Pilih Starter" : "Mulai Sekarang"}
               </a>
             </div>
 
@@ -875,10 +901,10 @@ export default function LandingPage() {
                 </ul>
               </div>
               <a 
-                href="/auth/signup?plan=business" 
+                href={isLoggedIn ? "/checkout?plan=business" : "/auth/signup?plan=business"} 
                 className="block text-center py-2.5 rounded-lg bg-[#2563EB] text-xs font-bold text-white hover:bg-[#1D4ED8] transition-colors"
               >
-                Mulai Sekarang
+                {isLoggedIn ? "Pilih Business" : "Mulai Sekarang"}
               </a>
             </div>
 
@@ -967,12 +993,12 @@ export default function LandingPage() {
           </p>
           <div className="flex flex-col items-center gap-3">
             <a 
-              href="/auth/signup" 
+              href={isLoggedIn ? "/dashboard" : "/auth/signup"} 
               className="inline-flex h-12 items-center justify-center rounded-lg bg-[#2563EB] px-8 text-base font-bold text-white transition-all hover:bg-[#1D4ED8] hover:shadow-lg hover:shadow-blue-500/10"
             >
-              Mulai Gratis
+              {isLoggedIn ? "Buka Dashboard" : "Mulai Gratis"}
             </a>
-            <span className="text-xs text-[#64748B]">Tidak perlu kartu kredit.</span>
+            {!isLoggedIn && <span className="text-xs text-[#64748B]">Tidak perlu kartu kredit.</span>}
           </div>
         </div>
       </section>
@@ -992,7 +1018,11 @@ export default function LandingPage() {
               <a href="#product" className="hover:text-[#2563EB] transition-colors">Product</a>
               <a href="#pricing" className="hover:text-[#2563EB] transition-colors">Pricing</a>
               <a href="#faq" className="hover:text-[#2563EB] transition-colors">FAQ</a>
-              <a href="/auth/login" className="hover:text-[#2563EB] transition-colors">Login</a>
+              {isLoggedIn ? (
+                <a href="/dashboard" className="hover:text-[#2563EB] transition-colors">Dashboard</a>
+              ) : (
+                <a href="/auth/login" className="hover:text-[#2563EB] transition-colors">Login</a>
+              )}
             </div>
           </div>
           
