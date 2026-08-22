@@ -57,6 +57,11 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      fontFamily: {
+        sans: ["var(--font-poppins)", "sans-serif"],
+        heading: ["var(--font-montserrat)", "sans-serif"],
+        rounded: ["'Gotham Rounded Bold'", "var(--font-quicksand)", "sans-serif"],
+      },
     },
   },
   plugins: [require("tailwindcss-animate")],

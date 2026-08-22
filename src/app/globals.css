@@ -67,6 +67,12 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+  }
+  h1, h2 {
+    font-family: 'Gotham Rounded Bold', var(--font-quicksand), sans-serif;
+  }
+  h3, h4, h5, h6 {
+    font-family: var(--font-montserrat), sans-serif;
   }
 }
