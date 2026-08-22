@@ -19,11 +19,13 @@ export async function getCurrentUser(): Promise<UserProfile | null> {
   const supabase = await createClient();
   const { data: { user }, error } = await supabase.auth.getUser();
 
-  if (error || !user || !user.email) {
+  let userProfile;
+  try {
+    userProfile = await db.select().from(users).where(eq(users.email, user.email)).limit(1);
+  } catch (error) {
+    console.error('Failed to query user profile, falling back to null:', error);
     return null;
   }
-
-  let userProfile = await db.select().from(users).where(eq(users.email, user.email)).limit(1);
 
   if (userProfile.length === 0) {
     // If user exists in auth but not in db, we have a problem in the multi-tenant architecture
