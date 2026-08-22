@@ -94,13 +94,13 @@ export function LoginForm({
               </Button>
             </div>
             <div className="mt-4 text-center text-sm">
-              Don&apos;t have an account?{" "}
-              {/* <Link
+              Belum punya akun?{" "}
+              <Link
                 href="/auth/sign-up"
                 className="underline underline-offset-4"
               >
-                Sign up
-              </Link> */}
+                Daftar di sini
+              </Link>
             </div>
           </form>
         </CardContent>
