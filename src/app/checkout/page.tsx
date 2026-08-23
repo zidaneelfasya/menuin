@@ -4,6 +4,8 @@ import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Check, ArrowLeft, ShieldCheck, CreditCard, Sparkles } from "lucide-react";
 
+import { getDashboardDetailsByEmail, markDashboardAsPaidAction } from "@/lib/actions/auth";
+
 declare global {
   interface Window {
     snap: any;
@@ -20,12 +22,26 @@ function CheckoutContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Retrieve user details from dummy signup and safely inject Midtrans Snap SDK script
+  // Retrieve user details from database (by email query) or dummy signup and safely inject Midtrans SDK script
   useEffect(() => {
-    const storedBusiness = localStorage.getItem("menuin_dummy_business") || "Restoran Baru";
-    const storedEmail = localStorage.getItem("menuin_dummy_email") || "owner@menuin.id";
-    setBusinessName(storedBusiness);
-    setEmail(storedEmail);
+    const fetchDetails = async () => {
+      const paramEmail = searchParams.get("email");
+      if (paramEmail) {
+        const details = await getDashboardDetailsByEmail(paramEmail);
+        if (details) {
+          setBusinessName(details.restaurantName);
+          setEmail(details.email);
+          return;
+        }
+      }
+      
+      const storedBusiness = localStorage.getItem("menuin_dummy_business") || "Restoran Baru";
+      const storedEmail = localStorage.getItem("menuin_dummy_email") || "owner@menuin.id";
+      setBusinessName(storedBusiness);
+      setEmail(storedEmail);
+    };
+
+    fetchDetails();
 
     // Inject Midtrans Snap script manually to bypass Next/React HMR removeChild issues
     const scriptId = "midtrans-snap-script";
@@ -44,7 +60,7 @@ function CheckoutContent() {
       script.async = true;
       document.body.appendChild(script);
     }
-  }, []);
+  }, [searchParams]);
 
   const planDetails = {
     starter: {
@@ -99,9 +115,21 @@ function CheckoutContent() {
 
       if (window.snap) {
         window.snap.pay(token, {
-          onSuccess: function (result: any) {
+          onSuccess: async function (result: any) {
             console.log("Success:", result);
-            router.push("/pos");
+            setIsLoading(true);
+            try {
+              const res = await markDashboardAsPaidAction(email);
+              if (res.error) {
+                setError(res.error);
+              } else {
+                router.push("/pos");
+              }
+            } catch (err: any) {
+              setError("Gagal memperbarui status pembayaran: " + err.message);
+            } finally {
+              setIsLoading(false);
+            }
           },
           onPending: function (result: any) {
             console.log("Pending:", result);

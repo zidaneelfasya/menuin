@@ -4,10 +4,23 @@ const fs = require('fs');
 
 async function main() {
   console.log("Connecting to database...");
-  const sql = postgres(process.env.DATABASE_URL, { prepare: false });
+  let connectionString = process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/postgres';
+  try {
+    const match = connectionString.match(/^(postgresql?:\/\/[^:]+:)(.*)(@[^@]+:\d+\/[^?]+.*)$/);
+    if (match) {
+      const password = match[2];
+      if (password.includes('@') || password.includes('#') || password.includes('!')) {
+        const encodedPassword = encodeURIComponent(password);
+        connectionString = match[1] + encodedPassword + match[3];
+      }
+    }
+  } catch (e) {
+    console.error("Failed to parse DB URL", e);
+  }
+  const sql = postgres(connectionString, { prepare: false });
   
   try {
-    const migrationSQL = fs.readFileSync('drizzle/0001_lush_jubilee.sql', 'utf8');
+    const migrationSQL = fs.readFileSync('drizzle/0002_slim_black_tarantula.sql', 'utf8');
     
     console.log("Executing SQL...");
     // Split the SQL script into statements if needed, or run as a single string

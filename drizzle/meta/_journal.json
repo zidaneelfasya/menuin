@@ -15,6 +15,13 @@
       "when": 1787384758459,
       "tag": "0001_lush_jubilee",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787405548775,
+      "tag": "0002_slim_black_tarantula",
+      "breakpoints": true
     }
   ]
 }

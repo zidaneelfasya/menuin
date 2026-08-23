@@ -3,6 +3,7 @@ import { pgTable, text, timestamp, integer, decimal, boolean, uuid, uniqueIndex 
 export const dashboards = pgTable('dashboards', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: text('name').notNull(),
+  isPaid: boolean('is_paid').default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

@@ -2,18 +2,12 @@
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import Image from "next/image";
 import { signUpAction } from "@/lib/actions/auth";
 
 export function SignUpForm({
@@ -35,19 +29,21 @@ export function SignUpForm({
 
     try {
       const formData = new FormData();
-      formData.append('email', email);
-      formData.append('password', password);
-      formData.append('name', name);
-      formData.append('restaurantName', restaurantName);
+      formData.append("email", email);
+      formData.append("password", password);
+      formData.append("name", name);
+      formData.append("restaurantName", restaurantName);
 
       const result = await signUpAction(formData);
-      
+
       if (result.error) {
         throw new Error(result.error);
       }
-      
-      // Redirect to login or success page
-      router.push("/pos");
+
+      localStorage.setItem("menuin_dummy_business", restaurantName);
+      localStorage.setItem("menuin_dummy_email", email);
+
+      router.push(`/checkout?email=${encodeURIComponent(email)}`);
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
     } finally {
@@ -56,77 +52,151 @@ export function SignUpForm({
   };
 
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">Daftar Akun Baru</CardTitle>
-          <CardDescription>
-            Buat akun Menuin dan daftarkan bisnis Anda
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSignUp}>
-            <div className="flex flex-col gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="restaurantName">Nama Restoran / Bisnis</Label>
-                <Input
-                  id="restaurantName"
-                  type="text"
-                  placeholder="Contoh: Kopi Kenangan"
-                  required
-                  value={restaurantName}
-                  onChange={(e) => setRestaurantName(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="name">Nama Pemilik</Label>
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="Nama Lengkap"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="m@example.com"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-              {error && <p className="text-sm text-red-500">{error}</p>}
-              <Button type="submit" className="w-full mt-2" disabled={isLoading}>
-                {isLoading ? "Mendaftar..." : "Daftar Sekarang"}
-              </Button>
-            </div>
-            <div className="mt-4 text-center text-sm">
-              Sudah punya akun?{" "}
-              <Link
-                href="/auth/login"
-                className="underline underline-offset-4"
+    <div
+      className={cn(
+        "min-h-screen w-full flex items-center justify-center bg-[#FAFAFA] p-4 md:p-8",
+        className
+      )}
+      {...props}
+    >
+      <div className="w-full max-w-[960px] min-h-[580px] flex rounded-2xl overflow-hidden border border-[#E5E5E5] bg-white">
+        {/* Brand Panel */}
+        <div className="hidden md:flex flex-1 bg-[#2563EB] flex-col items-center justify-center p-12 relative">
+          <Image
+            src="/logo-nemuin.jpeg"
+            alt="Menuin"
+            width={200}
+            height={60}
+            className="brightness-0 invert mb-8"
+            priority
+          />
+          <p className="text-white/70 text-sm text-center max-w-[240px] leading-relaxed">
+            Mulai kelola bisnis kuliner Anda dengan sistem yang simpel dan modern.
+          </p>
+        </div>
+
+        {/* Form Panel */}
+        <div className="flex-1 flex flex-col justify-center px-8 py-12 md:px-14">
+          {/* Mobile logo */}
+          <div className="md:hidden mb-10">
+            <Image
+              src="/logo-nemuin.jpeg"
+              alt="Menuin"
+              width={140}
+              height={42}
+              className="mb-6"
+              priority
+            />
+          </div>
+
+          <div className="mb-10">
+            <h1 className="text-[28px] font-bold text-[#111] tracking-[-0.02em] mb-2">
+              Buat akun baru
+            </h1>
+            <p className="text-[#666] text-[15px]">
+              Daftarkan bisnis Anda dan mulai gunakan Menuin.
+            </p>
+          </div>
+
+          <form onSubmit={handleSignUp} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label
+                htmlFor="restaurantName"
+                className="text-[13px] font-medium text-[#111]"
               >
-                Masuk di sini
-              </Link>
+                Nama restoran
+              </Label>
+              <Input
+                id="restaurantName"
+                type="text"
+                placeholder="Contoh: Kopi Kenangan"
+                required
+                value={restaurantName}
+                onChange={(e) => setRestaurantName(e.target.value)}
+                className="h-12 rounded-xl border-[#E5E5E5] bg-[#FAFAFA] px-4 text-[15px] placeholder:text-[#AAAAAA] focus-visible:ring-2 focus-visible:ring-[#2563EB]/20 focus-visible:border-[#2563EB] transition-colors"
+              />
             </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label
+                htmlFor="name"
+                className="text-[13px] font-medium text-[#111]"
+              >
+                Nama pemilik
+              </Label>
+              <Input
+                id="name"
+                type="text"
+                placeholder="Nama lengkap Anda"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="h-12 rounded-xl border-[#E5E5E5] bg-[#FAFAFA] px-4 text-[15px] placeholder:text-[#AAAAAA] focus-visible:ring-2 focus-visible:ring-[#2563EB]/20 focus-visible:border-[#2563EB] transition-colors"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label
+                htmlFor="email"
+                className="text-[13px] font-medium text-[#111]"
+              >
+                Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="nama@restoran.id"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="h-12 rounded-xl border-[#E5E5E5] bg-[#FAFAFA] px-4 text-[15px] placeholder:text-[#AAAAAA] focus-visible:ring-2 focus-visible:ring-[#2563EB]/20 focus-visible:border-[#2563EB] transition-colors"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label
+                htmlFor="password"
+                className="text-[13px] font-medium text-[#111]"
+              >
+                Kata sandi
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Minimal 6 karakter"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="h-12 rounded-xl border-[#E5E5E5] bg-[#FAFAFA] px-4 text-[15px] placeholder:text-[#AAAAAA] focus-visible:ring-2 focus-visible:ring-[#2563EB]/20 focus-visible:border-[#2563EB] transition-colors"
+              />
+            </div>
+
+            {error && (
+              <div className="bg-[#FEF2F2] border border-[#FECACA] rounded-xl px-4 py-3 text-[13px] text-[#DC2626] font-medium">
+                {error}
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              className="w-full h-12 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-[15px] font-semibold transition-colors mt-1"
+              disabled={isLoading}
+            >
+              {isLoading ? "Mendaftarkan..." : "Daftar & Lanjut"}
+            </Button>
           </form>
-        </CardContent>
-      </Card>
+
+          <p className="mt-8 text-center text-[14px] text-[#666]">
+            Sudah punya akun?{" "}
+            <Link
+              href="/auth/login"
+              className="font-semibold text-[#2563EB] hover:text-[#1D4ED8] transition-colors"
+            >
+              Masuk
+            </Link>
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

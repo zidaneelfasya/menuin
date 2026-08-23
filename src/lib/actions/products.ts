@@ -5,6 +5,7 @@ import { products, categories } from '@/lib/db/schema';
 import { eq, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
+import { getCurrentUser } from './auth';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Nama produk wajib diisi'),
@@ -61,6 +62,9 @@ export async function getProducts() {
 
 export async function createProduct(formData: z.infer<typeof productSchema>) {
   try {
+    const user = await getCurrentUser();
+    if (!user) return { success: false, error: 'Unauthorized' };
+
     const validatedData = productSchema.parse(formData);
     
     // Auto-generate barcode if empty
@@ -69,6 +73,7 @@ export async function createProduct(formData: z.infer<typeof productSchema>) {
       : generateBarcode();
     
     await db.insert(products).values({
+      dashboardId: user.dashboardId,
       name: validatedData.name,
       sku: validatedData.sku,
       categoryId: validatedData.categoryId,

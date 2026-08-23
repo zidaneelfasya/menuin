@@ -4,6 +4,7 @@ import { db } from '@/lib/db';
 import { transactions, transactionItems, products } from '@/lib/db/schema';
 import { eq, desc, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+import { getCurrentUser } from './auth';
 
 // We'll trust the checkout payload from the client to have this structure
 type CheckoutPayload = {
@@ -22,10 +23,14 @@ type CheckoutPayload = {
 
 export async function createTransaction(payload: CheckoutPayload) {
   try {
+    const user = await getCurrentUser();
+    if (!user) return { success: false, error: 'Unauthorized' };
+
     // We run the transaction logic in a single DB transaction
     const result = await db.transaction(async (tx) => {
       // 1. Create Transaction record
       const [newTx] = await tx.insert(transactions).values({
+        dashboardId: user.dashboardId,
         totalAmount: payload.totalAmount.toString(),
         discount: payload.discount.toString(),
         tax: payload.tax.toString(),

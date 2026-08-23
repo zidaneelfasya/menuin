@@ -1,0 +1,1 @@
+ALTER TABLE "dashboards" ADD COLUMN "is_paid" boolean DEFAULT false NOT NULL;
