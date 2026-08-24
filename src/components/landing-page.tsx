@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { Check, ChevronDown, ArrowRight, PlayCircle } from "lucide-react";
 
+
 function useInView(threshold = 0.15) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
@@ -299,7 +300,7 @@ export default function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boole
 
     const buildCache = () => {
       if (!marqueeContainerRef.current) return null;
-      
+
       const contentsList = Array.from(marqueeContainerRef.current.querySelectorAll('.marquee-content')) as HTMLElement[];
       const oldTransforms = contentsList.map(c => c.style.transform);
       contentsList.forEach(c => c.style.transform = 'none');
@@ -307,51 +308,51 @@ export default function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boole
       const containerRect = marqueeContainerRef.current.getBoundingClientRect();
       const containerWidth = containerRect.width;
       const containerCenter = containerRect.left + containerRect.width / 2;
-      
+
       const tracks = Array.from(marqueeContainerRef.current.querySelectorAll('.row-top, .row-middle, .row-bottom')).map(track => {
         const isMiddle = track.classList.contains('row-middle');
         const isBottom = track.classList.contains('row-bottom');
         let delay = 0;
         if (isMiddle) delay = -12.5;
         if (isBottom) delay = -6;
-        
+
         const contents = Array.from(track.querySelectorAll('.marquee-content')).map(content => {
           const contentEl = content as HTMLElement;
           const contentRect = contentEl.getBoundingClientRect();
           const contentWidth = contentRect.width;
-          
+
           const wrappers = Array.from(content.querySelectorAll('.testimonial-wrapper')).map(wrapper => {
             const el = wrapper as HTMLElement;
             const inner = el.querySelector('.testimonial-inner') as HTMLElement;
             const isTopRow = el.closest('.row-top') !== null;
             const isBottomRow = el.closest('.row-bottom') !== null;
-            
+
             const rect = el.getBoundingClientRect();
             const initialCenter = rect.left + rect.width / 2;
-            
+
             return { inner, initialCenter, isTopRow, isBottomRow };
           });
-          
+
           return { content: contentEl, contentWidth, wrappers };
         });
-        
+
         return { delay, contents };
       });
-      
+
       contentsList.forEach((c, i) => c.style.transform = oldTransforms[i]);
 
       return { containerWidth, containerCenter, tracks };
     };
-
+    // logic untuk membuat animasi testimonial
     const updateCards = (time: number) => {
       if (!cache) {
-         cache = buildCache();
-         if (!cache) {
-           animationFrameId = requestAnimationFrame(updateCards);
-           return;
-         }
+        cache = buildCache();
+        if (!cache) {
+          animationFrameId = requestAnimationFrame(updateCards);
+          return;
+        }
       }
-      
+
       const { containerWidth, containerCenter, tracks } = cache;
       const duration = 15;
       const elapsed = (time - startTime) / 1000;
@@ -367,20 +368,20 @@ export default function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boole
         for (let j = 0; j < trackInfo.contents.length; j++) {
           const contentInfo = trackInfo.contents[j];
           const translateXPixels = (translateXPercent / 100) * contentInfo.contentWidth;
-          
+
           contentInfo.content.style.transform = `translate3d(${translateXPercent}%, 0, 0)`;
-          
+
           for (let k = 0; k < contentInfo.wrappers.length; k++) {
             const wrapperInfo = contentInfo.wrappers[k];
-            
+
             const currentCenter = wrapperInfo.initialCenter + translateXPixels;
             const distanceFromCenter = (currentCenter - containerCenter) / (containerWidth / 2);
-            
-            const clampedDistance = Math.max(-1.2, Math.min(1.2, distanceFromCenter));
+
+            const clampedDistance = Math.max(-1.5, Math.min(1.5, distanceFromCenter));
             const curveIntensity = clampedDistance * clampedDistance;
-            
-            const maxOffset = 60;
-            const maxRotation = 8;
+
+            const maxOffset = 180;
+            const maxRotation = 15;
 
             let translateY = 0;
             let rotateZ = 0;
@@ -402,7 +403,7 @@ export default function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boole
     };
 
     cache = buildCache();
-    
+
     let resizeTimer: ReturnType<typeof setTimeout>;
     const handleResize = () => {
       clearTimeout(resizeTimer);
@@ -410,7 +411,7 @@ export default function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boole
         cache = buildCache();
       }, 200);
     };
-    
+
     window.addEventListener('resize', handleResize);
     animationFrameId = requestAnimationFrame(updateCards);
 
@@ -785,194 +786,365 @@ export default function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boole
         </div>
       </section>
 
-      {/* TESTIMONIALS REVEAL */}
-      <section ref={marqueeContainerRef} className="relative py-24 md:py-32 overflow-hidden bg-[#FAFAFA]" id="testimonials">
-        <div className="mx-auto max-w-[1200px] text-center mb-20 relative z-20 px-6">
-          <h2 className="text-[clamp(32px,5vw,48px)] font-bold leading-[1.1] tracking-[-0.02em] text-[#111]">
-            Transformasi Nyata.<br /><span className="text-[#0E59F9]">Tumbuh Bersama Menuin.</span>
-          </h2>
+      {/* WRAPPER FOR TESTIMONIAL & PRICING */}
+      <div className="relative overflow-hidden bg-[#FAFAFA]">
+
+        {/* BACKGROUND DIVIDER SVG */}
+        <div className="absolute top-[88px] left-1/2 -translate-x-1/2 w-[1922px] pointer-events-none z-20 flex justify-center">
+          <img src="/divider/divider.svg" alt="Divider Background" className="w-full h-auto" />
         </div>
 
-        <div className="relative w-full h-[800px] flex flex-col items-center justify-center">
-          {/* The glowing beam in the center */}
-          <div className="absolute left-1/2 top-0 bottom-0 w-[2px] bg-blue-500 shadow-[0_0_30px_5px_rgba(14,89,249,0.8)] z-30 pointer-events-none" />
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 bg-[#0E59F9] rounded-2xl flex items-center justify-center z-40 shadow-[0_0_40px_15px_rgba(14,89,249,0.4)] border border-white/20">
-            <span className="text-white font-black text-xl tracking-tighter">m.</span>
+        {/* TESTIMONIALS REVEAL */}
+        <section
+          ref={marqueeContainerRef}
+          id="testimonials"
+          className="relative py-24 md:py-32 z-10"
+        >
+          {/* HEADER */}
+          <div className="relative z-[60] mx-auto mb-16 max-w-[1200px] px-6 text-center md:mb-20">
+            <h2 className="text-[clamp(32px,5vw,48px)] font-bold leading-[1.1] tracking-[-0.02em] text-[#111]">
+              Testimonial Menuin
+              <br />
+
+              <span className="text-[#0E59F9]">
+                Hall of Fame.
+              </span>
+            </h2>
           </div>
 
-          {/* MARQUEE WRAPPER - TOP ROW */}
-          <div className="absolute top-[190px] left-0 w-full overflow-visible z-10 row-top">
-            <div className="w-full relative flex h-[120px]">
-              <div className="absolute top-0 left-0 w-full h-full flex z-10">
-                <div className="flex shrink-0 items-center gap-5 min-w-full pr-5 marquee-content will-change-transform">
-                  {testimonialsData.map((t, i) => <SkeletonCard key={`skel1-t-${i}`} />)}
+          {/* TESTIMONIAL CANVAS */}
+          <div className="relative h-[760px] w-full">
+
+            {/* ========================================= */}
+            {/* TESTIMONIAL MARQUEE */}
+            {/* ========================================= */}
+
+            {/* TOP ROW */}
+            <div className="row-top absolute left-0 top-[170px] z-10 w-full">
+              <div className="relative flex h-[120px] w-full">
+
+                {/* SKELETON */}
+                <div className="absolute inset-0 z-10 flex">
+                  <div className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5">
+                    {testimonialsData.map((t, i) => (
+                      <SkeletonCard key={`skel1-t-${i}`} />
+                    ))}
+                  </div>
+
+                  <div
+                    className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5"
+                    aria-hidden="true"
+                  >
+                    {testimonialsData.map((t, i) => (
+                      <SkeletonCard key={`skel2-t-${i}`} />
+                    ))}
+                  </div>
                 </div>
-                <div className="flex shrink-0 items-center gap-5 min-w-full pr-5 marquee-content will-change-transform" aria-hidden="true">
-                  {testimonialsData.map((t, i) => <SkeletonCard key={`skel2-t-${i}`} />)}
-                </div>
-              </div>
-              <div className="absolute top-0 left-0 w-full h-full flex z-20" style={{ clipPath: 'inset(-200px 0 -200px 50%)' }}>
-                <div className="flex shrink-0 items-center gap-5 min-w-full pr-5 marquee-content will-change-transform">
-                  {testimonialsData.map((t, i) => <RealCard key={`real1-t-${i}`} data={t} />)}
-                </div>
-                <div className="flex shrink-0 items-center gap-5 min-w-full pr-5 marquee-content will-change-transform" aria-hidden="true">
-                  {testimonialsData.map((t, i) => <RealCard key={`real2-t-${i}`} data={t} />)}
+
+                {/* REAL TESTIMONIAL */}
+                <div
+                  className="absolute inset-0 z-20 flex"
+                  style={{
+                    clipPath: "inset(-200px 0 -200px 50%)",
+                  }}
+                >
+                  <div className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5">
+                    {testimonialsData.map((t, i) => (
+                      <RealCard
+                        key={`real1-t-${i}`}
+                        data={t}
+                      />
+                    ))}
+                  </div>
+
+                  <div
+                    className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5"
+                    aria-hidden="true"
+                  >
+                    {testimonialsData.map((t, i) => (
+                      <RealCard
+                        key={`real2-t-${i}`}
+                        data={t}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* MARQUEE WRAPPER - MIDDLE ROW */}
-          <div className="absolute top-[340px] left-0 w-full overflow-visible z-10 row-middle">
-            <div className="w-full relative flex h-[120px]">
-              <div className="absolute top-0 left-0 w-full h-full flex z-10">
-                <div className="flex shrink-0 items-center gap-5 min-w-full pr-5 marquee-content will-change-transform">
-                  {[...testimonialsData].reverse().map((t, i) => <SkeletonCard key={`skel1-m-${i}`} />)}
+            {/* MIDDLE ROW */}
+            <div className="row-middle absolute left-0 top-[315px] z-10 w-full">
+              <div className="relative flex h-[120px] w-full">
+
+                {/* SKELETON */}
+                <div className="absolute inset-0 z-10 flex">
+                  <div className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5">
+                    {[...testimonialsData].reverse().map((t, i) => (
+                      <SkeletonCard key={`skel1-m-${i}`} />
+                    ))}
+                  </div>
+
+                  <div
+                    className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5"
+                    aria-hidden="true"
+                  >
+                    {[...testimonialsData].reverse().map((t, i) => (
+                      <SkeletonCard key={`skel2-m-${i}`} />
+                    ))}
+                  </div>
                 </div>
-                <div className="flex shrink-0 items-center gap-5 min-w-full pr-5 marquee-content will-change-transform" aria-hidden="true">
-                  {[...testimonialsData].reverse().map((t, i) => <SkeletonCard key={`skel2-m-${i}`} />)}
+
+                {/* REAL */}
+                <div
+                  className="absolute inset-0 z-20 flex"
+                  style={{
+                    clipPath: "inset(-200px 0 -200px 50%)",
+                  }}
+                >
+                  <div className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5">
+                    {[...testimonialsData].reverse().map((t, i) => (
+                      <RealCard
+                        key={`real1-m-${i}`}
+                        data={t}
+                      />
+                    ))}
+                  </div>
+
+                  <div
+                    className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5"
+                    aria-hidden="true"
+                  >
+                    {[...testimonialsData].reverse().map((t, i) => (
+                      <RealCard
+                        key={`real2-m-${i}`}
+                        data={t}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
-              <div className="absolute top-0 left-0 w-full h-full flex z-20" style={{ clipPath: 'inset(-200px 0 -200px 50%)' }}>
-                <div className="flex shrink-0 items-center gap-5 min-w-full pr-5 marquee-content will-change-transform">
-                  {[...testimonialsData].reverse().map((t, i) => <RealCard key={`real1-m-${i}`} data={t} />)}
+            </div>
+
+            {/* BOTTOM ROW */}
+            <div className="row-bottom absolute left-0 top-[460px] z-10 w-full">
+              <div className="relative flex h-[120px] w-full">
+
+                {/* SKELETON */}
+                <div className="absolute inset-0 z-10 flex">
+                  <div className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5">
+                    {testimonialsData.map((t, i) => (
+                      <SkeletonCard key={`skel1-b-${i}`} />
+                    ))}
+                  </div>
+
+                  <div
+                    className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5"
+                    aria-hidden="true"
+                  >
+                    {testimonialsData.map((t, i) => (
+                      <SkeletonCard key={`skel2-b-${i}`} />
+                    ))}
+                  </div>
                 </div>
-                <div className="flex shrink-0 items-center gap-5 min-w-full pr-5 marquee-content will-change-transform" aria-hidden="true">
-                  {[...testimonialsData].reverse().map((t, i) => <RealCard key={`real2-m-${i}`} data={t} />)}
+
+                {/* REAL */}
+                <div
+                  className="absolute inset-0 z-20 flex"
+                  style={{
+                    clipPath: "inset(-200px 0 -200px 50%)",
+                  }}
+                >
+                  <div className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5">
+                    {testimonialsData.map((t, i) => (
+                      <RealCard
+                        key={`real1-b-${i}`}
+                        data={t}
+                      />
+                    ))}
+                  </div>
+
+                  <div
+                    className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5"
+                    aria-hidden="true"
+                  >
+                    {testimonialsData.map((t, i) => (
+                      <RealCard
+                        key={`real2-b-${i}`}
+                        data={t}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
+
+            {/* ========================================= */}
+            {/* EDGE FADE */}
+            {/* ========================================= */}
+
+            <div
+              className="
+        pointer-events-none
+        absolute
+        inset-y-0
+        left-0
+        z-[55]
+        w-[18%]
+        bg-gradient-to-r
+        from-[#FAFAFA]
+        via-[#FAFAFA]/80
+        to-transparent
+      "
+            />
+
+            <div
+              className="
+        pointer-events-none
+        absolute
+        inset-y-0
+        right-0
+        z-[55]
+        w-[18%]
+        bg-gradient-to-l
+        from-[#FAFAFA]
+        via-[#FAFAFA]/80
+        to-transparent
+      "
+            />
           </div>
 
-          {/* MARQUEE WRAPPER - BOTTOM ROW */}
-          <div className="absolute top-[490px] left-0 w-full overflow-visible z-10 row-bottom">
-            <div className="w-full relative flex h-[120px]">
-              <div className="absolute top-0 left-0 w-full h-full flex z-10">
-                <div className="flex shrink-0 items-center gap-5 min-w-full pr-5 marquee-content will-change-transform">
-                  {testimonialsData.map((t, i) => <SkeletonCard key={`skel1-b-${i}`} />)}
-                </div>
-                <div className="flex shrink-0 items-center gap-5 min-w-full pr-5 marquee-content will-change-transform" aria-hidden="true">
-                  {testimonialsData.map((t, i) => <SkeletonCard key={`skel2-b-${i}`} />)}
-                </div>
-              </div>
-              <div className="absolute top-0 left-0 w-full h-full flex z-20" style={{ clipPath: 'inset(-200px 0 -200px 50%)' }}>
-                <div className="flex shrink-0 items-center gap-5 min-w-full pr-5 marquee-content will-change-transform">
-                  {testimonialsData.map((t, i) => <RealCard key={`real1-b-${i}`} data={t} />)}
-                </div>
-                <div className="flex shrink-0 items-center gap-5 min-w-full pr-5 marquee-content will-change-transform" aria-hidden="true">
-                  {testimonialsData.map((t, i) => <RealCard key={`real2-b-${i}`} data={t} />)}
-                </div>
-              </div>
-            </div>
-          </div>
 
-          {/* FADE MASKS FOR LEFT AND RIGHT EDGES */}
-          <div className="absolute top-0 left-0 bottom-0 w-[15%] bg-gradient-to-r from-[#FAFAFA] to-transparent z-40 pointer-events-none" />
-          <div className="absolute top-0 right-0 bottom-0 w-[15%] bg-gradient-to-l from-[#FAFAFA] to-transparent z-40 pointer-events-none" />
-        </div>
+        </section>
 
-        {/* INPUT FORM SECTION */}
-        <div className="px-6 relative z-30">
-          <TestimonialForm />
-        </div>
-      </section>
-
-      {/* PRICING (Dark Blue Background) */}
-      <section className="py-24 md:py-32 px-6 bg-[#0B1221]" id="pricing">
-        <div className="mx-auto max-w-[1200px] px-6">
-          <FadeIn>
-            <div className="text-center max-w-[600px] mx-auto mb-14">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 mb-6">
-                <span className="text-white text-[12px] font-semibold uppercase tracking-wider">Pricing</span>
-              </div>
-              <h2 className="text-[clamp(32px,5vw,48px)] font-bold leading-[1.1] tracking-[-0.02em] text-white">
-                Choose <span className="text-[#4989F8]">Your Plan</span>
-              </h2>
-
-              <div className="mt-8 inline-flex items-center gap-3 p-1 rounded-full bg-white/10 backdrop-blur-sm border border-white/10">
-                <button className="px-6 py-2 rounded-full bg-white text-[#111] text-[14px] font-bold shadow-sm">Monthly</button>
-                <button className="px-6 py-2 rounded-full text-white/70 text-[14px] font-medium hover:text-white transition-colors">Yearly <span className="text-[10px] text-[#4989F8] font-bold ml-1">Save 20%</span></button>
-              </div>
-            </div>
-          </FadeIn>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-[1050px] mx-auto items-center">
-            {/* Starter Plan */}
-            <FadeIn delay={0}>
-              <div className="p-8 rounded-3xl bg-[#131E3A] border border-white/10 flex flex-col h-full">
-                <h4 className="text-[20px] font-bold text-white mb-1">Starter Plan</h4>
-                <div className="flex items-baseline gap-1 mb-2">
-                  <span className="text-[36px] font-bold text-white">Free</span>
-                  <span className="text-[14px] text-white/50">/month</span>
+        {/* PRICING (Transparent to show SVG background) */}
+        <section className="relative z-30 py-24 md:py-32 px-6" id="pricing">
+          <div className="mx-auto max-w-[1200px]">
+            <FadeIn>
+              <div className="text-center mb-16">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 shadow-sm mb-6">
+                  <span className="text-[#0E59F9] text-[12px] font-semibold uppercase tracking-wider">Pricing</span>
                 </div>
-                <p className="text-[14px] text-white/60 mb-8">Perfect for small business.</p>
-                <a href="/auth/signup" className="block text-center py-3.5 rounded-xl bg-white text-[15px] font-bold text-[#111] hover:bg-gray-100 transition-colors mb-8">
-                  Get Started
-                </a>
-                <div className="text-[11px] font-bold uppercase tracking-wider text-white/40 mb-4">Features</div>
-                <ul className="space-y-4 text-[14px] text-white/70">
-                  {["Digital Menu Catalog", "QR Code Generation", "Basic Online Ordering", "Single User Access", "Standard Support"].map((item, j) => (
-                    <li key={j} className="flex items-start gap-3">
-                      <Check className="w-5 h-5 text-[#4989F8] shrink-0" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
+                <h2 className="text-[clamp(32px,5vw,48px)] font-bold leading-[1.1] tracking-[-0.02em] text-[#111]">
+                  Choose <span className="text-[#0E59F9]">Your Plan</span>
+                </h2>
+
+                <div className="mt-8 inline-flex items-center gap-3 p-1 rounded-full bg-gray-100 border border-gray-200">
+                  <button className="px-6 py-2 rounded-full bg-white text-[#111] text-[14px] font-bold shadow-sm">Monthly</button>
+                  <button className="px-6 py-2 rounded-full text-gray-500 text-[14px] font-medium hover:text-[#111] transition-colors">Yearly <span className="text-[10px] text-[#0E59F9] font-bold ml-1">Save 20%</span></button>
+                </div>
               </div>
             </FadeIn>
 
-            {/* Professional Plan (Highlighted) */}
-            <FadeIn delay={0.1}>
-              <div className="p-8 rounded-3xl bg-[#1A2A54] border border-[#4989F8]/50 flex flex-col relative transform md:scale-105 shadow-2xl shadow-blue-900/20 z-10 h-full">
-                <div className="absolute -top-4 right-8 bg-white text-[#111] text-[11px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider shadow-sm">
-                  Most Popular
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-[1050px] mx-auto items-center">
+              {/* Starter Plan */}
+              <FadeIn delay={0}>
+                <div className="p-8 rounded-3xl bg-[#131E3A] border border-white/10 flex flex-col h-full">
+                  <h4 className="text-[20px] font-bold text-white mb-1">Starter Plan</h4>
+                  <div className="flex items-baseline gap-1 mb-2">
+                    <span className="text-[36px] font-bold text-white">Free</span>
+                    <span className="text-[14px] text-white/50">/month</span>
+                  </div>
+                  <p className="text-[14px] text-white/60 mb-8">Perfect for small business.</p>
+                  <a href="/auth/signup" className="block text-center py-3.5 rounded-xl bg-white text-[15px] font-bold text-[#111] hover:bg-gray-100 transition-colors mb-8">
+                    Get Started
+                  </a>
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-white/40 mb-4">Features</div>
+                  <ul className="space-y-4 text-[14px] text-white/70">
+                    {["Digital Menu Catalog", "QR Code Generation", "Basic Online Ordering", "Single User Access", "Standard Support"].map((item, j) => (
+                      <li key={j} className="flex items-start gap-3">
+                        <Check className="w-5 h-5 text-[#4989F8] shrink-0" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <h4 className="text-[20px] font-bold text-white mb-1">Professional</h4>
-                <div className="flex items-baseline gap-1 mb-2">
-                  <span className="text-[36px] font-bold text-white">Rp 199k</span>
-                  <span className="text-[14px] text-white/50">/month</span>
-                </div>
-                <p className="text-[14px] text-white/60 mb-8">Perfect for growing business.</p>
-                <a href="/auth/signup?plan=pro" className="block text-center py-3.5 rounded-xl bg-[#0E59F9] text-[15px] font-bold text-white hover:bg-[#0C4CD6] transition-colors mb-8 shadow-lg shadow-blue-500/25">
-                  Get Started
-                </a>
-                <div className="text-[11px] font-bold uppercase tracking-wider text-white/40 mb-4">Features</div>
-                <ul className="space-y-4 text-[14px] text-white/90">
-                  {["Everything in Starter", "Integrated POS System", "Payment Gateway (QRIS)", "Advanced Dashboard Analytics", "Multiple Users / Roles", "Priority Support"].map((item, j) => (
-                    <li key={j} className="flex items-start gap-3">
-                      <Check className="w-5 h-5 text-[#4989F8] shrink-0" />
-                      <span className={j === 0 ? "font-semibold" : ""}>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </FadeIn>
+              </FadeIn>
 
-            {/* Enterprise Plan */}
-            <FadeIn delay={0.2}>
-              <div className="p-8 rounded-3xl bg-[#131E3A] border border-white/10 flex flex-col h-full">
-                <h4 className="text-[20px] font-bold text-white mb-1">Enterprise</h4>
-                <div className="flex items-baseline gap-1 mb-2">
-                  <span className="text-[36px] font-bold text-white">Custom</span>
+              {/* Professional Plan (Highlighted) */}
+              <FadeIn delay={0.1}>
+                <div className="p-8 rounded-3xl bg-[#1A2A54] border border-[#4989F8]/50 flex flex-col relative transform md:scale-105 shadow-2xl shadow-blue-900/20 z-10 h-full">
+                  <div className="absolute -top-4 right-8 bg-white text-[#111] text-[11px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider shadow-sm">
+                    Most Popular
+                  </div>
+                  <h4 className="text-[20px] font-bold text-white mb-1">Professional</h4>
+                  <div className="flex items-baseline gap-1 mb-2">
+                    <span className="text-[36px] font-bold text-white">Rp 199k</span>
+                    <span className="text-[14px] text-white/50">/month</span>
+                  </div>
+                  <p className="text-[14px] text-white/60 mb-8">Perfect for growing business.</p>
+                  <a href="/auth/signup?plan=pro" className="block text-center py-3.5 rounded-xl bg-[#0E59F9] text-[15px] font-bold text-white hover:bg-[#0C4CD6] transition-colors mb-8 shadow-lg shadow-blue-500/25">
+                    Get Started
+                  </a>
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-white/40 mb-4">Features</div>
+                  <ul className="space-y-4 text-[14px] text-white/90">
+                    {["Everything in Starter", "Integrated POS System", "Payment Gateway (QRIS)", "Advanced Dashboard Analytics", "Multiple Users / Roles", "Priority Support"].map((item, j) => (
+                      <li key={j} className="flex items-start gap-3">
+                        <Check className="w-5 h-5 text-[#4989F8] shrink-0" />
+                        <span className={j === 0 ? "font-semibold" : ""}>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <p className="text-[14px] text-white/60 mb-8">Perfect for large scale business.</p>
-                <a href="mailto:hello@menuin.id" className="block text-center py-3.5 rounded-xl bg-white text-[15px] font-bold text-[#111] hover:bg-gray-100 transition-colors mb-8">
-                  Contact Us
-                </a>
-                <div className="text-[11px] font-bold uppercase tracking-wider text-white/40 mb-4">Features</div>
-                <ul className="space-y-4 text-[14px] text-white/70">
-                  {["Everything in Professional", "Multi-Branch Management", "Custom API Integrations", "Dedicated Account Manager", "White-label Options"].map((item, j) => (
-                    <li key={j} className="flex items-start gap-3">
-                      <Check className="w-5 h-5 text-[#4989F8] shrink-0" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </FadeIn>
+              </FadeIn>
+
+              {/* Enterprise Plan */}
+              <FadeIn delay={0.2}>
+                <div className="p-8 rounded-3xl bg-[#131E3A] border border-white/10 flex flex-col h-full">
+                  <h4 className="text-[20px] font-bold text-white mb-1">Enterprise</h4>
+                  <div className="flex items-baseline gap-1 mb-2">
+                    <span className="text-[36px] font-bold text-white">Custom</span>
+                  </div>
+                  <p className="text-[14px] text-white/60 mb-8">Perfect for large scale business.</p>
+                  <a href="mailto:hello@menuin.id" className="block text-center py-3.5 rounded-xl bg-white text-[15px] font-bold text-[#111] hover:bg-gray-100 transition-colors mb-8">
+                    Contact Us
+                  </a>
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-white/40 mb-4">Features</div>
+                  <ul className="space-y-4 text-[14px] text-white/70">
+                    {["Everything in Professional", "Multi-Branch Management", "Custom API Integrations", "Dedicated Account Manager", "White-label Options"].map((item, j) => (
+                      <li key={j} className="flex items-start gap-3">
+                        <Check className="w-5 h-5 text-[#4989F8] shrink-0" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </FadeIn>
+            </div>
           </div>
-        </div>
-      </section>
+
+          {/* ========================================= */}
+          {/* EDGE FADE FOR PRICING                     */}
+          {/* ========================================= */}
+          <div
+            className="
+            pointer-events-none
+            absolute
+            inset-y-0
+            left-0
+            z-[40]
+            w-[18%]
+            bg-gradient-to-r
+            from-[#FAFAFA]
+            via-[#FAFAFA]/80
+            to-transparent
+          "
+          />
+          <div
+            className="
+            pointer-events-none
+            absolute
+            inset-y-0
+            right-0
+            z-[40]
+            w-[18%]
+            bg-gradient-to-l
+            from-[#FAFAFA]
+            via-[#FAFAFA]/80
+            to-transparent
+          "
+          />
+        </section>
+      </div>
 
       {/* TESTIMONIALS */}
       <section className="relative py-24 md:py-32 px-6 overflow-hidden">
