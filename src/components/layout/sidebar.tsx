@@ -3,8 +3,9 @@
 import * as React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { createClient } from '@/lib/supabase/client';
 import { 
   LayoutDashboard, 
   ShoppingCart, 
@@ -28,22 +29,30 @@ import { UserProfile, signOutAction } from '@/lib/actions/auth';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 
 const navItems = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Kasir', href: '/pos', icon: ShoppingCart },
-  { name: 'Produk', href: '/products', icon: Package },
-  { name: 'Kategori', href: '/categories', icon: Tags },
-  { name: 'Stock', href: '/inventory', icon: Archive },
-  { name: 'Riwayat Transaksi', href: '/transactions', icon: History },
-  { name: 'Laporan', href: '/reports', icon: BarChart3 },
-  { name: 'Keuangan', href: '/finance', icon: Wallet },
-  { name: 'Promo', href: '/promotions', icon: Percent },
-  { name: 'Pengguna', href: '/users', icon: UserCircle, role: 'SUPERADMIN' },
-  { name: 'Pengaturan', href: '/settings', icon: Settings },
-  { name: 'Pembelian', href: '/purchases', icon: ShoppingBag },
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['SUPERADMIN'] },
+  { name: 'Kasir (POS)', href: '/pos', icon: ShoppingCart, roles: ['SUPERADMIN', 'CASHIER'] },
+  { name: 'Produk', href: '/products', icon: Package, roles: ['SUPERADMIN'] },
+  { name: 'Kategori', href: '/categories', icon: Tags, roles: ['SUPERADMIN'] },
+  { name: 'Stock', href: '/inventory', icon: Archive, roles: ['SUPERADMIN'] },
+  { name: 'Riwayat Transaksi', href: '/transactions', icon: History, roles: ['SUPERADMIN', 'CASHIER'] },
+  { name: 'Laporan', href: '/reports', icon: BarChart3, roles: ['SUPERADMIN'] },
+  { name: 'Keuangan', href: '/finance', icon: Wallet, roles: ['SUPERADMIN'] },
+  { name: 'Promo', href: '/promotions', icon: Percent, roles: ['SUPERADMIN'] },
+  { name: 'Kasir Toko', href: '/users', icon: UserCircle, roles: ['SUPERADMIN'] },
+  { name: 'Pengaturan', href: '/settings', icon: Settings, roles: ['SUPERADMIN'] },
+  { name: 'Pembelian', href: '/purchases', icon: ShoppingBag, roles: ['SUPERADMIN'] },
 ];
 
 function SidebarContent({ collapsed, setCollapsed, user }: { collapsed: boolean; setCollapsed?: (val: boolean) => void; user: UserProfile }) {
   const pathname = usePathname();
+
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/");
+  };
 
   return (
     <>
@@ -72,7 +81,7 @@ function SidebarContent({ collapsed, setCollapsed, user }: { collapsed: boolean;
       {/* Navigation */}
       <div className="flex-1 overflow-y-auto py-6 px-3 scrollbar-hide">
         <nav className="space-y-1.5">
-          {navItems.filter(item => !item.role || item.role === user.role).map((item) => {
+          {navItems.filter(item => !item.roles || item.roles.includes(user.role as any)).map((item) => {
             const isActive = pathname.startsWith(item.href);
             return (
               <Link key={item.name} href={item.href}>
@@ -112,15 +121,13 @@ function SidebarContent({ collapsed, setCollapsed, user }: { collapsed: boolean;
           )}
           <div className={cn('flex items-center gap-1', collapsed && 'flex-col')}>
             <ThemeSwitcher />
-            <form action={signOutAction}>
-               <button 
-                 type="submit"
-                 className={cn('text-muted-foreground hover:text-destructive transition-colors h-9 w-9 flex items-center justify-center', collapsed && 'bg-muted rounded-full')}
-                 title="Logout"
-               >
-                 <LogOut size={collapsed ? 18 : 20} />
-               </button>
-            </form>
+            <button 
+              onClick={handleLogout}
+              className={cn('text-muted-foreground hover:text-destructive transition-colors h-9 w-9 flex items-center justify-center', collapsed && 'bg-muted rounded-full')}
+              title="Logout"
+            >
+              <LogOut size={collapsed ? 18 : 20} />
+            </button>
           </div>
         </div>
       </div>

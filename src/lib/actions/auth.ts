@@ -5,15 +5,15 @@ import { db } from '@/lib/db';
 import { users, dashboards } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 
-export type UserRole = 'CASHIER' | 'ADMIN' | 'SUPERADMIN';
+export type UserRole = 'CASHIER' | 'SUPERADMIN' | 'SYSTEM_ADMIN';
 
 export type UserProfile = {
   id: string;
   email: string;
   name: string;
   role: UserRole;
-  dashboardId: string;
-  restaurantName: string;
+  dashboardId: string | null;
+  restaurantName: string | null;
   isPaid: boolean;
 };
 
@@ -31,7 +31,7 @@ export async function getCurrentUser(): Promise<UserProfile | null> {
         dashboard: dashboards,
       })
       .from(users)
-      .innerJoin(dashboards, eq(users.dashboardId, dashboards.id))
+      .leftJoin(dashboards, eq(users.dashboardId, dashboards.id))
       .where(eq(users.email, user.email))
       .limit(1);
   } catch (error) {
@@ -40,7 +40,7 @@ export async function getCurrentUser(): Promise<UserProfile | null> {
   }
 
   if (result.length === 0) {
-    console.error('User profile or dashboard not found in database for:', user.email);
+    console.error('User profile not found in database for:', user.email);
     return null;
   }
 
@@ -52,8 +52,8 @@ export async function getCurrentUser(): Promise<UserProfile | null> {
     name: data.user.name,
     role: data.user.role as UserRole,
     dashboardId: data.user.dashboardId,
-    restaurantName: data.dashboard.name,
-    isPaid: data.dashboard.isPaid,
+    restaurantName: data.dashboard?.name || null,
+    isPaid: data.dashboard?.isPaid || false,
   };
 }
 
@@ -144,6 +144,9 @@ export async function markDashboardAsPaidAction(email: string) {
       return { error: 'User not found' };
     }
     const dashboardId = userProfile[0].dashboardId;
+    if (!dashboardId) {
+      return { error: 'User does not have a dashboard' };
+    }
 
     await db.update(dashboards).set({ isPaid: true }).where(eq(dashboards.id, dashboardId));
     return { success: true };

@@ -2,7 +2,7 @@
 
 import { db } from '@/lib/db';
 import { products, categories } from '@/lib/db/schema';
-import { eq, sql } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { getCurrentUser } from './auth';
@@ -35,6 +35,11 @@ function generateBarcode() {
 
 export async function getProducts() {
   try {
+    const user = await getCurrentUser();
+    if (!user || !user.dashboardId) {
+      return { success: false, error: 'Unauthorized or no dashboard' };
+    }
+
     const data = await db
       .select({
         id: products.id,
@@ -51,6 +56,7 @@ export async function getProducts() {
       })
       .from(products)
       .leftJoin(categories, eq(products.categoryId, categories.id))
+      .where(eq(products.dashboardId, user.dashboardId))
       .orderBy(products.name);
       
     return { success: true, data };
@@ -63,7 +69,7 @@ export async function getProducts() {
 export async function createProduct(formData: z.infer<typeof productSchema>) {
   try {
     const user = await getCurrentUser();
-    if (!user) return { success: false, error: 'Unauthorized' };
+    if (!user || !user.dashboardId) return { success: false, error: 'Unauthorized or no dashboard' };
 
     const validatedData = productSchema.parse(formData);
     
@@ -97,6 +103,9 @@ export async function createProduct(formData: z.infer<typeof productSchema>) {
 
 export async function updateProduct(id: string, formData: z.infer<typeof productSchema>) {
   try {
+    const user = await getCurrentUser();
+    if (!user || !user.dashboardId) return { success: false, error: 'Unauthorized' };
+
     const validatedData = productSchema.parse(formData);
     
     await db.update(products)
@@ -112,7 +121,7 @@ export async function updateProduct(id: string, formData: z.infer<typeof product
         barcode: validatedData.barcode,
         updatedAt: new Date(),
       })
-      .where(eq(products.id, id));
+      .where(and(eq(products.id, id), eq(products.dashboardId, user.dashboardId)));
     
     revalidatePath('/products');
     revalidatePath('/pos');
@@ -126,7 +135,10 @@ export async function updateProduct(id: string, formData: z.infer<typeof product
 
 export async function deleteProduct(id: string) {
   try {
-    await db.delete(products).where(eq(products.id, id));
+    const user = await getCurrentUser();
+    if (!user || !user.dashboardId) return { success: false, error: 'Unauthorized' };
+
+    await db.delete(products).where(and(eq(products.id, id), eq(products.dashboardId, user.dashboardId)));
     
     revalidatePath('/products');
     revalidatePath('/pos');
