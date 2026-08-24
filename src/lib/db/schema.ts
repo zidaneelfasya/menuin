@@ -76,3 +76,14 @@ export const transactionItems = pgTable('transaction_items', {
   subtotal: decimal('subtotal', { precision: 12, scale: 2 }).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
+
+export const testimonials = pgTable('testimonials', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name').notNull(),
+  role: text('role').notNull(),
+  avatarUrl: text('avatar_url'),
+  rating: decimal('rating', { precision: 2, scale: 1 }).notNull().default('5.0'),
+  content: text('content').notNull(),
+  sentiment: text('sentiment').notNull().default('Excellent'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});

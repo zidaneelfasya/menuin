@@ -4,8 +4,10 @@ import { getCurrentUser } from '@/lib/actions/auth';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
+import { connection } from 'next/server';
 
 async function AuthWrapper({ children }: { children: React.ReactNode }) {
+  await connection();
   const user = await getCurrentUser();
   if (!user) {
     redirect('/auth/login');
