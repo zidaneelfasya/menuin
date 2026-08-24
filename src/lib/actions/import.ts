@@ -45,8 +45,8 @@ function slugify(text: string) {
 export async function importProducts(formData: FormData) {
   try {
     const user = await getCurrentUser();
-    if (!user) {
-      return { success: false, error: 'Sesi tidak ditemukan. Silakan login kembali.' };
+    if (!user || !user.dashboardId) {
+      return { success: false, error: 'Sesi tidak ditemukan atau dashboard tidak valid.' };
     }
     const dashboardId = user.dashboardId;
 

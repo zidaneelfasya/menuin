@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer, decimal, boolean, uuid, uniqueIndex } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, integer, decimal, boolean, uuid, uniqueIndex, pgEnum } from 'drizzle-orm/pg-core';
 
 export const dashboards = pgTable('dashboards', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -8,12 +8,14 @@ export const dashboards = pgTable('dashboards', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+export const roleEnum = pgEnum('role', ['CASHIER', 'SUPERADMIN', 'SYSTEM_ADMIN']);
+
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
-  dashboardId: uuid('dashboard_id').references(() => dashboards.id).notNull(),
+  dashboardId: uuid('dashboard_id').references(() => dashboards.id),
   email: text('email').notNull().unique(),
   name: text('name').notNull(),
-  role: text('role').notNull().default('CASHIER'),
+  role: roleEnum('role').notNull().default('CASHIER'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

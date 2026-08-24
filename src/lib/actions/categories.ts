@@ -14,7 +14,9 @@ const categorySchema = z.object({
 export async function getCategories() {
   try {
     const user = await getCurrentUser();
-    if (!user) return { success: false, error: 'Unauthorized' };
+    if (!user || !user.dashboardId) {
+      return { success: false, error: 'Unauthorized or no dashboard' };
+    }
     
     const data = await db.select().from(categories).where(eq(categories.dashboardId, user.dashboardId)).orderBy(categories.name);
     return { success: true, data };
@@ -27,7 +29,7 @@ export async function getCategories() {
 export async function createCategory(formData: z.infer<typeof categorySchema>) {
   try {
     const user = await getCurrentUser();
-    if (!user) return { success: false, error: 'Unauthorized' };
+    if (!user || !user.dashboardId) return { success: false, error: 'Unauthorized or no dashboard' };
     
     const validatedData = categorySchema.parse(formData);
     const slug = validatedData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
@@ -50,7 +52,7 @@ export async function createCategory(formData: z.infer<typeof categorySchema>) {
 export async function updateCategory(id: string, formData: z.infer<typeof categorySchema>) {
   try {
     const user = await getCurrentUser();
-    if (!user) return { success: false, error: 'Unauthorized' };
+    if (!user || !user.dashboardId) return { success: false, error: 'Unauthorized or no dashboard' };
     
     const validatedData = categorySchema.parse(formData);
     const slug = validatedData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
@@ -75,7 +77,7 @@ export async function updateCategory(id: string, formData: z.infer<typeof catego
 export async function deleteCategory(id: string) {
   try {
     const user = await getCurrentUser();
-    if (!user) return { success: false, error: 'Unauthorized' };
+    if (!user || !user.dashboardId) return { success: false, error: 'Unauthorized or no dashboard' };
     
     await db.delete(categories).where(and(eq(categories.id, id), eq(categories.dashboardId, user.dashboardId)));
     

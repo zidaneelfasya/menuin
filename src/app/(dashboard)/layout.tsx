@@ -13,6 +13,10 @@ async function AuthWrapper({ children }: { children: React.ReactNode }) {
     redirect('/auth/login');
   }
 
+  if (user.role === 'SYSTEM_ADMIN') {
+    redirect('/system-admin');
+  }
+
   // Dashboard terkunci sampai pembayaran selesai
   if (!user.isPaid) {
     return <PaymentGate user={user} />;

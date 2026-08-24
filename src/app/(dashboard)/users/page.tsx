@@ -7,7 +7,7 @@ import { ShieldAlert } from 'lucide-react';
 import { getUsers } from '@/lib/actions/users';
 import { UsersList } from './users-list';
 
-export const metadata: Metadata = { title: 'Pengguna - Bolu Anisa POS' };
+export const metadata: Metadata = { title: 'Kasir Toko - POS' };
 
 async function UsersDataWrapper() {
   const user = await getCurrentUser();
@@ -18,7 +18,7 @@ async function UsersDataWrapper() {
           <CardContent className="pt-6 flex flex-col items-center">
             <ShieldAlert className="h-12 w-12 text-destructive mb-4" />
             <h2 className="text-xl font-bold mb-2">Akses Ditolak</h2>
-            <p className="text-muted-foreground text-sm">Halaman ini khusus untuk Super Admin.</p>
+            <p className="text-muted-foreground text-sm">Halaman ini khusus untuk Super Admin toko.</p>
           </CardContent>
         </Card>
       </div>
@@ -37,3 +37,4 @@ export default function Page() {
     </Suspense>
   );
 }
+

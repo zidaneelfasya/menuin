@@ -24,13 +24,17 @@ type CheckoutPayload = {
 export async function createTransaction(payload: CheckoutPayload) {
   try {
     const user = await getCurrentUser();
-    if (!user) return { success: false, error: 'Unauthorized' };
+    if (!user || !user.dashboardId) return { success: false, error: 'Unauthorized or no dashboard' };
+
+    const dashboardId = user.dashboardId;
+    const userId = user.id;
 
     // We run the transaction logic in a single DB transaction
     const result = await db.transaction(async (tx) => {
       // 1. Create Transaction record
       const [newTx] = await tx.insert(transactions).values({
-        dashboardId: user.dashboardId,
+        dashboardId,
+        userId,
         totalAmount: payload.totalAmount.toString(),
         discount: payload.discount.toString(),
         tax: payload.tax.toString(),
@@ -74,10 +78,16 @@ export async function createTransaction(payload: CheckoutPayload) {
 
 export async function getTransactions() {
   try {
-    // This fetches the list of transactions for the history page
+    const user = await getCurrentUser();
+    if (!user || !user.dashboardId) {
+      return { success: false, error: 'Unauthorized or no dashboard' };
+    }
+
+    // This fetches the list of transactions for this specific store
     const data = await db
       .select()
       .from(transactions)
+      .where(eq(transactions.dashboardId, user.dashboardId))
       .orderBy(desc(transactions.createdAt));
       
     return { success: true, data };
