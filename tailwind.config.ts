@@ -62,6 +62,20 @@ export default {
         heading: ["var(--font-montserrat)", "sans-serif"],
         rounded: ["'Gotham Rounded Bold'", "var(--font-quicksand)", "sans-serif"],
       },
+      keyframes: {
+        marquee: {
+          '0%': { transform: 'translateX(0%)' },
+          '100%': { transform: 'translateX(-100%)' },
+        },
+        'marquee-reverse': {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(0%)' },
+        }
+      },
+      animation: {
+        marquee: 'marquee 25s linear infinite',
+        'marquee-reverse': 'marquee-reverse 35s linear infinite',
+      },
     },
   },
   plugins: [require("tailwindcss-animate")],
