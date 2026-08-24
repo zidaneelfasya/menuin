@@ -197,25 +197,25 @@ const testimonialsData = [
 function SkeletonCard() {
   return (
     <div className="w-[300px] shrink-0 h-[120px] testimonial-wrapper">
-      <div className="w-full h-full bg-white/50 backdrop-blur-sm rounded-[24px] p-5 border border-gray-100 flex flex-col shadow-sm opacity-50 grayscale testimonial-inner origin-center will-change-transform">
+      <div className="w-full h-full bg-white/50 backdrop-blur-sm rounded-[24px] p-4 border border-gray-100 flex flex-col shadow-sm opacity-50 grayscale testimonial-inner origin-center will-change-transform">
 
         {/* Header Row */}
-        <div className="flex justify-between items-start mb-3">
-          <div className="flex gap-3 items-center">
-            <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse" />
-            <div className="flex flex-col gap-1.5">
-              <div className="w-20 h-3 bg-gray-200 rounded animate-pulse" />
-              <div className="w-24 h-2 bg-gray-100 rounded animate-pulse" />
+        <div className="flex justify-between items-start mb-2">
+          <div className="flex gap-2 items-center flex-1 min-w-0 mr-2">
+            <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse shrink-0" />
+            <div className="flex flex-col gap-1 min-w-0 flex-1">
+              <div className="w-20 max-w-full h-2.5 bg-gray-200 rounded animate-pulse" />
+              <div className="w-16 max-w-full h-2 bg-gray-100 rounded animate-pulse" />
             </div>
           </div>
-          <div className="flex flex-col items-end gap-1.5">
-            <div className="w-16 h-2 bg-gray-200 rounded animate-pulse" />
-            <div className="w-20 h-5 bg-gray-100 rounded-full animate-pulse" />
+          <div className="flex flex-col items-end gap-1 shrink-0">
+            <div className="w-14 h-2 bg-gray-200 rounded animate-pulse" />
+            <div className="w-16 h-4 bg-gray-100 rounded-full animate-pulse" />
           </div>
         </div>
 
         {/* Text Body */}
-        <div className="flex flex-col gap-1.5 mt-auto">
+        <div className="flex flex-col gap-1 mt-auto mb-1">
           <div className="w-full h-2 bg-gray-200 rounded animate-pulse" />
           <div className="w-[85%] h-2 bg-gray-100 rounded animate-pulse" />
         </div>
@@ -228,33 +228,33 @@ function SkeletonCard() {
 function RealCard({ data }: { data: any }) {
   return (
     <div className="w-[300px] shrink-0 h-[120px] testimonial-wrapper">
-      <div className="w-full h-full bg-white rounded-[24px] p-5 border border-black/[0.04] shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-xl transition-shadow flex flex-col testimonial-inner origin-center will-change-transform">
+      <div className="w-full h-full bg-white rounded-[24px] p-4 border border-black/[0.04] shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-xl transition-shadow flex flex-col testimonial-inner origin-center will-change-transform">
 
         {/* Header Row */}
-        <div className="flex justify-between items-start mb-3">
-          <div className="flex gap-3 items-center">
-            <img src={data.avatar} alt={data.name} className="w-10 h-10 rounded-full object-cover shadow-sm" />
-            <div className="flex flex-col">
-              <span className="text-[13px] font-bold text-[#111] leading-tight">{data.name.toLowerCase()}</span>
-              <span className="text-[11px] text-[#888]">{data.role.toLowerCase()}</span>
+        <div className="flex justify-between items-start mb-2">
+          <div className="flex gap-2 items-center flex-1 min-w-0 mr-2">
+            <img src={data.avatar} alt={data.name} className="w-8 h-8 rounded-full object-cover shadow-sm shrink-0" />
+            <div className="flex flex-col min-w-0 flex-1">
+              <span className="text-[12px] font-bold text-[#111] leading-tight truncate block">{data.name.toLowerCase()}</span>
+              <span className="text-[10px] text-[#888] truncate block">{data.role.toLowerCase()}</span>
             </div>
           </div>
 
-          <div className="flex flex-col items-end gap-1">
+          <div className="flex flex-col items-end gap-0.5 shrink-0">
             <div className="flex items-center gap-0.5">
               {[...Array(5)].map((_, i) => (
-                <span key={i} className={`text-[10px] ${i < Math.floor(data.rating) ? 'text-amber-400' : 'text-gray-300'}`}>★</span>
+                <span key={i} className={`text-[9px] ${i < Math.floor(data.rating) ? 'text-amber-400' : 'text-gray-300'}`}>★</span>
               ))}
-              <span className="text-[11px] font-bold text-[#111] ml-1">{data.rating}</span>
+              <span className="text-[10px] font-bold text-[#111] ml-1">{data.rating}</span>
             </div>
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-[#E8F8F0] text-[#139E60] text-[9px] font-black tracking-wide uppercase border border-[#D0EBE0]">
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-[#E8F8F0] text-[#139E60] text-[8px] font-black tracking-wide uppercase border border-[#D0EBE0]">
               {data.sentiment}
             </span>
           </div>
         </div>
 
         {/* Text Body */}
-        <p className="text-[12px] text-[#666] leading-relaxed line-clamp-2 mt-auto">
+        <p className="text-[11px] text-[#666] leading-relaxed line-clamp-2 mt-auto mb-1">
           "{data.text}"
         </p>
 
@@ -428,7 +428,7 @@ export default function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boole
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-black/[0.04]">
         <div className="mx-auto max-w-[1200px] h-[72px] flex items-center justify-between px-6">
           <a href="/" className="flex items-center">
-            <Image src="/logo-nemuin.jpeg" alt="Menuin" width={110} height={32} style={{ width: "auto" }} priority />
+            <Image src="/menuin.png" alt="Menuin" width={110} height={32} style={{ width: "auto" }} priority />
           </a>
 
           <nav className="hidden md:flex items-center gap-8 text-[15px] font-medium text-[#444]">
@@ -1117,6 +1117,7 @@ export default function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boole
           {/* ========================================= */}
           <div
             className="
+            hidden md:block
             pointer-events-none
             absolute
             inset-y-0
@@ -1131,6 +1132,7 @@ export default function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boole
           />
           <div
             className="
+            hidden md:block
             pointer-events-none
             absolute
             inset-y-0
@@ -1248,7 +1250,7 @@ export default function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boole
       <footer className="border-t border-black/[0.04] py-12 px-6 bg-white">
         <div className="mx-auto max-w-[1200px] flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex flex-col items-center md:items-start gap-2">
-            <Image src="/logo-nemuin.jpeg" alt="Menuin" width={100} height={28} style={{ width: "auto" }} />
+            <Image src="/menuin.png" alt="Menuin" width={100} height={28} style={{ width: "auto" }} />
             <span className="text-[13px] text-[#888] font-medium">Smart tools for modern F&B.</span>
           </div>
           <div className="flex flex-wrap justify-center gap-8 text-[14px] font-medium text-[#666]">
