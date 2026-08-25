@@ -288,10 +288,18 @@ function TestimonialForm() {
   );
 }
 
-export default function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
+export default function LandingPage({
+  isLoggedIn = false,
+  userName = "",
+}: {
+  isLoggedIn?: boolean;
+  userName?: string;
+}) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
   const marqueeContainerRef = useRef<HTMLElement>(null);
+
+  const userInitial = (userName || "U").trim().charAt(0).toUpperCase();
 
   useEffect(() => {
     let animationFrameId: number;
@@ -425,29 +433,37 @@ export default function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boole
   return (
     <div className="min-h-screen bg-white text-[#111] font-sans antialiased selection:bg-[#0E59F9] selection:text-white overflow-x-hidden">
       {/* NAVBAR */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-black/[0.04]">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200/80">
         <div className="mx-auto max-w-[1200px] h-[72px] flex items-center justify-between px-6">
           <a href="/" className="flex items-center">
-            <Image src="/menuin.png" alt="Menuin" width={110} height={32} style={{ width: "auto" }} priority />
+            <Image src="/menuin.png" alt="MENUIN - Sistem POS Pintar" width={110} height={32} style={{ width: "auto" }} priority />
           </a>
 
-          <nav className="hidden md:flex items-center gap-8 text-[15px] font-medium text-[#444]">
-            <a href="#" className="text-[#111] font-semibold">Home</a>
-            <a href="#features" className="hover:text-[#111] transition-colors">Features</a>
-            <a href="#pricing" className="hover:text-[#111] transition-colors">Pricing</a>
-            <a href="#faq" className="hover:text-[#111] transition-colors">FAQ</a>
+          <nav className="hidden md:flex items-center gap-8 text-[14px] font-medium text-slate-600">
+            <a href="#" className="text-slate-900 font-semibold">Beranda</a>
+            <a href="#features" className="hover:text-slate-900 transition-colors">Fitur Barcode</a>
+            <a href="#pricing" className="hover:text-slate-900 transition-colors">Paket POS</a>
+            <a href="#testimonials" className="hover:text-slate-900 transition-colors">Testimoni</a>
+            <a href="#faq" className="hover:text-slate-900 transition-colors">FAQ</a>
           </nav>
 
           <div className="hidden md:flex items-center gap-4">
             {isLoggedIn ? (
-              <a href="/pos" className="h-11 px-6 flex items-center rounded-full bg-[#111] text-white text-[14px] font-semibold hover:bg-[#333] transition-colors">
-
+              <a
+                href="/pos"
+                className="h-10 pl-2 pr-4 flex items-center rounded-full bg-slate-900 text-white text-[13px] font-semibold hover:bg-slate-800 transition-all gap-2.5 shadow-sm group"
+              >
+                <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-[#0E59F9] to-[#3B82F6] text-white flex items-center justify-center font-bold text-[12px] shadow-sm">
+                  {userInitial}
+                </div>
+                <span>Buka Kasir POS</span>
+                <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
               </a>
             ) : (
               <>
-                <a href="/auth/login" className="text-[14px] font-semibold text-[#111] hover:text-[#0E59F9] transition-colors mr-2">Log in</a>
-                <a href="/auth/signup" className="h-11 px-6 flex items-center rounded-full bg-[#0E59F9] text-white text-[14px] font-semibold hover:bg-[#0C4CD6] transition-all shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30">
-                  Get Started
+                <a href="/auth/login" className="text-[14px] font-semibold text-slate-700 hover:text-[#0E59F9] transition-colors mr-2">Masuk</a>
+                <a href="/auth/signup" className="h-10 px-5 flex items-center rounded-full bg-[#0E59F9] text-white text-[14px] font-semibold hover:bg-[#0C4CD6] transition-all shadow-sm hover:shadow-md">
+                  Coba POS Gratis
                 </a>
               </>
             )}
@@ -455,13 +471,13 @@ export default function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boole
 
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden w-10 h-10 flex items-center justify-center rounded-lg hover:bg-black/[0.04] transition-colors"
+            className="md:hidden w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-100 transition-colors"
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
               {mobileOpen ? (
-                <path d="M6 18L18 6M6 6L18 18" stroke="#111" strokeWidth="2" strokeLinecap="round" />
+                <path d="M6 18L18 6M6 6L18 18" stroke="#0F172A" strokeWidth="2" strokeLinecap="round" />
               ) : (
-                <path d="M4 12H20M4 6H20M4 18H20" stroke="#111" strokeWidth="2" strokeLinecap="round" />
+                <path d="M4 12H20M4 6H20M4 18H20" stroke="#0F172A" strokeWidth="2" strokeLinecap="round" />
               )}
             </svg>
           </button>
@@ -469,21 +485,27 @@ export default function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boole
 
         {/* Mobile Menu */}
         {mobileOpen && (
-          <div className="md:hidden absolute top-[72px] left-0 w-full bg-white border-b border-black/[0.04] px-6 py-6 space-y-5 shadow-2xl">
-            <nav className="flex flex-col gap-5 text-[16px] font-medium text-[#444]">
-              <a href="#" onClick={() => setMobileOpen(false)} className="text-[#111]">Home</a>
-              <a href="#features" onClick={() => setMobileOpen(false)}>Features</a>
-              <a href="#pricing" onClick={() => setMobileOpen(false)}>Pricing</a>
+          <div className="md:hidden absolute top-[72px] left-0 w-full bg-white border-b border-slate-200 px-6 py-6 space-y-5 shadow-xl">
+            <nav className="flex flex-col gap-4 text-[15px] font-medium text-slate-700">
+              <a href="#" onClick={() => setMobileOpen(false)} className="text-slate-900 font-semibold">Beranda</a>
+              <a href="#features" onClick={() => setMobileOpen(false)}>Fitur Barcode</a>
+              <a href="#pricing" onClick={() => setMobileOpen(false)}>Paket POS</a>
+              <a href="#testimonials" onClick={() => setMobileOpen(false)}>Testimoni</a>
               <a href="#faq" onClick={() => setMobileOpen(false)}>FAQ</a>
             </nav>
-            <div className="h-px bg-black/[0.06]" />
+            <div className="h-px bg-slate-100" />
             <div className="flex flex-col gap-3">
               {isLoggedIn ? (
-                <a href="/pos" className="flex items-center justify-center h-12 rounded-full bg-[#111] text-white text-[15px] font-semibold">Dashboard</a>
+                <a href="/pos" className="flex items-center justify-center gap-2.5 h-11 rounded-full bg-slate-900 text-white text-[14px] font-semibold">
+                  <div className="w-6 h-6 rounded-full bg-[#0E59F9] text-white flex items-center justify-center font-bold text-[11px]">
+                    {userInitial}
+                  </div>
+                  <span>Buka Kasir POS</span>
+                </a>
               ) : (
                 <>
-                  <a href="/auth/login" className="flex items-center justify-center h-12 rounded-full border border-black/[0.08] text-[15px] font-semibold text-[#111]">Log in</a>
-                  <a href="/auth/signup" className="flex items-center justify-center h-12 rounded-full bg-[#0E59F9] text-white text-[15px] font-semibold">Get Started</a>
+                  <a href="/auth/login" className="flex items-center justify-center h-11 rounded-full border border-slate-200 text-[14px] font-semibold text-slate-800">Masuk</a>
+                  <a href="/auth/signup" className="flex items-center justify-center h-11 rounded-full bg-[#0E59F9] text-white text-[14px] font-semibold">Coba POS Gratis</a>
                 </>
               )}
             </div>
@@ -508,21 +530,22 @@ export default function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boole
 
         <div className="mx-auto max-w-[1200px] text-center">
           <FadeIn>
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-black/[0.06] shadow-sm mb-8">
-              <span className="flex h-5 items-center px-2 rounded-full bg-[#0E59F9] text-white text-[10px] font-bold uppercase tracking-wider">New</span>
-              <span className="text-[12px] font-medium text-[#444] pr-2">Trusted by 600+ F&B Professionals</span>
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-slate-200 shadow-sm mb-8">
+              <span className="flex h-5 items-center px-2 rounded-full bg-[#0E59F9] text-white text-[10px] font-bold uppercase tracking-wider">Next-Gen POS</span>
+              <span className="text-[12px] font-medium text-slate-600 pr-1">Sistem POS Pintar Berbasis Barcode Meja</span>
             </div>
           </FadeIn>
 
           <FadeIn delay={0.1}>
-            <h1 className="text-[clamp(44px,6vw,72px)] font-bold leading-[1.05] tracking-[-0.03em] text-[#111] max-w-[850px] mx-auto">
-              Smart F&B <span className="text-[#0E59F9]">Management</span>
+            <h1 className="text-[clamp(36px,5.2vw,64px)] font-extrabold leading-[1.1] tracking-[-0.03em] text-slate-900 max-w-[900px] mx-auto">
+              Sistem POS Cerdas dengan <br className="hidden sm:inline" />
+              <span className="text-[#0E59F9]">Integrasi Barcode Meja & Kasir</span>
             </h1>
           </FadeIn>
 
           <FadeIn delay={0.2}>
-            <p className="mt-6 text-[18px] md:text-[20px] text-[#555] leading-relaxed max-w-[650px] mx-auto">
-              Transformasikan cara Anda mengelola pesanan, pelanggan, dan kasir dengan platform all-in-one yang dirancang untuk bisnis kuliner modern.
+            <p className="mt-6 text-[16px] md:text-[18px] text-slate-600 leading-relaxed max-w-[680px] mx-auto">
+              Tamu cukup scan barcode di meja untuk memesan dan membayar mandiri via QRIS. Pesanan langsung masuk ke dapur dan kasir secara teratur tanpa antrean menumpuk.
             </p>
           </FadeIn>
 
@@ -530,16 +553,17 @@ export default function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boole
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
               <a
                 href={isLoggedIn ? "/pos" : "/auth/signup"}
-                className="h-14 px-8 flex items-center justify-center rounded-full bg-[#0E59F9] text-white text-[16px] font-semibold hover:bg-[#0C4CD6] transition-all shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/40 w-full sm:w-auto"
+                className="h-12 px-7 flex items-center justify-center rounded-full bg-[#0E59F9] text-white text-[15px] font-semibold hover:bg-[#0C4CD6] transition-all shadow-md shadow-blue-500/20 hover:shadow-lg w-full sm:w-auto gap-2"
               >
-                {isLoggedIn ? "Buka Dashboard" : "Get Started"}
+                <span>{isLoggedIn ? "Masuk ke POS Kasir" : "Coba POS Barcode Gratis"}</span>
+                <ArrowRight className="w-4 h-4" />
               </a>
               <a
-                href="#demo"
-                className="h-14 px-8 flex items-center justify-center rounded-full bg-white border border-black/[0.08] text-[16px] font-semibold text-[#111] hover:bg-white/50 transition-all shadow-sm w-full sm:w-auto gap-2"
+                href="#features"
+                className="h-12 px-7 flex items-center justify-center rounded-full bg-white border border-slate-200 text-[15px] font-semibold text-slate-800 hover:bg-slate-50 transition-all shadow-sm w-full sm:w-auto gap-2"
               >
-                <PlayCircle className="w-5 h-5 text-[#444]" />
-                Book A Demo
+                <PlayCircle className="w-4 h-4 text-slate-600" />
+                Lihat Cara Kerja Barcode
               </a>
             </div>
           </FadeIn>
@@ -1148,70 +1172,38 @@ export default function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boole
         </section>
       </div>
 
-      {/* TESTIMONIALS */}
-      <section className="relative py-24 md:py-32 px-6 overflow-hidden">
-        {/* Soft Blue Background inside the section */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#F0F6FF] to-white -z-10" />
 
-        <div className="mx-auto max-w-[1200px]">
+
+      {/* FAQ */}
+      <section className="py-20 md:py-28 bg-slate-50/50 border-t border-slate-200/80" id="faq">
+        <div className="mx-auto max-w-[720px] px-6">
           <FadeIn>
-            <div className="text-center mb-16">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-blue-100 shadow-sm mb-6">
-                <span className="text-[#0E59F9] text-[12px] font-semibold uppercase tracking-wider">Testimonials</span>
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 mb-4">
+                <span className="text-[#0E59F9] text-[11px] font-bold uppercase tracking-wider">Tanya Jawab</span>
               </div>
-              <h2 className="text-[clamp(32px,5vw,48px)] font-bold leading-[1.1] tracking-[-0.02em] text-[#111]">
-                We Value <span className="text-[#0E59F9]">Your Opinions!</span>
+              <h2 className="text-[clamp(26px,3.5vw,36px)] font-bold leading-[1.2] tracking-[-0.02em] text-slate-900">
+                Pertanyaan yang Sering Diajukan
               </h2>
             </div>
           </FadeIn>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-[1000px] mx-auto">
-            {[
-              { text: "MENUIN sangat membantu operasional kedai kopi kami. Kasir dan order online tergabung jadi satu, sangat efisien!", name: "Arlene McCoy", role: "Owner, Kopi Kami" },
-              { text: "Dashboard analyticsnya luar biasa. Saya bisa pantau penjualan harian dengan mudah lewat HP dimanapun saya berada.", name: "Guy Hawkins", role: "Manager, Warung Bahari" },
-              { text: "Setup menu digitalnya sangat cepat dan UI-nya sangat clean. Pelanggan kami juga suka karena mudah digunakan.", name: "Ronald Richards", role: "Founder, Sweet Bakery" }
-            ].map((t, i) => (
-              <FadeIn key={i} delay={i * 0.1}>
-                <div className="bg-white rounded-3xl p-8 shadow-sm border border-black/[0.04] h-full flex flex-col justify-between hover:shadow-md transition-shadow">
-                  <p className="text-[15px] text-[#555] leading-relaxed mb-8">"{t.text}"</p>
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-gray-200 shrink-0 border-2 border-white shadow-sm overflow-hidden flex items-center justify-center text-xl font-bold text-gray-500">
-                      {t.name.charAt(0)}
-                    </div>
-                    <div>
-                      <h5 className="text-[15px] font-bold text-[#111]">{t.name}</h5>
-                      <p className="text-[13px] text-[#666]">{t.role}</p>
-                    </div>
-                  </div>
-                </div>
-              </FadeIn>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="py-24 md:py-32 bg-white border-t border-black/[0.04]" id="faq">
-        <div className="mx-auto max-w-[700px] px-6">
-          <FadeIn>
-            <h2 className="text-[clamp(30px,4vw,40px)] font-bold leading-[1.1] tracking-[-0.02em] text-[#111] text-center mb-14">
-              Frequently Asked Questions
-            </h2>
-          </FadeIn>
-          <div className="space-y-4">
+          
+          <div className="space-y-3">
             {faqs.map((faq, i) => (
-              <FadeIn key={i} delay={i * 0.05}>
-                <div className={`border border-black/[0.06] rounded-2xl overflow-hidden transition-all duration-300 ${activeFaq === i ? "bg-[#F8F9FA]" : "bg-white"}`}>
+              <FadeIn key={i} delay={i * 0.04}>
+                <div className="border border-slate-200/80 rounded-2xl overflow-hidden bg-white shadow-sm transition-all">
                   <button
                     onClick={() => setActiveFaq(activeFaq === i ? null : i)}
-                    className="flex w-full items-center justify-between p-6 text-left"
+                    className="flex w-full items-center justify-between p-5 md:p-6 text-left transition-colors hover:bg-slate-50/60"
                   >
-                    <span className="text-[16px] font-semibold text-[#111] pr-4">{faq.q}</span>
-                    <ChevronDown className={`w-5 h-5 text-[#999] shrink-0 transition-transform duration-300 ${activeFaq === i ? "rotate-180" : ""}`} />
+                    <span className="text-[15px] md:text-[16px] font-bold text-slate-900 pr-4">{faq.q}</span>
+                    <ChevronDown className={`w-5 h-5 text-slate-400 shrink-0 transition-transform duration-200 ${activeFaq === i ? "rotate-180 text-[#0E59F9]" : ""}`} />
                   </button>
-                  <div className={`overflow-hidden transition-all duration-300 px-6 ${activeFaq === i ? "max-h-40 pb-6 opacity-100" : "max-h-0 opacity-0"}`}>
-                    <p className="text-[15px] text-[#666] leading-relaxed">{faq.a}</p>
-                  </div>
+                  {activeFaq === i && (
+                    <div className="px-5 md:px-6 pb-5 pt-0 text-[14px] md:text-[15px] text-slate-600 leading-relaxed border-t border-slate-100/80">
+                      <p className="pt-3">{faq.a}</p>
+                    </div>
+                  )}
                 </div>
               </FadeIn>
             ))}
@@ -1219,49 +1211,119 @@ export default function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boole
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-24 md:py-32 px-6">
-        <div className="mx-auto max-w-[800px] bg-gradient-to-br from-[#0E59F9] to-[#0C4CD6] rounded-3xl p-10 md:p-16 text-center shadow-2xl shadow-blue-900/20 relative overflow-hidden">
-          {/* Decorative circles */}
-          <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/3 w-64 h-64 bg-white/10 rounded-full blur-2xl" />
-          <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/3 w-64 h-64 bg-black/10 rounded-full blur-2xl" />
 
-          <FadeIn className="relative z-10">
-            <h2 className="text-[clamp(32px,5vw,48px)] font-bold leading-[1.05] tracking-[-0.02em] text-white mb-6">
-              Ready to simplify your F&B business?
-            </h2>
-            <p className="text-[16px] md:text-[18px] text-white/80 mb-10 max-w-[500px] mx-auto">
-              Kelola menu, pesanan, kasir, dan data dalam satu platform cerdas.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <a
-                href={isLoggedIn ? "/pos" : "/auth/signup"}
-                className="h-14 px-8 flex items-center justify-center rounded-full bg-white text-[#0E59F9] text-[16px] font-bold hover:bg-gray-50 transition-colors w-full sm:w-auto shadow-lg"
-              >
-                {isLoggedIn ? "Buka Dashboard" : "Get Started Now"}
-              </a>
+
+      {/* FOOTER - PUTIH ELEGAN, MODERN & CLEAN */}
+      <footer className="border-t border-slate-200/80 bg-white text-slate-800 pt-16 pb-12 px-6">
+        <div className="mx-auto max-w-[1200px]">
+          
+          {/* Main 4-Column Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-slate-200/80">
+            
+            {/* Column 1: Brand & Status (Spans 2 cols on lg) */}
+            <div className="lg:col-span-2 space-y-4">
+              <div className="flex items-center gap-3">
+                <Image
+                  src="/menuin.png"
+                  alt="MENUIN - Smart F&B POS"
+                  width={115}
+                  height={32}
+                  style={{ width: "auto" }}
+                />
+              </div>
+
+              <p className="text-[14px] text-slate-500 leading-relaxed max-w-[340px]">
+                Sistem POS pintar berbasis Barcode & QR. Mempercepat transaksi meja, kasir, dan dapur untuk bisnis kuliner modern di Indonesia.
+              </p>
+
+              {/* Status Indicator */}
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200/80 text-[12px] text-slate-600 shadow-sm">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="font-medium">Seluruh Layanan POS Normal</span>
+              </div>
+
+              {/* Quick Contacts */}
+              <div className="pt-2 flex flex-wrap items-center gap-3 text-[13px]">
+                <a
+                  href="mailto:halo@menuin.id"
+                  className="px-3.5 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 font-medium border border-slate-200 transition-all shadow-sm"
+                >
+                  halo@menuin.id
+                </a>
+                <a
+                  href="https://wa.me/628123456789"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3.5 py-1.5 rounded-xl bg-slate-50 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 text-slate-700 font-medium border border-slate-200 transition-all shadow-sm"
+                >
+                  WhatsApp Support
+                </a>
+              </div>
             </div>
-            {!isLoggedIn && <p className="text-[13px] text-white/60 mt-6 font-medium">No credit card required. 14-day free trial.</p>}
-          </FadeIn>
-        </div>
-      </section>
 
-      {/* FOOTER */}
-      <footer className="border-t border-black/[0.04] py-12 px-6 bg-white">
-        <div className="mx-auto max-w-[1200px] flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex flex-col items-center md:items-start gap-2">
-            <Image src="/menuin.png" alt="Menuin" width={100} height={28} style={{ width: "auto" }} />
-            <span className="text-[13px] text-[#888] font-medium">Smart tools for modern F&B.</span>
+            {/* Column 2: Fitur Produk */}
+            <div>
+              <h4 className="text-[13px] font-bold uppercase tracking-wider text-slate-900 mb-4">
+                Fitur Produk
+              </h4>
+              <ul className="space-y-2.5 text-[14px] text-slate-500 font-medium">
+                <li><a href="#features" className="hover:text-[#0E59F9] transition-colors">Barcode Meja (Self-Order)</a></li>
+                <li><a href="#features" className="hover:text-[#0E59F9] transition-colors">Sistem Kasir POS Cepat</a></li>
+                <li><a href="#features" className="hover:text-[#0E59F9] transition-colors">Barcode QRIS Dinamis</a></li>
+                <li><a href="#features" className="hover:text-[#0E59F9] transition-colors">Kitchen Display Dapur (KDS)</a></li>
+                <li><a href="#features" className="hover:text-[#0E59F9] transition-colors">Kontrol Stok & Bahan Baku</a></li>
+                <li><a href="#features" className="hover:text-[#0E59F9] transition-colors">Laporan Penjualan & Laba</a></li>
+              </ul>
+            </div>
+
+            {/* Column 3: Solusi Bisnis */}
+            <div>
+              <h4 className="text-[13px] font-bold uppercase tracking-wider text-slate-900 mb-4">
+                Solusi Bisnis
+              </h4>
+              <ul className="space-y-2.5 text-[14px] text-slate-500 font-medium">
+                <li><a href="#pricing" className="hover:text-[#0E59F9] transition-colors">Kedai Kopi & Cafe</a></li>
+                <li><a href="#pricing" className="hover:text-[#0E59F9] transition-colors">Restoran Dine-In</a></li>
+                <li><a href="#pricing" className="hover:text-[#0E59F9] transition-colors">Food Court & Pujasera</a></li>
+                <li><a href="#pricing" className="hover:text-[#0E59F9] transition-colors">Bakery & Pastry</a></li>
+                <li><a href="#pricing" className="hover:text-[#0E59F9] transition-colors">Gerai Booth & Street Food</a></li>
+                <li><a href="#pricing" className="hover:text-[#0E59F9] transition-colors">Jaringan Multi-Cabang</a></li>
+              </ul>
+            </div>
+
+            {/* Column 4: Bantuan & Legal */}
+            <div>
+              <h4 className="text-[13px] font-bold uppercase tracking-wider text-slate-900 mb-4">
+                Bantuan & Akses
+              </h4>
+              <ul className="space-y-2.5 text-[14px] text-slate-500 font-medium">
+                <li><a href="#faq" className="hover:text-[#0E59F9] transition-colors">Tanya Jawab (FAQ)</a></li>
+                <li><a href="/auth/login" className="hover:text-[#0E59F9] transition-colors">Masuk ke Kasir POS</a></li>
+                <li><a href="/auth/signup" className="hover:text-[#0E59F9] transition-colors">Daftar Akun Baru</a></li>
+                <li><a href="#pricing" className="hover:text-[#0E59F9] transition-colors">Syarat & Ketentuan</a></li>
+                <li><a href="#pricing" className="hover:text-[#0E59F9] transition-colors">Kebijakan Privasi</a></li>
+                <li><a href="#pricing" className="hover:text-[#0E59F9] transition-colors">Keamanan Data SSL</a></li>
+              </ul>
+            </div>
+
           </div>
-          <div className="flex flex-wrap justify-center gap-8 text-[14px] font-medium text-[#666]">
-            <a href="#" className="hover:text-[#111] transition-colors">Home</a>
-            <a href="#features" className="hover:text-[#111] transition-colors">Features</a>
-            <a href="#pricing" className="hover:text-[#111] transition-colors">Pricing</a>
-            <a href="#faq" className="hover:text-[#111] transition-colors">FAQ</a>
+
+          {/* Bottom Bar */}
+          <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-[13px] text-slate-500">
+            <div className="flex items-center gap-2">
+              <span>&copy; 2026 MENUIN Indonesia. Hak cipta dilindungi undang-undang.</span>
+            </div>
+
+            <div className="flex items-center gap-6">
+              <span className="text-slate-600 font-medium">
+                🇮🇩 Indonesia (IDR)
+              </span>
+              <span className="text-slate-600">
+                Dibuat untuk memajukan bisnis F&B Indonesia
+              </span>
+            </div>
           </div>
-          <div className="flex flex-col items-center md:items-end gap-2">
-            <span className="text-[13px] text-[#AAA]">&copy; 2026 MENUIN. All rights reserved.</span>
-          </div>
+
         </div>
       </footer>
 

@@ -10,7 +10,13 @@ async function HomeContent() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  return <LandingPage isLoggedIn={Boolean(user)} />;
+  const userName =
+    user?.user_metadata?.full_name ||
+    user?.user_metadata?.name ||
+    user?.email?.split("@")[0] ||
+    "";
+
+  return <LandingPage isLoggedIn={Boolean(user)} userName={userName} />;
 }
 
 export default function Home() {
