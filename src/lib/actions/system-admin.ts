@@ -2,9 +2,30 @@
 
 import { getCurrentUser } from '@/lib/actions/auth';
 import { db } from '@/lib/db';
-import { users, dashboards } from '@/lib/db/schema';
-import { desc, count } from 'drizzle-orm';
+import { users, dashboards, categories, products, transactions, transactionItems } from '@/lib/db/schema';
+import { desc, eq, count, sql, inArray } from 'drizzle-orm';
+import { createClient } from '@supabase/supabase-js';
+import { revalidatePath } from 'next/cache';
 
+function getAdminClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl) {
+    throw new Error('NEXT_PUBLIC_SUPABASE_URL is missing');
+  }
+
+  return createClient(supabaseUrl, serviceRoleKey || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '', {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+}
+
+// -------------------------------------------------------------
+// STATS & OVERVIEW
+// -------------------------------------------------------------
 export async function getSystemAdminStats() {
   const user = await getCurrentUser();
   if (!user || user.role !== 'SYSTEM_ADMIN') {
@@ -12,27 +33,74 @@ export async function getSystemAdminStats() {
   }
 
   try {
-    const totalUsers = await db.select({ value: count() }).from(users);
-    const totalDashboards = await db.select({ value: count() }).from(dashboards);
-    
-    // Recent registrations
+    // 1. Total Tenants & status breakdown
+    const allDashboards = await db.select().from(dashboards);
+    const totalDashboards = allDashboards.length;
+    const paidDashboards = allDashboards.filter(d => d.isPaid).length;
+    const freeDashboards = totalDashboards - paidDashboards;
+
+    // 2. Users & roles breakdown
+    const allUsers = await db.select().from(users);
+    const totalUsers = allUsers.length;
+    const systemAdminCount = allUsers.filter(u => u.role === 'SYSTEM_ADMIN').length;
+    const superAdminCount = allUsers.filter(u => u.role === 'SUPERADMIN').length;
+    const cashierCount = allUsers.filter(u => u.role === 'CASHIER').length;
+
+    // 3. Transactions & Volume
+    const trxStats = await db
+      .select({
+        totalTransactions: count(),
+        totalRevenue: sql<string>`COALESCE(SUM(${transactions.grandTotal}), 0)`,
+      })
+      .from(transactions);
+
+    const totalTransactions = Number(trxStats[0]?.totalTransactions || 0);
+    const totalRevenue = Number(trxStats[0]?.totalRevenue || 0);
+
+    // 4. Recent Registrations
     const recentDashboards = await db
       .select()
       .from(dashboards)
       .orderBy(desc(dashboards.createdAt))
       .limit(5);
 
+    const recentUsers = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        role: users.role,
+        createdAt: users.createdAt,
+        dashboardId: users.dashboardId,
+        dashboardName: dashboards.name,
+      })
+      .from(users)
+      .leftJoin(dashboards, eq(users.dashboardId, dashboards.id))
+      .orderBy(desc(users.createdAt))
+      .limit(5);
+
     return {
-      totalUsers: totalUsers[0].value,
-      totalDashboards: totalDashboards[0].value,
+      totalDashboards,
+      paidDashboards,
+      freeDashboards,
+      totalUsers,
+      systemAdminCount,
+      superAdminCount,
+      cashierCount,
+      totalTransactions,
+      totalRevenue,
       recentDashboards,
+      recentUsers,
     };
   } catch (error) {
     console.error('Failed to get system admin stats:', error);
-    throw new Error('Failed to load stats');
+    throw new Error('Gagal memuat statistik platform');
   }
 }
 
+// -------------------------------------------------------------
+// TENANTS CRUD
+// -------------------------------------------------------------
 export async function getSystemTenants() {
   const user = await getCurrentUser();
   if (!user || user.role !== 'SYSTEM_ADMIN') {
@@ -41,17 +109,171 @@ export async function getSystemTenants() {
 
   try {
     const tenantsList = await db
-      .select()
+      .select({
+        id: dashboards.id,
+        name: dashboards.name,
+        isPaid: dashboards.isPaid,
+        createdAt: dashboards.createdAt,
+        updatedAt: dashboards.updatedAt,
+      })
       .from(dashboards)
       .orderBy(desc(dashboards.createdAt));
-      
-    return tenantsList;
+
+    // Get aggregated counts per tenant
+    const userCounts = await db
+      .select({
+        dashboardId: users.dashboardId,
+        count: count(),
+      })
+      .from(users)
+      .groupBy(users.dashboardId);
+
+    const productCounts = await db
+      .select({
+        dashboardId: products.dashboardId,
+        count: count(),
+      })
+      .from(products)
+      .groupBy(products.dashboardId);
+
+    const userCountMap = new Map(userCounts.map(u => [u.dashboardId, Number(u.count)]));
+    const productCountMap = new Map(productCounts.map(p => [p.dashboardId, Number(p.count)]));
+
+    return tenantsList.map(t => ({
+      ...t,
+      userCount: userCountMap.get(t.id) || 0,
+      productCount: productCountMap.get(t.id) || 0,
+    }));
   } catch (error) {
     console.error('Failed to load tenants:', error);
-    throw new Error('Failed to load tenants');
+    throw new Error('Gagal memuat daftar tenant');
   }
 }
 
+export async function createSystemTenant(data: { name: string; isPaid?: boolean }) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'SYSTEM_ADMIN') {
+    return { success: false, error: 'Unauthorized' };
+  }
+
+  if (!data.name || !data.name.trim()) {
+    return { success: false, error: 'Nama tenant / toko wajib diisi.' };
+  }
+
+  try {
+    const [newDashboard] = await db
+      .insert(dashboards)
+      .values({
+        name: data.name.trim(),
+        isPaid: Boolean(data.isPaid),
+      })
+      .returning();
+
+    revalidatePath('/system-admin');
+    revalidatePath('/system-admin/tenants');
+    return { success: true, message: 'Tenant berhasil dibuat.', data: newDashboard };
+  } catch (error: any) {
+    console.error('Failed to create tenant:', error);
+    return { success: false, error: error.message || 'Gagal membuat tenant.' };
+  }
+}
+
+export async function updateSystemTenant(id: string, data: { name: string; isPaid: boolean }) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'SYSTEM_ADMIN') {
+    return { success: false, error: 'Unauthorized' };
+  }
+
+  if (!data.name || !data.name.trim()) {
+    return { success: false, error: 'Nama tenant / toko wajib diisi.' };
+  }
+
+  try {
+    await db
+      .update(dashboards)
+      .set({
+        name: data.name.trim(),
+        isPaid: Boolean(data.isPaid),
+        updatedAt: new Date(),
+      })
+      .where(eq(dashboards.id, id));
+
+    revalidatePath('/system-admin');
+    revalidatePath('/system-admin/tenants');
+    return { success: true, message: 'Data tenant berhasil diperbarui.' };
+  } catch (error: any) {
+    console.error('Failed to update tenant:', error);
+    return { success: false, error: error.message || 'Gagal memperbarui tenant.' };
+  }
+}
+
+export async function toggleTenantStatus(id: string, isPaid: boolean) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'SYSTEM_ADMIN') {
+    return { success: false, error: 'Unauthorized' };
+  }
+
+  try {
+    await db
+      .update(dashboards)
+      .set({
+        isPaid,
+        updatedAt: new Date(),
+      })
+      .where(eq(dashboards.id, id));
+
+    revalidatePath('/system-admin');
+    revalidatePath('/system-admin/tenants');
+    return { success: true, message: `Status tenant diubah menjadi ${isPaid ? 'Paid' : 'Free Trial'}.` };
+  } catch (error: any) {
+    console.error('Failed to toggle tenant status:', error);
+    return { success: false, error: error.message || 'Gagal mengubah status tenant.' };
+  }
+}
+
+export async function deleteSystemTenant(id: string) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'SYSTEM_ADMIN') {
+    return { success: false, error: 'Unauthorized' };
+  }
+
+  try {
+    // 1. Find transactions to clean up transactionItems
+    const tenantTransactions = await db
+      .select({ id: transactions.id })
+      .from(transactions)
+      .where(eq(transactions.dashboardId, id));
+
+    const trxIds = tenantTransactions.map(t => t.id);
+    if (trxIds.length > 0) {
+      await db.delete(transactionItems).where(inArray(transactionItems.transactionId, trxIds));
+      await db.delete(transactions).where(eq(transactions.dashboardId, id));
+    }
+
+    // 2. Delete products & categories
+    await db.delete(products).where(eq(products.dashboardId, id));
+    await db.delete(categories).where(eq(categories.dashboardId, id));
+
+    // 3. Unlink users or delete CASHIER users
+    await db.delete(users).where(sql`${users.dashboardId} = ${id} AND ${users.role} = 'CASHIER'`);
+    await db.update(users).set({ dashboardId: null, updatedAt: new Date() }).where(eq(users.dashboardId, id));
+
+    // 4. Delete the dashboard itself
+    await db.delete(dashboards).where(eq(dashboards.id, id));
+
+    revalidatePath('/system-admin');
+    revalidatePath('/system-admin/tenants');
+    revalidatePath('/system-admin/users');
+    return { success: true, message: 'Tenant dan seluruh data terkait berhasil dihapus.' };
+  } catch (error: any) {
+    console.error('Failed to delete tenant:', error);
+    return { success: false, error: error.message || 'Gagal menghapus tenant.' };
+  }
+}
+
+// -------------------------------------------------------------
+// USERS CRUD
+// -------------------------------------------------------------
 export async function getSystemUsers() {
   const user = await getCurrentUser();
   if (!user || user.role !== 'SYSTEM_ADMIN') {
@@ -66,14 +288,187 @@ export async function getSystemUsers() {
         name: users.name,
         role: users.role,
         createdAt: users.createdAt,
+        updatedAt: users.updatedAt,
         dashboardId: users.dashboardId,
+        dashboardName: dashboards.name,
       })
       .from(users)
+      .leftJoin(dashboards, eq(users.dashboardId, dashboards.id))
       .orderBy(desc(users.createdAt));
-      
+
     return usersList;
   } catch (error) {
     console.error('Failed to load users:', error);
-    throw new Error('Failed to load users');
+    throw new Error('Gagal memuat data pengguna');
+  }
+}
+
+export async function createSystemUser(data: {
+  name: string;
+  email: string;
+  password?: string;
+  role: 'CASHIER' | 'SUPERADMIN' | 'SYSTEM_ADMIN';
+  dashboardId?: string | null;
+}) {
+  const currentUser = await getCurrentUser();
+  if (!currentUser || currentUser.role !== 'SYSTEM_ADMIN') {
+    return { success: false, error: 'Unauthorized' };
+  }
+
+  if (!data.name?.trim() || !data.email?.trim()) {
+    return { success: false, error: 'Nama dan email wajib diisi.' };
+  }
+
+  const password = data.password && data.password.length >= 6 ? data.password : 'password123';
+  const targetDashboardId = data.role === 'SYSTEM_ADMIN' ? null : (data.dashboardId || null);
+
+  try {
+    const supabaseClient = getAdminClient();
+    const hasServiceRole = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (hasServiceRole) {
+      const { error: authError } = await supabaseClient.auth.admin.createUser({
+        email: data.email.trim(),
+        password: password,
+        email_confirm: true,
+        user_metadata: { name: data.name.trim() },
+      });
+
+      if (authError) {
+        if (!authError.message.toLowerCase().includes('already') && !authError.message.toLowerCase().includes('registered')) {
+          console.error('Supabase Auth Error:', authError);
+          return { success: false, error: `Autentikasi gagal: ${authError.message}` };
+        }
+      }
+    } else {
+      const { error: authError } = await supabaseClient.auth.signUp({
+        email: data.email.trim(),
+        password: password,
+        options: {
+          data: { name: data.name.trim() },
+        },
+      });
+
+      if (authError) {
+        if (!authError.message.toLowerCase().includes('already') && !authError.message.toLowerCase().includes('registered')) {
+          console.error('Supabase Auth SignUp Error:', authError);
+          return { success: false, error: `Autentikasi gagal: ${authError.message}` };
+        }
+      }
+    }
+
+    // Upsert into DB
+    const existing = await db.select().from(users).where(eq(users.email, data.email.trim())).limit(1);
+
+    if (existing.length === 0) {
+      await db.insert(users).values({
+        name: data.name.trim(),
+        email: data.email.trim(),
+        role: data.role,
+        dashboardId: targetDashboardId,
+      });
+    } else {
+      await db
+        .update(users)
+        .set({
+          name: data.name.trim(),
+          role: data.role,
+          dashboardId: targetDashboardId,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.email, data.email.trim()));
+    }
+
+    revalidatePath('/system-admin');
+    revalidatePath('/system-admin/users');
+    return { success: true, message: `Akun ${data.name} berhasil dibuat.` };
+  } catch (error: any) {
+    console.error('Failed to create user:', error);
+    return { success: false, error: error.message || 'Gagal membuat pengguna.' };
+  }
+}
+
+export async function updateSystemUser(
+  id: string,
+  data: {
+    name: string;
+    email: string;
+    role: 'CASHIER' | 'SUPERADMIN' | 'SYSTEM_ADMIN';
+    dashboardId?: string | null;
+    password?: string;
+  }
+) {
+  const currentUser = await getCurrentUser();
+  if (!currentUser || currentUser.role !== 'SYSTEM_ADMIN') {
+    return { success: false, error: 'Unauthorized' };
+  }
+
+  if (!data.name?.trim() || !data.email?.trim()) {
+    return { success: false, error: 'Nama dan email wajib diisi.' };
+  }
+
+  const targetDashboardId = data.role === 'SYSTEM_ADMIN' ? null : (data.dashboardId || null);
+
+  try {
+    // If password provided and service role available, update auth password
+    if (data.password && data.password.trim().length >= 6) {
+      const hasServiceRole = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
+      if (hasServiceRole) {
+        const supabaseClient = getAdminClient();
+        const { data: authUsers } = await supabaseClient.auth.admin.listUsers();
+        const foundAuth = authUsers?.users?.find(u => u.email?.toLowerCase() === data.email.trim().toLowerCase());
+        if (foundAuth) {
+          await supabaseClient.auth.admin.updateUserById(foundAuth.id, {
+            password: data.password.trim(),
+            user_metadata: { name: data.name.trim() },
+          });
+        }
+      }
+    }
+
+    await db
+      .update(users)
+      .set({
+        name: data.name.trim(),
+        email: data.email.trim(),
+        role: data.role,
+        dashboardId: targetDashboardId,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, id));
+
+    revalidatePath('/system-admin');
+    revalidatePath('/system-admin/users');
+    return { success: true, message: 'Data pengguna berhasil diperbarui.' };
+  } catch (error: any) {
+    console.error('Failed to update user:', error);
+    return { success: false, error: error.message || 'Gagal memperbarui pengguna.' };
+  }
+}
+
+export async function deleteSystemUser(id: string) {
+  const currentUser = await getCurrentUser();
+  if (!currentUser || currentUser.role !== 'SYSTEM_ADMIN') {
+    return { success: false, error: 'Unauthorized' };
+  }
+
+  if (currentUser.id === id) {
+    return { success: false, error: 'Anda tidak dapat menghapus akun Anda sendiri.' };
+  }
+
+  try {
+    const targetUser = await db.select().from(users).where(eq(users.id, id)).limit(1);
+    if (targetUser.length === 0) {
+      return { success: false, error: 'Pengguna tidak ditemukan.' };
+    }
+
+    await db.delete(users).where(eq(users.id, id));
+
+    revalidatePath('/system-admin');
+    revalidatePath('/system-admin/users');
+    return { success: true, message: 'Pengguna berhasil dihapus.' };
+  } catch (error: any) {
+    console.error('Failed to delete user:', error);
+    return { success: false, error: error.message || 'Gagal menghapus pengguna.' };
   }
 }

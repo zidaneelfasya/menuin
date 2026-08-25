@@ -1,10 +1,20 @@
+'use server';
+
 import { db } from '../db';
 import { transactions, transactionItems, products } from '../db/schema';
 import { eq, sql, desc, and, gte, lte } from 'drizzle-orm';
+import { getCurrentUser } from './auth';
 
 export async function getDashboardMetrics(startDate: Date, endDate: Date) {
   try {
+    const user = await getCurrentUser();
+    if (!user || !user.dashboardId) {
+      return { success: false, error: 'Unauthorized or no dashboard' };
+    }
+    const dashboardId = user.dashboardId;
+
     const dateFilter = and(
+      eq(transactions.dashboardId, dashboardId),
       gte(transactions.createdAt, startDate),
       lte(transactions.createdAt, endDate)
     );
@@ -33,8 +43,12 @@ export async function getDashboardMetrics(startDate: Date, endDate: Date) {
     const cost = profitResult[0]?.totalCost || 0;
     const totalLaba = Number(revenue) - Number(cost);
 
-    // 3. Total Produk
-    const prodResult = await db.select({ count: sql<number>`count(${products.id})::int` }).from(products);
+    // 3. Total Produk untuk tenant ini
+    const prodResult = await db
+      .select({ count: sql<number>`count(${products.id})::int` })
+      .from(products)
+      .where(eq(products.dashboardId, dashboardId));
+
     const totalProduk = prodResult[0]?.count || 0;
 
     return {
@@ -54,7 +68,14 @@ export async function getDashboardMetrics(startDate: Date, endDate: Date) {
 
 export async function getTopSellingProducts(startDate: Date, endDate: Date) {
   try {
+    const user = await getCurrentUser();
+    if (!user || !user.dashboardId) {
+      return { success: false, error: 'Unauthorized or no dashboard' };
+    }
+    const dashboardId = user.dashboardId;
+
     const dateFilter = and(
+      eq(transactions.dashboardId, dashboardId),
       gte(transactions.createdAt, startDate),
       lte(transactions.createdAt, endDate)
     );
@@ -80,13 +101,22 @@ export async function getTopSellingProducts(startDate: Date, endDate: Date) {
 
 export async function getLowStockProducts() {
   try {
+    const user = await getCurrentUser();
+    if (!user || !user.dashboardId) {
+      return { success: false, error: 'Unauthorized or no dashboard' };
+    }
+    const dashboardId = user.dashboardId;
+
     const result = await db.select({
       name: products.name,
       stock: products.stock,
       minStock: products.minStock
     })
     .from(products)
-    .where(sql`${products.stock} <= ${products.minStock}`)
+    .where(and(
+      eq(products.dashboardId, dashboardId),
+      sql`${products.stock} <= ${products.minStock}`
+    ))
     .orderBy(products.stock)
     .limit(5);
 
@@ -99,7 +129,14 @@ export async function getLowStockProducts() {
 
 export async function getSalesChartData(startDate: Date, endDate: Date, groupBy: 'day' | 'month' | 'year' = 'day') {
   try {
+    const user = await getCurrentUser();
+    if (!user || !user.dashboardId) {
+      return { success: false, error: 'Unauthorized or no dashboard' };
+    }
+    const dashboardId = user.dashboardId;
+
     const dateFilter = and(
+      eq(transactions.dashboardId, dashboardId),
       gte(transactions.createdAt, startDate),
       lte(transactions.createdAt, endDate)
     );
@@ -131,6 +168,12 @@ export async function getSalesChartData(startDate: Date, endDate: Date, groupBy:
 
 export async function getRecentTransactions(limitCount = 5) {
   try {
+    const user = await getCurrentUser();
+    if (!user || !user.dashboardId) {
+      return { success: false, error: 'Unauthorized or no dashboard' };
+    }
+    const dashboardId = user.dashboardId;
+
     const result = await db.select({
       id: transactions.id,
       date: transactions.createdAt,
@@ -139,6 +182,7 @@ export async function getRecentTransactions(limitCount = 5) {
       status: transactions.status
     })
     .from(transactions)
+    .where(eq(transactions.dashboardId, dashboardId))
     .orderBy(desc(transactions.createdAt))
     .limit(limitCount);
 
