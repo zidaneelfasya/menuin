@@ -2,7 +2,11 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import { Check, ChevronDown, ArrowRight, PlayCircle } from "lucide-react";
+import { Check, ChevronDown, ArrowRight, PlayCircle, QrCode, CreditCard, Monitor, TrendingUp } from "lucide-react";
+import PricingTableDark from "@/components/ui/pricing-table-dark";
+import FaqEditorial from "@/components/ui/faq-editorial";
+import FooterReadyToBegin from "@/components/ui/footer-ready-to-begin";
+import FooterSuperfluidStyle from "@/components/ui/footer-superfluid-style";
 
 
 function useInView(threshold = 0.15) {
@@ -55,10 +59,26 @@ const faqs = [
 ];
 
 const features = [
-  { title: "Katalog Digital yang Elegan", desc: "Setiap bisnis memiliki link katalog sendiri. Pelanggan melihat menu langsung dari meja mereka tanpa perlu instal aplikasi.", icon: "📱" },
-  { title: "Pesanan & Pembayaran Instan", desc: "Pelanggan memilih menu, checkout mandiri, dan membayar melalui gateway QRIS atau E-Wallet yang terintegrasi.", icon: "💳" },
-  { title: "Sistem Kasir (POS) Utama", desc: "Kelola pesanan dine-in maupun take-away langsung dari dashboard kasir. Sinkronisasi real-time tanpa delay.", icon: "💻" },
-  { title: "Analitik & Laporan Mendalam", desc: "Pantau revenue, pesanan, produk terlaris, dan kinerja tim dari satu halaman dashboard pintar.", icon: "📈" },
+  {
+    title: "Katalog Digital yang Elegan",
+    desc: "Setiap bisnis memiliki link katalog sendiri. Pelanggan melihat menu langsung dari meja mereka tanpa perlu instal aplikasi.",
+    icon: QrCode,
+  },
+  {
+    title: "Pesanan & Pembayaran Instan",
+    desc: "Pelanggan memilih menu, checkout mandiri, dan membayar melalui gateway QRIS atau E-Wallet yang terintegrasi.",
+    icon: CreditCard,
+  },
+  {
+    title: "Sistem Kasir (POS) Utama",
+    desc: "Kelola pesanan dine-in maupun take-away langsung dari dashboard kasir. Sinkronisasi real-time tanpa delay.",
+    icon: Monitor,
+  },
+  {
+    title: "Analitik & Laporan Mendalam",
+    desc: "Pantau revenue, pesanan, produk terlaris, dan kinerja tim dari satu halaman dashboard pintar.",
+    icon: TrendingUp,
+  },
 ];
 
 const logos = [
@@ -792,19 +812,22 @@ export default function LandingPage({
             </FadeIn>
 
             <div className="space-y-8">
-              {features.map((f, i) => (
-                <FadeIn key={i} delay={0.15 + (i * 0.1)}>
-                  <div className="flex gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-[20px] shrink-0 text-[#0E59F9]">
-                      {f.icon}
+              {features.map((f, i) => {
+                const IconComp = f.icon;
+                return (
+                  <FadeIn key={i} delay={0.15 + (i * 0.1)}>
+                    <div className="flex gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0 text-[#0E59F9]">
+                        <IconComp className="w-5 h-5 text-[#0E59F9]" />
+                      </div>
+                      <div>
+                        <h4 className="text-[18px] font-bold text-[#111] mb-2">{f.title}</h4>
+                        <p className="text-[15px] text-[#666] leading-relaxed">{f.desc}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="text-[18px] font-bold text-[#111] mb-2">{f.title}</h4>
-                      <p className="text-[15px] text-[#666] leading-relaxed">{f.desc}</p>
-                    </div>
-                  </div>
-                </FadeIn>
-              ))}
+                  </FadeIn>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -1040,292 +1063,24 @@ export default function LandingPage({
 
         </section>
 
-        {/* PRICING (Transparent to show SVG background) */}
-        <section className="relative z-30 py-24 md:py-32 px-6" id="pricing">
-          <div className="mx-auto max-w-[1200px]">
-            <FadeIn>
-              <div className="text-center mb-16">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 shadow-sm mb-6">
-                  <span className="text-[#0E59F9] text-[12px] font-semibold uppercase tracking-wider">Pricing</span>
-                </div>
-                <h2 className="text-[clamp(32px,5vw,48px)] font-bold leading-[1.1] tracking-[-0.02em] text-[#111]">
-                  Choose <span className="text-[#0E59F9]">Your Plan</span>
-                </h2>
 
-                <div className="mt-8 inline-flex items-center gap-3 p-1 rounded-full bg-gray-100 border border-gray-200">
-                  <button className="px-6 py-2 rounded-full bg-white text-[#111] text-[14px] font-bold shadow-sm">Monthly</button>
-                  <button className="px-6 py-2 rounded-full text-gray-500 text-[14px] font-medium hover:text-[#111] transition-colors">Yearly <span className="text-[10px] text-[#0E59F9] font-bold ml-1">Save 20%</span></button>
-                </div>
-              </div>
-            </FadeIn>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-[1050px] mx-auto items-center">
-              {/* Starter Plan */}
-              <FadeIn delay={0}>
-                <div className="p-8 rounded-3xl bg-[#131E3A] border border-white/10 flex flex-col h-full">
-                  <h4 className="text-[20px] font-bold text-white mb-1">Starter Plan</h4>
-                  <div className="flex items-baseline gap-1 mb-2">
-                    <span className="text-[36px] font-bold text-white">Free</span>
-                    <span className="text-[14px] text-white/50">/month</span>
-                  </div>
-                  <p className="text-[14px] text-white/60 mb-8">Perfect for small business.</p>
-                  <a href="/auth/signup" className="block text-center py-3.5 rounded-xl bg-white text-[15px] font-bold text-[#111] hover:bg-gray-100 transition-colors mb-8">
-                    Get Started
-                  </a>
-                  <div className="text-[11px] font-bold uppercase tracking-wider text-white/40 mb-4">Features</div>
-                  <ul className="space-y-4 text-[14px] text-white/70">
-                    {["Digital Menu Catalog", "QR Code Generation", "Basic Online Ordering", "Single User Access", "Standard Support"].map((item, j) => (
-                      <li key={j} className="flex items-start gap-3">
-                        <Check className="w-5 h-5 text-[#4989F8] shrink-0" />
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </FadeIn>
-
-              {/* Professional Plan (Highlighted) */}
-              <FadeIn delay={0.1}>
-                <div className="p-8 rounded-3xl bg-[#1A2A54] border border-[#4989F8]/50 flex flex-col relative transform md:scale-105 shadow-2xl shadow-blue-900/20 z-10 h-full">
-                  <div className="absolute -top-4 right-8 bg-white text-[#111] text-[11px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider shadow-sm">
-                    Most Popular
-                  </div>
-                  <h4 className="text-[20px] font-bold text-white mb-1">Professional</h4>
-                  <div className="flex items-baseline gap-1 mb-2">
-                    <span className="text-[36px] font-bold text-white">Rp 199k</span>
-                    <span className="text-[14px] text-white/50">/month</span>
-                  </div>
-                  <p className="text-[14px] text-white/60 mb-8">Perfect for growing business.</p>
-                  <a href="/auth/signup?plan=pro" className="block text-center py-3.5 rounded-xl bg-[#0E59F9] text-[15px] font-bold text-white hover:bg-[#0C4CD6] transition-colors mb-8 shadow-lg shadow-blue-500/25">
-                    Get Started
-                  </a>
-                  <div className="text-[11px] font-bold uppercase tracking-wider text-white/40 mb-4">Features</div>
-                  <ul className="space-y-4 text-[14px] text-white/90">
-                    {["Everything in Starter", "Integrated POS System", "Payment Gateway (QRIS)", "Advanced Dashboard Analytics", "Multiple Users / Roles", "Priority Support"].map((item, j) => (
-                      <li key={j} className="flex items-start gap-3">
-                        <Check className="w-5 h-5 text-[#4989F8] shrink-0" />
-                        <span className={j === 0 ? "font-semibold" : ""}>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </FadeIn>
-
-              {/* Enterprise Plan */}
-              <FadeIn delay={0.2}>
-                <div className="p-8 rounded-3xl bg-[#131E3A] border border-white/10 flex flex-col h-full">
-                  <h4 className="text-[20px] font-bold text-white mb-1">Enterprise</h4>
-                  <div className="flex items-baseline gap-1 mb-2">
-                    <span className="text-[36px] font-bold text-white">Custom</span>
-                  </div>
-                  <p className="text-[14px] text-white/60 mb-8">Perfect for large scale business.</p>
-                  <a href="mailto:hello@menuin.id" className="block text-center py-3.5 rounded-xl bg-white text-[15px] font-bold text-[#111] hover:bg-gray-100 transition-colors mb-8">
-                    Contact Us
-                  </a>
-                  <div className="text-[11px] font-bold uppercase tracking-wider text-white/40 mb-4">Features</div>
-                  <ul className="space-y-4 text-[14px] text-white/70">
-                    {["Everything in Professional", "Multi-Branch Management", "Custom API Integrations", "Dedicated Account Manager", "White-label Options"].map((item, j) => (
-                      <li key={j} className="flex items-start gap-3">
-                        <Check className="w-5 h-5 text-[#4989F8] shrink-0" />
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </FadeIn>
-            </div>
-          </div>
-
-          {/* ========================================= */}
-          {/* EDGE FADE FOR PRICING                     */}
-          {/* ========================================= */}
-          <div
-            className="
-            hidden md:block
-            pointer-events-none
-            absolute
-            inset-y-0
-            left-0
-            z-[40]
-            w-[18%]
-            bg-gradient-to-r
-            from-[#FAFAFA]
-            via-[#FAFAFA]/80
-            to-transparent
-          "
-          />
-          <div
-            className="
-            hidden md:block
-            pointer-events-none
-            absolute
-            inset-y-0
-            right-0
-            z-[40]
-            w-[18%]
-            bg-gradient-to-l
-            from-[#FAFAFA]
-            via-[#FAFAFA]/80
-            to-transparent
-          "
-          />
-        </section>
       </div>
 
 
 
-      {/* FAQ */}
-      <section className="py-20 md:py-28 bg-slate-50/50 border-t border-slate-200/80" id="faq">
-        <div className="mx-auto max-w-[720px] px-6">
-          <FadeIn>
-            <div className="text-center mb-12">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 mb-4">
-                <span className="text-[#0E59F9] text-[11px] font-bold uppercase tracking-wider">Tanya Jawab</span>
-              </div>
-              <h2 className="text-[clamp(26px,3.5vw,36px)] font-bold leading-[1.2] tracking-[-0.02em] text-slate-900">
-                Pertanyaan yang Sering Diajukan
-              </h2>
-            </div>
-          </FadeIn>
-          
-          <div className="space-y-3">
-            {faqs.map((faq, i) => (
-              <FadeIn key={i} delay={i * 0.04}>
-                <div className="border border-slate-200/80 rounded-2xl overflow-hidden bg-white shadow-sm transition-all">
-                  <button
-                    onClick={() => setActiveFaq(activeFaq === i ? null : i)}
-                    className="flex w-full items-center justify-between p-5 md:p-6 text-left transition-colors hover:bg-slate-50/60"
-                  >
-                    <span className="text-[15px] md:text-[16px] font-bold text-slate-900 pr-4">{faq.q}</span>
-                    <ChevronDown className={`w-5 h-5 text-slate-400 shrink-0 transition-transform duration-200 ${activeFaq === i ? "rotate-180 text-[#0E59F9]" : ""}`} />
-                  </button>
-                  {activeFaq === i && (
-                    <div className="px-5 md:px-6 pb-5 pt-0 text-[14px] md:text-[15px] text-slate-600 leading-relaxed border-t border-slate-100/80">
-                      <p className="pt-3">{faq.a}</p>
-                    </div>
-                  )}
-                </div>
-              </FadeIn>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* PRICING SECTION - DARK MINIMALIST (STARTER, PRO, CUSTOM) */}
+      <PricingTableDark />
+
+      {/* FAQ EDITORIAL (SPLIT 2-COLUMN LAYOUT) */}
+      <FaqEditorial />
 
 
 
-      {/* FOOTER - PUTIH ELEGAN, MODERN & CLEAN */}
-      <footer className="border-t border-slate-200/80 bg-white text-slate-800 pt-16 pb-12 px-6">
-        <div className="mx-auto max-w-[1200px]">
-          
-          {/* Main 4-Column Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-slate-200/80">
-            
-            {/* Column 1: Brand & Status (Spans 2 cols on lg) */}
-            <div className="lg:col-span-2 space-y-4">
-              <div className="flex items-center gap-3">
-                <Image
-                  src="/menuin.png"
-                  alt="MENUIN - Smart F&B POS"
-                  width={115}
-                  height={32}
-                  style={{ width: "auto" }}
-                />
-              </div>
+      {/* READY TO BEGIN CTA BANNER */}
+      <FooterReadyToBegin />
 
-              <p className="text-[14px] text-slate-500 leading-relaxed max-w-[340px]">
-                Sistem POS pintar berbasis Barcode & QR. Mempercepat transaksi meja, kasir, dan dapur untuk bisnis kuliner modern di Indonesia.
-              </p>
-
-              {/* Status Indicator */}
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200/80 text-[12px] text-slate-600 shadow-sm">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="font-medium">Seluruh Layanan POS Normal</span>
-              </div>
-
-              {/* Quick Contacts */}
-              <div className="pt-2 flex flex-wrap items-center gap-3 text-[13px]">
-                <a
-                  href="mailto:halo@menuin.id"
-                  className="px-3.5 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 font-medium border border-slate-200 transition-all shadow-sm"
-                >
-                  halo@menuin.id
-                </a>
-                <a
-                  href="https://wa.me/628123456789"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3.5 py-1.5 rounded-xl bg-slate-50 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 text-slate-700 font-medium border border-slate-200 transition-all shadow-sm"
-                >
-                  WhatsApp Support
-                </a>
-              </div>
-            </div>
-
-            {/* Column 2: Fitur Produk */}
-            <div>
-              <h4 className="text-[13px] font-bold uppercase tracking-wider text-slate-900 mb-4">
-                Fitur Produk
-              </h4>
-              <ul className="space-y-2.5 text-[14px] text-slate-500 font-medium">
-                <li><a href="#features" className="hover:text-[#0E59F9] transition-colors">Barcode Meja (Self-Order)</a></li>
-                <li><a href="#features" className="hover:text-[#0E59F9] transition-colors">Sistem Kasir POS Cepat</a></li>
-                <li><a href="#features" className="hover:text-[#0E59F9] transition-colors">Barcode QRIS Dinamis</a></li>
-                <li><a href="#features" className="hover:text-[#0E59F9] transition-colors">Kitchen Display Dapur (KDS)</a></li>
-                <li><a href="#features" className="hover:text-[#0E59F9] transition-colors">Kontrol Stok & Bahan Baku</a></li>
-                <li><a href="#features" className="hover:text-[#0E59F9] transition-colors">Laporan Penjualan & Laba</a></li>
-              </ul>
-            </div>
-
-            {/* Column 3: Solusi Bisnis */}
-            <div>
-              <h4 className="text-[13px] font-bold uppercase tracking-wider text-slate-900 mb-4">
-                Solusi Bisnis
-              </h4>
-              <ul className="space-y-2.5 text-[14px] text-slate-500 font-medium">
-                <li><a href="#pricing" className="hover:text-[#0E59F9] transition-colors">Kedai Kopi & Cafe</a></li>
-                <li><a href="#pricing" className="hover:text-[#0E59F9] transition-colors">Restoran Dine-In</a></li>
-                <li><a href="#pricing" className="hover:text-[#0E59F9] transition-colors">Food Court & Pujasera</a></li>
-                <li><a href="#pricing" className="hover:text-[#0E59F9] transition-colors">Bakery & Pastry</a></li>
-                <li><a href="#pricing" className="hover:text-[#0E59F9] transition-colors">Gerai Booth & Street Food</a></li>
-                <li><a href="#pricing" className="hover:text-[#0E59F9] transition-colors">Jaringan Multi-Cabang</a></li>
-              </ul>
-            </div>
-
-            {/* Column 4: Bantuan & Legal */}
-            <div>
-              <h4 className="text-[13px] font-bold uppercase tracking-wider text-slate-900 mb-4">
-                Bantuan & Akses
-              </h4>
-              <ul className="space-y-2.5 text-[14px] text-slate-500 font-medium">
-                <li><a href="#faq" className="hover:text-[#0E59F9] transition-colors">Tanya Jawab (FAQ)</a></li>
-                <li><a href="/auth/login" className="hover:text-[#0E59F9] transition-colors">Masuk ke Kasir POS</a></li>
-                <li><a href="/auth/signup" className="hover:text-[#0E59F9] transition-colors">Daftar Akun Baru</a></li>
-                <li><a href="#pricing" className="hover:text-[#0E59F9] transition-colors">Syarat & Ketentuan</a></li>
-                <li><a href="#pricing" className="hover:text-[#0E59F9] transition-colors">Kebijakan Privasi</a></li>
-                <li><a href="#pricing" className="hover:text-[#0E59F9] transition-colors">Keamanan Data SSL</a></li>
-              </ul>
-            </div>
-
-          </div>
-
-          {/* Bottom Bar */}
-          <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-[13px] text-slate-500">
-            <div className="flex items-center gap-2">
-              <span>&copy; 2026 MENUIN Indonesia. Hak cipta dilindungi undang-undang.</span>
-            </div>
-
-            <div className="flex items-center gap-6">
-              <span className="text-slate-600 font-medium">
-                🇮🇩 Indonesia (IDR)
-              </span>
-              <span className="text-slate-600">
-                Dibuat untuk memajukan bisnis F&B Indonesia
-              </span>
-            </div>
-          </div>
-
-        </div>
-      </footer>
+      {/* SUPERFLUID-INSPIRED BRUTALIST BRAND FOOTER */}
+      <FooterSuperfluidStyle />
 
     </div>
   );
