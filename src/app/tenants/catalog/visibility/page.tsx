@@ -2,7 +2,13 @@ import { getProducts } from "@/lib/actions/products";
 import { VisibilityClient } from "./visibility-client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-export default async function CatalogVisibilityPage() {
+import { connection } from "next/server";
+
+import { Suspense } from "react";
+import { Loader2 } from "lucide-react";
+
+async function VisibilityDataWrapper() {
+  await connection();
   const result = await getProducts();
   const products = result.success && result.data ? result.data : [];
 
@@ -27,5 +33,13 @@ export default async function CatalogVisibilityPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function CatalogVisibilityPage() {
+  return (
+    <Suspense fallback={<div className="p-6 flex justify-center"><Loader2 className="animate-spin h-6 w-6 text-muted-foreground" /></div>}>
+      <VisibilityDataWrapper />
+    </Suspense>
   );
 }

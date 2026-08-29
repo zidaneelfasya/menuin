@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { MainLayout } from '@/components/layout/main-layout';
 import { PaymentGate } from '@/components/payment-gate';
 import { getCurrentUser } from '@/lib/actions/auth';
@@ -25,11 +26,12 @@ async function AuthWrapper({ children }: { children: React.ReactNode }) {
   return <MainLayout user={user}>{children}</MainLayout>;
 }
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  await connection();
   return (
     <Suspense fallback={
       <div className="flex flex-col h-screen w-full items-center justify-center bg-background/50 backdrop-blur-sm">

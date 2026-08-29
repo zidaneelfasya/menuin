@@ -108,13 +108,13 @@ export function CheckoutClient({ tenantSlug, settings }: CheckoutClientProps) {
           setIsSuccess(true);
           clearCart();
           toast.success("Pembayaran berhasil!");
-          router.push(`/status?order=${encodeURIComponent(result.orderNumber)}`);
+          router.push(`/status?order=${encodeURIComponent(result.orderNumber || "")}`);
         },
         onPending: function () {
           setIsSuccess(true);
           clearCart();
           toast.info("Menunggu pembayaran Anda");
-          router.push(`/status?order=${encodeURIComponent(result.orderNumber)}`);
+          router.push(`/status?order=${encodeURIComponent(result.orderNumber || "")}`);
         },
         onError: function () {
           toast.error("Pembayaran gagal atau dibatalkan");
@@ -129,7 +129,7 @@ export function CheckoutClient({ tenantSlug, settings }: CheckoutClientProps) {
       setIsSuccess(true);
       clearCart();
       toast.success("Pesanan berhasil dibuat!");
-      router.push(`/status?order=${encodeURIComponent(result.orderNumber)}`);
+      router.push(`/status?order=${encodeURIComponent(result.orderNumber || "")}`);
     }
   };
 

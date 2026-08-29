@@ -6,7 +6,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Save } from "lucide-react";
 
-export default async function CatalogAppearancePage() {
+import { connection } from "next/server";
+
+import { Suspense } from "react";
+import { Loader2 } from "lucide-react";
+
+async function AppearanceDataWrapper() {
+  await connection();
   const settings = await getTenantCatalogSettings();
 
   return (
@@ -90,5 +96,13 @@ export default async function CatalogAppearancePage() {
         </div>
       </form>
     </div>
+  );
+}
+
+export default function CatalogAppearancePage() {
+  return (
+    <Suspense fallback={<div className="p-6 flex justify-center"><Loader2 className="animate-spin h-6 w-6 text-muted-foreground" /></div>}>
+      <AppearanceDataWrapper />
+    </Suspense>
   );
 }
