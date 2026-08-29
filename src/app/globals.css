@@ -76,3 +76,42 @@
     font-family: var(--font-montserrat), sans-serif;
   }
 }
+
+@keyframes laserScan {
+  0% {
+    top: 5%;
+    opacity: 0.8;
+  }
+  50% {
+    top: 85%;
+    opacity: 1;
+  }
+  100% {
+    top: 5%;
+    opacity: 0.8;
+  }
+}
+
+@keyframes printPaper {
+  0% {
+    transform: translateY(-80%);
+    opacity: 0.2;
+  }
+  60% {
+    transform: translateY(0%);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0%);
+    opacity: 1;
+  }
+}
+
+.animate-laser-scan {
+  animation: laserScan 2s ease-in-out infinite;
+}
+
+.animate-print-paper {
+  animation: printPaper 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
