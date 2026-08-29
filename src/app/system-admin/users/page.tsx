@@ -1,23 +1,21 @@
-import { getSystemUsers } from '@/lib/actions/system-admin';
-import { Card, CardContent } from '@/components/ui/card';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
-import { Users } from 'lucide-react';
+import { getSystemUsers, getSystemTenants } from '@/lib/actions/system-admin';
+import { getCurrentUser } from '@/lib/actions/auth';
+import { UsersClient } from './users-client';
+import { connection } from 'next/server';
 
 export default async function UsersPage() {
-  const usersList = await getSystemUsers();
+  await connection();
+  const [usersList, tenants, currentUser] = await Promise.all([
+    getSystemUsers(),
+    getSystemTenants(),
+    getCurrentUser(),
+  ]);
 
-  return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
-      <div className="flex items-center gap-3 mb-8">
-        <div className="h-12 w-12 bg-emerald-100 rounded-xl flex items-center justify-center">
-          <Users className="h-6 w-6 text-emerald-600" />
-        </div>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Users</h1>
-          <p className="text-muted-foreground">Manage all staff and admin accounts across the platform.</p>
-        </div>
-      </div>
+  const tenantOptions = tenants.map((t) => ({
+    id: t.id,
+    name: t.name,
+  }));
+
 
       <Card className="border-border/50 shadow-sm overflow-hidden">
         <CardContent className="p-0">
@@ -70,5 +68,6 @@ export default async function UsersPage() {
         </CardContent>
       </Card>
     </div>
+
   );
 }
