@@ -1,7 +1,8 @@
+import { Suspense } from "react";
 import LandingPage from "@/components/landing-page";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function Home() {
+async function LandingPageWithAuth() {
   let user = null;
   let userName = "";
 
@@ -20,3 +21,12 @@ export default async function Home() {
 
   return <LandingPage isLoggedIn={Boolean(user)} userName={userName} />;
 }
+
+export default function Home() {
+  return (
+    <Suspense fallback={<LandingPage isLoggedIn={false} userName="" />}>
+      <LandingPageWithAuth />
+    </Suspense>
+  );
+}
+
