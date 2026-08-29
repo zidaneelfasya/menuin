@@ -1212,17 +1212,14 @@ export default function LandingPage({
           {/* 3 High-Impact Value Pillars */}
           <div className="mt-14 grid grid-cols-1 md:grid-cols-3 gap-6">
             <FadeIn delay={0.2} className="h-full">
-              <div className="p-6 md:p-8 rounded-2xl bg-white border border-slate-200/80 shadow-xs h-full flex flex-col justify-between">
+              <div className="p-6 md:p-8 rounded-2xl bg-gradient-to-b from-blue-50/90 via-blue-50/30 to-white border border-blue-100/80 shadow-xs hover:border-blue-300 hover:shadow-md transition-all h-full flex flex-col justify-between">
                 <div>
-                  <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#0E59F9] flex items-center justify-center mb-4">
-                    <QrCode className="w-5 h-5" />
-                  </div>
                   <h3 className="text-lg font-bold text-slate-900 mb-2">Table QR Self-Ordering</h3>
                   <p className="text-sm text-slate-600 leading-relaxed">
                     Guests sit at their table, scan the QR sticker with their phone camera without downloading any app, customize menu items, and checkout via QRIS. Reduces register lines by up to 80%.
                   </p>
                 </div>
-                <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-500">
+                <div className="mt-6 pt-4 border-t border-blue-100/80 flex items-center justify-between text-xs font-semibold text-slate-500">
                   <span>Browser-Based (No App)</span>
                   <span className="text-emerald-600 font-bold">Instant QRIS Sync</span>
                 </div>
@@ -1230,17 +1227,14 @@ export default function LandingPage({
             </FadeIn>
 
             <FadeIn delay={0.3} className="h-full">
-              <div className="p-6 md:p-8 rounded-2xl bg-white border border-slate-200/80 shadow-xs h-full flex flex-col justify-between">
+              <div className="p-6 md:p-8 rounded-2xl bg-gradient-to-b from-blue-50/90 via-blue-50/30 to-white border border-blue-100/80 shadow-xs hover:border-blue-300 hover:shadow-md transition-all h-full flex flex-col justify-between">
                 <div>
-                  <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
-                    <Monitor className="w-5 h-5" />
-                  </div>
                   <h3 className="text-lg font-bold text-slate-900 mb-2">POS Register & Live Reports</h3>
                   <p className="text-sm text-slate-600 leading-relaxed">
                     For walk-in and take-away counter orders. Search products effortlessly, print 58/80mm thermal receipts, and every transaction syncs automatically to sales and inventory analytics.
                   </p>
                 </div>
-                <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-500">
+                <div className="mt-6 pt-4 border-t border-blue-100/80 flex items-center justify-between text-xs font-semibold text-slate-500">
                   <span>58/80mm Thermal Receipt</span>
                   <span className="text-emerald-600 font-bold">Real-Time Reporting</span>
                 </div>
@@ -1248,17 +1242,14 @@ export default function LandingPage({
             </FadeIn>
 
             <FadeIn delay={0.4} className="h-full">
-              <div className="p-6 md:p-8 rounded-2xl bg-white border border-slate-200/80 shadow-xs h-full flex flex-col justify-between">
+              <div className="p-6 md:p-8 rounded-2xl bg-gradient-to-b from-blue-50/90 via-blue-50/30 to-white border border-blue-100/80 shadow-xs hover:border-blue-300 hover:shadow-md transition-all h-full flex flex-col justify-between">
                 <div>
-                  <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-800 flex items-center justify-center mb-4">
-                    <ShieldCheck className="w-5 h-5" />
-                  </div>
                   <h3 className="text-lg font-bold text-slate-900 mb-2">Shift Cash Audit & Multi-Branch</h3>
                   <p className="text-sm text-slate-600 leading-relaxed">
                     Enforce opening float entry and track petty cash expenses. At shift closing, the system automatically matches counted physical cash with system totals to ensure zero cash variance.
                   </p>
                 </div>
-                <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-500">
+                <div className="mt-6 pt-4 border-t border-blue-100/80 flex items-center justify-between text-xs font-semibold text-slate-500">
                   <span>Multi-Tenant PostgreSQL</span>
                   <span className="text-[#0E59F9] font-bold">Variance: Rp 0</span>
                 </div>
@@ -1289,17 +1280,11 @@ export default function LandingPage({
 
             <div className="space-y-8">
               {features.map((f, i) => {
-                const IconComp = f.icon;
                 return (
                   <FadeIn key={i} delay={0.15 + (i * 0.1)}>
-                    <div className="flex gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0 text-[#0E59F9]">
-                        <IconComp className="w-5 h-5 text-[#0E59F9]" />
-                      </div>
-                      <div>
-                        <h4 className="text-[18px] font-bold text-[#111] mb-2">{f.title}</h4>
-                        <p className="text-[15px] text-[#666] leading-relaxed">{f.desc}</p>
-                      </div>
+                    <div className="border-l-2 border-slate-200 hover:border-[#0E59F9] pl-5 transition-colors">
+                      <h4 className="text-[18px] font-bold text-[#111] mb-1.5">{f.title}</h4>
+                      <p className="text-[15px] text-[#666] leading-relaxed">{f.desc}</p>
                     </div>
                   </FadeIn>
                 );
