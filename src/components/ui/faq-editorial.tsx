@@ -59,7 +59,7 @@ export default function FaqEditorial() {
   };
 
   return (
-    <section className="w-full bg-white text-slate-900 py-20 md:py-28 px-6 sm:px-10 lg:px-14 border-t border-slate-200" id="faq">
+    <section className="w-full bg-white text-slate-900 pt-24 md:pt-36 pb-36 md:pb-52 px-6 sm:px-10 lg:px-14 border-t border-slate-200" id="faq">
       <div className="mx-auto max-w-[1360px]">
         
         {/* Main 2-Column Split Layout matching the exact reference */}

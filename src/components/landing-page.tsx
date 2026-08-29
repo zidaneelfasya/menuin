@@ -248,19 +248,30 @@ const testimonialsData = [
 
 function SkeletonCard() {
   return (
-    <div className="w-[320px] shrink-0 h-[120px]">
-      <div className="w-full h-full bg-[#EAEAEA]/70 rounded-2xl p-4 border border-black/[0.04] flex flex-col justify-between opacity-50">
-        <div className="flex gap-2.5 items-center">
-          <div className="w-8 h-8 rounded-full bg-black/10 shrink-0" />
-          <div className="flex flex-col gap-1.5 flex-1">
-            <div className="h-2.5 w-24 bg-black/10 rounded-full" />
-            <div className="h-2 w-16 bg-black/5 rounded-full" />
+    <div className="w-[300px] shrink-0 h-[120px] testimonial-wrapper">
+      <div className="w-full h-full bg-white/50 backdrop-blur-sm rounded-[24px] p-4 border border-gray-100 flex flex-col shadow-sm opacity-50 grayscale testimonial-inner origin-center will-change-transform">
+
+        {/* Header Row */}
+        <div className="flex justify-between items-start mb-2">
+          <div className="flex gap-2 items-center flex-1 min-w-0 mr-2">
+            <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse shrink-0" />
+            <div className="flex flex-col gap-1 min-w-0 flex-1">
+              <div className="w-20 max-w-full h-2.5 bg-gray-200 rounded animate-pulse" />
+              <div className="w-16 max-w-full h-2 bg-gray-100 rounded animate-pulse" />
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-1 shrink-0">
+            <div className="w-14 h-2 bg-gray-200 rounded animate-pulse" />
+            <div className="w-16 h-4 bg-gray-100 rounded-full animate-pulse" />
           </div>
         </div>
-        <div className="flex flex-col gap-1.5">
-          <div className="h-2 w-full bg-black/5 rounded-full" />
-          <div className="h-2 w-3/4 bg-black/5 rounded-full" />
+
+        {/* Text Body */}
+        <div className="flex flex-col gap-1 mt-auto mb-1">
+          <div className="w-full h-2 bg-gray-200 rounded animate-pulse" />
+          <div className="w-[85%] h-2 bg-gray-100 rounded animate-pulse" />
         </div>
+
       </div>
     </div>
   );
@@ -268,35 +279,37 @@ function SkeletonCard() {
 
 function RealCard({ data }: { data: any }) {
   return (
-    <div className="w-[320px] shrink-0 h-[120px]">
-      <div className="w-full h-full bg-white rounded-2xl p-4 border border-slate-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-md transition-all flex flex-col justify-between">
+    <div className="w-[300px] shrink-0 h-[120px] testimonial-wrapper">
+      <div className="w-full h-full bg-white rounded-[24px] p-4 border border-black/[0.04] shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-xl transition-shadow flex flex-col testimonial-inner origin-center will-change-transform">
+
         {/* Header Row */}
-        <div className="flex justify-between items-start">
-          <div className="flex gap-2.5 items-center flex-1 min-w-0 mr-2">
-            <img src={data.avatar} alt={data.name} className="w-8 h-8 rounded-full object-cover shadow-xs shrink-0" />
+        <div className="flex justify-between items-start mb-2">
+          <div className="flex gap-2 items-center flex-1 min-w-0 mr-2">
+            <img src={data.avatar} alt={data.name} className="w-8 h-8 rounded-full object-cover shadow-sm shrink-0" />
             <div className="flex flex-col min-w-0 flex-1">
-              <span className="text-xs font-bold text-slate-900 leading-tight truncate block">{data.name}</span>
-              <span className="text-[10px] text-slate-500 truncate block">{data.role}</span>
+              <span className="text-[12px] font-bold text-[#111] leading-tight truncate block">{data.name.toLowerCase()}</span>
+              <span className="text-[10px] text-[#888] truncate block">{data.role.toLowerCase()}</span>
             </div>
           </div>
 
           <div className="flex flex-col items-end gap-0.5 shrink-0">
             <div className="flex items-center gap-0.5">
               {[...Array(5)].map((_, i) => (
-                <span key={i} className={`text-[10px] ${i < Math.floor(data.rating) ? 'text-amber-400' : 'text-slate-200'}`}>★</span>
+                <span key={i} className={`text-[9px] ${i < Math.floor(data.rating) ? 'text-amber-400' : 'text-gray-300'}`}>★</span>
               ))}
-              <span className="text-[10px] font-bold text-slate-800 ml-1">{data.rating}</span>
+              <span className="text-[10px] font-bold text-[#111] ml-1">{data.rating}</span>
             </div>
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[8px] font-bold border border-emerald-200">
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-[#E8F8F0] text-[#139E60] text-[8px] font-black tracking-wide uppercase border border-[#D0EBE0]">
               {data.sentiment}
             </span>
           </div>
         </div>
 
         {/* Text Body */}
-        <p className="text-[11px] text-slate-600 leading-relaxed line-clamp-2 mt-1">
+        <p className="text-[11px] text-[#666] leading-relaxed line-clamp-2 mt-auto mb-1">
           "{data.text}"
         </p>
+
       </div>
     </div>
   );
@@ -857,6 +870,139 @@ export default function LandingPage({
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
   const marqueeContainerRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    let animationFrameId: number;
+    let startTime = performance.now();
+    let cache: any = null;
+
+    const buildCache = () => {
+      if (!marqueeContainerRef.current) return null;
+
+      const contentsList = Array.from(marqueeContainerRef.current.querySelectorAll('.marquee-content')) as HTMLElement[];
+      const oldTransforms = contentsList.map(c => c.style.transform);
+      contentsList.forEach(c => c.style.transform = 'none');
+
+      const containerRect = marqueeContainerRef.current.getBoundingClientRect();
+      const containerWidth = containerRect.width;
+      const containerCenter = containerRect.left + containerRect.width / 2;
+
+      const tracks = Array.from(marqueeContainerRef.current.querySelectorAll('.row-top, .row-middle, .row-bottom')).map(track => {
+        const isMiddle = track.classList.contains('row-middle');
+        const isBottom = track.classList.contains('row-bottom');
+        let delay = 0;
+        if (isMiddle) delay = -12.5;
+        if (isBottom) delay = -6;
+
+        const contents = Array.from(track.querySelectorAll('.marquee-content')).map(content => {
+          const contentEl = content as HTMLElement;
+          const contentRect = contentEl.getBoundingClientRect();
+          const contentWidth = contentRect.width;
+
+          const wrappers = Array.from(content.querySelectorAll('.testimonial-wrapper')).map(wrapper => {
+            const el = wrapper as HTMLElement;
+            const inner = el.querySelector('.testimonial-inner') as HTMLElement;
+            const isTopRow = el.closest('.row-top') !== null;
+            const isBottomRow = el.closest('.row-bottom') !== null;
+
+            const rect = el.getBoundingClientRect();
+            const initialCenter = rect.left + rect.width / 2;
+
+            return { inner, initialCenter, isTopRow, isBottomRow };
+          });
+
+          return { content: contentEl, contentWidth, wrappers };
+        });
+
+        return { delay, contents };
+      });
+
+      contentsList.forEach((c, i) => c.style.transform = oldTransforms[i]);
+
+      return { containerWidth, containerCenter, tracks };
+    };
+
+    // logic untuk membuat animasi testimonial lengkung & halus
+    const updateCards = (time: number) => {
+      if (!cache) {
+        cache = buildCache();
+        if (!cache) {
+          animationFrameId = requestAnimationFrame(updateCards);
+          return;
+        }
+      }
+
+      if (!marqueeContainerRef.current) return;
+      const { containerWidth, containerCenter, tracks } = cache;
+      const duration = 15;
+      const elapsed = (time - startTime) / 1000;
+
+      for (let i = 0; i < tracks.length; i++) {
+        const trackInfo = tracks[i];
+        const totalElapsed = elapsed - trackInfo.delay;
+        let progress = (totalElapsed % duration) / duration;
+        if (progress < 0) progress += 1;
+
+        const translateXPercent = -100 + (progress * 100);
+
+        for (let j = 0; j < trackInfo.contents.length; j++) {
+          const contentInfo = trackInfo.contents[j];
+          if (!contentInfo.content || !contentInfo.content.isConnected) continue;
+          const translateXPixels = (translateXPercent / 100) * contentInfo.contentWidth;
+
+          contentInfo.content.style.transform = `translate3d(${translateXPercent}%, 0, 0)`;
+
+          for (let k = 0; k < contentInfo.wrappers.length; k++) {
+            const wrapperInfo = contentInfo.wrappers[k];
+            if (!wrapperInfo.inner || !wrapperInfo.inner.isConnected) continue;
+
+            const currentCenter = wrapperInfo.initialCenter + translateXPixels;
+            const distanceFromCenter = (currentCenter - containerCenter) / (containerWidth / 2);
+
+            const clampedDistance = Math.max(-1.5, Math.min(1.5, distanceFromCenter));
+            const curveIntensity = clampedDistance * clampedDistance;
+
+            const maxOffset = 180;
+            const maxRotation = 15;
+
+            let translateY = 0;
+            let rotateZ = 0;
+
+            if (wrapperInfo.isTopRow) {
+              translateY = -curveIntensity * maxOffset;
+              rotateZ = -clampedDistance * maxRotation;
+            } else if (wrapperInfo.isBottomRow) {
+              translateY = curveIntensity * maxOffset;
+              rotateZ = clampedDistance * maxRotation;
+            }
+
+            wrapperInfo.inner.style.transform = `translate3d(0, ${translateY}px, 0) rotateZ(${rotateZ}deg) scale(1)`;
+          }
+        }
+      }
+
+      animationFrameId = requestAnimationFrame(updateCards);
+    };
+
+    cache = buildCache();
+
+    let resizeTimer: ReturnType<typeof setTimeout>;
+    const handleResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        cache = buildCache();
+      }, 200);
+    };
+
+    window.addEventListener('resize', handleResize);
+    animationFrameId = requestAnimationFrame(updateCards);
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(resizeTimer);
+    };
+  }, []);
+
   const userInitial = (userName || "U").trim().charAt(0).toUpperCase();
 
   return (
@@ -1200,17 +1346,17 @@ export default function LandingPage({
 
                 {/* SKELETON */}
                 <div className="absolute inset-0 z-10 flex">
-                  <div className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5 animate-marquee">
-                    {testimonialsData.map((t, i) => (
+                  <div className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5">
+                    {[...testimonialsData, ...testimonialsData].map((t, i) => (
                       <SkeletonCard key={`skel1-t-${i}`} />
                     ))}
                   </div>
 
                   <div
-                    className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5 animate-marquee"
+                    className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5"
                     aria-hidden="true"
                   >
-                    {testimonialsData.map((t, i) => (
+                    {[...testimonialsData, ...testimonialsData].map((t, i) => (
                       <SkeletonCard key={`skel2-t-${i}`} />
                     ))}
                   </div>
@@ -1223,8 +1369,8 @@ export default function LandingPage({
                     clipPath: "inset(-200px 0 -200px 50%)",
                   }}
                 >
-                  <div className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5 animate-marquee">
-                    {testimonialsData.map((t, i) => (
+                  <div className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5">
+                    {[...testimonialsData, ...testimonialsData].map((t, i) => (
                       <RealCard
                         key={`real1-t-${i}`}
                         data={t}
@@ -1233,10 +1379,10 @@ export default function LandingPage({
                   </div>
 
                   <div
-                    className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5 animate-marquee"
+                    className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5"
                     aria-hidden="true"
                   >
-                    {testimonialsData.map((t, i) => (
+                    {[...testimonialsData, ...testimonialsData].map((t, i) => (
                       <RealCard
                         key={`real2-t-${i}`}
                         data={t}
@@ -1253,17 +1399,17 @@ export default function LandingPage({
 
                 {/* SKELETON */}
                 <div className="absolute inset-0 z-10 flex">
-                  <div className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5 animate-marquee-reverse">
-                    {[...testimonialsData].reverse().map((t, i) => (
+                  <div className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5">
+                    {[...testimonialsData, ...testimonialsData].reverse().map((t, i) => (
                       <SkeletonCard key={`skel1-m-${i}`} />
                     ))}
                   </div>
 
                   <div
-                    className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5 animate-marquee-reverse"
+                    className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5"
                     aria-hidden="true"
                   >
-                    {[...testimonialsData].reverse().map((t, i) => (
+                    {[...testimonialsData, ...testimonialsData].reverse().map((t, i) => (
                       <SkeletonCard key={`skel2-m-${i}`} />
                     ))}
                   </div>
@@ -1276,8 +1422,8 @@ export default function LandingPage({
                     clipPath: "inset(-200px 0 -200px 50%)",
                   }}
                 >
-                  <div className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5 animate-marquee-reverse">
-                    {[...testimonialsData].reverse().map((t, i) => (
+                  <div className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5">
+                    {[...testimonialsData, ...testimonialsData].reverse().map((t, i) => (
                       <RealCard
                         key={`real1-m-${i}`}
                         data={t}
@@ -1286,10 +1432,10 @@ export default function LandingPage({
                   </div>
 
                   <div
-                    className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5 animate-marquee-reverse"
+                    className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5"
                     aria-hidden="true"
                   >
-                    {[...testimonialsData].reverse().map((t, i) => (
+                    {[...testimonialsData, ...testimonialsData].reverse().map((t, i) => (
                       <RealCard
                         key={`real2-m-${i}`}
                         data={t}
@@ -1306,17 +1452,17 @@ export default function LandingPage({
 
                 {/* SKELETON */}
                 <div className="absolute inset-0 z-10 flex">
-                  <div className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5 animate-marquee">
-                    {testimonialsData.map((t, i) => (
+                  <div className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5">
+                    {[...testimonialsData, ...testimonialsData].map((t, i) => (
                       <SkeletonCard key={`skel1-b-${i}`} />
                     ))}
                   </div>
 
                   <div
-                    className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5 animate-marquee"
+                    className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5"
                     aria-hidden="true"
                   >
-                    {testimonialsData.map((t, i) => (
+                    {[...testimonialsData, ...testimonialsData].map((t, i) => (
                       <SkeletonCard key={`skel2-b-${i}`} />
                     ))}
                   </div>
@@ -1329,8 +1475,8 @@ export default function LandingPage({
                     clipPath: "inset(-200px 0 -200px 50%)",
                   }}
                 >
-                  <div className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5 animate-marquee">
-                    {testimonialsData.map((t, i) => (
+                  <div className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5">
+                    {[...testimonialsData, ...testimonialsData].map((t, i) => (
                       <RealCard
                         key={`real1-b-${i}`}
                         data={t}
@@ -1339,10 +1485,10 @@ export default function LandingPage({
                   </div>
 
                   <div
-                    className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5 animate-marquee"
+                    className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5"
                     aria-hidden="true"
                   >
-                    {testimonialsData.map((t, i) => (
+                    {[...testimonialsData, ...testimonialsData].map((t, i) => (
                       <RealCard
                         key={`real2-b-${i}`}
                         data={t}
@@ -1388,10 +1534,176 @@ export default function LandingPage({
             />
           </div>
         </section>
-      </div>
 
-      {/* PRICING SECTION - DARK MINIMALIST (STARTER, PRO, CUSTOM) */}
-      <PricingTableDark />
+        {/* PRICING (Side-by-Side Editorial Layout inside wrapper with SVG Background) */}
+        <section className="relative z-30 pt-36 md:pt-52 pb-28 md:pb-36 px-6 sm:px-10 lg:px-14 mt-16 md:mt-24" id="pricing">
+          <div className="mx-auto max-w-[1240px] relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start">
+
+              {/* Column 1: Left Editorial Typographic Header */}
+              <FadeIn className="lg:col-span-4 pr-0 lg:pr-4 pt-3">
+                <div className="space-y-1">
+                  <h2 className="text-[clamp(32px,3.8vw,46px)] font-black leading-[1.08] tracking-[-0.04em] text-slate-900">
+                    Monthly Renewal,
+                  </h2>
+                  <h2 className="text-[clamp(32px,3.8vw,46px)] font-black leading-[1.08] tracking-[-0.04em] text-[#0E59F9]">
+                    No Fixed Term Contracts
+                  </h2>
+                </div>
+
+                <p className="text-slate-500 text-sm sm:text-[14.5px] mt-6 leading-relaxed">
+                  Flexible monthly subscription without long-term commitments. Digitize orders, cashier POS, tables, kitchen display, and stock in one unified platform.
+                </p>
+
+                <div className="mt-8 flex items-center gap-2.5 text-xs font-semibold text-slate-700">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#0E59F9]" />
+                  <span>Instant Activation & Free Setup Support</span>
+                </div>
+              </FadeIn>
+
+              {/* Column 2 & 3: Pro & Custom White Cards */}
+              <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-7">
+
+                {/* Pro Card */}
+                <FadeIn delay={0.1}>
+                  <div className="flex flex-col justify-between p-7 sm:p-8 rounded-[32px] bg-white border border-slate-200/80 shadow-[0_4px_24px_rgba(0,0,0,0.04)] hover:shadow-xl transition-all h-full">
+                    <div>
+                      <h3 className="text-xl font-bold text-slate-900">
+                        Pro
+                      </h3>
+                      <div className="flex items-baseline gap-1 mt-2 mb-6">
+                        <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+                          Rp199k
+                        </span>
+                        <span className="text-xs sm:text-sm font-semibold text-slate-400">
+                          /mo
+                        </span>
+                      </div>
+
+                      <div className="border-t border-slate-100 divide-y divide-slate-100">
+                        {[
+                          "Fast Cloud POS & Receipt Printing",
+                          "Unlimited QR Code Table Self-Ordering",
+                          "Automated Dynamic QRIS Payment",
+                          "Kitchen Display System (KDS Dapur)",
+                          "Multi-Staff & Role-Based Access Control",
+                          "Live Inventory & Low Stock Alerts",
+                          "Real-Time Sales, Shift & Profit Reports",
+                          "Bluetooth & LAN Cashier Printer Integration",
+                          "Real-Time Excel & PDF Data Export",
+                        ].map((feat, idx) => (
+                          <div key={idx} className="py-2.5 text-[12.5px] sm:text-[13px] font-medium text-slate-700 leading-snug">
+                            {feat}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="pt-6 mt-4">
+                      <a
+                        href="/auth/signup?plan=pro"
+                        className="inline-flex items-center gap-3 group"
+                      >
+                        <div className="w-8 h-8 rounded-full bg-[#0E59F9] text-white flex items-center justify-center text-xs font-bold shadow-md shadow-blue-500/20 group-hover:scale-105 transition-all">
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </div>
+                        <span className="text-xs sm:text-[13px] font-bold text-slate-900 group-hover:text-[#0E59F9] transition-colors">
+                          Inquire Now
+                        </span>
+                      </a>
+                    </div>
+                  </div>
+                </FadeIn>
+
+                {/* Custom Card */}
+                <FadeIn delay={0.2}>
+                  <div className="flex flex-col justify-between p-7 sm:p-8 rounded-[32px] bg-white border border-slate-200/80 shadow-[0_4px_24px_rgba(0,0,0,0.04)] hover:shadow-xl transition-all h-full">
+                    <div>
+                      <h3 className="text-xl font-bold text-slate-900">
+                        Custom
+                      </h3>
+                      <div className="flex items-baseline gap-1 mt-2 mb-6">
+                        <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+                          Custom
+                        </span>
+                      </div>
+
+                      <div className="border-t border-slate-100 divide-y divide-slate-100">
+                        {[
+                          "Unlimited Outlets & Multi-Branch Network",
+                          "Everything in Pro Plan Included",
+                          "Custom Domain & White-Label Branding",
+                          "Full API & External ERP Integrations",
+                          "Dedicated Account Manager & Onboarding",
+                          "24/7 Priority Support (99.9% SLA)",
+                          "Custom Hardware Setup & Staff Training",
+                          "Custom Feature Development on Demand",
+                          "Full Historical Data & Menu Migration",
+                        ].map((feat, idx) => (
+                          <div key={idx} className="py-2.5 text-[12.5px] sm:text-[13px] font-medium text-slate-700 leading-snug">
+                            {feat}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="pt-6 mt-4">
+                      <a
+                        href="https://wa.me/628123456789?text=Halo%20MENUIN,%20saya%20tertarik%20dengan%20Custom%20Enterprise%20Plan"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-3 group"
+                      >
+                        <div className="w-8 h-8 rounded-full bg-[#0E59F9] text-white flex items-center justify-center text-xs font-bold shadow-md shadow-blue-500/20 group-hover:scale-105 transition-all">
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </div>
+                        <span className="text-xs sm:text-[13px] font-bold text-slate-900 group-hover:text-[#0E59F9] transition-colors">
+                          Inquire Now
+                        </span>
+                      </a>
+                    </div>
+                  </div>
+                </FadeIn>
+
+              </div>
+            </div>
+          </div>
+
+          {/* ========================================= */}
+          {/* EDGE FADE FOR PRICING                     */}
+          {/* ========================================= */}
+          <div
+            className="
+            hidden md:block
+            pointer-events-none
+            absolute
+            inset-y-0
+            left-0
+            z-[40]
+            w-[18%]
+            bg-gradient-to-r
+            from-[#FAFAFA]
+            via-[#FAFAFA]/80
+            to-transparent
+          "
+          />
+          <div
+            className="
+            hidden md:block
+            pointer-events-none
+            absolute
+            inset-y-0
+            right-0
+            z-[40]
+            w-[18%]
+            bg-gradient-to-l
+            from-[#FAFAFA]
+            via-[#FAFAFA]/80
+            to-transparent
+          "
+          />
+        </section>
+      </div>
 
       {/* FAQ EDITORIAL (SPLIT 2-COLUMN LAYOUT) */}
       <FaqEditorial />
