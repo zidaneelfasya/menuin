@@ -67,16 +67,16 @@ async function runSeed() {
     await db.delete(schema.categories);
 
     // Ambil dashboard aktif (buat jika belum ada)
-    const dashboards = await db.select().from(schema.dashboards).limit(1);
-    let dashboardId: string;
-    if (dashboards.length > 0) {
-      dashboardId = dashboards[0].id;
+    const tenants = await db.select().from(schema.tenants).limit(1);
+    let tenantId: string;
+    if (tenants.length > 0) {
+      tenantId = tenants[0].id;
     } else {
-      const [newDashboard] = await db.insert(schema.dashboards).values({
+      const [newDashboard] = await db.insert(schema.tenants).values({
         name: 'Bolu Anisa',
         isPaid: true,
       }).returning();
-      dashboardId = newDashboard.id;
+      tenantId = newDashboard.id;
     }
 
     // Ambil cashierId pertama yang ada di db
@@ -126,7 +126,7 @@ async function runSeed() {
         categoryMap.set(catKey, catId);
         categoriesToInsert.push({
           id: catId,
-          dashboardId,
+          tenantId,
           name: categoryNameRaw,
           slug: slugify(categoryNameRaw)
         });
@@ -134,7 +134,7 @@ async function runSeed() {
 
       productsToInsert.push({
         id: crypto.randomUUID(),
-        dashboardId,
+        tenantId,
         name,
         categoryId: catId,
         sku: generateSku(name, i),
@@ -221,7 +221,7 @@ async function runSeed() {
 
         transactionsToInsert.push({
           id: txId,
-          dashboardId,
+          tenantId,
           userId: cashierId,
           totalAmount: totalAmount.toString(),
           discount: '0',

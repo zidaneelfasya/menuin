@@ -40,19 +40,19 @@ async function main() {
     await db.delete(schema.products);
     await db.delete(schema.categories);
     await db.delete(schema.users);
-    await db.delete(schema.dashboards);
+    await db.delete(schema.tenants);
 
     // 2. Insert Dashboard (tenant) + User
-    const [dashboard] = await db.insert(schema.dashboards).values({
+    const [dashboard] = await db.insert(schema.tenants).values({
       name: 'Bolu Anisa',
       isPaid: true,
     }).returning();
-    const dashboardId = dashboard.id;
+    const tenantId = dashboard.id;
 
     const userId = uuidv4();
     await db.insert(schema.users).values({
       id: userId,
-      dashboardId,
+      tenantId,
       name: 'Kasir Utama',
       email: 'kasir@boluanisa.com',
       role: 'CASHIER',
@@ -62,7 +62,7 @@ async function main() {
     console.log('Inserting category...');
     const catId = uuidv4();
     await db.insert(schema.categories).values([
-      { id: catId, dashboardId, name: 'Stress Test Category', slug: 'stress-test' }
+      { id: catId, tenantId, name: 'Stress Test Category', slug: 'stress-test' }
     ]);
 
     // 4. Insert 250 Products
@@ -87,7 +87,7 @@ async function main() {
       // Insert in batches of 50 to avoid Postgres parameter limits
       const batchSize = 50;
       for (let i = 0; i < productsToInsert.length; i += batchSize) {
-        const batch = productsToInsert.slice(i, i + batchSize).map((p) => ({ ...p, dashboardId }));
+        const batch = productsToInsert.slice(i, i + batchSize).map((p) => ({ ...p, tenantId }));
         await db.insert(schema.products).values(batch);
         console.log(`Inserted batch ${i / batchSize + 1}...`);
       }
