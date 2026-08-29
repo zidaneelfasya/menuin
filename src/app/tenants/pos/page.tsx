@@ -9,16 +9,19 @@ export const metadata: Metadata = {
   title: 'Kasir - Bolu Anisa POS',
 };
 
+import { getTenantCatalogSettings } from '@/lib/actions/catalog';
+
 async function POSDataWrapper() {
-  const [productsResult, categoriesResult] = await Promise.all([
+  const [productsResult, categoriesResult, tenantSettings] = await Promise.all([
     getProducts(),
     getCategories(),
+    getTenantCatalogSettings(),
   ]);
 
   const products = productsResult.success && productsResult.data ? productsResult.data : [];
   const categories = categoriesResult.success && categoriesResult.data ? categoriesResult.data : [];
 
-  return <POSPage initialProducts={products} initialCategories={categories} />;
+  return <POSPage initialProducts={products} initialCategories={categories} posSettings={tenantSettings} />;
 }
 
 export default function Page() {

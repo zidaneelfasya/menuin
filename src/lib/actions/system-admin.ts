@@ -2,10 +2,8 @@
 
 import { getCurrentUser } from '@/lib/actions/auth';
 import { db } from '@/lib/db';
-import { users, dashboards, categories, products, transactions, transactionItems } from '@/lib/db/schema';
-import { desc, eq, count, sql, inArray } from 'drizzle-orm';
-import { createClient } from '@supabase/supabase-js';
-import { revalidatePath } from 'next/cache';
+import { users, tenants } from '@/lib/db/schema';
+import { desc, count } from 'drizzle-orm';
 
 function getAdminClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -33,35 +31,14 @@ export async function getSystemAdminStats() {
   }
 
   try {
-    // 1. Total Tenants & status breakdown
-    const allDashboards = await db.select().from(dashboards);
-    const totalDashboards = allDashboards.length;
-    const paidDashboards = allDashboards.filter(d => d.isPaid).length;
-    const freeDashboards = totalDashboards - paidDashboards;
-
-    // 2. Users & roles breakdown
-    const allUsers = await db.select().from(users);
-    const totalUsers = allUsers.length;
-    const systemAdminCount = allUsers.filter(u => u.role === 'SYSTEM_ADMIN').length;
-    const superAdminCount = allUsers.filter(u => u.role === 'SUPERADMIN').length;
-    const cashierCount = allUsers.filter(u => u.role === 'CASHIER').length;
-
-    // 3. Transactions & Volume
-    const trxStats = await db
-      .select({
-        totalTransactions: count(),
-        totalRevenue: sql<string>`COALESCE(SUM(${transactions.grandTotal}), 0)`,
-      })
-      .from(transactions);
-
-    const totalTransactions = Number(trxStats[0]?.totalTransactions || 0);
-    const totalRevenue = Number(trxStats[0]?.totalRevenue || 0);
-
-    // 4. Recent Registrations
+    const totalUsers = await db.select({ value: count() }).from(users);
+    const totalDashboards = await db.select({ value: count() }).from(tenants);
+    
+    // Recent registrations
     const recentDashboards = await db
       .select()
-      .from(dashboards)
-      .orderBy(desc(dashboards.createdAt))
+      .from(tenants)
+      .orderBy(desc(tenants.createdAt))
       .limit(5);
 
     const recentUsers = await db
@@ -109,41 +86,11 @@ export async function getSystemTenants() {
 
   try {
     const tenantsList = await db
-      .select({
-        id: dashboards.id,
-        name: dashboards.name,
-        isPaid: dashboards.isPaid,
-        createdAt: dashboards.createdAt,
-        updatedAt: dashboards.updatedAt,
-      })
-      .from(dashboards)
-      .orderBy(desc(dashboards.createdAt));
-
-    // Get aggregated counts per tenant
-    const userCounts = await db
-      .select({
-        dashboardId: users.dashboardId,
-        count: count(),
-      })
-      .from(users)
-      .groupBy(users.dashboardId);
-
-    const productCounts = await db
-      .select({
-        dashboardId: products.dashboardId,
-        count: count(),
-      })
-      .from(products)
-      .groupBy(products.dashboardId);
-
-    const userCountMap = new Map(userCounts.map(u => [u.dashboardId, Number(u.count)]));
-    const productCountMap = new Map(productCounts.map(p => [p.dashboardId, Number(p.count)]));
-
-    return tenantsList.map(t => ({
-      ...t,
-      userCount: userCountMap.get(t.id) || 0,
-      productCount: productCountMap.get(t.id) || 0,
-    }));
+      .select()
+      .from(tenants)
+      .orderBy(desc(tenants.createdAt));
+      
+    return tenantsList;
   } catch (error) {
     console.error('Failed to load tenants:', error);
     throw new Error('Gagal memuat daftar tenant');
@@ -288,9 +235,7 @@ export async function getSystemUsers() {
         name: users.name,
         role: users.role,
         createdAt: users.createdAt,
-        updatedAt: users.updatedAt,
-        dashboardId: users.dashboardId,
-        dashboardName: dashboards.name,
+        tenantId: users.tenantId,
       })
       .from(users)
       .leftJoin(dashboards, eq(users.dashboardId, dashboards.id))

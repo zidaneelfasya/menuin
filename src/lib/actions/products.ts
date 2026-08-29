@@ -36,7 +36,7 @@ function generateBarcode() {
 export async function getProducts() {
   try {
     const user = await getCurrentUser();
-    if (!user || !user.dashboardId) {
+    if (!user || !user.tenantId) {
       return { success: false, error: 'Unauthorized or no dashboard' };
     }
 
@@ -52,11 +52,13 @@ export async function getProducts() {
         categoryId: products.categoryId,
         imageUrl: products.imageUrl,
         barcode: products.barcode,
+        isAvailableOnline: products.isAvailableOnline,
+        isFeatured: products.isFeatured,
         status: sql<string>`CASE WHEN ${products.stock} > 0 THEN 'active' ELSE 'inactive' END`,
       })
       .from(products)
       .leftJoin(categories, eq(products.categoryId, categories.id))
-      .where(eq(products.dashboardId, user.dashboardId))
+      .where(eq(products.tenantId, user.tenantId))
       .orderBy(products.name);
       
     return { success: true, data };
@@ -69,7 +71,7 @@ export async function getProducts() {
 export async function createProduct(formData: z.infer<typeof productSchema>) {
   try {
     const user = await getCurrentUser();
-    if (!user || !user.dashboardId) return { success: false, error: 'Unauthorized or no dashboard' };
+    if (!user || !user.tenantId) return { success: false, error: 'Unauthorized or no dashboard' };
 
     const validatedData = productSchema.parse(formData);
     
@@ -79,7 +81,7 @@ export async function createProduct(formData: z.infer<typeof productSchema>) {
       : generateBarcode();
     
     await db.insert(products).values({
-      dashboardId: user.dashboardId,
+      tenantId: user.tenantId,
       name: validatedData.name,
       sku: validatedData.sku,
       categoryId: validatedData.categoryId,
@@ -91,9 +93,9 @@ export async function createProduct(formData: z.infer<typeof productSchema>) {
       barcode: finalBarcode,
     });
     
-    revalidatePath('/products');
-    revalidatePath('/pos');
-    revalidatePath('/inventory');
+    revalidatePath('/tenants/products');
+    revalidatePath('/tenants/pos');
+    revalidatePath('/tenants/inventory');
     return { success: true };
   } catch (error) {
     console.error('Error creating product:', error);
@@ -104,7 +106,7 @@ export async function createProduct(formData: z.infer<typeof productSchema>) {
 export async function updateProduct(id: string, formData: z.infer<typeof productSchema>) {
   try {
     const user = await getCurrentUser();
-    if (!user || !user.dashboardId) return { success: false, error: 'Unauthorized' };
+    if (!user || !user.tenantId) return { success: false, error: 'Unauthorized' };
 
     const validatedData = productSchema.parse(formData);
     
@@ -121,11 +123,11 @@ export async function updateProduct(id: string, formData: z.infer<typeof product
         barcode: validatedData.barcode,
         updatedAt: new Date(),
       })
-      .where(and(eq(products.id, id), eq(products.dashboardId, user.dashboardId)));
+      .where(and(eq(products.id, id), eq(products.tenantId, user.tenantId)));
     
-    revalidatePath('/products');
-    revalidatePath('/pos');
-    revalidatePath('/inventory');
+    revalidatePath('/tenants/products');
+    revalidatePath('/tenants/pos');
+    revalidatePath('/tenants/inventory');
     return { success: true };
   } catch (error) {
     console.error('Error updating product:', error);
@@ -136,13 +138,13 @@ export async function updateProduct(id: string, formData: z.infer<typeof product
 export async function deleteProduct(id: string) {
   try {
     const user = await getCurrentUser();
-    if (!user || !user.dashboardId) return { success: false, error: 'Unauthorized' };
+    if (!user || !user.tenantId) return { success: false, error: 'Unauthorized' };
 
-    await db.delete(products).where(and(eq(products.id, id), eq(products.dashboardId, user.dashboardId)));
+    await db.delete(products).where(and(eq(products.id, id), eq(products.tenantId, user.tenantId)));
     
-    revalidatePath('/products');
-    revalidatePath('/pos');
-    revalidatePath('/inventory');
+    revalidatePath('/tenants/products');
+    revalidatePath('/tenants/pos');
+    revalidatePath('/tenants/inventory');
     return { success: true };
   } catch (error) {
     console.error('Error deleting product:', error);

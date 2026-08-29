@@ -5,29 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1785287173241,
-      "tag": "0000_gigantic_omega_flight",
+      "when": 1787654961418,
+      "tag": "0000_remarkable_lenny_balinger",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1787384758459,
-      "tag": "0001_lush_jubilee",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1787405548775,
-      "tag": "0002_slim_black_tarantula",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1787546123758,
-      "tag": "0003_giant_preak",
+      "when": 1787928425157,
+      "tag": "0001_strange_rocket_racer",
       "breakpoints": true
     }
   ]

@@ -21,32 +21,38 @@ import {
   ShoppingBag,
   LogOut,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Store,
+  ChefHat
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { UserProfile, signOutAction } from '@/lib/actions/auth';
 import { ThemeSwitcher } from '@/components/theme-switcher';
+import { useRealtimeOrder } from '@/components/providers/realtime-order-provider';
 
 const navItems = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['SUPERADMIN'] },
-  { name: 'Kasir (POS)', href: '/pos', icon: ShoppingCart, roles: ['SUPERADMIN', 'CASHIER'] },
-  { name: 'Produk', href: '/products', icon: Package, roles: ['SUPERADMIN'] },
-  { name: 'Kategori', href: '/categories', icon: Tags, roles: ['SUPERADMIN'] },
-  { name: 'Stock', href: '/inventory', icon: Archive, roles: ['SUPERADMIN'] },
-  { name: 'Riwayat Transaksi', href: '/transactions', icon: History, roles: ['SUPERADMIN', 'CASHIER'] },
-  { name: 'Laporan', href: '/reports', icon: BarChart3, roles: ['SUPERADMIN'] },
-  { name: 'Keuangan', href: '/finance', icon: Wallet, roles: ['SUPERADMIN'] },
-  { name: 'Promo', href: '/promotions', icon: Percent, roles: ['SUPERADMIN'] },
-  { name: 'Kasir Toko', href: '/users', icon: UserCircle, roles: ['SUPERADMIN'] },
-  { name: 'Pengaturan', href: '/settings', icon: Settings, roles: ['SUPERADMIN'] },
-  { name: 'Pembelian', href: '/purchases', icon: ShoppingBag, roles: ['SUPERADMIN'] },
+  { name: 'Dashboard', href: '/tenants/dashboard', icon: LayoutDashboard, roles: ['SUPERADMIN'] },
+  { name: 'Kasir (POS)', href: '/tenants/pos', icon: ShoppingCart, roles: ['SUPERADMIN', 'CASHIER'] },
+  { name: 'Pesanan Dapur', href: '/tenants/orders', icon: ChefHat, roles: ['SUPERADMIN', 'CASHIER'] },
+  { name: 'Katalog', href: '/tenants/catalog', icon: Store, roles: ['SUPERADMIN'] },
+  { name: 'Produk', href: '/tenants/products', icon: Package, roles: ['SUPERADMIN'] },
+  { name: 'Kategori', href: '/tenants/categories', icon: Tags, roles: ['SUPERADMIN'] },
+  { name: 'Stock', href: '/tenants/inventory', icon: Archive, roles: ['SUPERADMIN'] },
+  { name: 'Riwayat Transaksi', href: '/tenants/transactions', icon: History, roles: ['SUPERADMIN', 'CASHIER'] },
+  { name: 'Laporan', href: '/tenants/reports', icon: BarChart3, roles: ['SUPERADMIN'] },
+  { name: 'Keuangan', href: '/tenants/finance', icon: Wallet, roles: ['SUPERADMIN'] },
+  { name: 'Promo', href: '/tenants/promotions', icon: Percent, roles: ['SUPERADMIN'] },
+  { name: 'Kasir Toko', href: '/tenants/users', icon: UserCircle, roles: ['SUPERADMIN'] },
+  { name: 'Pengaturan', href: '/tenants/settings', icon: Settings, roles: ['SUPERADMIN'] },
+  { name: 'Pengaturan Kasir', href: '/tenants/pos/settings', icon: Settings, roles: ['SUPERADMIN'] },
+  { name: 'Pembelian', href: '/tenants/purchases', icon: ShoppingBag, roles: ['SUPERADMIN'] },
 ];
 
 function SidebarContent({ collapsed, setCollapsed, user }: { collapsed: boolean; setCollapsed?: (val: boolean) => void; user: UserProfile }) {
   const pathname = usePathname();
-
   const router = useRouter();
+  const { incomingOrders } = useRealtimeOrder();
 
   const handleLogout = async () => {
     const supabase = createClient();
@@ -87,7 +93,7 @@ function SidebarContent({ collapsed, setCollapsed, user }: { collapsed: boolean;
               <Link key={item.name} href={item.href}>
                 <div
                   className={cn(
-                    'flex items-center px-3 py-2.5 rounded-xl transition-all duration-200 group',
+                    'flex items-center px-3 py-2.5 rounded-xl transition-all duration-200 group relative',
                     isActive 
                       ? 'bg-primary text-primary-foreground shadow-md' 
                       : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -96,7 +102,15 @@ function SidebarContent({ collapsed, setCollapsed, user }: { collapsed: boolean;
                 >
                   <item.icon className={cn('h-5 w-5 flex-shrink-0', isActive ? 'text-primary-foreground' : 'text-muted-foreground group-hover:text-foreground')} />
                   {!collapsed && (
-                    <span className="ml-3 font-medium text-sm">{item.name}</span>
+                    <span className="ml-3 font-medium text-sm flex-1">{item.name}</span>
+                  )}
+                  {item.href === '/tenants/orders' && incomingOrders.length > 0 && (
+                    <span className={cn(
+                      "absolute bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded-full",
+                      collapsed ? "top-0 right-0 translate-x-1 -translate-y-1" : "right-3 top-1/2 -translate-y-1/2"
+                    )}>
+                      {incomingOrders.length}
+                    </span>
                   )}
                 </div>
               </Link>

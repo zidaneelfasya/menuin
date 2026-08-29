@@ -14,11 +14,11 @@ const categorySchema = z.object({
 export async function getCategories() {
   try {
     const user = await getCurrentUser();
-    if (!user || !user.dashboardId) {
+    if (!user || !user.tenantId) {
       return { success: false, error: 'Unauthorized or no dashboard' };
     }
     
-    const data = await db.select().from(categories).where(eq(categories.dashboardId, user.dashboardId)).orderBy(categories.name);
+    const data = await db.select().from(categories).where(eq(categories.tenantId, user.tenantId)).orderBy(categories.name);
     return { success: true, data };
   } catch (error) {
     console.error('Error fetching categories:', error);
@@ -29,19 +29,19 @@ export async function getCategories() {
 export async function createCategory(formData: z.infer<typeof categorySchema>) {
   try {
     const user = await getCurrentUser();
-    if (!user || !user.dashboardId) return { success: false, error: 'Unauthorized or no dashboard' };
+    if (!user || !user.tenantId) return { success: false, error: 'Unauthorized or no dashboard' };
     
     const validatedData = categorySchema.parse(formData);
     const slug = validatedData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
     
     await db.insert(categories).values({
-      dashboardId: user.dashboardId,
+      tenantId: user.tenantId,
       name: validatedData.name,
       slug,
     });
     
-    revalidatePath('/categories');
-    revalidatePath('/products');
+    revalidatePath('/tenants/categories');
+    revalidatePath('/tenants/products');
     return { success: true };
   } catch (error) {
     console.error('Error creating category:', error);
@@ -52,7 +52,7 @@ export async function createCategory(formData: z.infer<typeof categorySchema>) {
 export async function updateCategory(id: string, formData: z.infer<typeof categorySchema>) {
   try {
     const user = await getCurrentUser();
-    if (!user || !user.dashboardId) return { success: false, error: 'Unauthorized or no dashboard' };
+    if (!user || !user.tenantId) return { success: false, error: 'Unauthorized or no dashboard' };
     
     const validatedData = categorySchema.parse(formData);
     const slug = validatedData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
@@ -63,10 +63,10 @@ export async function updateCategory(id: string, formData: z.infer<typeof catego
         slug,
         updatedAt: new Date(),
       })
-      .where(and(eq(categories.id, id), eq(categories.dashboardId, user.dashboardId)));
+      .where(and(eq(categories.id, id), eq(categories.tenantId, user.tenantId)));
     
-    revalidatePath('/categories');
-    revalidatePath('/products');
+    revalidatePath('/tenants/categories');
+    revalidatePath('/tenants/products');
     return { success: true };
   } catch (error) {
     console.error('Error updating category:', error);
@@ -77,12 +77,12 @@ export async function updateCategory(id: string, formData: z.infer<typeof catego
 export async function deleteCategory(id: string) {
   try {
     const user = await getCurrentUser();
-    if (!user || !user.dashboardId) return { success: false, error: 'Unauthorized or no dashboard' };
+    if (!user || !user.tenantId) return { success: false, error: 'Unauthorized or no dashboard' };
     
-    await db.delete(categories).where(and(eq(categories.id, id), eq(categories.dashboardId, user.dashboardId)));
+    await db.delete(categories).where(and(eq(categories.id, id), eq(categories.tenantId, user.tenantId)));
     
-    revalidatePath('/categories');
-    revalidatePath('/products');
+    revalidatePath('/tenants/categories');
+    revalidatePath('/tenants/products');
     return { success: true };
   } catch (error) {
     console.error('Error deleting category:', error);

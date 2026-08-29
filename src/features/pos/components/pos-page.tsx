@@ -26,10 +26,12 @@ type Product = {
 
 export function POSPage({ 
   initialProducts, 
-  initialCategories 
+  initialCategories,
+  posSettings
 }: { 
   initialProducts: Product[], 
-  initialCategories: Category[] 
+  initialCategories: Category[],
+  posSettings: any
 }) {
   const [mounted, setMounted] = React.useState(false);
   const [isProcessing, setIsProcessing] = React.useState(false);
@@ -50,16 +52,20 @@ export function POSPage({
     setIsPaymentModalOpen(true);
   };
 
-  const handleConfirmPayment = async (cashReceived: number, change: number) => {
+  const handleConfirmPayment = async (cashReceived: number, change: number, customerDetails?: any) => {
     setIsProcessing(true);
     const toastId = toast.loading('Memproses transaksi...');
 
     const payload = {
       totalAmount: getTotal(),
       discount: 0,
-      tax: 0,
-      grandTotal: getTotal(),
+      tax: posSettings?.posTaxRate ? (getTotal() * (parseFloat(posSettings.posTaxRate) / 100)) : 0,
+      grandTotal: getTotal() + (posSettings?.posTaxRate ? (getTotal() * (parseFloat(posSettings.posTaxRate) / 100)) : 0),
       paymentMethod: 'cash',
+      customerName: customerDetails?.customerName,
+      tableNumber: customerDetails?.tableNumber,
+      orderType: customerDetails?.orderType || 'DINE_IN',
+      posKitchenSync: posSettings?.posKitchenSync || false,
       items: items.map(item => ({
         productId: item.productId,
         quantity: item.quantity,
@@ -187,6 +193,7 @@ export function POSPage({
         onClose={() => setIsPaymentModalOpen(false)}
         totalAmount={cartTotal}
         onConfirm={handleConfirmPayment}
+        posSettings={posSettings}
       />
       
       <ReceiptPrinter data={receiptData} />

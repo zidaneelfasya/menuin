@@ -26,7 +26,7 @@ function getAdminClient() {
 
 export async function getUsers() {
   const currentUser = await getCurrentUser();
-  if (currentUser?.role !== 'SUPERADMIN' || !currentUser.dashboardId) {
+  if (currentUser?.role !== 'SUPERADMIN' || !currentUser.tenantId) {
     return { success: false, error: 'Unauthorized' };
   }
 
@@ -34,7 +34,7 @@ export async function getUsers() {
     const tenantUsers = await db
       .select()
       .from(users)
-      .where(eq(users.dashboardId, currentUser.dashboardId))
+      .where(eq(users.tenantId, currentUser.tenantId))
       .orderBy(users.createdAt);
     return { success: true, data: tenantUsers };
   } catch (error) {
@@ -45,7 +45,7 @@ export async function getUsers() {
 
 export async function createUser(data: { name: string; email: string; password?: string }) {
   const currentUser = await getCurrentUser();
-  if (currentUser?.role !== 'SUPERADMIN' || !currentUser.dashboardId) {
+  if (currentUser?.role !== 'SUPERADMIN' || !currentUser.tenantId) {
     return { success: false, error: 'Hanya Super Admin yang dapat menambahkan kasir.' };
   }
 
@@ -91,31 +91,31 @@ export async function createUser(data: { name: string; email: string; password?:
       }
     }
 
-    // Upsert user into Drizzle DB (Profile) tied directly to this tenant's dashboardId and CASHIER role
+    // Upsert user into Drizzle DB (Profile) tied directly to this tenant's tenantId and CASHIER role
     const existingUser = await db.select().from(users).where(eq(users.email, data.email.trim())).limit(1);
 
     if (existingUser.length === 0) {
       await db.insert(users).values({
-        dashboardId: currentUser.dashboardId,
+        tenantId: currentUser.tenantId,
         name: data.name.trim(),
         email: data.email.trim(),
         role: 'CASHIER',
       });
     } else {
       // Check if user is a Super Admin of another tenant
-      if (existingUser[0].role === 'SUPERADMIN' && existingUser[0].dashboardId !== currentUser.dashboardId) {
+      if (existingUser[0].role === 'SUPERADMIN' && existingUser[0].tenantId !== currentUser.tenantId) {
         return { success: false, error: 'Email ini sudah terdaftar sebagai Super Admin toko lain.' };
       }
 
       await db.update(users).set({
         name: data.name.trim(),
         role: 'CASHIER',
-        dashboardId: currentUser.dashboardId,
+        tenantId: currentUser.tenantId,
         updatedAt: new Date(),
       }).where(eq(users.email, data.email.trim()));
     }
 
-    revalidatePath('/users');
+    revalidatePath('/tenants/users');
     return { success: true, message: 'Akun kasir berhasil disimpan dan terhubung ke toko Anda' };
   } catch (error: any) {
     console.error('Error creating user:', error);
@@ -125,7 +125,7 @@ export async function createUser(data: { name: string; email: string; password?:
 
 export async function deleteUser(id: string) {
   const currentUser = await getCurrentUser();
-  if (currentUser?.role !== 'SUPERADMIN' || !currentUser.dashboardId) {
+  if (currentUser?.role !== 'SUPERADMIN' || !currentUser.tenantId) {
     return { success: false, error: 'Unauthorized' };
   }
 
@@ -133,7 +133,7 @@ export async function deleteUser(id: string) {
     const targetUser = await db
       .select()
       .from(users)
-      .where(and(eq(users.id, id), eq(users.dashboardId, currentUser.dashboardId)))
+      .where(and(eq(users.id, id), eq(users.tenantId, currentUser.tenantId)))
       .limit(1);
 
     if (targetUser.length === 0) {
@@ -146,9 +146,9 @@ export async function deleteUser(id: string) {
 
     await db
       .delete(users)
-      .where(and(eq(users.id, id), eq(users.dashboardId, currentUser.dashboardId)));
+      .where(and(eq(users.id, id), eq(users.tenantId, currentUser.tenantId)));
 
-    revalidatePath('/users');
+    revalidatePath('/tenants/users');
     return { success: true, message: 'Kasir berhasil dihapus' };
   } catch (error: any) {
     console.error('Error deleting user:', error);

@@ -440,7 +440,7 @@ export default function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boole
 
           <div className="hidden md:flex items-center gap-4">
             {isLoggedIn ? (
-              <a href="/pos" className="h-11 px-6 flex items-center rounded-full bg-[#111] text-white text-[14px] font-semibold hover:bg-[#333] transition-colors">
+              <a href="/tenants/pos" className="h-11 px-6 flex items-center rounded-full bg-[#111] text-white text-[14px] font-semibold hover:bg-[#333] transition-colors">
 
               </a>
             ) : (
@@ -479,7 +479,7 @@ export default function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boole
             <div className="h-px bg-black/[0.06]" />
             <div className="flex flex-col gap-3">
               {isLoggedIn ? (
-                <a href="/pos" className="flex items-center justify-center h-12 rounded-full bg-[#111] text-white text-[15px] font-semibold">Dashboard</a>
+                <a href="/tenants/pos" className="flex items-center justify-center h-12 rounded-full bg-[#111] text-white text-[15px] font-semibold">Dashboard</a>
               ) : (
                 <>
                   <a href="/auth/login" className="flex items-center justify-center h-12 rounded-full border border-black/[0.08] text-[15px] font-semibold text-[#111]">Log in</a>
@@ -529,7 +529,7 @@ export default function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boole
           <FadeIn delay={0.3}>
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
               <a
-                href={isLoggedIn ? "/pos" : "/auth/signup"}
+                href={isLoggedIn ? "/tenants/pos" : "/auth/signup"}
                 className="h-14 px-8 flex items-center justify-center rounded-full bg-[#0E59F9] text-white text-[16px] font-semibold hover:bg-[#0C4CD6] transition-all shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/40 w-full sm:w-auto"
               >
                 {isLoggedIn ? "Buka Dashboard" : "Get Started"}
@@ -1235,7 +1235,7 @@ export default function LandingPage({ isLoggedIn = false }: { isLoggedIn?: boole
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <a
-                href={isLoggedIn ? "/pos" : "/auth/signup"}
+                href={isLoggedIn ? "/tenants/pos" : "/auth/signup"}
                 className="h-14 px-8 flex items-center justify-center rounded-full bg-white text-[#0E59F9] text-[16px] font-bold hover:bg-gray-50 transition-colors w-full sm:w-auto shadow-lg"
               >
                 {isLoggedIn ? "Buka Dashboard" : "Get Started Now"}

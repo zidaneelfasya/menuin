@@ -45,10 +45,10 @@ function slugify(text: string) {
 export async function importProducts(formData: FormData) {
   try {
     const user = await getCurrentUser();
-    if (!user || !user.dashboardId) {
+    if (!user || !user.tenantId) {
       return { success: false, error: 'Sesi tidak ditemukan atau dashboard tidak valid.' };
     }
-    const dashboardId = user.dashboardId;
+    const tenantId = user.tenantId;
 
     const file = formData.get('file') as File;
     if (!file) {
@@ -106,7 +106,7 @@ export async function importProducts(formData: FormData) {
           const newId = crypto.randomUUID();
           newCategoriesToInsert.set(categoryKey, {
             id: newId,
-            dashboardId,
+            tenantId,
             name: categoryNameRaw,
             slug: slugify(categoryNameRaw)
           });
@@ -122,7 +122,7 @@ export async function importProducts(formData: FormData) {
       const sku = generateSku(name, i);
 
       productsToInsert.push({
-        dashboardId,
+        tenantId,
         name,
         categoryId,
         sku,
@@ -146,9 +146,9 @@ export async function importProducts(formData: FormData) {
       await db.insert(products).values(batch).onConflictDoNothing(); // prevent crashing on duplicate SKU/barcode if any clash
     }
 
-    revalidatePath('/products');
-    revalidatePath('/inventory');
-    revalidatePath('/pos');
+    revalidatePath('/tenants/products');
+    revalidatePath('/tenants/inventory');
+    revalidatePath('/tenants/pos');
     
     return { 
       success: true, 
