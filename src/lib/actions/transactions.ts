@@ -13,6 +13,10 @@ type CheckoutPayload = {
   tax: number;
   grandTotal: number;
   paymentMethod: string;
+  customerName?: string;
+  tableNumber?: string;
+  orderType?: string;
+  posKitchenSync?: boolean;
   items: Array<{
     productId: string;
     quantity: number;
@@ -21,26 +25,42 @@ type CheckoutPayload = {
   }>;
 };
 
+function generateOrderNumber() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '#';
+  for (let i = 0; i < 6; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
 export async function createTransaction(payload: CheckoutPayload) {
   try {
     const user = await getCurrentUser();
-    if (!user || !user.dashboardId) return { success: false, error: 'Unauthorized or no dashboard' };
+    if (!user || !user.tenantId) return { success: false, error: 'Unauthorized or no dashboard' };
 
-    const dashboardId = user.dashboardId;
+    const tenantId = user.tenantId;
     const userId = user.id;
 
     // We run the transaction logic in a single DB transaction
     const result = await db.transaction(async (tx) => {
+      const orderNumber = generateOrderNumber();
+
       // 1. Create Transaction record
       const [newTx] = await tx.insert(transactions).values({
-        dashboardId,
+        tenantId,
         userId,
         totalAmount: payload.totalAmount.toString(),
         discount: payload.discount.toString(),
         tax: payload.tax.toString(),
         grandTotal: payload.grandTotal.toString(),
         paymentMethod: payload.paymentMethod,
-        status: 'COMPLETED',
+        status: payload.posKitchenSync ? 'PENDING' : 'COMPLETED',
+        source: 'POS',
+        orderType: payload.orderType || 'DINE_IN',
+        customerName: payload.customerName || null,
+        tableNumber: payload.tableNumber || null,
+        orderNumber,
       }).returning({ id: transactions.id });
       
       // 2. Insert Items and Update Stock
@@ -64,10 +84,11 @@ export async function createTransaction(payload: CheckoutPayload) {
       return newTx.id;
     });
     
-    revalidatePath('/transactions');
-    revalidatePath('/inventory');
-    revalidatePath('/products');
-    revalidatePath('/dashboard');
+    revalidatePath('/tenants/transactions');
+    revalidatePath('/tenants/inventory');
+    revalidatePath('/tenants/products');
+    revalidatePath('/tenants/dashboard');
+    revalidatePath('/tenants/orders');
     
     return { success: true, transactionId: result };
   } catch (error) {
@@ -79,7 +100,7 @@ export async function createTransaction(payload: CheckoutPayload) {
 export async function getTransactions() {
   try {
     const user = await getCurrentUser();
-    if (!user || !user.dashboardId) {
+    if (!user || !user.tenantId) {
       return { success: false, error: 'Unauthorized or no dashboard' };
     }
 
@@ -87,7 +108,7 @@ export async function getTransactions() {
     const data = await db
       .select()
       .from(transactions)
-      .where(eq(transactions.dashboardId, user.dashboardId))
+      .where(eq(transactions.tenantId, user.tenantId))
       .orderBy(desc(transactions.createdAt));
       
     return { success: true, data };

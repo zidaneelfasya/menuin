@@ -27,9 +27,9 @@ export async function adjustStock(formData: z.infer<typeof adjustStockSchema>) {
       })
       .where(eq(products.id, productId));
       
-    revalidatePath('/inventory');
-    revalidatePath('/products');
-    revalidatePath('/pos');
+    revalidatePath('/tenants/inventory');
+    revalidatePath('/tenants/products');
+    revalidatePath('/tenants/pos');
     
     return { success: true };
   } catch (error) {

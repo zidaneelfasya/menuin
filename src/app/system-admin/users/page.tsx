@@ -50,7 +50,7 @@ export default async function UsersPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-xs text-muted-foreground font-mono">
-                      {user.dashboardId ? user.dashboardId.split('-')[0] + '...' : '-'}
+                      {user.tenantId ? user.tenantId.split('-')[0] + '...' : '-'}
                     </td>
                     <td className="px-6 py-4 text-muted-foreground">
                       {format(new Date(user.createdAt), 'dd MMM yyyy, HH:mm', { locale: id })}

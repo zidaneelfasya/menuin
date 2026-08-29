@@ -2,7 +2,7 @@
 
 import { getCurrentUser } from '@/lib/actions/auth';
 import { db } from '@/lib/db';
-import { users, dashboards } from '@/lib/db/schema';
+import { users, tenants } from '@/lib/db/schema';
 import { desc, count } from 'drizzle-orm';
 
 export async function getSystemAdminStats() {
@@ -13,13 +13,13 @@ export async function getSystemAdminStats() {
 
   try {
     const totalUsers = await db.select({ value: count() }).from(users);
-    const totalDashboards = await db.select({ value: count() }).from(dashboards);
+    const totalDashboards = await db.select({ value: count() }).from(tenants);
     
     // Recent registrations
     const recentDashboards = await db
       .select()
-      .from(dashboards)
-      .orderBy(desc(dashboards.createdAt))
+      .from(tenants)
+      .orderBy(desc(tenants.createdAt))
       .limit(5);
 
     return {
@@ -42,8 +42,8 @@ export async function getSystemTenants() {
   try {
     const tenantsList = await db
       .select()
-      .from(dashboards)
-      .orderBy(desc(dashboards.createdAt));
+      .from(tenants)
+      .orderBy(desc(tenants.createdAt));
       
     return tenantsList;
   } catch (error) {
@@ -66,7 +66,7 @@ export async function getSystemUsers() {
         name: users.name,
         role: users.role,
         createdAt: users.createdAt,
-        dashboardId: users.dashboardId,
+        tenantId: users.tenantId,
       })
       .from(users)
       .orderBy(desc(users.createdAt));
