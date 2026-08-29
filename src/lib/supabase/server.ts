@@ -7,6 +7,8 @@ import { cookies } from "next/headers";
  * it.
  */
 export async function createClient() {
+  const { connection } = await import('next/server');
+  await connection();
   const cookieStore = await cookies();
 
   return createServerClient(

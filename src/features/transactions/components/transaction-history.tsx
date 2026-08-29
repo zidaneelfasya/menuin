@@ -29,6 +29,10 @@ type Transaction = {
   grandTotal: string;
   paymentMethod: string;
   status: string;
+  source: string;
+  orderType: string;
+  customerName: string | null;
+  tableNumber: string | null;
   createdAt: Date;
 };
 
@@ -59,6 +63,33 @@ export const columns: ColumnDef<Transaction>[] = [
     cell: ({ row }) => {
       const method = row.getValue('paymentMethod') as string;
       return <span>{paymentMethodMap[method] || method}</span>;
+    }
+  },
+  {
+    accessorKey: 'source',
+    header: 'Sumber & Tipe',
+    cell: ({ row }) => {
+      const source = row.getValue('source') as string;
+      const orderType = row.original.orderType as string;
+      const customer = row.original.customerName;
+      const table = row.original.tableNumber;
+      
+      return (
+        <div className="flex flex-col">
+          <div className="flex items-center gap-2">
+            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${source === 'ONLINE' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>
+              {source}
+            </span>
+            <span className="text-xs text-muted-foreground">{orderType.replace('_', ' ')}</span>
+          </div>
+          {(customer || table) && (
+            <div className="text-xs text-muted-foreground mt-1">
+              {customer && <span>{customer} </span>}
+              {table && <span>(Meja {table})</span>}
+            </div>
+          )}
+        </div>
+      );
     }
   },
   {

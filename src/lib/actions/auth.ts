@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { db } from '@/lib/db';
-import { users, dashboards } from '@/lib/db/schema';
+import { users, tenants } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 
 export type UserRole = 'CASHIER' | 'SUPERADMIN' | 'SYSTEM_ADMIN';
@@ -12,7 +12,7 @@ export type UserProfile = {
   email: string;
   name: string;
   role: UserRole;
-  dashboardId: string | null;
+  tenantId: string | null;
   restaurantName: string | null;
   isPaid: boolean;
 };
@@ -28,10 +28,10 @@ export async function getCurrentUser(): Promise<UserProfile | null> {
     result = await db
       .select({
         user: users,
-        dashboard: dashboards,
+        dashboard: tenants,
       })
       .from(users)
-      .leftJoin(dashboards, eq(users.dashboardId, dashboards.id))
+      .leftJoin(tenants, eq(users.tenantId, tenants.id))
       .where(eq(users.email, user.email))
       .limit(1);
   } catch (error) {
@@ -51,7 +51,7 @@ export async function getCurrentUser(): Promise<UserProfile | null> {
     email: data.user.email,
     name: data.user.name,
     role: data.user.role as UserRole,
-    dashboardId: data.user.dashboardId,
+    tenantId: data.user.tenantId,
     restaurantName: data.dashboard?.name || null,
     isPaid: data.dashboard?.isPaid || false,
   };
@@ -90,7 +90,7 @@ export async function signUpAction(formData: FormData) {
 
   try {
     // 2. Create the new dashboard/tenant
-    const [newDashboard] = await db.insert(dashboards).values({
+    const [newDashboard] = await db.insert(tenants).values({
       name: restaurantName,
     }).returning();
 
@@ -99,7 +99,7 @@ export async function signUpAction(formData: FormData) {
       email,
       name,
       role: 'SUPERADMIN',
-      dashboardId: newDashboard.id,
+      tenantId: newDashboard.id,
     });
 
     return { success: true };
@@ -109,15 +109,15 @@ export async function signUpAction(formData: FormData) {
   }
 }
 
-export async function getDashboardDetailsByEmail(email: string) {
+export async function getTenantDetailsByEmail(email: string) {
   try {
     const result = await db
       .select({
         user: users,
-        dashboard: dashboards,
+        dashboard: tenants,
       })
       .from(users)
-      .innerJoin(dashboards, eq(users.dashboardId, dashboards.id))
+      .innerJoin(tenants, eq(users.tenantId, tenants.id))
       .where(eq(users.email, email))
       .limit(1);
 
@@ -137,18 +137,18 @@ export async function getDashboardDetailsByEmail(email: string) {
   }
 }
 
-export async function markDashboardAsPaidAction(email: string) {
+export async function markTenantAsPaidAction(email: string) {
   try {
     const userProfile = await db.select().from(users).where(eq(users.email, email)).limit(1);
     if (userProfile.length === 0) {
       return { error: 'User not found' };
     }
-    const dashboardId = userProfile[0].dashboardId;
-    if (!dashboardId) {
+    const tenantId = userProfile[0].tenantId;
+    if (!tenantId) {
       return { error: 'User does not have a dashboard' };
     }
 
-    await db.update(dashboards).set({ isPaid: true }).where(eq(dashboards.id, dashboardId));
+    await db.update(tenants).set({ isPaid: true }).where(eq(tenants.id, tenantId));
     return { success: true };
   } catch (error: any) {
     console.error('Failed to mark dashboard as paid:', error);

@@ -4,7 +4,7 @@ import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Check, ArrowLeft, ShieldCheck, CreditCard, Sparkles } from "lucide-react";
 
-import { getDashboardDetailsByEmail, markDashboardAsPaidAction } from "@/lib/actions/auth";
+import { getTenantDetailsByEmail, markTenantAsPaidAction } from "@/lib/actions/auth";
 
 declare global {
   interface Window {
@@ -27,7 +27,7 @@ function CheckoutContent() {
     const fetchDetails = async () => {
       const paramEmail = searchParams.get("email");
       if (paramEmail) {
-        const details = await getDashboardDetailsByEmail(paramEmail);
+        const details = await getTenantDetailsByEmail(paramEmail);
         if (details) {
           setBusinessName(details.restaurantName);
           setEmail(details.email);
@@ -119,11 +119,11 @@ function CheckoutContent() {
             console.log("Success:", result);
             setIsLoading(true);
             try {
-              const res = await markDashboardAsPaidAction(email);
+              const res = await markTenantAsPaidAction(email);
               if (res.error) {
                 setError(res.error);
               } else {
-                router.push("/pos");
+                router.push("/tenants/pos");
               }
             } catch (err: any) {
               setError("Gagal memperbarui status pembayaran: " + err.message);

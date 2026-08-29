@@ -35,18 +35,36 @@ export default function LoginPage() {
       if (user?.role === 'SYSTEM_ADMIN') {
         router.push("/system-admin");
       } else {
-        router.push("/pos");
+        router.push("/tenants/pos");
       }
     } catch (error: any) {
-      let errorMessage = error?.message || "Terjadi kesalahan saat masuk";
+      let errorMessage = error?.message || error?.error_description || "Terjadi kesalahan saat masuk";
       
-      if (errorMessage.includes("Invalid login credentials")) {
-        errorMessage = "Email atau password salah, atau akun belum terdaftar.";
-      } else if (errorMessage.includes("Email not confirmed")) {
-        errorMessage = "Email belum diverifikasi. Silakan cek kotak masuk email Anda.";
+      // Jika pesan error berupa string '{}', kemungkinan ini dari response 500 yang gagal diparsing
+      if (typeof errorMessage === 'string' && errorMessage === '{}') {
+        errorMessage = "Terjadi masalah pada server (Internal Server Error). Silakan coba lagi nanti.";
       }
       
-      setError(errorMessage);
+      if (typeof errorMessage === 'string') {
+        if (errorMessage.includes("Invalid login credentials")) {
+          errorMessage = "Email atau password salah, atau akun belum terdaftar.";
+        } else if (errorMessage.includes("Email not confirmed")) {
+          errorMessage = "Email belum diverifikasi. Silakan cek kotak masuk email Anda.";
+        } else if (errorMessage.includes("Failed to fetch")) {
+          errorMessage = "Koneksi terputus. Periksa jaringan internet Anda.";
+        }
+      } else if (typeof errorMessage === 'object') {
+        try {
+          errorMessage = JSON.stringify(errorMessage);
+          if (errorMessage === '{}') {
+            errorMessage = "Terjadi masalah pada server. Silakan coba lagi nanti.";
+          }
+        } catch (e) {
+          errorMessage = "Terjadi kesalahan saat masuk.";
+        }
+      }
+      
+      setError(String(errorMessage));
     } finally {
       setIsLoading(false);
     }

@@ -40,20 +40,20 @@ async function main() {
     await db.delete(schema.products);
     await db.delete(schema.categories);
     await db.delete(schema.users);
-    await db.delete(schema.dashboards);
+    await db.delete(schema.tenants);
 
     // 2. Insert Dashboard (tenant) + Users
     console.log('Inserting dashboard and users...');
-    const [dashboard] = await db.insert(schema.dashboards).values({
+    const [dashboard] = await db.insert(schema.tenants).values({
       name: 'Bolu Anisa',
       isPaid: true,
     }).returning();
-    const dashboardId = dashboard.id;
+    const tenantId = dashboard.id;
 
     const userId = uuidv4();
     await db.insert(schema.users).values({
       id: userId,
-      dashboardId,
+      tenantId,
       name: 'Kasir Utama',
       email: 'kasir@boluanisa.com',
       role: 'CASHIER',
@@ -62,11 +62,11 @@ async function main() {
     // 3. Insert Categories
     console.log('Inserting categories...');
     const categoriesToInsert = [
-      { id: uuidv4(), dashboardId, name: 'Bolu Panggang', slug: 'bolu-panggang' },
-      { id: uuidv4(), dashboardId, name: 'Bolu Kukus', slug: 'bolu-kukus' },
-      { id: uuidv4(), dashboardId, name: 'Kue Kering', slug: 'kue-kering' },
-      { id: uuidv4(), dashboardId, name: 'Roti Manis', slug: 'roti-manis' },
-      { id: uuidv4(), dashboardId, name: 'Minuman', slug: 'minuman' },
+      { id: uuidv4(), tenantId, name: 'Bolu Panggang', slug: 'bolu-panggang' },
+      { id: uuidv4(), tenantId, name: 'Bolu Kukus', slug: 'bolu-kukus' },
+      { id: uuidv4(), tenantId, name: 'Kue Kering', slug: 'kue-kering' },
+      { id: uuidv4(), tenantId, name: 'Roti Manis', slug: 'roti-manis' },
+      { id: uuidv4(), tenantId, name: 'Minuman', slug: 'minuman' },
     ];
     await db.insert(schema.categories).values(categoriesToInsert);
 
@@ -101,7 +101,7 @@ async function main() {
     ];
 
     const insertedProducts = await db.insert(schema.products).values(
-      productsToInsert.map((p) => ({ ...p, dashboardId }))
+      productsToInsert.map((p) => ({ ...p, tenantId }))
     ).returning();
 
     // 5. Insert dummy transactions
@@ -135,7 +135,7 @@ async function main() {
       date.setDate(date.getDate() - Math.floor(Math.random() * 7));
 
       const [newTx] = await db.insert(schema.transactions).values({
-        dashboardId,
+        tenantId,
         totalAmount: grandTotal.toString(),
         discount: '0',
         tax: '0',

@@ -1,6 +1,6 @@
 {
-  "id": "2ecdd03a-3480-42be-8979-3caf0e438d43",
-  "prevId": "4e7ea5df-ab1e-4bbe-8e2f-f36e605af85f",
+  "id": "9bb274f3-baa8-4dac-a927-3110f6bd3f45",
+  "prevId": "7426ca7b-004d-4f61-9887-0f123eca6a5d",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -15,8 +15,8 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "dashboard_id": {
-          "name": "dashboard_id",
+        "tenant_id": {
+          "name": "tenant_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
@@ -32,6 +32,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "display_order": {
+          "name": "display_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
         },
         "created_at": {
           "name": "created_at",
@@ -49,11 +56,11 @@
         }
       },
       "indexes": {
-        "dashboard_slug_idx": {
-          "name": "dashboard_slug_idx",
+        "tenant_slug_idx": {
+          "name": "tenant_slug_idx",
           "columns": [
             {
-              "expression": "dashboard_id",
+              "expression": "tenant_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -72,12 +79,12 @@
         }
       },
       "foreignKeys": {
-        "categories_dashboard_id_dashboards_id_fk": {
-          "name": "categories_dashboard_id_dashboards_id_fk",
+        "categories_tenant_id_tenants_id_fk": {
+          "name": "categories_tenant_id_tenants_id_fk",
           "tableFrom": "categories",
-          "tableTo": "dashboards",
+          "tableTo": "tenants",
           "columnsFrom": [
-            "dashboard_id"
+            "tenant_id"
           ],
           "columnsTo": [
             "id"
@@ -92,8 +99,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.dashboards": {
-      "name": "dashboards",
+    "public.operating_hours": {
+      "name": "operating_hours",
       "schema": "",
       "columns": {
         "id": {
@@ -103,11 +110,104 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "name": {
-          "name": "name",
-          "type": "text",
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
+        },
+        "day_of_week": {
+          "name": "day_of_week",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "open_time": {
+          "name": "open_time",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'09:00'"
+        },
+        "close_time": {
+          "name": "close_time",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'22:00'"
+        },
+        "is_closed": {
+          "name": "is_closed",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "operating_hours_tenant_id_tenants_id_fk": {
+          "name": "operating_hours_tenant_id_tenants_id_fk",
+          "tableFrom": "operating_hours",
+          "tableTo": "tenants",
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.payments": {
+      "name": "payments",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "transaction_id": {
+          "name": "transaction_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider_transaction_id": {
+          "name": "provider_transaction_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "provider": {
+          "name": "provider",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'MIDTRANS'"
+        },
+        "amount": {
+          "name": "amount",
+          "type": "numeric(12, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'PENDING'"
         },
         "created_at": {
           "name": "created_at",
@@ -125,7 +225,21 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "payments_transaction_id_transactions_id_fk": {
+          "name": "payments_transaction_id_transactions_id_fk",
+          "tableFrom": "payments",
+          "tableTo": "transactions",
+          "columnsFrom": [
+            "transaction_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -143,8 +257,8 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "dashboard_id": {
-          "name": "dashboard_id",
+        "tenant_id": {
+          "name": "tenant_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
@@ -205,6 +319,27 @@
           "primaryKey": false,
           "notNull": false
         },
+        "is_available_online": {
+          "name": "is_available_online",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "is_featured": {
+          "name": "is_featured",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "display_order": {
+          "name": "display_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -221,11 +356,11 @@
         }
       },
       "indexes": {
-        "dashboard_sku_idx": {
-          "name": "dashboard_sku_idx",
+        "tenant_sku_idx": {
+          "name": "tenant_sku_idx",
           "columns": [
             {
-              "expression": "dashboard_id",
+              "expression": "tenant_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -242,11 +377,11 @@
           "method": "btree",
           "with": {}
         },
-        "dashboard_barcode_idx": {
-          "name": "dashboard_barcode_idx",
+        "tenant_barcode_idx": {
+          "name": "tenant_barcode_idx",
           "columns": [
             {
-              "expression": "dashboard_id",
+              "expression": "tenant_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -265,12 +400,12 @@
         }
       },
       "foreignKeys": {
-        "products_dashboard_id_dashboards_id_fk": {
-          "name": "products_dashboard_id_dashboards_id_fk",
+        "products_tenant_id_tenants_id_fk": {
+          "name": "products_tenant_id_tenants_id_fk",
           "tableFrom": "products",
-          "tableTo": "dashboards",
+          "tableTo": "tenants",
           "columnsFrom": [
-            "dashboard_id"
+            "tenant_id"
           ],
           "columnsTo": [
             "id"
@@ -292,6 +427,291 @@
           "onUpdate": "no action"
         }
       },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.tables": {
+      "name": "tables",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "qr_code_url": {
+          "name": "qr_code_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "tables_tenant_id_tenants_id_fk": {
+          "name": "tables_tenant_id_tenants_id_fk",
+          "tableFrom": "tables",
+          "tableTo": "tenants",
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.tenants": {
+      "name": "tenants",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "storefront_enabled": {
+          "name": "storefront_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "store_description": {
+          "name": "store_description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "store_logo_url": {
+          "name": "store_logo_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "store_banner_url": {
+          "name": "store_banner_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "primary_color": {
+          "name": "primary_color",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'#2563EB'"
+        },
+        "dine_in_enabled": {
+          "name": "dine_in_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "take_away_enabled": {
+          "name": "take_away_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "delivery_enabled": {
+          "name": "delivery_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "customer_name_required": {
+          "name": "customer_name_required",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "customer_phone_required": {
+          "name": "customer_phone_required",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "order_process_type": {
+          "name": "order_process_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'MANUAL'"
+        },
+        "midtrans_server_key": {
+          "name": "midtrans_server_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "midtrans_client_key": {
+          "name": "midtrans_client_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "midtrans_environment": {
+          "name": "midtrans_environment",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'sandbox'"
+        },
+        "is_paid": {
+          "name": "is_paid",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "tenants_slug_unique": {
+          "name": "tenants_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.testimonials": {
+      "name": "testimonials",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "avatar_url": {
+          "name": "avatar_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rating": {
+          "name": "rating",
+          "type": "numeric(2, 1)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'5.0'"
+        },
+        "content": {
+          "name": "content",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sentiment": {
+          "name": "sentiment",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'Excellent'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -338,6 +758,13 @@
           "type": "numeric(12, 2)",
           "primaryKey": false,
           "notNull": true
+        },
+        "is_completed": {
+          "name": "is_completed",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         },
         "created_at": {
           "name": "created_at",
@@ -393,8 +820,8 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "dashboard_id": {
-          "name": "dashboard_id",
+        "tenant_id": {
+          "name": "tenant_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
@@ -444,6 +871,51 @@
           "notNull": true,
           "default": "'COMPLETED'"
         },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'POS'"
+        },
+        "order_type": {
+          "name": "order_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'DINE_IN'"
+        },
+        "customer_name": {
+          "name": "customer_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "customer_phone": {
+          "name": "customer_phone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "table_number": {
+          "name": "table_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "public_token": {
+          "name": "public_token",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "gen_random_uuid()"
+        },
+        "order_number": {
+          "name": "order_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -454,12 +926,12 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "transactions_dashboard_id_dashboards_id_fk": {
-          "name": "transactions_dashboard_id_dashboards_id_fk",
+        "transactions_tenant_id_tenants_id_fk": {
+          "name": "transactions_tenant_id_tenants_id_fk",
           "tableFrom": "transactions",
-          "tableTo": "dashboards",
+          "tableTo": "tenants",
           "columnsFrom": [
-            "dashboard_id"
+            "tenant_id"
           ],
           "columnsTo": [
             "id"
@@ -482,7 +954,22 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "transactions_public_token_unique": {
+          "name": "transactions_public_token_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "public_token"
+          ]
+        },
+        "transactions_order_number_unique": {
+          "name": "transactions_order_number_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "order_number"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -498,11 +985,11 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "dashboard_id": {
-          "name": "dashboard_id",
+        "tenant_id": {
+          "name": "tenant_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "email": {
           "name": "email",
@@ -518,7 +1005,8 @@
         },
         "role": {
           "name": "role",
-          "type": "text",
+          "type": "role",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
           "default": "'CASHIER'"
@@ -540,12 +1028,12 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "users_dashboard_id_dashboards_id_fk": {
-          "name": "users_dashboard_id_dashboards_id_fk",
+        "users_tenant_id_tenants_id_fk": {
+          "name": "users_tenant_id_tenants_id_fk",
           "tableFrom": "users",
-          "tableTo": "dashboards",
+          "tableTo": "tenants",
           "columnsFrom": [
-            "dashboard_id"
+            "tenant_id"
           ],
           "columnsTo": [
             "id"
@@ -569,7 +1057,17 @@
       "isRLSEnabled": false
     }
   },
-  "enums": {},
+  "enums": {
+    "public.role": {
+      "name": "role",
+      "schema": "public",
+      "values": [
+        "CASHIER",
+        "SUPERADMIN",
+        "SYSTEM_ADMIN"
+      ]
+    }
+  },
   "schemas": {},
   "sequences": {},
   "roles": {},

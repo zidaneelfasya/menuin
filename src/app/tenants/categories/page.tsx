@@ -6,7 +6,10 @@ import { TableSkeleton } from '@/components/ui/table-skeleton';
 
 export const metadata: Metadata = { title: 'Kategori - Bolu Anisa POS' };
 
+import { connection } from "next/server";
+
 async function CategoryDataWrapper() {
+  await connection();
   const result = await getCategories();
   const categories = result.success && result.data ? result.data : [];
   return <CategoryList initialData={categories} />;
