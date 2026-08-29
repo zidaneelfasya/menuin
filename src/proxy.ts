@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { updateSession } from '@/lib/supabase/middleware';
 
 export const config = {
     matcher: [
@@ -28,8 +29,6 @@ const RESERVED_SUBDOMAINS = [
     'billing',
     'webhook'
 ];
-
-import { updateSession } from '@/lib/supabase/proxy';
 
 export async function proxy(req: NextRequest) {
     const url = req.nextUrl;
@@ -63,7 +62,6 @@ export async function proxy(req: NextRequest) {
 
         // Rewrite to the store catalog route
         const newPath = url.pathname === '/' ? `/store/${slug}` : `/store/${slug}${url.pathname}`;
-        console.log("PROXY REWRITE TO:", newPath);
 
         // For public subdomains, we don't strictly need updateSession unless we want auth there too,
         // but typically subdomains are public catalogs. We'll just rewrite.
