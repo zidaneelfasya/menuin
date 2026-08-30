@@ -18,7 +18,7 @@ const adjustStockSchema = z.object({
 export async function adjustStock(formData: z.infer<typeof adjustStockSchema>) {
   try {
     const user = await getCurrentUser();
-    if (!user || !user.dashboardId) {
+    if (!user || !user.tenantId) {
       return { success: false, error: 'Unauthorized or no dashboard' };
     }
 
@@ -32,7 +32,7 @@ export async function adjustStock(formData: z.infer<typeof adjustStockSchema>) {
         stock: sql`${products.stock} + ${modifier}`,
         updatedAt: new Date(),
       })
-      .where(and(eq(products.id, productId), eq(products.dashboardId, user.dashboardId)));
+      .where(and(eq(products.id, productId), eq(products.tenantId, user.tenantId)));
       
 
     revalidatePath('/tenants/inventory');
