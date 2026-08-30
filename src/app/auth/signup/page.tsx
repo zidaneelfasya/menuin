@@ -60,12 +60,12 @@ export default function SignUpPage() {
           
           <div className="relative z-10 flex flex-col items-center max-w-[320px]">
             <Image
-              src="/logo/logo.jpeg"
+              src="/menuin-putih.png"
               alt="Menuin"
               width={180}
-              height={54}
+              height={50}
               style={{ height: "auto" }}
-              className="brightness-0 invert mb-8"
+              className="mb-8 object-contain"
               priority
             />
             <p className="text-white/80 text-sm leading-relaxed">
@@ -79,12 +79,12 @@ export default function SignUpPage() {
           {/* Mobile logo header */}
           <div className="md:hidden mb-8 flex items-center justify-between">
             <Image
-              src="/logo/logo.jpeg"
+              src="/logo-menuin-memanjang.svg"
               alt="Menuin"
-              width={110}
-              height={32}
+              width={120}
+              height={34}
               style={{ height: "auto" }}
-              className="rounded-lg"
+              className="object-contain"
               priority
             />
             <span className="text-xs font-semibold bg-slate-100 px-2.5 py-1 rounded-full text-slate-600">POS</span>

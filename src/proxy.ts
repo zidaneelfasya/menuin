@@ -3,70 +3,68 @@ import type { NextRequest } from 'next/server';
 import { updateSession } from '@/lib/supabase/middleware';
 
 export const config = {
-    matcher: [
-        /*
-         * Match all paths except for:
-         * 1. /api routes
-         * 2. /_next (Next.js internals)
-         * 3. /_static (inside /public)
-         * 4. all root files inside /public (e.g. favicon.ico)
-         */
-        '/((?!api/|_next/|_static/|_vercel|[\\w-]+\\.\\w+).*)',
-    ],
+  matcher: [
+    /*
+     * Match all paths except for:
+     * 1. /api routes
+     * 2. /_next (Next.js internals)
+     * 3. /_static (inside /public)
+     * 4. static files with extensions (e.g. .svg, .png, .jpg, .ico, etc.)
+     */
+    '/((?!api/|_next/|_static/|_vercel|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|mp3|css|js|map|txt)).*)',
+  ],
 };
 
 const RESERVED_SUBDOMAINS = [
-    'www',
-    'app',
-    'api',
-    'admin',
-    'dashboard',
-    'auth',
-    'docs',
-    'status',
-    'support',
-    'mail',
-    'billing',
-    'webhook'
+  'www',
+  'app',
+  'api',
+  'admin',
+  'dashboard',
+  'auth',
+  'docs',
+  'status',
+  'support',
+  'mail',
+  'billing',
+  'webhook',
 ];
 
 export async function proxy(req: NextRequest) {
-    const url = req.nextUrl;
+  const url = req.nextUrl;
 
-    // Get hostname of request (e.g. demo.localhost:3000, demo.menuin.id)
-    let hostname = req.headers.get('host');
+  // Get hostname of request (e.g. demo.localhost:3000, demo.menuin.id)
+  let hostname = req.headers.get('host');
 
-    if (!hostname) {
-        return await updateSession(req);
-    }
-
-    // Strip port if exists
-    hostname = hostname.split(':')[0];
-
-    // Define allowed domains (localhost and production domain)
-    const allowedDomains = ['localhost', 'menuin.id'];
-
-    // Check if the current hostname is a subdomain
-    const isSubdomain = allowedDomains.some((domain) =>
-        hostname.endsWith(`.${domain}`)
-    );
-
-    if (isSubdomain) {
-        // Extract the subdomain (slug)
-        const slug = hostname.split('.')[0];
-
-        // Block reserved subdomains
-        if (RESERVED_SUBDOMAINS.includes(slug)) {
-            return await updateSession(req);
-        }
-
-        // Rewrite to the store catalog route
-        const newPath = url.pathname === '/' ? `/store/${slug}` : `/store/${slug}${url.pathname}`;
-
-        // For public subdomains, we don't strictly need updateSession unless we want auth there too,
-        // but typically subdomains are public catalogs. We'll just rewrite.
-        return NextResponse.rewrite(new URL(`${newPath}${url.search}`, req.url));
-    }
-
+  if (!hostname) {
     return await updateSession(req);
+  }
+
+  // Strip port if exists
+  hostname = hostname.split(':')[0];
+
+  // Define allowed domains (localhost and production domain)
+  const allowedDomains = ['localhost', 'menuin.id'];
+
+  // Check if the current hostname is a subdomain
+  const isSubdomain = allowedDomains.some((domain) =>
+    hostname.endsWith(`.${domain}`)
+  );
+
+  if (isSubdomain) {
+    // Extract the subdomain (slug)
+    const slug = hostname.split('.')[0];
+
+    // Block reserved subdomains
+    if (RESERVED_SUBDOMAINS.includes(slug)) {
+      return await updateSession(req);
+    }
+
+    // Rewrite to the store catalog route
+    const newPath = url.pathname === '/' ? `/store/${slug}` : `/store/${slug}${url.pathname}`;
+
+    return NextResponse.rewrite(new URL(`${newPath}${url.search}`, req.url));
+  }
+
+  return await updateSession(req);
 }

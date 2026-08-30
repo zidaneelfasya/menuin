@@ -2,8 +2,10 @@
 
 import { getCurrentUser } from '@/lib/actions/auth';
 import { db } from '@/lib/db';
-import { users, tenants } from '@/lib/db/schema';
-import { desc, count } from 'drizzle-orm';
+import { users, tenants, transactions, transactionItems, products, categories } from '@/lib/db/schema';
+import { desc, count, eq, inArray, sql } from 'drizzle-orm';
+import { createClient } from '@supabase/supabase-js';
+import { revalidatePath } from 'next/cache';
 
 function getAdminClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -13,7 +15,7 @@ function getAdminClient() {
     throw new Error('NEXT_PUBLIC_SUPABASE_URL is missing');
   }
 
-  return createClient(supabaseUrl, serviceRoleKey || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '', {
+  return createClient(supabaseUrl, serviceRoleKey || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '', {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
@@ -31,9 +33,25 @@ export async function getSystemAdminStats() {
   }
 
   try {
-    const totalUsers = await db.select({ value: count() }).from(users);
-    const totalDashboards = await db.select({ value: count() }).from(tenants);
-    
+    const allUsers = await db.select().from(users);
+    const allTenants = await db.select().from(tenants);
+    const allTransactions = await db.select({
+      id: transactions.id,
+      grandTotal: transactions.grandTotal,
+    }).from(transactions);
+
+    const totalDashboards = allTenants.length;
+    const paidDashboards = allTenants.filter(t => t.isPaid).length;
+    const freeDashboards = allTenants.filter(t => !t.isPaid).length;
+
+    const totalUsers = allUsers.length;
+    const systemAdminCount = allUsers.filter(u => u.role === 'SYSTEM_ADMIN').length;
+    const superAdminCount = allUsers.filter(u => u.role === 'SUPERADMIN').length;
+    const cashierCount = allUsers.filter(u => u.role === 'CASHIER').length;
+
+    const totalTransactions = allTransactions.length;
+    const totalRevenue = allTransactions.reduce((acc, curr) => acc + (parseFloat(curr.grandTotal) || 0), 0);
+
     // Recent registrations
     const recentDashboards = await db
       .select()
@@ -41,18 +59,18 @@ export async function getSystemAdminStats() {
       .orderBy(desc(tenants.createdAt))
       .limit(5);
 
-    const recentUsers = await db
+    const recentUsersRaw = await db
       .select({
         id: users.id,
         name: users.name,
         email: users.email,
         role: users.role,
         createdAt: users.createdAt,
-        dashboardId: users.dashboardId,
-        dashboardName: dashboards.name,
+        dashboardId: users.tenantId,
+        dashboardName: tenants.name,
       })
       .from(users)
-      .leftJoin(dashboards, eq(users.dashboardId, dashboards.id))
+      .leftJoin(tenants, eq(users.tenantId, tenants.id))
       .orderBy(desc(users.createdAt))
       .limit(5);
 
@@ -67,7 +85,7 @@ export async function getSystemAdminStats() {
       totalTransactions,
       totalRevenue,
       recentDashboards,
-      recentUsers,
+      recentUsers: recentUsersRaw,
     };
   } catch (error) {
     console.error('Failed to get system admin stats:', error);
@@ -85,12 +103,34 @@ export async function getSystemTenants() {
   }
 
   try {
-    const tenantsList = await db
-      .select()
-      .from(tenants)
-      .orderBy(desc(tenants.createdAt));
-      
-    return tenantsList;
+    const [allTenants, allUsers, allProducts] = await Promise.all([
+      db.select().from(tenants).orderBy(desc(tenants.createdAt)),
+      db.select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        role: users.role,
+        tenantId: users.tenantId,
+      }).from(users),
+      db.select({
+        id: products.id,
+        tenantId: products.tenantId,
+      }).from(products),
+    ]);
+
+    return allTenants.map((t) => {
+      const tenantUsers = allUsers.filter((u) => u.tenantId === t.id);
+      const owner = tenantUsers.find((u) => u.role === 'SUPERADMIN') || tenantUsers[0];
+      const productCount = allProducts.filter((p) => p.tenantId === t.id).length;
+
+      return {
+        ...t,
+        ownerName: owner?.name || null,
+        ownerEmail: owner?.email || null,
+        userCount: tenantUsers.length,
+        productCount,
+      };
+    });
   } catch (error) {
     console.error('Failed to load tenants:', error);
     throw new Error('Gagal memuat daftar tenant');
@@ -109,7 +149,7 @@ export async function createSystemTenant(data: { name: string; isPaid?: boolean 
 
   try {
     const [newDashboard] = await db
-      .insert(dashboards)
+      .insert(tenants)
       .values({
         name: data.name.trim(),
         isPaid: Boolean(data.isPaid),
@@ -137,13 +177,13 @@ export async function updateSystemTenant(id: string, data: { name: string; isPai
 
   try {
     await db
-      .update(dashboards)
+      .update(tenants)
       .set({
         name: data.name.trim(),
         isPaid: Boolean(data.isPaid),
         updatedAt: new Date(),
       })
-      .where(eq(dashboards.id, id));
+      .where(eq(tenants.id, id));
 
     revalidatePath('/system-admin');
     revalidatePath('/system-admin/tenants');
@@ -162,12 +202,12 @@ export async function toggleTenantStatus(id: string, isPaid: boolean) {
 
   try {
     await db
-      .update(dashboards)
+      .update(tenants)
       .set({
         isPaid,
         updatedAt: new Date(),
       })
-      .where(eq(dashboards.id, id));
+      .where(eq(tenants.id, id));
 
     revalidatePath('/system-admin');
     revalidatePath('/system-admin/tenants');
@@ -189,24 +229,24 @@ export async function deleteSystemTenant(id: string) {
     const tenantTransactions = await db
       .select({ id: transactions.id })
       .from(transactions)
-      .where(eq(transactions.dashboardId, id));
+      .where(eq(transactions.tenantId, id));
 
     const trxIds = tenantTransactions.map(t => t.id);
     if (trxIds.length > 0) {
       await db.delete(transactionItems).where(inArray(transactionItems.transactionId, trxIds));
-      await db.delete(transactions).where(eq(transactions.dashboardId, id));
+      await db.delete(transactions).where(eq(transactions.tenantId, id));
     }
 
     // 2. Delete products & categories
-    await db.delete(products).where(eq(products.dashboardId, id));
-    await db.delete(categories).where(eq(categories.dashboardId, id));
+    await db.delete(products).where(eq(products.tenantId, id));
+    await db.delete(categories).where(eq(categories.tenantId, id));
 
     // 3. Unlink users or delete CASHIER users
-    await db.delete(users).where(sql`${users.dashboardId} = ${id} AND ${users.role} = 'CASHIER'`);
-    await db.update(users).set({ dashboardId: null, updatedAt: new Date() }).where(eq(users.dashboardId, id));
+    await db.delete(users).where(sql`${users.tenantId} = ${id} AND ${users.role} = 'CASHIER'`);
+    await db.update(users).set({ tenantId: null, updatedAt: new Date() }).where(eq(users.tenantId, id));
 
-    // 4. Delete the dashboard itself
-    await db.delete(dashboards).where(eq(dashboards.id, id));
+    // 4. Delete the tenant itself
+    await db.delete(tenants).where(eq(tenants.id, id));
 
     revalidatePath('/system-admin');
     revalidatePath('/system-admin/tenants');
@@ -235,10 +275,12 @@ export async function getSystemUsers() {
         name: users.name,
         role: users.role,
         createdAt: users.createdAt,
-        tenantId: users.tenantId,
+        updatedAt: users.updatedAt,
+        dashboardId: users.tenantId,
+        dashboardName: tenants.name,
       })
       .from(users)
-      .leftJoin(dashboards, eq(users.dashboardId, dashboards.id))
+      .leftJoin(tenants, eq(users.tenantId, tenants.id))
       .orderBy(desc(users.createdAt));
 
     return usersList;
@@ -310,7 +352,7 @@ export async function createSystemUser(data: {
         name: data.name.trim(),
         email: data.email.trim(),
         role: data.role,
-        dashboardId: targetDashboardId,
+        tenantId: targetDashboardId,
       });
     } else {
       await db
@@ -318,7 +360,7 @@ export async function createSystemUser(data: {
         .set({
           name: data.name.trim(),
           role: data.role,
-          dashboardId: targetDashboardId,
+          tenantId: targetDashboardId,
           updatedAt: new Date(),
         })
         .where(eq(users.email, data.email.trim()));
@@ -377,7 +419,7 @@ export async function updateSystemUser(
         name: data.name.trim(),
         email: data.email.trim(),
         role: data.role,
-        dashboardId: targetDashboardId,
+        tenantId: targetDashboardId,
         updatedAt: new Date(),
       })
       .where(eq(users.id, id));

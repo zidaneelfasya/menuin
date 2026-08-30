@@ -2,14 +2,14 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import { 
-  Check, 
-  ChevronDown, 
-  ArrowRight, 
-  PlayCircle, 
-  QrCode, 
-  CreditCard, 
-  Monitor, 
+import {
+  Check,
+  ChevronDown,
+  ArrowRight,
+  PlayCircle,
+  QrCode,
+  CreditCard,
+  Monitor,
   TrendingUp,
   Printer,
   ScanBarcode,
@@ -41,19 +41,23 @@ import FooterSuperfluidStyle from "@/components/ui/footer-superfluid-style";
 
 
 
-function useInView(threshold = 0.15) {
+function useInView(threshold = 0.05) {
   const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
+  const [visible, setVisible] = useState(true);
+
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     const obs = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setVisible(true); },
-      { threshold }
+      ([entry]) => {
+        if (entry.isIntersecting) setVisible(true);
+      },
+      { threshold, rootMargin: "60px" }
     );
     obs.observe(el);
     return () => obs.disconnect();
   }, [threshold]);
+
   return { ref, visible };
 }
 
@@ -187,6 +191,7 @@ function HeroImageStack() {
               sizes="(max-width: 768px) 100vw, 1000px"
               className="object-cover object-top"
               priority={i === indexes.front || i === indexes.collapsing}
+              unoptimized={true}
             />
           </div>
         );
@@ -285,12 +290,12 @@ function RealCard({ data }: { data: any }) {
         {/* Header Row */}
         <div className="flex justify-between items-start mb-2">
           <div className="flex gap-2 items-center flex-1 min-w-0 mr-2">
-            <img 
-              src={data.avatar} 
-              alt={data.name} 
+            <img
+              src={data.avatar}
+              alt={data.name}
               loading="lazy"
               decoding="async"
-              className="w-8 h-8 rounded-full object-cover shadow-xs shrink-0" 
+              className="w-8 h-8 rounded-full object-cover shadow-xs shrink-0"
             />
             <div className="flex flex-col min-w-0 flex-1">
               <span className="text-[12px] font-bold text-[#111] leading-tight truncate block">{data.name.toLowerCase()}</span>
@@ -331,58 +336,58 @@ function InteractivePOSShowcase() {
   const [activeOutletIdx, setActiveOutletIdx] = useState(0);
 
   const sampleProducts = [
-    { 
-      name: 'Signature Mocca Cake', 
-      sku: 'BLP-001', 
-      price: 'Rp 45.000', 
-      category: 'Bakery & Cakes', 
+    {
+      name: 'Signature Mocca Cake',
+      sku: 'BLP-001',
+      price: 'Rp 45.000',
+      category: 'Bakery & Cakes',
       stock: 24,
       image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=400&q=80'
     },
-    { 
-      name: 'Baked Cheese Cake', 
-      sku: 'BLP-002', 
-      price: 'Rp 50.000', 
-      category: 'Bakery & Cakes', 
+    {
+      name: 'Baked Cheese Cake',
+      sku: 'BLP-002',
+      price: 'Rp 50.000',
+      category: 'Bakery & Cakes',
       stock: 18,
       image: 'https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&w=400&q=80'
     },
-    { 
-      name: 'Pandan Chiffon Cake', 
-      sku: 'BLK-001', 
-      price: 'Rp 35.000', 
-      category: 'Bakery & Cakes', 
+    {
+      name: 'Pandan Chiffon Cake',
+      sku: 'BLK-001',
+      price: 'Rp 35.000',
+      category: 'Bakery & Cakes',
       stock: 30,
       image: 'https://images.unsplash.com/photo-1588195538326-c5b1e9f80a1b?auto=format&fit=crop&w=400&q=80'
     },
-    { 
-      name: 'Cheese Pastry Cookies', 
-      sku: 'KKR-002', 
-      price: 'Rp 90.000', 
-      category: 'Pastries', 
+    {
+      name: 'Cheese Pastry Cookies',
+      sku: 'KKR-002',
+      price: 'Rp 90.000',
+      category: 'Pastries',
       stock: 15,
       image: 'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?auto=format&fit=crop&w=400&q=80'
     },
-    { 
-      name: 'Iced Palm Sugar Latte', 
-      sku: 'MNM-001', 
-      price: 'Rp 18.000', 
-      category: 'Beverages', 
+    {
+      name: 'Iced Palm Sugar Latte',
+      sku: 'MNM-001',
+      price: 'Rp 18.000',
+      category: 'Beverages',
       stock: 85,
       image: 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=400&q=80'
     },
-    { 
-      name: 'Iced Fresh Milk Tea', 
-      sku: 'MNM-002', 
-      price: 'Rp 15.000', 
-      category: 'Beverages', 
+    {
+      name: 'Iced Fresh Milk Tea',
+      sku: 'MNM-002',
+      price: 'Rp 15.000',
+      category: 'Beverages',
       stock: 60,
       image: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=400&q=80'
     },
   ];
 
-  const filteredProducts = activeCategory === 'All Items' 
-    ? sampleProducts 
+  const filteredProducts = activeCategory === 'All Items'
+    ? sampleProducts
     : sampleProducts.filter(p => p.category === activeCategory);
 
   const outlets = [
@@ -416,11 +421,10 @@ function InteractivePOSShowcase() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as ShowcaseTab)}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
-                  isActive
-                    ? 'bg-white text-[#0E59F9] shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
-                }`}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap ${isActive
+                  ? 'bg-white text-[#0E59F9] shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+                  }`}
               >
                 <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#0E59F9]' : 'text-slate-400'}`} />
                 <span>{tab.label}</span>
@@ -463,10 +467,10 @@ function InteractivePOSShowcase() {
                 {/* Cart Content in Customer Phone */}
                 <div className="p-3.5 flex-1 overflow-y-auto space-y-2.5 text-xs bg-slate-50/50">
                   <div className="p-2.5 rounded-xl bg-white border border-slate-200/80 flex items-start gap-2.5 shadow-2xs">
-                    <img 
-                      src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=120&q=80" 
-                      alt="Signature Mocca Cake" 
-                      className="w-10 h-10 rounded-lg object-cover border border-slate-100 shrink-0" 
+                    <img
+                      src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=120&q=80"
+                      alt="Signature Mocca Cake"
+                      className="w-10 h-10 rounded-lg object-cover border border-slate-100 shrink-0"
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between font-bold">
@@ -478,10 +482,10 @@ function InteractivePOSShowcase() {
                   </div>
 
                   <div className="p-2.5 rounded-xl bg-white border border-slate-200/80 flex items-start gap-2.5 shadow-2xs">
-                    <img 
-                      src="https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=120&q=80" 
-                      alt="Iced Palm Sugar Latte" 
-                      className="w-10 h-10 rounded-lg object-cover border border-slate-100 shrink-0" 
+                    <img
+                      src="https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=120&q=80"
+                      alt="Iced Palm Sugar Latte"
+                      className="w-10 h-10 rounded-lg object-cover border border-slate-100 shrink-0"
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between font-bold">
@@ -514,7 +518,7 @@ function InteractivePOSShowcase() {
                     <span className="text-[10px] text-slate-500 font-semibold">Total Due (Table 08)</span>
                     <span className="text-sm font-extrabold text-slate-900">Rp 80.190</span>
                   </div>
-                  <button 
+                  <button
                     type="button"
                     className="w-full h-9 rounded-xl bg-[#0E59F9] text-white text-[11px] font-bold flex items-center justify-center gap-1.5 shadow-sm hover:bg-[#0B48CC] transition-colors"
                   >
@@ -591,9 +595,9 @@ function InteractivePOSShowcase() {
               {/* Product Search Bar */}
               <div className="relative">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input 
-                  type="text" 
-                  readOnly 
+                <input
+                  type="text"
+                  readOnly
                   value="Signature Mocca Cake"
                   placeholder="Search products..."
                   className="w-full h-11 pl-10 pr-4 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700 outline-none select-none"
@@ -609,11 +613,10 @@ function InteractivePOSShowcase() {
                   <button
                     key={cat}
                     onClick={() => setActiveCategory(cat)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer whitespace-nowrap ${
-                      activeCategory === cat
-                        ? 'bg-slate-900 text-white'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200/70'
-                    }`}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer whitespace-nowrap ${activeCategory === cat
+                      ? 'bg-slate-900 text-white'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200/70'
+                      }`}
                   >
                     {cat}
                   </button>
@@ -623,16 +626,16 @@ function InteractivePOSShowcase() {
               {/* Products Grid with Admin-Style Photos */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {filteredProducts.map((p, idx) => (
-                  <div 
+                  <div
                     key={idx}
                     className="rounded-2xl border border-slate-200/80 hover:border-[#0E59F9]/50 hover:shadow-md transition-all bg-white flex flex-col justify-between overflow-hidden select-none group cursor-pointer"
                   >
                     {/* Aspect 4/3 Product Image like Admin POS */}
                     <div className="aspect-[4/3] bg-slate-100 relative overflow-hidden flex items-center justify-center">
-                      <img 
-                        src={p.image} 
-                        alt={p.name} 
-                        className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300" 
+                      <img
+                        src={p.image}
+                        alt={p.name}
+                        className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
                       />
                       <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md bg-white/90 backdrop-blur-xs text-slate-700 text-[9px] font-mono font-bold shadow-xs">
                         {p.sku}
@@ -675,10 +678,10 @@ function InteractivePOSShowcase() {
                 <div className="py-3 space-y-2.5 border-b border-slate-200 text-xs">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <img 
-                        src="https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&w=120&q=80" 
-                        alt="Baked Cheese Cake" 
-                        className="w-9 h-9 rounded-lg object-cover border border-slate-200 shrink-0" 
+                      <img
+                        src="https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&w=120&q=80"
+                        alt="Baked Cheese Cake"
+                        className="w-9 h-9 rounded-lg object-cover border border-slate-200 shrink-0"
                       />
                       <div className="truncate">
                         <p className="font-semibold text-slate-800 truncate">1x Baked Cheese Cake</p>
@@ -690,10 +693,10 @@ function InteractivePOSShowcase() {
 
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <img 
-                        src="https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=120&q=80" 
-                        alt="Iced Palm Sugar Latte" 
-                        className="w-9 h-9 rounded-lg object-cover border border-slate-200 shrink-0" 
+                      <img
+                        src="https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=120&q=80"
+                        alt="Iced Palm Sugar Latte"
+                        className="w-9 h-9 rounded-lg object-cover border border-slate-200 shrink-0"
                       />
                       <div className="truncate">
                         <p className="font-semibold text-slate-800 truncate">2x Iced Palm Sugar Latte</p>
@@ -738,7 +741,7 @@ function InteractivePOSShowcase() {
                   </div>
                 </div>
 
-                <button 
+                <button
                   type="button"
                   className="w-full h-10 rounded-xl bg-[#0E59F9] text-white text-xs font-bold hover:bg-[#0C4CD6] transition-colors flex items-center justify-center gap-2 shadow-sm"
                 >
@@ -824,11 +827,10 @@ function InteractivePOSShowcase() {
                 <div
                   key={idx}
                   onClick={() => setActiveOutletIdx(idx)}
-                  className={`p-4 rounded-2xl border transition-all cursor-pointer ${
-                    activeOutletIdx === idx
-                      ? 'border-[#0E59F9] bg-blue-50/20 shadow-sm ring-1 ring-[#0E59F9]'
-                      : 'border-slate-200 bg-white hover:border-slate-300'
-                  }`}
+                  className={`p-4 rounded-2xl border transition-all cursor-pointer ${activeOutletIdx === idx
+                    ? 'border-[#0E59F9] bg-blue-50/20 shadow-sm ring-1 ring-[#0E59F9]'
+                    : 'border-slate-200 bg-white hover:border-slate-300'
+                    }`}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-900 text-white">
@@ -1305,7 +1307,7 @@ export default function LandingPage({
         <div className="mx-auto max-w-[1200px] flex flex-col lg:flex-row items-center gap-16">
           <FadeIn className="w-full lg:w-1/2">
             <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-black/[0.04] bg-[#F8F9FA] aspect-square max-h-[600px] flex items-center justify-center">
-              <Image src="/img/hero/img2.png" alt="Feature showcase" fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover object-left" />
+              <Image src="/img/hero/img2.png" alt="Feature showcase" fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover object-left" unoptimized={true} />
             </div>
           </FadeIn>
 
