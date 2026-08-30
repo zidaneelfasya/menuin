@@ -3,9 +3,11 @@
 import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from '@/lib/actions/auth';
 import { db } from '@/lib/db';
-import { users, tenants, transactions, products, transactionItems, categories } from '@/lib/db/schema';
-import { desc, count, eq, sum, sql, inArray } from 'drizzle-orm';
+import { users, tenants, transactions, transactionItems, products, categories } from '@/lib/db/schema';
+import { desc, count, eq, inArray, sql } from 'drizzle-orm';
 import { createClient } from '@supabase/supabase-js';
+import { revalidatePath } from 'next/cache';
+
 function getAdminClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -14,7 +16,7 @@ function getAdminClient() {
     throw new Error('NEXT_PUBLIC_SUPABASE_URL is missing');
   }
 
-  return createClient(supabaseUrl, serviceRoleKey || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '', {
+  return createClient(supabaseUrl, serviceRoleKey || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '', {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
@@ -32,28 +34,25 @@ export async function getSystemAdminStats() {
   }
 
   try {
-    const [
-      totalUsersRes,
-      totalDashboardsRes,
-      paidDashboardsRes,
-      freeDashboardsRes,
-      systemAdminCountRes,
-      superAdminCountRes,
-      cashierCountRes,
-      totalTransactionsRes,
-      totalRevenueRes,
-    ] = await Promise.all([
-      db.select({ value: count() }).from(users),
-      db.select({ value: count() }).from(tenants),
-      db.select({ value: count() }).from(tenants).where(eq(tenants.isPaid, true)),
-      db.select({ value: count() }).from(tenants).where(eq(tenants.isPaid, false)),
-      db.select({ value: count() }).from(users).where(eq(users.role, 'SYSTEM_ADMIN')),
-      db.select({ value: count() }).from(users).where(eq(users.role, 'SUPERADMIN')),
-      db.select({ value: count() }).from(users).where(eq(users.role, 'CASHIER')),
-      db.select({ value: count() }).from(transactions),
-      db.select({ value: sum(transactions.grandTotal) }).from(transactions),
-    ]);
-    
+    const allUsers = await db.select().from(users);
+    const allTenants = await db.select().from(tenants);
+    const allTransactions = await db.select({
+      id: transactions.id,
+      grandTotal: transactions.grandTotal,
+    }).from(transactions);
+
+    const totalDashboards = allTenants.length;
+    const paidDashboards = allTenants.filter(t => t.isPaid).length;
+    const freeDashboards = allTenants.filter(t => !t.isPaid).length;
+
+    const totalUsers = allUsers.length;
+    const systemAdminCount = allUsers.filter(u => u.role === 'SYSTEM_ADMIN').length;
+    const superAdminCount = allUsers.filter(u => u.role === 'SUPERADMIN').length;
+    const cashierCount = allUsers.filter(u => u.role === 'CASHIER').length;
+
+    const totalTransactions = allTransactions.length;
+    const totalRevenue = allTransactions.reduce((acc, curr) => acc + (parseFloat(curr.grandTotal) || 0), 0);
+
     // Recent registrations
     const recentDashboards = await db
       .select()
@@ -61,7 +60,7 @@ export async function getSystemAdminStats() {
       .orderBy(desc(tenants.createdAt))
       .limit(5);
 
-    const recentUsers = await db
+    const recentUsersRaw = await db
       .select({
         id: users.id,
         name: users.name,
@@ -87,7 +86,7 @@ export async function getSystemAdminStats() {
       totalTransactions: Number(totalTransactionsRes[0]?.value || 0),
       totalRevenue: Number(totalRevenueRes[0]?.value || 0),
       recentDashboards,
-      recentUsers,
+      recentUsers: recentUsersRaw,
     };
   } catch (error) {
     console.error('Failed to get system admin stats:', error);
@@ -105,42 +104,34 @@ export async function getSystemTenants() {
   }
 
   try {
-    const tenantsList = await db
-      .select({
-        id: tenants.id,
-        name: tenants.name,
-        slug: tenants.slug,
-        storefrontEnabled: tenants.storefrontEnabled,
-        storeDescription: tenants.storeDescription,
-        storeLogoUrl: tenants.storeLogoUrl,
-        storeBannerUrl: tenants.storeBannerUrl,
-        primaryColor: tenants.primaryColor,
-        dineInEnabled: tenants.dineInEnabled,
-        takeAwayEnabled: tenants.takeAwayEnabled,
-        deliveryEnabled: tenants.deliveryEnabled,
-        customerNameRequired: tenants.customerNameRequired,
-        customerPhoneRequired: tenants.customerPhoneRequired,
-        tableNumberRequired: tenants.tableNumberRequired,
-        orderProcessType: tenants.orderProcessType,
-        posKitchenSync: tenants.posKitchenSync,
-        posRequireCustomer: tenants.posRequireCustomer,
-        posOrderTypeSelection: tenants.posOrderTypeSelection,
-        posTaxRate: tenants.posTaxRate,
-        midtransServerKey: tenants.midtransServerKey,
-        midtransClientKey: tenants.midtransClientKey,
-        midtransEnvironment: tenants.midtransEnvironment,
-        isPaid: tenants.isPaid,
-        createdAt: tenants.createdAt,
-        updatedAt: tenants.updatedAt,
-        userCount: count(users.id),
-        productCount: sql<number>`(SELECT count(*) FROM ${products} WHERE ${products.tenantId} = ${tenants.id})`.mapWith(Number),
-      })
-      .from(tenants)
-      .leftJoin(users, eq(users.tenantId, tenants.id))
-      .groupBy(tenants.id)
-      .orderBy(desc(tenants.createdAt));
-      
-    return tenantsList;
+    const [allTenants, allUsers, allProducts] = await Promise.all([
+      db.select().from(tenants).orderBy(desc(tenants.createdAt)),
+      db.select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        role: users.role,
+        tenantId: users.tenantId,
+      }).from(users),
+      db.select({
+        id: products.id,
+        tenantId: products.tenantId,
+      }).from(products),
+    ]);
+
+    return allTenants.map((t) => {
+      const tenantUsers = allUsers.filter((u) => u.tenantId === t.id);
+      const owner = tenantUsers.find((u) => u.role === 'SUPERADMIN') || tenantUsers[0];
+      const productCount = allProducts.filter((p) => p.tenantId === t.id).length;
+
+      return {
+        ...t,
+        ownerName: owner?.name || null,
+        ownerEmail: owner?.email || null,
+        userCount: tenantUsers.length,
+        productCount,
+      };
+    });
   } catch (error) {
     console.error('Failed to load tenants:', error);
     throw new Error('Gagal memuat daftar tenant');
@@ -255,7 +246,7 @@ export async function deleteSystemTenant(id: string) {
     await db.delete(users).where(sql`${users.tenantId} = ${id} AND ${users.role} = 'CASHIER'`);
     await db.update(users).set({ tenantId: null, updatedAt: new Date() }).where(eq(users.tenantId, id));
 
-    // 4. Delete the dashboard itself
+    // 4. Delete the tenant itself
     await db.delete(tenants).where(eq(tenants.id, id));
 
     revalidatePath('/system-admin');

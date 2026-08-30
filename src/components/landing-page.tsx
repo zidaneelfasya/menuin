@@ -2,14 +2,14 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import { 
-  Check, 
-  ChevronDown, 
-  ArrowRight, 
-  PlayCircle, 
-  QrCode, 
-  CreditCard, 
-  Monitor, 
+import {
+  Check,
+  ChevronDown,
+  ArrowRight,
+  PlayCircle,
+  QrCode,
+  CreditCard,
+  Monitor,
   TrendingUp,
   Printer,
   ScanBarcode,
@@ -41,19 +41,23 @@ import FooterSuperfluidStyle from "@/components/ui/footer-superfluid-style";
 
 
 
-function useInView(threshold = 0.15) {
+function useInView(threshold = 0.05) {
   const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
+  const [visible, setVisible] = useState(true);
+
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     const obs = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setVisible(true); },
-      { threshold }
+      ([entry]) => {
+        if (entry.isIntersecting) setVisible(true);
+      },
+      { threshold, rootMargin: "60px" }
     );
     obs.observe(el);
     return () => obs.disconnect();
   }, [threshold]);
+
   return { ref, visible };
 }
 
@@ -187,6 +191,7 @@ function HeroImageStack() {
               sizes="(max-width: 768px) 100vw, 1000px"
               className="object-cover object-top"
               priority={i === indexes.front || i === indexes.collapsing}
+              unoptimized={true}
             />
           </div>
         );
@@ -248,28 +253,28 @@ const testimonialsData = [
 
 function SkeletonCard() {
   return (
-    <div className="w-[300px] shrink-0 h-[120px] testimonial-wrapper">
-      <div className="w-full h-full bg-white/50 backdrop-blur-sm rounded-[24px] p-4 border border-gray-100 flex flex-col shadow-sm opacity-50 grayscale testimonial-inner origin-center will-change-transform">
+    <div className="w-[300px] shrink-0 h-[120px] testimonial-wrapper pointer-events-none select-none">
+      <div className="w-full h-full bg-slate-50/90 rounded-[24px] p-4 border border-slate-200/60 flex flex-col shadow-xs opacity-60 grayscale testimonial-inner origin-center will-change-transform transform-gpu">
 
         {/* Header Row */}
         <div className="flex justify-between items-start mb-2">
           <div className="flex gap-2 items-center flex-1 min-w-0 mr-2">
-            <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse shrink-0" />
+            <div className="w-8 h-8 rounded-full bg-slate-200 shrink-0" />
             <div className="flex flex-col gap-1 min-w-0 flex-1">
-              <div className="w-20 max-w-full h-2.5 bg-gray-200 rounded animate-pulse" />
-              <div className="w-16 max-w-full h-2 bg-gray-100 rounded animate-pulse" />
+              <div className="w-20 max-w-full h-2.5 bg-slate-200 rounded" />
+              <div className="w-16 max-w-full h-2 bg-slate-100 rounded" />
             </div>
           </div>
           <div className="flex flex-col items-end gap-1 shrink-0">
-            <div className="w-14 h-2 bg-gray-200 rounded animate-pulse" />
-            <div className="w-16 h-4 bg-gray-100 rounded-full animate-pulse" />
+            <div className="w-14 h-2 bg-slate-200 rounded" />
+            <div className="w-16 h-4 bg-slate-100 rounded-full" />
           </div>
         </div>
 
         {/* Text Body */}
         <div className="flex flex-col gap-1 mt-auto mb-1">
-          <div className="w-full h-2 bg-gray-200 rounded animate-pulse" />
-          <div className="w-[85%] h-2 bg-gray-100 rounded animate-pulse" />
+          <div className="w-full h-2 bg-slate-200 rounded" />
+          <div className="w-[85%] h-2 bg-slate-100 rounded" />
         </div>
 
       </div>
@@ -280,12 +285,18 @@ function SkeletonCard() {
 function RealCard({ data }: { data: any }) {
   return (
     <div className="w-[300px] shrink-0 h-[120px] testimonial-wrapper">
-      <div className="w-full h-full bg-white rounded-[24px] p-4 border border-black/[0.04] shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-xl transition-shadow flex flex-col testimonial-inner origin-center will-change-transform">
+      <div className="w-full h-full bg-white rounded-[24px] p-4 border border-slate-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.04)] flex flex-col testimonial-inner origin-center will-change-transform transform-gpu">
 
         {/* Header Row */}
         <div className="flex justify-between items-start mb-2">
           <div className="flex gap-2 items-center flex-1 min-w-0 mr-2">
-            <img src={data.avatar} alt={data.name} className="w-8 h-8 rounded-full object-cover shadow-sm shrink-0" />
+            <img
+              src={data.avatar}
+              alt={data.name}
+              loading="lazy"
+              decoding="async"
+              className="w-8 h-8 rounded-full object-cover shadow-xs shrink-0"
+            />
             <div className="flex flex-col min-w-0 flex-1">
               <span className="text-[12px] font-bold text-[#111] leading-tight truncate block">{data.name.toLowerCase()}</span>
               <span className="text-[10px] text-[#888] truncate block">{data.role.toLowerCase()}</span>
@@ -325,58 +336,58 @@ function InteractivePOSShowcase() {
   const [activeOutletIdx, setActiveOutletIdx] = useState(0);
 
   const sampleProducts = [
-    { 
-      name: 'Signature Mocca Cake', 
-      sku: 'BLP-001', 
-      price: 'Rp 45.000', 
-      category: 'Bakery & Cakes', 
+    {
+      name: 'Signature Mocca Cake',
+      sku: 'BLP-001',
+      price: 'Rp 45.000',
+      category: 'Bakery & Cakes',
       stock: 24,
       image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=400&q=80'
     },
-    { 
-      name: 'Baked Cheese Cake', 
-      sku: 'BLP-002', 
-      price: 'Rp 50.000', 
-      category: 'Bakery & Cakes', 
+    {
+      name: 'Baked Cheese Cake',
+      sku: 'BLP-002',
+      price: 'Rp 50.000',
+      category: 'Bakery & Cakes',
       stock: 18,
       image: 'https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&w=400&q=80'
     },
-    { 
-      name: 'Pandan Chiffon Cake', 
-      sku: 'BLK-001', 
-      price: 'Rp 35.000', 
-      category: 'Bakery & Cakes', 
+    {
+      name: 'Pandan Chiffon Cake',
+      sku: 'BLK-001',
+      price: 'Rp 35.000',
+      category: 'Bakery & Cakes',
       stock: 30,
       image: 'https://images.unsplash.com/photo-1588195538326-c5b1e9f80a1b?auto=format&fit=crop&w=400&q=80'
     },
-    { 
-      name: 'Cheese Pastry Cookies', 
-      sku: 'KKR-002', 
-      price: 'Rp 90.000', 
-      category: 'Pastries', 
+    {
+      name: 'Cheese Pastry Cookies',
+      sku: 'KKR-002',
+      price: 'Rp 90.000',
+      category: 'Pastries',
       stock: 15,
       image: 'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?auto=format&fit=crop&w=400&q=80'
     },
-    { 
-      name: 'Iced Palm Sugar Latte', 
-      sku: 'MNM-001', 
-      price: 'Rp 18.000', 
-      category: 'Beverages', 
+    {
+      name: 'Iced Palm Sugar Latte',
+      sku: 'MNM-001',
+      price: 'Rp 18.000',
+      category: 'Beverages',
       stock: 85,
       image: 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=400&q=80'
     },
-    { 
-      name: 'Iced Fresh Milk Tea', 
-      sku: 'MNM-002', 
-      price: 'Rp 15.000', 
-      category: 'Beverages', 
+    {
+      name: 'Iced Fresh Milk Tea',
+      sku: 'MNM-002',
+      price: 'Rp 15.000',
+      category: 'Beverages',
       stock: 60,
       image: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=400&q=80'
     },
   ];
 
-  const filteredProducts = activeCategory === 'All Items' 
-    ? sampleProducts 
+  const filteredProducts = activeCategory === 'All Items'
+    ? sampleProducts
     : sampleProducts.filter(p => p.category === activeCategory);
 
   const outlets = [
@@ -410,11 +421,10 @@ function InteractivePOSShowcase() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as ShowcaseTab)}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
-                  isActive
-                    ? 'bg-white text-[#0E59F9] shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
-                }`}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap ${isActive
+                  ? 'bg-white text-[#0E59F9] shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+                  }`}
               >
                 <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#0E59F9]' : 'text-slate-400'}`} />
                 <span>{tab.label}</span>
@@ -457,10 +467,10 @@ function InteractivePOSShowcase() {
                 {/* Cart Content in Customer Phone */}
                 <div className="p-3.5 flex-1 overflow-y-auto space-y-2.5 text-xs bg-slate-50/50">
                   <div className="p-2.5 rounded-xl bg-white border border-slate-200/80 flex items-start gap-2.5 shadow-2xs">
-                    <img 
-                      src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=120&q=80" 
-                      alt="Signature Mocca Cake" 
-                      className="w-10 h-10 rounded-lg object-cover border border-slate-100 shrink-0" 
+                    <img
+                      src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=120&q=80"
+                      alt="Signature Mocca Cake"
+                      className="w-10 h-10 rounded-lg object-cover border border-slate-100 shrink-0"
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between font-bold">
@@ -472,10 +482,10 @@ function InteractivePOSShowcase() {
                   </div>
 
                   <div className="p-2.5 rounded-xl bg-white border border-slate-200/80 flex items-start gap-2.5 shadow-2xs">
-                    <img 
-                      src="https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=120&q=80" 
-                      alt="Iced Palm Sugar Latte" 
-                      className="w-10 h-10 rounded-lg object-cover border border-slate-100 shrink-0" 
+                    <img
+                      src="https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=120&q=80"
+                      alt="Iced Palm Sugar Latte"
+                      className="w-10 h-10 rounded-lg object-cover border border-slate-100 shrink-0"
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between font-bold">
@@ -508,7 +518,7 @@ function InteractivePOSShowcase() {
                     <span className="text-[10px] text-slate-500 font-semibold">Total Due (Table 08)</span>
                     <span className="text-sm font-extrabold text-slate-900">Rp 80.190</span>
                   </div>
-                  <button 
+                  <button
                     type="button"
                     className="w-full h-9 rounded-xl bg-[#0E59F9] text-white text-[11px] font-bold flex items-center justify-center gap-1.5 shadow-sm hover:bg-[#0B48CC] transition-colors"
                   >
@@ -585,9 +595,9 @@ function InteractivePOSShowcase() {
               {/* Product Search Bar */}
               <div className="relative">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input 
-                  type="text" 
-                  readOnly 
+                <input
+                  type="text"
+                  readOnly
                   value="Signature Mocca Cake"
                   placeholder="Search products..."
                   className="w-full h-11 pl-10 pr-4 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700 outline-none select-none"
@@ -603,11 +613,10 @@ function InteractivePOSShowcase() {
                   <button
                     key={cat}
                     onClick={() => setActiveCategory(cat)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer whitespace-nowrap ${
-                      activeCategory === cat
-                        ? 'bg-slate-900 text-white'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200/70'
-                    }`}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer whitespace-nowrap ${activeCategory === cat
+                      ? 'bg-slate-900 text-white'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200/70'
+                      }`}
                   >
                     {cat}
                   </button>
@@ -617,16 +626,16 @@ function InteractivePOSShowcase() {
               {/* Products Grid with Admin-Style Photos */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {filteredProducts.map((p, idx) => (
-                  <div 
+                  <div
                     key={idx}
                     className="rounded-2xl border border-slate-200/80 hover:border-[#0E59F9]/50 hover:shadow-md transition-all bg-white flex flex-col justify-between overflow-hidden select-none group cursor-pointer"
                   >
                     {/* Aspect 4/3 Product Image like Admin POS */}
                     <div className="aspect-[4/3] bg-slate-100 relative overflow-hidden flex items-center justify-center">
-                      <img 
-                        src={p.image} 
-                        alt={p.name} 
-                        className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300" 
+                      <img
+                        src={p.image}
+                        alt={p.name}
+                        className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
                       />
                       <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md bg-white/90 backdrop-blur-xs text-slate-700 text-[9px] font-mono font-bold shadow-xs">
                         {p.sku}
@@ -669,10 +678,10 @@ function InteractivePOSShowcase() {
                 <div className="py-3 space-y-2.5 border-b border-slate-200 text-xs">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <img 
-                        src="https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&w=120&q=80" 
-                        alt="Baked Cheese Cake" 
-                        className="w-9 h-9 rounded-lg object-cover border border-slate-200 shrink-0" 
+                      <img
+                        src="https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&w=120&q=80"
+                        alt="Baked Cheese Cake"
+                        className="w-9 h-9 rounded-lg object-cover border border-slate-200 shrink-0"
                       />
                       <div className="truncate">
                         <p className="font-semibold text-slate-800 truncate">1x Baked Cheese Cake</p>
@@ -684,10 +693,10 @@ function InteractivePOSShowcase() {
 
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <img 
-                        src="https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=120&q=80" 
-                        alt="Iced Palm Sugar Latte" 
-                        className="w-9 h-9 rounded-lg object-cover border border-slate-200 shrink-0" 
+                      <img
+                        src="https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=120&q=80"
+                        alt="Iced Palm Sugar Latte"
+                        className="w-9 h-9 rounded-lg object-cover border border-slate-200 shrink-0"
                       />
                       <div className="truncate">
                         <p className="font-semibold text-slate-800 truncate">2x Iced Palm Sugar Latte</p>
@@ -732,7 +741,7 @@ function InteractivePOSShowcase() {
                   </div>
                 </div>
 
-                <button 
+                <button
                   type="button"
                   className="w-full h-10 rounded-xl bg-[#0E59F9] text-white text-xs font-bold hover:bg-[#0C4CD6] transition-colors flex items-center justify-center gap-2 shadow-sm"
                 >
@@ -818,11 +827,10 @@ function InteractivePOSShowcase() {
                 <div
                   key={idx}
                   onClick={() => setActiveOutletIdx(idx)}
-                  className={`p-4 rounded-2xl border transition-all cursor-pointer ${
-                    activeOutletIdx === idx
-                      ? 'border-[#0E59F9] bg-blue-50/20 shadow-sm ring-1 ring-[#0E59F9]'
-                      : 'border-slate-200 bg-white hover:border-slate-300'
-                  }`}
+                  className={`p-4 rounded-2xl border transition-all cursor-pointer ${activeOutletIdx === idx
+                    ? 'border-[#0E59F9] bg-blue-50/20 shadow-sm ring-1 ring-[#0E59F9]'
+                    : 'border-slate-200 bg-white hover:border-slate-300'
+                    }`}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-900 text-white">
@@ -871,9 +879,10 @@ export default function LandingPage({
   const marqueeContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    let animationFrameId: number;
+    let animationFrameId: number | null = null;
     let startTime = performance.now();
     let cache: any = null;
+    let isVisible = false;
 
     const buildCache = () => {
       if (!marqueeContainerRef.current) return null;
@@ -885,6 +894,7 @@ export default function LandingPage({
       const containerRect = marqueeContainerRef.current.getBoundingClientRect();
       const containerWidth = containerRect.width;
       const containerCenter = containerRect.left + containerRect.width / 2;
+      const halfContainerWidth = containerWidth / 2 || 1;
 
       const tracks = Array.from(marqueeContainerRef.current.querySelectorAll('.row-top, .row-middle, .row-bottom')).map(track => {
         const isMiddle = track.classList.contains('row-middle');
@@ -918,11 +928,16 @@ export default function LandingPage({
 
       contentsList.forEach((c, i) => c.style.transform = oldTransforms[i]);
 
-      return { containerWidth, containerCenter, tracks };
+      return { containerWidth, containerCenter, halfContainerWidth, tracks };
     };
 
-    // logic untuk membuat animasi testimonial lengkung & halus
+    // Logic untuk membuat animasi testimonial lengkung & sangat halus
     const updateCards = (time: number) => {
+      if (!isVisible) {
+        animationFrameId = null;
+        return;
+      }
+
       if (!cache) {
         cache = buildCache();
         if (!cache) {
@@ -932,8 +947,8 @@ export default function LandingPage({
       }
 
       if (!marqueeContainerRef.current) return;
-      const { containerWidth, containerCenter, tracks } = cache;
-      const duration = 15;
+      const { containerCenter, halfContainerWidth, tracks } = cache;
+      const duration = 22; // Durasi gliding lebih halus dan stabil
       const elapsed = (time - startTime) / 1000;
 
       for (let i = 0; i < tracks.length; i++) {
@@ -949,20 +964,25 @@ export default function LandingPage({
           if (!contentInfo.content || !contentInfo.content.isConnected) continue;
           const translateXPixels = (translateXPercent / 100) * contentInfo.contentWidth;
 
-          contentInfo.content.style.transform = `translate3d(${translateXPercent}%, 0, 0)`;
+          contentInfo.content.style.transform = `translate3d(${translateXPercent.toFixed(3)}%, 0, 0)`;
 
           for (let k = 0; k < contentInfo.wrappers.length; k++) {
             const wrapperInfo = contentInfo.wrappers[k];
             if (!wrapperInfo.inner || !wrapperInfo.inner.isConnected) continue;
 
             const currentCenter = wrapperInfo.initialCenter + translateXPixels;
-            const distanceFromCenter = (currentCenter - containerCenter) / (containerWidth / 2);
+            const distanceFromCenter = (currentCenter - containerCenter) / halfContainerWidth;
+
+            // Skip offscreen elements to avoid unnecessary transform calculations
+            if (distanceFromCenter < -2.2 || distanceFromCenter > 2.2) {
+              continue;
+            }
 
             const clampedDistance = Math.max(-1.5, Math.min(1.5, distanceFromCenter));
             const curveIntensity = clampedDistance * clampedDistance;
 
-            const maxOffset = 180;
-            const maxRotation = 15;
+            const maxOffset = 170;
+            const maxRotation = 14;
 
             let translateY = 0;
             let rotateZ = 0;
@@ -975,7 +995,7 @@ export default function LandingPage({
               rotateZ = clampedDistance * maxRotation;
             }
 
-            wrapperInfo.inner.style.transform = `translate3d(0, ${translateY}px, 0) rotateZ(${rotateZ}deg) scale(1)`;
+            wrapperInfo.inner.style.transform = `translate3d(0, ${translateY.toFixed(1)}px, 0) rotate(${rotateZ.toFixed(2)}deg)`;
           }
         }
       }
@@ -985,19 +1005,42 @@ export default function LandingPage({
 
     cache = buildCache();
 
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        isVisible = entry.isIntersecting;
+        if (isVisible) {
+          if (!animationFrameId) {
+            startTime = performance.now();
+            animationFrameId = requestAnimationFrame(updateCards);
+          }
+        } else {
+          if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
+          }
+        }
+      },
+      { rootMargin: '200px 0px' }
+    );
+
+    if (marqueeContainerRef.current) {
+      observer.observe(marqueeContainerRef.current);
+    }
+
     let resizeTimer: ReturnType<typeof setTimeout>;
     const handleResize = () => {
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => {
         cache = buildCache();
-      }, 200);
+      }, 150);
     };
 
-    window.addEventListener('resize', handleResize);
-    animationFrameId = requestAnimationFrame(updateCards);
+    window.addEventListener('resize', handleResize, { passive: true });
 
     return () => {
-      cancelAnimationFrame(animationFrameId);
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      observer.disconnect();
       window.removeEventListener('resize', handleResize);
       clearTimeout(resizeTimer);
     };
@@ -1212,17 +1255,14 @@ export default function LandingPage({
           {/* 3 High-Impact Value Pillars */}
           <div className="mt-14 grid grid-cols-1 md:grid-cols-3 gap-6">
             <FadeIn delay={0.2} className="h-full">
-              <div className="p-6 md:p-8 rounded-2xl bg-white border border-slate-200/80 shadow-xs h-full flex flex-col justify-between">
+              <div className="p-6 md:p-8 rounded-2xl bg-gradient-to-b from-blue-50/90 via-blue-50/30 to-white border border-blue-100/80 shadow-xs hover:border-blue-300 hover:shadow-md transition-all h-full flex flex-col justify-between">
                 <div>
-                  <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#0E59F9] flex items-center justify-center mb-4">
-                    <QrCode className="w-5 h-5" />
-                  </div>
                   <h3 className="text-lg font-bold text-slate-900 mb-2">Table QR Self-Ordering</h3>
                   <p className="text-sm text-slate-600 leading-relaxed">
                     Guests sit at their table, scan the QR sticker with their phone camera without downloading any app, customize menu items, and checkout via QRIS. Reduces register lines by up to 80%.
                   </p>
                 </div>
-                <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-500">
+                <div className="mt-6 pt-4 border-t border-blue-100/80 flex items-center justify-between text-xs font-semibold text-slate-500">
                   <span>Browser-Based (No App)</span>
                   <span className="text-emerald-600 font-bold">Instant QRIS Sync</span>
                 </div>
@@ -1230,17 +1270,14 @@ export default function LandingPage({
             </FadeIn>
 
             <FadeIn delay={0.3} className="h-full">
-              <div className="p-6 md:p-8 rounded-2xl bg-white border border-slate-200/80 shadow-xs h-full flex flex-col justify-between">
+              <div className="p-6 md:p-8 rounded-2xl bg-gradient-to-b from-blue-50/90 via-blue-50/30 to-white border border-blue-100/80 shadow-xs hover:border-blue-300 hover:shadow-md transition-all h-full flex flex-col justify-between">
                 <div>
-                  <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
-                    <Monitor className="w-5 h-5" />
-                  </div>
                   <h3 className="text-lg font-bold text-slate-900 mb-2">POS Register & Live Reports</h3>
                   <p className="text-sm text-slate-600 leading-relaxed">
                     For walk-in and take-away counter orders. Search products effortlessly, print 58/80mm thermal receipts, and every transaction syncs automatically to sales and inventory analytics.
                   </p>
                 </div>
-                <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-500">
+                <div className="mt-6 pt-4 border-t border-blue-100/80 flex items-center justify-between text-xs font-semibold text-slate-500">
                   <span>58/80mm Thermal Receipt</span>
                   <span className="text-emerald-600 font-bold">Real-Time Reporting</span>
                 </div>
@@ -1248,17 +1285,14 @@ export default function LandingPage({
             </FadeIn>
 
             <FadeIn delay={0.4} className="h-full">
-              <div className="p-6 md:p-8 rounded-2xl bg-white border border-slate-200/80 shadow-xs h-full flex flex-col justify-between">
+              <div className="p-6 md:p-8 rounded-2xl bg-gradient-to-b from-blue-50/90 via-blue-50/30 to-white border border-blue-100/80 shadow-xs hover:border-blue-300 hover:shadow-md transition-all h-full flex flex-col justify-between">
                 <div>
-                  <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-800 flex items-center justify-center mb-4">
-                    <ShieldCheck className="w-5 h-5" />
-                  </div>
                   <h3 className="text-lg font-bold text-slate-900 mb-2">Shift Cash Audit & Multi-Branch</h3>
                   <p className="text-sm text-slate-600 leading-relaxed">
                     Enforce opening float entry and track petty cash expenses. At shift closing, the system automatically matches counted physical cash with system totals to ensure zero cash variance.
                   </p>
                 </div>
-                <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-500">
+                <div className="mt-6 pt-4 border-t border-blue-100/80 flex items-center justify-between text-xs font-semibold text-slate-500">
                   <span>Multi-Tenant PostgreSQL</span>
                   <span className="text-[#0E59F9] font-bold">Variance: Rp 0</span>
                 </div>
@@ -1273,7 +1307,7 @@ export default function LandingPage({
         <div className="mx-auto max-w-[1200px] flex flex-col lg:flex-row items-center gap-16">
           <FadeIn className="w-full lg:w-1/2">
             <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-black/[0.04] bg-[#F8F9FA] aspect-square max-h-[600px] flex items-center justify-center">
-              <Image src="/img/hero/img2.png" alt="Feature showcase" fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover object-left" />
+              <Image src="/img/hero/img2.png" alt="Feature showcase" fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover object-left" unoptimized={true} />
             </div>
           </FadeIn>
 
@@ -1289,17 +1323,11 @@ export default function LandingPage({
 
             <div className="space-y-8">
               {features.map((f, i) => {
-                const IconComp = f.icon;
                 return (
                   <FadeIn key={i} delay={0.15 + (i * 0.1)}>
-                    <div className="flex gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0 text-[#0E59F9]">
-                        <IconComp className="w-5 h-5 text-[#0E59F9]" />
-                      </div>
-                      <div>
-                        <h4 className="text-[18px] font-bold text-[#111] mb-2">{f.title}</h4>
-                        <p className="text-[15px] text-[#666] leading-relaxed">{f.desc}</p>
-                      </div>
+                    <div className="border-l-2 border-slate-200 hover:border-[#0E59F9] pl-5 transition-colors">
+                      <h4 className="text-[18px] font-bold text-[#111] mb-1.5">{f.title}</h4>
+                      <p className="text-[15px] text-[#666] leading-relaxed">{f.desc}</p>
                     </div>
                   </FadeIn>
                 );

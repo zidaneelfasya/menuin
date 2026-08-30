@@ -119,6 +119,7 @@ export default function FooterSuperfluidStyle() {
             height={280}
             className="w-full max-w-[1300px] h-auto object-contain select-none pointer-events-none drop-shadow-sm"
             priority
+            unoptimized={true}
           />
         </div>
 

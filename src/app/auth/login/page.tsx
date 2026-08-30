@@ -78,15 +78,15 @@ export default function LoginPage() {
         {/* Brand Panel */}
         <div className="hidden md:flex flex-1 bg-[#2563EB] flex-col items-center justify-center p-12 relative">
           <Image
-            src="/logo/logo.jpeg"
+            src="/menuin-putih.png"
             alt="Menuin"
-            width={200}
-            height={60}
-            className="brightness-0 invert mb-8"
+            width={180}
+            height={50}
+            className="mb-8 object-contain"
             style={{ height: "auto" }}
             priority
           />
-          <p className="text-white/70 text-sm text-center max-w-[240px] leading-relaxed">
+          <p className="text-white/80 text-sm text-center max-w-[240px] leading-relaxed">
             Sistem POS modern untuk restoran dan bisnis kuliner Anda.
           </p>
         </div>
@@ -94,13 +94,13 @@ export default function LoginPage() {
         {/* Form Panel */}
         <div className="flex-1 flex flex-col justify-center px-8 py-12 md:px-14">
           {/* Mobile logo */}
-          <div className="md:hidden mb-10">
+          <div className="md:hidden mb-8">
             <Image
-              src="/logo/logo.jpeg"
+              src="/logo-menuin-memanjang.svg"
               alt="Menuin"
               width={140}
-              height={42}
-              className="mb-6"
+              height={40}
+              className="mb-4 object-contain"
               style={{ height: "auto" }}
               priority
             />

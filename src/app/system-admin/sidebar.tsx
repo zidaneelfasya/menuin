@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, Users, Server, LogOut, ChevronLeft, ChevronRight, ShieldAlert, Sparkles, ExternalLink } from 'lucide-react';
+import { LayoutDashboard, Users, Server, LogOut, ChevronLeft, ChevronRight, ShieldCheck } from 'lucide-react';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { createClient } from '@/lib/supabase/client';
 import { UserProfile } from '@/lib/actions/auth';
@@ -55,18 +55,18 @@ export function Sidebar({
       <motion.aside
         initial={false}
         animate={{
-          width: collapsed ? '80px' : '270px',
+          width: collapsed ? '80px' : '260px',
           x: mobileOpen ? 0 : (typeof window !== 'undefined' && window.innerWidth < 768 ? -300 : 0)
         }}
         className={cn(
-          "bg-card/95 backdrop-blur-md border-r flex flex-col h-screen fixed left-0 top-0 z-50 transition-[width] duration-300 shadow-sm",
-          mobileOpen ? "flex !w-[270px]" : "hidden md:flex"
+          "bg-card border-r flex flex-col h-screen fixed left-0 top-0 z-50 transition-[width] duration-300 shadow-none",
+          mobileOpen ? "flex !w-[260px]" : "hidden md:flex"
         )}
       >
         {/* Header / Brand */}
-        <div className="h-20 flex items-center justify-between border-b px-4 relative">
-          <Link href="/system-admin" className="flex items-center gap-3 overflow-hidden">
-            <div className="relative w-28 h-10 flex-shrink-0">
+        <div className="h-16 flex items-center justify-between border-b px-4 relative">
+          <Link href="/system-admin" className="flex items-center gap-2 overflow-hidden">
+            <div className="relative w-28 h-8 flex-shrink-0">
               <Image
                 src="/logo-menuin-memanjang.svg"
                 alt="Logo Menuin"
@@ -75,34 +75,16 @@ export function Sidebar({
                 priority
               />
             </div>
-            {!collapsed && (
-              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-                System
-              </span>
-            )}
           </Link>
 
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="hidden md:flex absolute -right-3 top-7 bg-card border rounded-full p-1 text-muted-foreground hover:text-foreground hover:bg-muted shadow-sm transition-colors"
+            className="hidden md:flex absolute -right-3 top-5 bg-card border rounded-full p-1 text-muted-foreground hover:text-foreground hover:bg-muted shadow-sm transition-colors"
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
           </button>
         </div>
-
-        {/* System Admin Portal Banner */}
-        {!collapsed && (
-          <div className="mx-3 mt-3 px-3 py-2 rounded-xl bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 border border-blue-500/15 flex items-center gap-2.5">
-            <div className="h-7 w-7 rounded-lg bg-blue-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm">
-              <ShieldAlert className="h-4 w-4" />
-            </div>
-            <div className="overflow-hidden">
-              <p className="text-xs font-semibold text-foreground tracking-tight leading-none">System Admin</p>
-              <p className="text-[11px] text-muted-foreground truncate mt-0.5">Control Center</p>
-            </div>
-          </div>
-        )}
 
         {/* Navigation */}
         <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1.5 scrollbar-thin">

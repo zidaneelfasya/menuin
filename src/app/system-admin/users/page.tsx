@@ -22,10 +22,10 @@ export default async function UsersPage() {
   }));
 
   return (
-    <UsersClient 
-      initialUsers={usersList} 
-      tenants={tenantOptions} 
-      currentUserId={currentUser.id} 
+    <UsersClient
+      initialUsers={usersList}
+      tenants={tenantOptions}
+      currentUserId={currentUser?.id}
     />
   );
 }

@@ -61,8 +61,10 @@ interface TenantItem {
   isPaid: boolean;
   createdAt: Date;
   updatedAt: Date;
-  userCount: number;
-  productCount: number;
+  userCount?: number;
+  productCount?: number;
+  ownerName?: string | null;
+  ownerEmail?: string | null;
 }
 
 export function TenantsClient({ initialTenants }: { initialTenants: TenantItem[] }) {
@@ -89,9 +91,12 @@ export function TenantsClient({ initialTenants }: { initialTenants: TenantItem[]
 
   // Filtered list
   const filteredTenants = tenants.filter((t) => {
+    const q = search.toLowerCase();
     const matchesSearch =
-      t.name.toLowerCase().includes(search.toLowerCase()) ||
-      t.id.toLowerCase().includes(search.toLowerCase());
+      t.name.toLowerCase().includes(q) ||
+      t.id.toLowerCase().includes(q) ||
+      (t.ownerName && t.ownerName.toLowerCase().includes(q)) ||
+      (t.ownerEmail && t.ownerEmail.toLowerCase().includes(q));
     const matchesStatus =
       statusFilter === 'all' ||
       (statusFilter === 'paid' && t.isPaid) ||
@@ -287,6 +292,7 @@ export function TenantsClient({ initialTenants }: { initialTenants: TenantItem[]
               <thead className="text-xs uppercase bg-muted/40 text-muted-foreground border-b border-border/70">
                 <tr>
                   <th className="px-6 py-4 font-semibold">Nama Toko & ID</th>
+                  <th className="px-6 py-4 font-semibold">Pemilik (Owner)</th>
                   <th className="px-6 py-4 font-semibold">Status Berlangganan</th>
                   <th className="px-6 py-4 font-semibold text-center">Pengguna</th>
                   <th className="px-6 py-4 font-semibold text-center">Produk</th>
@@ -297,7 +303,7 @@ export function TenantsClient({ initialTenants }: { initialTenants: TenantItem[]
               <tbody className="divide-y divide-border/50">
                 {filteredTenants.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
+                    <td colSpan={7} className="px-6 py-12 text-center text-muted-foreground">
                       <Store className="h-8 w-8 mx-auto mb-2 opacity-40" />
                       Tidak ada data tenant yang cocok.
                     </td>
@@ -326,6 +332,18 @@ export function TenantsClient({ initialTenants }: { initialTenants: TenantItem[]
                         </div>
                       </td>
 
+                      {/* Owner Details */}
+                      <td className="px-6 py-4">
+                        {tenant.ownerName ? (
+                          <div>
+                            <div className="font-medium text-foreground text-sm">{tenant.ownerName}</div>
+                            <div className="text-xs text-muted-foreground">{tenant.ownerEmail}</div>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground italic">Belum ada owner</span>
+                        )}
+                      </td>
+
                       {/* Status */}
                       <td className="px-6 py-4">
                         <button
@@ -345,7 +363,7 @@ export function TenantsClient({ initialTenants }: { initialTenants: TenantItem[]
                       <td className="px-6 py-4 text-center">
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-medium bg-muted text-muted-foreground">
                           <Users className="h-3 w-3" />
-                          {tenant.userCount}
+                          {tenant.userCount ?? 0}
                         </span>
                       </td>
 
@@ -353,7 +371,7 @@ export function TenantsClient({ initialTenants }: { initialTenants: TenantItem[]
                       <td className="px-6 py-4 text-center">
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-medium bg-muted text-muted-foreground">
                           <Package className="h-3 w-3" />
-                          {tenant.productCount}
+                          {tenant.productCount ?? 0}
                         </span>
                       </td>
 
