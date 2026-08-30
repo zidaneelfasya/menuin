@@ -247,8 +247,12 @@ const testimonialsData = [
     avatar: 'https://i.pravatar.cc/150?u=ayu',
     rating: 4.7,
     text: 'Opening a new branch takes only minutes to configure. Multi-outlet reports give me complete financial visibility from anywhere.',
-    sentiment: 'Highly Satisfied'
   }
+];
+
+const shiftedTestimonialsData = [
+  ...testimonialsData.slice(3),
+  ...testimonialsData.slice(0, 3)
 ];
 
 function SkeletonCard() {
@@ -900,8 +904,7 @@ export default function LandingPage({
         const isMiddle = track.classList.contains('row-middle');
         const isBottom = track.classList.contains('row-bottom');
         let delay = 0;
-        if (isMiddle) delay = -12.5;
-        if (isBottom) delay = -6;
+        if (isMiddle) delay = -12;
 
         const contents = Array.from(track.querySelectorAll('.marquee-content')).map(content => {
           const contentEl = content as HTMLElement;
@@ -1481,7 +1484,7 @@ export default function LandingPage({
                 {/* SKELETON */}
                 <div className="absolute inset-0 z-10 flex">
                   <div className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5">
-                    {[...testimonialsData, ...testimonialsData].map((t, i) => (
+                    {[...shiftedTestimonialsData, ...shiftedTestimonialsData].map((t, i) => (
                       <SkeletonCard key={`skel1-b-${i}`} />
                     ))}
                   </div>
@@ -1490,7 +1493,7 @@ export default function LandingPage({
                     className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5"
                     aria-hidden="true"
                   >
-                    {[...testimonialsData, ...testimonialsData].map((t, i) => (
+                    {[...shiftedTestimonialsData, ...shiftedTestimonialsData].map((t, i) => (
                       <SkeletonCard key={`skel2-b-${i}`} />
                     ))}
                   </div>
@@ -1504,7 +1507,7 @@ export default function LandingPage({
                   }}
                 >
                   <div className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5">
-                    {[...testimonialsData, ...testimonialsData].map((t, i) => (
+                    {[...shiftedTestimonialsData, ...shiftedTestimonialsData].map((t, i) => (
                       <RealCard
                         key={`real1-b-${i}`}
                         data={t}
@@ -1516,7 +1519,7 @@ export default function LandingPage({
                     className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5"
                     aria-hidden="true"
                   >
-                    {[...testimonialsData, ...testimonialsData].map((t, i) => (
+                    {[...shiftedTestimonialsData, ...shiftedTestimonialsData].map((t, i) => (
                       <RealCard
                         key={`real2-b-${i}`}
                         data={t}
