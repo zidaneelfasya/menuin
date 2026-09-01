@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from '@/lib/db';
-import { products, categories } from '@/lib/db/schema';
+import { products, categories, productModifierGroups, modifierGroups } from '@/lib/db/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
@@ -17,6 +17,7 @@ const productSchema = z.object({
   minStock: z.coerce.number().min(0, 'Batas minimum stok tidak boleh negatif'),
   imageUrl: z.string().optional().nullable(),
   barcode: z.string().optional().nullable(),
+  modifierGroupIds: z.array(z.string()).optional(),
 });
 
 // Helper untuk generate 13 digit barcode EAN-13 style dummy
@@ -61,7 +62,14 @@ export async function getProducts() {
       .where(eq(products.tenantId, user.tenantId))
       .orderBy(products.name);
       
-    return { success: true, data };
+    // Fetch product modifiers
+    const allProductModifiers = await db.select().from(productModifierGroups);
+    const dataWithModifiers = data.map(p => ({
+      ...p,
+      modifierGroupIds: allProductModifiers.filter(pm => pm.productId === p.id).map(pm => pm.modifierGroupId)
+    }));
+      
+    return { success: true, data: dataWithModifiers };
   } catch (error) {
     console.error('Error fetching products:', error);
     return { success: false, error: 'Gagal mengambil data produk' };
@@ -91,7 +99,17 @@ export async function createProduct(formData: z.infer<typeof productSchema>) {
       minStock: validatedData.minStock,
       imageUrl: validatedData.imageUrl,
       barcode: finalBarcode,
-    });
+    }).returning({ id: products.id });
+    
+    const newProductId = insertedProduct[0].id;
+    if (validatedData.modifierGroupIds && validatedData.modifierGroupIds.length > 0) {
+      await db.insert(productModifierGroups).values(
+        validatedData.modifierGroupIds.map(groupId => ({
+          productId: newProductId,
+          modifierGroupId: groupId
+        }))
+      );
+    }
     
     revalidatePath('/tenants/products');
     revalidatePath('/tenants/pos');
@@ -125,6 +143,17 @@ export async function updateProduct(id: string, formData: z.infer<typeof product
       })
       .where(and(eq(products.id, id), eq(products.tenantId, user.tenantId)));
     
+    // Update modifiers
+    await db.delete(productModifierGroups).where(eq(productModifierGroups.productId, id));
+    if (validatedData.modifierGroupIds && validatedData.modifierGroupIds.length > 0) {
+      await db.insert(productModifierGroups).values(
+        validatedData.modifierGroupIds.map(groupId => ({
+          productId: id,
+          modifierGroupId: groupId
+        }))
+      );
+    }
+    
     revalidatePath('/tenants/products');
     revalidatePath('/tenants/pos');
     revalidatePath('/tenants/inventory');
@@ -140,6 +169,7 @@ export async function deleteProduct(id: string) {
     const user = await getCurrentUser();
     if (!user || !user.tenantId) return { success: false, error: 'Unauthorized' };
 
+    await db.delete(productModifierGroups).where(eq(productModifierGroups.productId, id));
     await db.delete(products).where(and(eq(products.id, id), eq(products.tenantId, user.tenantId)));
     
     revalidatePath('/tenants/products');

@@ -92,7 +92,12 @@ export function CheckoutClient({ tenantSlug, settings }: CheckoutClientProps) {
       tableNumber: formData.tableNumber || undefined,
       customerName: formData.customerName,
       customerPhone: formData.customerPhone,
-      items: items.map(i => ({ id: i.id, quantity: i.quantity })),
+      items: items.map(i => ({ 
+        id: i.productId, 
+        quantity: i.quantity,
+        modifiers: i.modifiers,
+        notes: i.notes
+      })),
       paymentMethod: 'ONLINE'
     });
 
@@ -143,7 +148,7 @@ export function CheckoutClient({ tenantSlug, settings }: CheckoutClientProps) {
         {/* Cart Items */}
         <div className="space-y-4">
           {items.map((item) => (
-            <div key={item.id} className="flex gap-4">
+            <div key={item.cartItemId} className="flex gap-4">
               <div className="h-20 w-20 bg-gray-100 rounded-xl flex-shrink-0 border overflow-hidden">
                 {item.imageUrl ? (
                   <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
@@ -156,18 +161,28 @@ export function CheckoutClient({ tenantSlug, settings }: CheckoutClientProps) {
                 <div>
                   <div className="font-semibold text-sm leading-tight text-gray-800">{item.name}</div>
                   <div className="text-gray-500 text-sm mt-1">{formatCurrency(item.price)}</div>
+                  {item.modifiers && item.modifiers.length > 0 && (
+                    <div className="text-xs text-gray-400 mt-0.5">
+                      {item.modifiers.map(m => m.name).join(', ')}
+                    </div>
+                  )}
+                  {item.notes && (
+                    <div className="text-xs text-gray-400 italic mt-0.5 line-clamp-1">
+                      "{item.notes}"
+                    </div>
+                  )}
                 </div>
                 
                 <div className="flex items-center gap-2 bg-gray-50 border rounded-lg p-1 w-fit">
                   <button 
-                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                    onClick={() => updateQuantity(item.cartItemId, item.quantity - 1)}
                     className="h-7 w-7 flex items-center justify-center bg-white rounded shadow-sm text-gray-600 hover:bg-gray-100"
                   >
                     <Minus className="h-3 w-3" />
                   </button>
                   <span className="text-sm font-semibold w-6 text-center">{item.quantity}</span>
                   <button 
-                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                    onClick={() => updateQuantity(item.cartItemId, item.quantity + 1)}
                     className="h-7 w-7 flex items-center justify-center bg-catalog-primary text-white rounded shadow-sm hover:bg-catalog-primary/90"
                   >
                     <Plus className="h-3 w-3" />

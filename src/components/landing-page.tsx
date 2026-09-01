@@ -1071,7 +1071,7 @@ export default function LandingPage({
           <div className="hidden md:flex items-center gap-4">
             {isLoggedIn ? (
               <a
-                href="/pos"
+                href="/tenants/pos"
                 className="h-10 pl-2 pr-4 flex items-center rounded-full bg-slate-900 text-white text-[13px] font-semibold hover:bg-slate-800 transition-all gap-2.5 shadow-sm group"
               >
                 <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-[#0E59F9] to-[#3B82F6] text-white flex items-center justify-center font-bold text-[12px] shadow-sm">

@@ -44,6 +44,7 @@ import * as z from 'zod';
 import { createProduct, updateProduct, deleteProduct } from '@/lib/actions/products';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
+import { Checkbox } from '@/components/ui/checkbox';
 
 type Product = {
   id: string;
@@ -57,6 +58,7 @@ type Product = {
   imageUrl: string | null;
   barcode: string | null;
   status: string;
+  modifierGroupIds?: string[];
 };
 
 type Category = {
@@ -65,7 +67,7 @@ type Category = {
 };
 
 const productSchema = z.object({
-  name: z.string().min(1, 'Nama produk wajib diisi'),
+  name: z.string().min(1, 'Nama item wajib diisi'),
   sku: z.string().min(1, 'SKU wajib diisi'),
   categoryId: z.string().uuid('Pilih kategori').nullable(),
   price: z.coerce.number().min(0, 'Harga tidak boleh negatif'),
@@ -74,9 +76,10 @@ const productSchema = z.object({
   minStock: z.coerce.number().min(0, 'Batas minimum stok tidak boleh negatif'),
   imageUrl: z.string().optional().nullable(),
   barcode: z.string().optional().nullable(),
+  modifierGroupIds: z.array(z.string()).optional(),
 });
 
-export function ProductList({ initialData, categories }: { initialData: Product[], categories: Category[] }) {
+export function ProductList({ initialData, categories, modifierGroups = [] }: { initialData: Product[], categories: Category[], modifierGroups?: any[] }) {
   const [isAddOpen, setIsAddOpen] = React.useState(false);
   const [isEditOpen, setIsEditOpen] = React.useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
@@ -89,7 +92,7 @@ export function ProductList({ initialData, categories }: { initialData: Product[
 
   const form = useForm<z.infer<typeof productSchema>>({
     resolver: zodResolver(productSchema),
-    defaultValues: { name: '', sku: '', categoryId: null, price: 0, costPrice: 0, stock: 0, minStock: 5, imageUrl: '', barcode: '' },
+    defaultValues: { name: '', sku: '', categoryId: null, price: 0, costPrice: 0, stock: 0, minStock: 5, imageUrl: '', barcode: '', modifierGroupIds: [] },
   });
 
   const uploadImage = async (file: File) => {
@@ -124,7 +127,7 @@ export function ProductList({ initialData, categories }: { initialData: Product[
       const result = await createProduct({ ...values, imageUrl: finalImageUrl });
       
       if (result.success) {
-        toast.success('Produk berhasil ditambahkan');
+        toast.success('Item berhasil ditambahkan');
         setIsAddOpen(false);
         form.reset();
         setImageFile(null);
@@ -151,7 +154,7 @@ export function ProductList({ initialData, categories }: { initialData: Product[
       const result = await updateProduct(selectedProduct.id, { ...values, imageUrl: finalImageUrl });
       
       if (result.success) {
-        toast.success('Produk berhasil diperbarui');
+        toast.success('Item berhasil diperbarui');
         setIsEditOpen(false);
         setImageFile(null);
       } else {
@@ -171,7 +174,7 @@ export function ProductList({ initialData, categories }: { initialData: Product[
     setIsLoading(false);
     
     if (result.success) {
-      toast.success('Produk berhasil dihapus');
+      toast.success('Item berhasil dihapus');
       setIsDeleteOpen(false);
     } else {
       toast.error(result.error);
@@ -191,6 +194,7 @@ export function ProductList({ initialData, categories }: { initialData: Product[
       minStock: product.minStock,
       barcode: product.barcode || '',
       imageUrl: product.imageUrl || '',
+      modifierGroupIds: product.modifierGroupIds || [],
     });
     setIsEditOpen(true);
   };
@@ -202,7 +206,7 @@ export function ProductList({ initialData, categories }: { initialData: Product[
 
   const handlePrintBarcodeClick = (product: Product) => {
     if (!product.barcode && !product.sku) {
-      toast.error('Produk ini tidak memiliki barcode atau SKU');
+      toast.error('Item ini tidak memiliki barcode atau SKU');
       return;
     }
     setSelectedProduct(product);
@@ -212,7 +216,7 @@ export function ProductList({ initialData, categories }: { initialData: Product[
   const columns: ColumnDef<Product>[] = [
     {
       accessorKey: 'name',
-      header: 'Produk',
+      header: 'Item',
       cell: ({ row }) => {
         const product = row.original;
         return (
@@ -299,7 +303,7 @@ export function ProductList({ initialData, categories }: { initialData: Product[
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
+              <Button variant="ghost" className="h-8 w-8 p-0" onClick={(e) => e.stopPropagation()}>
                 <span className="sr-only">Open menu</span>
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
@@ -316,7 +320,7 @@ export function ProductList({ initialData, categories }: { initialData: Product[
               <DropdownMenuItem className="text-primary cursor-pointer" onClick={() => handleEditClick(product)}>
                 <Pencil className="mr-2 h-4 w-4" /> Edit
               </DropdownMenuItem>
-              <DropdownMenuItem className="text-destructive cursor-pointer" onClick={() => handleDeleteClick(product)}>
+              <DropdownMenuItem className="text-destructive cursor-pointer" onClick={(e) => { e.stopPropagation(); handleDeleteClick(product); }}>
                 <Trash2 className="mr-2 h-4 w-4" /> Hapus
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -330,7 +334,7 @@ export function ProductList({ initialData, categories }: { initialData: Product[
     <form onSubmit={form.handleSubmit(onSubmit)}>
       <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto px-2">
         <div className="space-y-2">
-          <Label>Gambar Produk</Label>
+          <Label>Gambar Item</Label>
           <div className="flex items-center gap-4">
             <div className="h-16 w-16 rounded-md border bg-muted flex items-center justify-center overflow-hidden">
               {imageFile ? (
@@ -360,7 +364,7 @@ export function ProductList({ initialData, categories }: { initialData: Product[
             {form.formState.errors.sku && <p className="text-xs text-destructive">{form.formState.errors.sku.message}</p>}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="name">Nama Produk</Label>
+            <Label htmlFor="name">Nama Item</Label>
             <Input id="name" {...form.register('name')} placeholder="Misal: Kopi Susu" />
             {form.formState.errors.name && <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>}
           </div>
@@ -416,10 +420,47 @@ export function ProductList({ initialData, categories }: { initialData: Product[
             <Input id="minStock" type="number" {...form.register('minStock')} />
           </div>
         </div>
+
+        {modifierGroups.length > 0 && (
+          <div className="space-y-3 pt-2">
+            <Label>Grup Kustomisasi / Modifier (Opsional)</Label>
+            <div className="grid grid-cols-2 gap-2 border p-3 rounded-md bg-muted/20">
+              <Controller
+                control={form.control}
+                name="modifierGroupIds"
+                render={({ field }) => (
+                  <>
+                    {modifierGroups.map((mg: any) => {
+                      const isChecked = field.value?.includes(mg.id);
+                      return (
+                        <div key={mg.id} className="flex items-center space-x-2">
+                          <Checkbox 
+                            id={`mg-${mg.id}`}
+                            checked={isChecked}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                field.onChange([...(field.value || []), mg.id]);
+                              } else {
+                                field.onChange((field.value || []).filter((id: string) => id !== mg.id));
+                              }
+                            }}
+                          />
+                          <Label htmlFor={`mg-${mg.id}`} className="font-normal cursor-pointer">
+                            {mg.name}
+                          </Label>
+                        </div>
+                      );
+                    })}
+                  </>
+                )}
+              />
+            </div>
+          </div>
+        )}
       </div>
       <DialogFooter className="mt-4">
         <Button type="button" variant="outline" onClick={() => { setIsAddOpen(false); setIsEditOpen(false); }}>Batal</Button>
-        <Button type="submit" disabled={isLoading}>{isLoading ? 'Menyimpan...' : 'Simpan'}</Button>
+        <Button type="submit" disabled={isLoading || !form.formState.isDirty}>{isLoading ? 'Menyimpan...' : 'Simpan'}</Button>
       </DialogFooter>
     </form>
   );
@@ -428,32 +469,38 @@ export function ProductList({ initialData, categories }: { initialData: Product[
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Data Produk</h1>
-          <p className="text-sm text-muted-foreground">Kelola semua produk, harga, stok, gambar, dan barcode.</p>
+          <h1 className="text-2xl font-bold tracking-tight">Data Item</h1>
+          <p className="text-sm text-muted-foreground">Kelola semua item, harga, stok, gambar, dan barcode.</p>
         </div>
         <div className="flex gap-2">
           <ImportProductDialog />
           <Button 
             onClick={() => { 
-              form.reset({ name: '', sku: '', categoryId: null, price: 0, costPrice: 0, stock: 0, minStock: 5, imageUrl: '', barcode: '' }); 
+              form.reset({ name: '', sku: '', categoryId: null, price: 0, costPrice: 0, stock: 0, minStock: 5, imageUrl: '', barcode: '', modifierGroupIds: [] }); 
               setImageFile(null);
               setIsAddOpen(true); 
             }}
             className="rounded-xl px-4 flex items-center bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
           >
             <Plus className="mr-2 h-4 w-4" />
-            Tambah Produk
+            Tambah Item
           </Button>
         </div>
       </div>
 
-      <DataTable columns={columns} data={initialData} searchKey="name" searchPlaceholder="Cari nama produk..." />
+      <DataTable 
+        columns={columns} 
+        data={initialData} 
+        searchKey="name" 
+        searchPlaceholder="Cari nama item..." 
+        onRowClick={(row) => handleEditClick(row)}
+      />
 
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Tambah Produk Baru</DialogTitle>
-            <DialogDescription>Masukkan detail produk baru ke dalam sistem kasir.</DialogDescription>
+            <DialogTitle>Tambah Item Baru</DialogTitle>
+            <DialogDescription>Masukkan detail item baru ke dalam sistem kasir.</DialogDescription>
           </DialogHeader>
           <ProductForm onSubmit={onSubmitAdd} />
         </DialogContent>
@@ -462,8 +509,8 @@ export function ProductList({ initialData, categories }: { initialData: Product[
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Edit Produk</DialogTitle>
-            <DialogDescription>Perbarui informasi produk ini.</DialogDescription>
+            <DialogTitle>Detail / Edit Item</DialogTitle>
+            <DialogDescription>Perbarui informasi item ini.</DialogDescription>
           </DialogHeader>
           <ProductForm onSubmit={onSubmitEdit} />
         </DialogContent>
@@ -472,9 +519,9 @@ export function ProductList({ initialData, categories }: { initialData: Product[
       <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Hapus Produk</DialogTitle>
+            <DialogTitle>Hapus Item</DialogTitle>
             <DialogDescription>
-              Apakah Anda yakin ingin menghapus produk <b>{selectedProduct?.name}</b>? Tindakan ini tidak dapat dibatalkan.
+              Apakah Anda yakin ingin menghapus item <b>{selectedProduct?.name}</b>? Tindakan ini tidak dapat dibatalkan.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

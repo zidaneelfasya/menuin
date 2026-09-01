@@ -8,6 +8,7 @@ import { formatCurrency } from '@/lib/utils/format';
 import { Input } from '@/components/ui/input';
 import { useBarcodeScanner } from '@/hooks/use-barcode-scanner';
 import { toast } from 'sonner';
+import { CustomizationModal } from '@/components/shared/customization-modal';
 
 type Category = {
   id: string;
@@ -25,14 +26,17 @@ type Product = {
   imageUrl: string | null;
   barcode: string | null;
   status: string;
+  modifierGroupIds?: string[];
 };
 
 export function ProductCatalog({ 
   products, 
-  categories 
+  categories,
+  modifierGroups
 }: { 
   products: Product[], 
-  categories: Category[] 
+  categories: Category[],
+  modifierGroups?: any[]
 }) {
   const [activeCategory, setActiveCategory] = React.useState('Semua');
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -40,6 +44,24 @@ export function ProductCatalog({
   const addItem = useCartStore((state) => state.addItem);
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const observerTarget = React.useRef<HTMLDivElement>(null);
+  
+  const [selectedProductForModal, setSelectedProductForModal] = React.useState<Product | null>(null);
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
+
+  const handleAddToCart = (product: Product, modifiers: any[] = [], notes: string = '', quantity: number = 1) => {
+    let extraPrice = 0;
+    modifiers.forEach(m => extraPrice += Number(m.price));
+    
+    for(let i = 0; i < quantity; i++) {
+      addItem({ 
+        productId: product.id, 
+        name: product.name, 
+        price: parseFloat(product.price) + extraPrice, 
+        modifiers,
+        notes
+      });
+    }
+  };
 
   // Reset visible count when filter changes
   React.useEffect(() => {
@@ -87,12 +109,13 @@ export function ProductCatalog({
     onScan: (barcode: string) => {
       const matchedProduct = products.find(p => p.barcode === barcode || p.sku === barcode);
       if (matchedProduct && matchedProduct.stock > 0) {
-        addItem({ 
-          productId: matchedProduct.id, 
-          name: matchedProduct.name, 
-          price: parseFloat(matchedProduct.price), 
-        });
-        toast.success(`Berhasil menambahkan ${matchedProduct.name}`);
+        if (matchedProduct.modifierGroupIds && matchedProduct.modifierGroupIds.length > 0) {
+          setSelectedProductForModal(matchedProduct);
+          setIsModalOpen(true);
+        } else {
+          handleAddToCart(matchedProduct);
+          toast.success(`Berhasil menambahkan ${matchedProduct.name}`);
+        }
         setSearchQuery(''); // clear if it typed into the input
       } else {
         toast.error(`Produk dengan barcode ${barcode} tidak ditemukan atau stok habis.`);
@@ -105,11 +128,12 @@ export function ProductCatalog({
       // Manual search exact match
       const matchedProduct = products.find(p => p.barcode === searchQuery.trim() || p.sku === searchQuery.trim());
       if (matchedProduct && matchedProduct.stock > 0) {
-        addItem({ 
-          productId: matchedProduct.id, 
-          name: matchedProduct.name, 
-          price: parseFloat(matchedProduct.price), 
-        });
+        if (matchedProduct.modifierGroupIds && matchedProduct.modifierGroupIds.length > 0) {
+          setSelectedProductForModal(matchedProduct);
+          setIsModalOpen(true);
+        } else {
+          handleAddToCart(matchedProduct);
+        }
         setSearchQuery('');
       }
     }
@@ -180,11 +204,12 @@ export function ProductCatalog({
               )}
               onClick={() => {
                 if (product.stock > 0) {
-                  addItem({ 
-                    productId: product.id, 
-                    name: product.name, 
-                    price: parseFloat(product.price), 
-                  });
+                  if (product.modifierGroupIds && product.modifierGroupIds.length > 0) {
+                    setSelectedProductForModal(product);
+                    setIsModalOpen(true);
+                  } else {
+                    handleAddToCart(product);
+                  }
                 }
               }}
             >
@@ -240,6 +265,17 @@ export function ProductCatalog({
           </div>
         )}
       </div>
+
+      <CustomizationModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        product={selectedProductForModal}
+        allModifierGroups={modifierGroups || []}
+        onAddToCart={(product, modifiers, notes, qty) => {
+          handleAddToCart(product, modifiers, notes, qty);
+          toast.success(`${product.name} ditambahkan`);
+        }}
+      />
     </div>
   );
 }

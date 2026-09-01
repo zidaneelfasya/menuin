@@ -67,6 +67,16 @@ export function ShoppingCart() {
               </div>
               <div className="flex-1 min-w-0">
                 <h4 className="font-medium text-sm truncate">{item.name}</h4>
+                {item.modifiers && item.modifiers.length > 0 && (
+                  <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">
+                    {item.modifiers.map(m => m.name).join(', ')}
+                  </p>
+                )}
+                {item.notes && (
+                  <p className="text-[10px] text-muted-foreground italic mt-0.5 line-clamp-1">
+                    "{item.notes}"
+                  </p>
+                )}
                 <div className="flex items-center mt-1.5 space-x-2">
                   <div className="flex items-center bg-background border rounded-lg overflow-hidden">
                     <button 

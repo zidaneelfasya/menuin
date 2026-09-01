@@ -7,6 +7,8 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { formatCurrency } from "@/lib/utils/format";
+import { CustomizationModal } from '@/components/shared/customization-modal';
+import { toast } from 'sonner';
 
 type Product = {
   id: string;
@@ -14,22 +16,31 @@ type Product = {
   price: string;
   imageUrl: string | null;
   isFeatured: boolean | null;
+  imageUrl: string | null;
+  isFeatured: boolean | null;
   categoryId: string | null;
+  modifierGroupIds?: string[];
 };
 
 type CatalogProductListProps = {
   productsByCategory: Record<string, Product[]>;
   categories: { id: string; name: string }[];
   featuredProducts: Product[];
+  categories: { id: string; name: string }[];
+  featuredProducts: Product[];
   tenantSlug: string;
+  modifierGroups?: any[];
 };
 
-export function CatalogProductList({ productsByCategory, categories, featuredProducts, tenantSlug }: CatalogProductListProps) {
+export function CatalogProductList({ productsByCategory, categories, featuredProducts, tenantSlug, modifierGroups = [] }: CatalogProductListProps) {
   const searchParams = useSearchParams();
   const tableParam = searchParams.get("table");
   
   const { setTenant, setTableNumber, items, addItem, updateQuantity, getTotalItems, getTotalPrice } = useCartStore();
   const [searchQuery, setSearchQuery] = useState("");
+  
+  const [selectedProductForModal, setSelectedProductForModal] = useState<Product | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Initialize cart for this tenant
   useEffect(() => {
@@ -54,8 +65,11 @@ export function CatalogProductList({ productsByCategory, categories, featuredPro
   };
 
   const renderProduct = (product: Product, horizontal: boolean = false) => {
-    const cartItem = items.find(i => i.id === product.id);
-    const qty = cartItem?.quantity || 0;
+    const hasModifiers = product.modifierGroupIds && product.modifierGroupIds.length > 0;
+    const cartItemsForProduct = items.filter(i => i.productId === product.id);
+    const qty = cartItemsForProduct.reduce((sum, item) => sum + item.quantity, 0);
+    // If it has modifiers, we just show "Tambah". If it doesn't, we can show Plus/Minus for the single cart item.
+    const cartItemWithoutModifiers = !hasModifiers ? cartItemsForProduct[0] : null;
 
     return (
       <div 
@@ -80,17 +94,17 @@ export function CatalogProductList({ productsByCategory, categories, featuredPro
           </div>
           
           <div className="mt-auto">
-            {qty > 0 ? (
+            {!hasModifiers && cartItemWithoutModifiers ? (
               <div className="flex items-center justify-between bg-gray-50 rounded-lg p-1 border">
                 <button 
-                  onClick={() => updateQuantity(product.id, qty - 1)}
+                  onClick={() => updateQuantity(cartItemWithoutModifiers.cartItemId, cartItemWithoutModifiers.quantity - 1)}
                   className="h-8 w-8 flex items-center justify-center rounded-md bg-white text-catalog-primary shadow-sm hover:bg-gray-100"
                 >
                   <Minus className="h-4 w-4" />
                 </button>
-                <span className="font-semibold text-sm w-8 text-center">{qty}</span>
+                <span className="font-semibold text-sm w-8 text-center">{cartItemWithoutModifiers.quantity}</span>
                 <button 
-                  onClick={() => updateQuantity(product.id, qty + 1)}
+                  onClick={() => updateQuantity(cartItemWithoutModifiers.cartItemId, cartItemWithoutModifiers.quantity + 1)}
                   className="h-8 w-8 flex items-center justify-center rounded-md bg-catalog-primary text-white shadow-sm hover:bg-catalog-primary/90"
                 >
                   <Plus className="h-4 w-4" />
@@ -98,15 +112,23 @@ export function CatalogProductList({ productsByCategory, categories, featuredPro
               </div>
             ) : (
               <button 
-                className="w-full text-xs h-9 font-medium rounded-lg bg-white border-2 border-catalog-primary text-catalog-primary hover:bg-catalog-primary hover:text-white transition-colors"
-                onClick={() => addItem({
-                  id: product.id,
-                  name: product.name,
-                  price: Number(product.price),
-                  imageUrl: product.imageUrl
-                })}
+                className="w-full text-xs h-9 font-medium rounded-lg bg-white border-2 border-catalog-primary text-catalog-primary hover:bg-catalog-primary hover:text-white transition-colors flex items-center justify-center gap-1"
+                onClick={() => {
+                  if (hasModifiers) {
+                    setSelectedProductForModal(product);
+                    setIsModalOpen(true);
+                  } else {
+                    addItem({
+                      productId: product.id,
+                      name: product.name,
+                      price: Number(product.price),
+                      imageUrl: product.imageUrl
+                    });
+                    toast.success(`${product.name} ditambahkan`);
+                  }
+                }}
               >
-                Tambah
+                {qty > 0 && hasModifiers ? `Tambah Lagi (${qty})` : 'Tambah'}
               </button>
             )}
           </div>
@@ -225,6 +247,26 @@ export function CatalogProductList({ productsByCategory, categories, featuredPro
           </div>
         </div>
       )}
+
+      <CustomizationModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        product={selectedProductForModal}
+        allModifierGroups={modifierGroups || []}
+        onAddToCart={(product, modifiers, notes, qty) => {
+          let extraPrice = 0;
+          modifiers.forEach(m => extraPrice += Number(m.price));
+          addItem({
+            productId: product.id,
+            name: product.name,
+            price: Number(product.price) + extraPrice,
+            imageUrl: product.imageUrl,
+            modifiers,
+            notes
+          }, qty);
+          toast.success(`${product.name} ditambahkan`);
+        }}
+      />
     </div>
   );
 }

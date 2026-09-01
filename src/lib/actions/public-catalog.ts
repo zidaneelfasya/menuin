@@ -13,7 +13,9 @@ const orderSchema = z.object({
   tableNumber: z.string().optional(),
   items: z.array(z.object({
     id: z.string(),
-    quantity: z.number().min(1)
+    quantity: z.number().min(1),
+    modifiers: z.array(z.any()).optional(),
+    notes: z.string().optional()
   })).min(1),
   paymentMethod: z.string().default('ONLINE')
 });
@@ -60,6 +62,8 @@ export async function createOnlineOrder(formData: z.infer<typeof orderSchema>) {
         quantity: item.quantity,
         price: price.toString(),
         subtotal: total.toString(),
+        modifiers: item.modifiers || [],
+        notes: item.notes || null,
       });
     }
 
