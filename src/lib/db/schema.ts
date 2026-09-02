@@ -25,6 +25,16 @@ export const tenants = pgTable('tenants', {
   posRequireCustomer: boolean('pos_require_customer').default(false).notNull(), // false = Bebas, true = Wajib isi
   posOrderTypeSelection: text('pos_order_type_selection').default('MANUAL').notNull(), // MANUAL, DINE_IN, TAKEAWAY
   posTaxRate: decimal('pos_tax_rate', { precision: 5, scale: 2 }).default('0').notNull(),
+  taxName: text('tax_name').default('Pajak (PB1)').notNull(),
+  serviceChargeRate: decimal('service_charge_rate', { precision: 5, scale: 2 }).default('0').notNull(),
+  
+  // Potongan Komisi Platform Online Food (%)
+  grabFoodFeeRate: decimal('grab_food_fee_rate', { precision: 5, scale: 2 }).default('20').notNull(),
+  shopeeFoodFeeRate: decimal('shopee_food_fee_rate', { precision: 5, scale: 2 }).default('20').notNull(),
+  goFoodFeeRate: decimal('go_food_fee_rate', { precision: 5, scale: 2 }).default('20').notNull(),
+  
+  // Preferensi Tampilan
+  posPinBestSellers: boolean('pos_pin_best_sellers').default(true).notNull(),
   
   
   // Payment settings
@@ -47,6 +57,26 @@ export const users = pgTable('users', {
   role: roleEnum('role').notNull().default('CASHIER'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const promotions = pgTable('promotions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
+  code: text('code').notNull(),
+  name: text('name').notNull(),
+  type: text('type').default('PERCENTAGE').notNull(), // 'PERCENTAGE' | 'FIXED'
+  value: decimal('value', { precision: 12, scale: 2 }).notNull(),
+  minOrder: decimal('min_order', { precision: 12, scale: 2 }).default('0').notNull(),
+  maxDiscount: decimal('max_discount', { precision: 12, scale: 2 }),
+  isActive: boolean('is_active').default(true).notNull(),
+  startDate: timestamp('start_date'),
+  endDate: timestamp('end_date'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => {
+  return {
+    tenantPromoCodeIdx: uniqueIndex('tenant_promo_code_idx').on(table.tenantId, table.code),
+  };
 });
 
 export const categories = pgTable('categories', {
@@ -94,11 +124,14 @@ export const transactions = pgTable('transactions', {
   totalAmount: decimal('total_amount', { precision: 12, scale: 2 }).notNull(),
   discount: decimal('discount', { precision: 12, scale: 2 }).default('0'),
   tax: decimal('tax', { precision: 12, scale: 2 }).default('0'),
+  serviceCharge: decimal('service_charge', { precision: 12, scale: 2 }).default('0'),
+  platformFee: decimal('platform_fee', { precision: 12, scale: 2 }).default('0'),
   grandTotal: decimal('grand_total', { precision: 12, scale: 2 }).notNull(),
+  promoCode: text('promo_code'),
   paymentMethod: text('payment_method').notNull(),
   status: text('status').notNull().default('COMPLETED'),
   source: text('source').default('POS').notNull(), // POS, ONLINE
-  orderType: text('order_type').default('DINE_IN').notNull(), // DINE_IN, TAKEAWAY, DELIVERY
+  orderType: text('order_type').default('DINE_IN').notNull(), // DINE_IN, TAKEAWAY, DELIVERY, GRABFOOD, SHOPEEFOOD, GOFOOD
   customerName: text('customer_name'),
   customerPhone: text('customer_phone'),
   tableNumber: text('table_number'),

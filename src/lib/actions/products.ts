@@ -60,7 +60,7 @@ export async function getProducts() {
       .from(products)
       .leftJoin(categories, eq(products.categoryId, categories.id))
       .where(eq(products.tenantId, user.tenantId))
-      .orderBy(products.name);
+      .orderBy(desc(products.isFeatured), products.name);
       
     // Fetch product modifiers
     const allProductModifiers = await db.select().from(productModifierGroups);
@@ -73,6 +73,25 @@ export async function getProducts() {
   } catch (error) {
     console.error('Error fetching products:', error);
     return { success: false, error: 'Gagal mengambil data produk' };
+  }
+}
+
+export async function toggleProductBestSeller(productId: string, isFeatured: boolean) {
+  try {
+    const user = await getCurrentUser();
+    if (!user || !user.tenantId) return { success: false, error: 'Unauthorized' };
+
+    await db.update(products)
+      .set({ isFeatured, updatedAt: new Date() })
+      .where(and(eq(products.id, productId), eq(products.tenantId, user.tenantId)));
+
+    revalidatePath('/tenants/products');
+    revalidatePath('/tenants/pos');
+    revalidatePath('/tenants/catalog/visibility');
+    return { success: true };
+  } catch (error) {
+    console.error('Error toggling best seller status:', error);
+    return { success: false, error: 'Gagal mengubah status Best Seller' };
   }
 }
 

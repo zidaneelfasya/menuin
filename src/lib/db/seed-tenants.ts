@@ -380,8 +380,8 @@ async function seedTenants() {
     for (const tenantData of TENANTS_DATA) {
       console.log(`\n🏢 Memproses Tenant: "${tenantData.name}" (${tenantData.isPaid ? 'PAID' : 'FREE TRIAL'})...`);
 
-      // 3a. Buat Dashboard / Tenant
-      const [newDashboard] = await db
+      // 3a. Buat Tenant
+      const [newTenant] = await db
         .insert(schema.tenants)
         .values({
           name: tenantData.name,
@@ -389,7 +389,7 @@ async function seedTenants() {
         })
         .returning();
 
-      const tenantId = newDashboard.id;
+      const tenantId = newTenant.id;
 
       // 3b. Buat Pengguna (Owner Superadmin & Kasir)
       const tenantUsers: (typeof schema.users.$inferSelect)[] = [];

@@ -41,7 +41,7 @@ import { Label } from '@/components/ui/label';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { createProduct, updateProduct, deleteProduct } from '@/lib/actions/products';
+import { createProduct, updateProduct, deleteProduct, toggleProductBestSeller } from '@/lib/actions/products';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -57,6 +57,7 @@ type Product = {
   categoryId: string | null;
   imageUrl: string | null;
   barcode: string | null;
+  isFeatured?: boolean;
   status: string;
   modifierGroupIds?: string[];
 };
@@ -87,6 +88,28 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
   const [selectedProduct, setSelectedProduct] = React.useState<Product | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
   const [imageFile, setImageFile] = React.useState<File | null>(null);
+
+  React.useEffect(() => {
+    setProductsList(initialData);
+  }, [initialData]);
+
+  const handleToggleBestSeller = async (product: Product, currentValue: boolean) => {
+    const newValue = !currentValue;
+    // Optimistic UI update
+    setProductsList((prev) =>
+      prev.map((p) => (p.id === product.id ? { ...p, isFeatured: newValue } : p))
+    );
+
+    const result = await toggleProductBestSeller(product.id, newValue);
+    if (!result.success) {
+      toast.error(result.error || 'Gagal mengubah status Best Seller');
+      setProductsList((prev) =>
+        prev.map((p) => (p.id === product.id ? { ...p, isFeatured: currentValue } : p))
+      );
+    } else {
+      toast.success(newValue ? `⭐ ${product.name} dijadikan Best Seller!` : `${product.name} dihapus dari Best Seller.`);
+    }
+  };
 
   const supabase = createClient();
 
@@ -243,9 +266,40 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
               </div>
             )}
             <div>
-              <span className="font-medium block">{product.name}</span>
+              <div className="flex items-center gap-1.5">
+                <span className="font-medium">{product.name}</span>
+                {product.isFeatured && (
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20">
+                    <Star className="w-3 h-3 fill-current text-amber-500" /> Best Seller
+                  </span>
+                )}
+              </div>
               <span className="text-xs text-muted-foreground font-mono">{product.sku}</span>
             </div>
+          </div>
+        );
+      }
+    },
+    {
+      accessorKey: 'isFeatured',
+      header: 'Best Seller',
+      cell: ({ row }) => {
+        const product = row.original;
+        const isFeatured = !!product.isFeatured;
+        return (
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => handleToggleBestSeller(product, isFeatured)}
+              className={`p-1.5 rounded-lg transition-colors flex items-center gap-1 text-xs font-semibold ${
+                isFeatured 
+                  ? 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-950/60 dark:text-amber-300' 
+                  : 'bg-muted text-muted-foreground hover:bg-slate-200 dark:hover:bg-slate-800'
+              }`}
+              title={isFeatured ? 'Klik untuk batal jadikan Best Seller' : 'Klik untuk jadikan Best Seller'}
+            >
+              <Star className={`h-4 w-4 ${isFeatured ? 'fill-amber-500 text-amber-500' : ''}`} />
+              <span className="hidden sm:inline">{isFeatured ? 'Unggulan' : 'Set Best'}</span>
+            </button>
           </div>
         );
       }
@@ -310,6 +364,10 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Aksi</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => handleToggleBestSeller(product, !!product.isFeatured)}>
+                <Star className="mr-2 h-4 w-4 text-amber-500" />
+                {product.isFeatured ? 'Hapus dari Best Seller' : 'Jadikan Best Seller (Unggulan)'}
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigator.clipboard.writeText(product.barcode || product.sku)}>
                 Copy Barcode
               </DropdownMenuItem>
@@ -329,6 +387,19 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
       },
     },
   ];
+
+  const filteredData = React.useMemo(() => {
+    if (activeFilter === 'best_seller') {
+      return productsList.filter((p) => p.isFeatured);
+    }
+    if (activeFilter === 'low_stock') {
+      return productsList.filter((p) => p.stock <= p.minStock);
+    }
+    return productsList;
+  }, [productsList, activeFilter]);
+
+  const bestSellerCount = productsList.filter((p) => p.isFeatured).length;
+  const lowStockCount = productsList.filter((p) => p.stock <= p.minStock).length;
 
   const ProductForm = ({ onSubmit }: any) => (
     <form onSubmit={form.handleSubmit(onSubmit)}>
