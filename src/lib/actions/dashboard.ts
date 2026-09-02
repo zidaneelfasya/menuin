@@ -8,13 +8,13 @@ import { getCurrentUser } from './auth';
 export async function getDashboardMetrics(startDate: Date, endDate: Date) {
   try {
     const user = await getCurrentUser();
-    if (!user || !user.dashboardId) {
+    if (!user || !user.tenantId) {
       return { success: false, error: 'Unauthorized or no dashboard' };
     }
-    const dashboardId = user.dashboardId;
+    const tenantId = user.tenantId;
 
     const dateFilter = and(
-      eq(transactions.dashboardId, dashboardId),
+      eq(transactions.tenantId, tenantId),
       gte(transactions.createdAt, startDate),
       lte(transactions.createdAt, endDate)
     );
@@ -47,7 +47,7 @@ export async function getDashboardMetrics(startDate: Date, endDate: Date) {
     const prodResult = await db
       .select({ count: sql<number>`count(${products.id})::int` })
       .from(products)
-      .where(eq(products.dashboardId, dashboardId));
+      .where(eq(products.tenantId, tenantId));
 
     const totalProduk = prodResult[0]?.count || 0;
 
@@ -69,13 +69,13 @@ export async function getDashboardMetrics(startDate: Date, endDate: Date) {
 export async function getTopSellingProducts(startDate: Date, endDate: Date) {
   try {
     const user = await getCurrentUser();
-    if (!user || !user.dashboardId) {
+    if (!user || !user.tenantId) {
       return { success: false, error: 'Unauthorized or no dashboard' };
     }
-    const dashboardId = user.dashboardId;
+    const tenantId = user.tenantId;
 
     const dateFilter = and(
-      eq(transactions.dashboardId, dashboardId),
+      eq(transactions.tenantId, tenantId),
       gte(transactions.createdAt, startDate),
       lte(transactions.createdAt, endDate)
     );
@@ -102,10 +102,10 @@ export async function getTopSellingProducts(startDate: Date, endDate: Date) {
 export async function getLowStockProducts() {
   try {
     const user = await getCurrentUser();
-    if (!user || !user.dashboardId) {
+    if (!user || !user.tenantId) {
       return { success: false, error: 'Unauthorized or no dashboard' };
     }
-    const dashboardId = user.dashboardId;
+    const tenantId = user.tenantId;
 
     const result = await db.select({
       name: products.name,
@@ -114,7 +114,7 @@ export async function getLowStockProducts() {
     })
     .from(products)
     .where(and(
-      eq(products.dashboardId, dashboardId),
+      eq(products.tenantId, tenantId),
       sql`${products.stock} <= ${products.minStock}`
     ))
     .orderBy(products.stock)
@@ -130,13 +130,13 @@ export async function getLowStockProducts() {
 export async function getSalesChartData(startDate: Date, endDate: Date, groupBy: 'day' | 'month' | 'year' = 'day') {
   try {
     const user = await getCurrentUser();
-    if (!user || !user.dashboardId) {
+    if (!user || !user.tenantId) {
       return { success: false, error: 'Unauthorized or no dashboard' };
     }
-    const dashboardId = user.dashboardId;
+    const tenantId = user.tenantId;
 
     const dateFilter = and(
-      eq(transactions.dashboardId, dashboardId),
+      eq(transactions.tenantId, tenantId),
       gte(transactions.createdAt, startDate),
       lte(transactions.createdAt, endDate)
     );
@@ -169,10 +169,10 @@ export async function getSalesChartData(startDate: Date, endDate: Date, groupBy:
 export async function getRecentTransactions(limitCount = 5) {
   try {
     const user = await getCurrentUser();
-    if (!user || !user.dashboardId) {
+    if (!user || !user.tenantId) {
       return { success: false, error: 'Unauthorized or no dashboard' };
     }
-    const dashboardId = user.dashboardId;
+    const tenantId = user.tenantId;
 
     const result = await db.select({
       id: transactions.id,
@@ -182,7 +182,7 @@ export async function getRecentTransactions(limitCount = 5) {
       status: transactions.status
     })
     .from(transactions)
-    .where(eq(transactions.dashboardId, dashboardId))
+    .where(eq(transactions.tenantId, tenantId))
     .orderBy(desc(transactions.createdAt))
     .limit(limitCount);
 

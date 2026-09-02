@@ -362,7 +362,7 @@ async function seedTenants() {
     await db.delete(schema.products);
     await db.delete(schema.categories);
     await db.delete(schema.users);
-    await db.delete(schema.dashboards);
+    await db.delete(schema.tenants);
 
     // 2. Buat / Pastikan System Admin ada
     console.log('👑 Menyiapkan akun System Administrator...');
@@ -372,7 +372,7 @@ async function seedTenants() {
       name: 'System Administrator',
       email: sysAdminEmail,
       role: 'SYSTEM_ADMIN',
-      dashboardId: null,
+      tenantId: null,
     });
     console.log(`   ✅ Akun System Admin: ${sysAdminEmail} (Password: password123)`);
 
@@ -380,16 +380,16 @@ async function seedTenants() {
     for (const tenantData of TENANTS_DATA) {
       console.log(`\n🏢 Memproses Tenant: "${tenantData.name}" (${tenantData.isPaid ? 'PAID' : 'FREE TRIAL'})...`);
 
-      // 3a. Buat Dashboard / Tenant
-      const [newDashboard] = await db
-        .insert(schema.dashboards)
+      // 3a. Buat Tenant
+      const [newTenant] = await db
+        .insert(schema.tenants)
         .values({
           name: tenantData.name,
           isPaid: tenantData.isPaid,
         })
         .returning();
 
-      const dashboardId = newDashboard.id;
+      const tenantId = newTenant.id;
 
       // 3b. Buat Pengguna (Owner Superadmin & Kasir)
       const tenantUsers: (typeof schema.users.$inferSelect)[] = [];
@@ -398,7 +398,7 @@ async function seedTenants() {
         const [createdUser] = await db
           .insert(schema.users)
           .values({
-            dashboardId,
+            tenantId,
             name: u.name,
             email: u.email,
             role: u.role,
@@ -417,14 +417,14 @@ async function seedTenants() {
         const [createdCat] = await db
           .insert(schema.categories)
           .values({
-            dashboardId,
+            tenantId,
             name: cat.name,
             slug: cat.slug,
           })
           .returning();
 
         const prodsToInsert = cat.products.map((p) => ({
-          dashboardId,
+          tenantId,
           categoryId: createdCat.id,
           name: p.name,
           sku: p.sku,
@@ -497,7 +497,7 @@ async function seedTenants() {
 
           transactionsToInsert.push({
             id: txId,
-            dashboardId,
+            tenantId,
             userId: cashierUser.id,
             totalAmount: grandTotal.toString(),
             discount: '0',

@@ -2,7 +2,7 @@
 
 import { db } from '@/lib/db';
 import { products, categories } from '@/lib/db/schema';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, sql, desc } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { getCurrentUser } from './auth';
@@ -17,6 +17,7 @@ const productSchema = z.object({
   minStock: z.coerce.number().min(0, 'Batas minimum stok tidak boleh negatif'),
   imageUrl: z.string().optional().nullable(),
   barcode: z.string().optional().nullable(),
+  isFeatured: z.boolean().optional(),
 });
 
 // Helper untuk generate 13 digit barcode EAN-13 style dummy
@@ -59,12 +60,31 @@ export async function getProducts() {
       .from(products)
       .leftJoin(categories, eq(products.categoryId, categories.id))
       .where(eq(products.tenantId, user.tenantId))
-      .orderBy(products.name);
+      .orderBy(desc(products.isFeatured), products.name);
       
     return { success: true, data };
   } catch (error) {
     console.error('Error fetching products:', error);
     return { success: false, error: 'Gagal mengambil data produk' };
+  }
+}
+
+export async function toggleProductBestSeller(productId: string, isFeatured: boolean) {
+  try {
+    const user = await getCurrentUser();
+    if (!user || !user.tenantId) return { success: false, error: 'Unauthorized' };
+
+    await db.update(products)
+      .set({ isFeatured, updatedAt: new Date() })
+      .where(and(eq(products.id, productId), eq(products.tenantId, user.tenantId)));
+
+    revalidatePath('/tenants/products');
+    revalidatePath('/tenants/pos');
+    revalidatePath('/tenants/catalog/visibility');
+    return { success: true };
+  } catch (error) {
+    console.error('Error toggling best seller status:', error);
+    return { success: false, error: 'Gagal mengubah status Best Seller' };
   }
 }
 
