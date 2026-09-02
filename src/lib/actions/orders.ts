@@ -17,7 +17,7 @@ export async function getActiveOrders() {
     .where(
       and(
         eq(transactions.tenantId, user.tenantId),
-        inArray(transactions.status, ['NEW', 'PROCESSING', 'READY'])
+        inArray(transactions.status, ['PENDING', 'NEW', 'PROCESSING', 'READY'])
       )
     )
     .orderBy(desc(transactions.createdAt));

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
 import { updateOrderStatus, updateOrderItemStatus } from "@/lib/actions/orders";
 import { toast } from "sonner";
-import { Clock, Utensils, CheckCircle2, ChevronRight, Check } from "lucide-react";
+import { Clock, Utensils, CheckCircle2, ChevronRight, Check, Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -71,19 +71,19 @@ export function KanbanBoard({ initialOrders, tenantId }: KanbanBoardProps) {
           
           if (payload.eventType === 'INSERT') {
             const newTx = payload.new as any;
-            if (['NEW', 'PROCESSING', 'READY'].includes(newTx.status)) {
+            if (['PENDING', 'NEW', 'PROCESSING', 'READY'].includes(newTx.status)) {
               router.refresh(); 
             }
           } else if (payload.eventType === 'UPDATE') {
             const updatedTx = payload.new as any;
             setOrders(prev => {
               const exists = prev.find(o => o.id === updatedTx.id);
-              if (!exists && ['NEW', 'PROCESSING', 'READY'].includes(updatedTx.status)) {
+              if (!exists && ['PENDING', 'NEW', 'PROCESSING', 'READY'].includes(updatedTx.status)) {
                 router.refresh();
                 return prev;
               }
               
-              if (exists && !['NEW', 'PROCESSING', 'READY'].includes(updatedTx.status)) {
+              if (exists && !['PENDING', 'NEW', 'PROCESSING', 'READY'].includes(updatedTx.status)) {
                 return prev.filter(o => o.id !== updatedTx.id);
               }
 
@@ -102,7 +102,7 @@ export function KanbanBoard({ initialOrders, tenantId }: KanbanBoardProps) {
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     // Optimistic UI update
     setOrders(prev => {
-      if (!['NEW', 'PROCESSING', 'READY'].includes(newStatus)) {
+      if (!['PENDING', 'NEW', 'PROCESSING', 'READY'].includes(newStatus)) {
         return prev.filter(o => o.id !== orderId); // removing from board if completed
       }
       return prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o);
@@ -210,6 +210,7 @@ export function KanbanBoard({ initialOrders, tenantId }: KanbanBoardProps) {
                   <button 
                     onClick={(e) => { e.stopPropagation(); handleStatusChange(order.id, nextStatus); }}
                     className={`flex items-center gap-1.5 px-4 py-2 rounded-lg font-bold text-sm text-white transition-all active:scale-95 shadow-sm ${
+                      status === 'PENDING' ? 'bg-purple-600 hover:bg-purple-700' :
                       status === 'NEW' ? 'bg-blue-600 hover:bg-blue-700' :
                       status === 'PROCESSING' ? 'bg-amber-500 hover:bg-amber-600' :
                       'bg-emerald-600 hover:bg-emerald-700'
@@ -228,6 +229,7 @@ export function KanbanBoard({ initialOrders, tenantId }: KanbanBoardProps) {
 
   return (
     <div className="flex gap-6 overflow-x-auto pb-4 h-full">
+      {renderColumn('Menunggu Pembayaran', 'PENDING', 'NEW', 'Konfirmasi', <Wallet className="w-5 h-5 text-purple-500" />, 'border-purple-500')}
       {renderColumn('Pesanan Baru', 'NEW', 'PROCESSING', 'Proses', <Clock className="w-5 h-5 text-blue-500" />, 'border-blue-500')}
       {renderColumn('Sedang Dimasak', 'PROCESSING', 'READY', 'Siap', <Utensils className="w-5 h-5 text-amber-500" />, 'border-amber-500')}
       {renderColumn('Siap Disajikan', 'READY', 'COMPLETED', 'Selesai', <CheckCircle2 className="w-5 h-5 text-emerald-500" />, 'border-emerald-500')}
@@ -284,12 +286,15 @@ export function KanbanBoard({ initialOrders, tenantId }: KanbanBoardProps) {
                 <button
                   onClick={() => {
                     const status = selectedOrder.status;
-                    const next = status === 'NEW' ? 'PROCESSING' : status === 'PROCESSING' ? 'READY' : 'COMPLETED';
+                    const next = status === 'PENDING' ? 'NEW' : status === 'NEW' ? 'PROCESSING' : status === 'PROCESSING' ? 'READY' : 'COMPLETED';
                     handleStatusChange(selectedOrder.id, next);
                   }}
                   className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm"
                 >
-                  <CheckCircle2 className="w-5 h-5" /> Selesaikan Seluruh Pesanan
+                  <CheckCircle2 className="w-5 h-5" /> 
+                  {selectedOrder.status === 'PENDING' ? 'Konfirmasi Pembayaran' : 
+                   selectedOrder.status === 'NEW' ? 'Mulai Proses Pesanan' :
+                   selectedOrder.status === 'PROCESSING' ? 'Tandai Siap Disajikan' : 'Selesaikan Pesanan'}
                 </button>
               </div>
             </div>
