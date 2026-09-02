@@ -1,9 +1,10 @@
 import { db } from "@/lib/db";
-import { categories, products, tenants } from "@/lib/db/schema";
+import { categories, products, tenants, productModifierGroups, modifierGroups, modifiers } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { CatalogProductList } from "./catalog-product-list";
 import { connection } from "next/server";
+import { ActiveOrderBanner } from "./active-order-banner";
 
 export default async function StorePage({
   params,
@@ -38,8 +39,33 @@ export default async function StorePage({
       eq(products.isAvailableOnline, true)
     ));
 
+  // Fetch product modifiers mapping
+  const productMods = await db
+    .select({
+      productId: productModifierGroups.productId,
+      modifierGroupId: productModifierGroups.modifierGroupId
+    })
+    .from(productModifierGroups)
+    .innerJoin(products, eq(products.id, productModifierGroups.productId))
+    .where(eq(products.tenantId, tenant.id));
+    
+  const productsWithMods = productsList.map(p => {
+    return {
+      ...p,
+      modifierGroupIds: productMods.filter(pm => pm.productId === p.id).map(pm => pm.modifierGroupId)
+    }
+  });
+
+  // Get all modifier groups for this tenant
+  const tenantModGroups = await db.query.modifierGroups.findMany({
+    where: eq(modifierGroups.tenantId, tenant.id),
+    with: {
+      modifiers: true
+    }
+  });
+
   // Get categories
-  const categoryIds = Array.from(new Set(productsList.map(p => p.categoryId).filter(Boolean))) as string[];
+  const categoryIds = Array.from(new Set(productsWithMods.map(p => p.categoryId).filter(Boolean))) as string[];
   
   let cats: any[] = [];
   if (categoryIds.length > 0) {
@@ -48,12 +74,12 @@ export default async function StorePage({
   }
 
   // Group products by category ID
-  const productsByCategory: Record<string, typeof productsList> = {
-    'uncategorized': productsList.filter(p => !p.categoryId),
+  const productsByCategory: Record<string, typeof productsWithMods> = {
+    'uncategorized': productsWithMods.filter(p => !p.categoryId),
   };
 
   cats.forEach(c => {
-    const catProducts = productsList.filter(p => p.categoryId === c.id);
+    const catProducts = productsWithMods.filter(p => p.categoryId === c.id);
     if (catProducts.length > 0) {
       productsByCategory[c.id] = catProducts;
     }
@@ -74,8 +100,10 @@ export default async function StorePage({
         productsByCategory={productsByCategory} 
         categories={cats} 
         tenantSlug={tenant.slug!} 
-        featuredProducts={productsList.filter(p => p.isFeatured)}
+        featuredProducts={productsWithMods.filter(p => p.isFeatured)}
+        modifierGroups={tenantModGroups}
       />
+      <ActiveOrderBanner tenantSlug={tenant.slug!} />
     </div>
   );
 }

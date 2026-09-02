@@ -1,4 +1,5 @@
-import { pgTable, text, timestamp, integer, decimal, boolean, uuid, uniqueIndex, pgEnum } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, integer, decimal, boolean, uuid, uniqueIndex, pgEnum, json } from 'drizzle-orm/pg-core';
+import { relations } from 'drizzle-orm';
 
 export const tenants = pgTable('tenants', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -136,6 +137,7 @@ export const transactions = pgTable('transactions', {
   tableNumber: text('table_number'),
   publicToken: uuid('public_token').defaultRandom().unique(), // For public order tracking
   orderNumber: text('order_number').unique(), // For short human-readable order IDs
+  snapToken: text('snap_token'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
@@ -146,8 +148,36 @@ export const transactionItems = pgTable('transaction_items', {
   quantity: integer('quantity').notNull(),
   price: decimal('price', { precision: 12, scale: 2 }).notNull(),
   subtotal: decimal('subtotal', { precision: 12, scale: 2 }).notNull(),
+  modifiers: json('modifiers'), // Store array of { id, name, price } selected
+  notes: text('notes'),
   isCompleted: boolean('is_completed').default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const modifierGroups = pgTable('modifier_groups', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
+  name: text('name').notNull(),
+  isRequired: boolean('is_required').default(false).notNull(),
+  minSelections: integer('min_selections').default(0).notNull(),
+  maxSelections: integer('max_selections').default(1).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const modifiers = pgTable('modifiers', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  groupId: uuid('group_id').references(() => modifierGroups.id).notNull(),
+  name: text('name').notNull(),
+  price: decimal('price', { precision: 12, scale: 2 }).default('0').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const productModifierGroups = pgTable('product_modifier_groups', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  productId: uuid('product_id').references(() => products.id).notNull(),
+  modifierGroupId: uuid('modifier_group_id').references(() => modifierGroups.id).notNull(),
 });
 
 export const testimonials = pgTable('testimonials', {
@@ -189,3 +219,14 @@ export const operatingHours = pgTable('operating_hours', {
   closeTime: text('close_time').notNull().default('22:00'),
   isClosed: boolean('is_closed').default(false).notNull(),
 });
+
+export const modifierGroupsRelations = relations(modifierGroups, ({ many }) => ({
+  modifiers: many(modifiers),
+}));
+
+export const modifiersRelations = relations(modifiers, ({ one }) => ({
+  group: one(modifierGroups, {
+    fields: [modifiers.groupId],
+    references: [modifierGroups.id],
+  }),
+}));

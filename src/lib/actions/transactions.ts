@@ -26,6 +26,8 @@ type CheckoutPayload = {
     quantity: number;
     price: number;
     subtotal: number;
+    modifiers?: any[];
+    notes?: string;
   }>;
 };
 
@@ -79,14 +81,9 @@ export async function createTransaction(payload: CheckoutPayload) {
           quantity: item.quantity,
           price: item.price.toString(),
           subtotal: item.subtotal.toString(),
+          modifiers: item.modifiers || [],
+          notes: item.notes || null,
         });
-        
-        // 3. Deduct Stock atomically
-        await tx.update(products)
-          .set({
-            stock: sql`${products.stock} - ${item.quantity}`,
-          })
-          .where(eq(products.id, item.productId));
       }
       
       return newTx.id;

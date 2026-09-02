@@ -26,6 +26,7 @@ type Order = {
   grandTotal: string;
   status: string;
   orderType: string;
+  paymentMethod: string;
   orderNumber: string | null;
   tableNumber: string | null;
   customerName: string | null;
@@ -177,6 +178,11 @@ export function KanbanBoard({ initialOrders, tenantId }: KanbanBoardProps) {
                       <span className="font-black text-slate-700 bg-slate-100 px-2 py-0.5 rounded text-sm border border-slate-200">
                         {order.orderNumber || '#-'}
                       </span>
+                      {order.paymentMethod === 'ONLINE' && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 border border-emerald-200 uppercase tracking-wider">
+                          Lunas
+                        </span>
+                      )}
                     </div>
                     <div className="font-bold text-lg text-slate-900">
                       {order.tableNumber ? `Meja ${order.tableNumber}` : order.orderType.replace('_', ' ')}

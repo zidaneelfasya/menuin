@@ -23,7 +23,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Store,
-  ChefHat
+  ChefHat,
+  SlidersHorizontal
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
@@ -36,8 +37,9 @@ const navItems = [
   { name: 'Kasir (POS)', href: '/tenants/pos', icon: ShoppingCart, roles: ['SUPERADMIN', 'CASHIER'] },
   { name: 'Pesanan Dapur', href: '/tenants/orders', icon: ChefHat, roles: ['SUPERADMIN', 'CASHIER'] },
   { name: 'Katalog', href: '/tenants/catalog', icon: Store, roles: ['SUPERADMIN'] },
-  { name: 'Produk', href: '/tenants/products', icon: Package, roles: ['SUPERADMIN'] },
+  { name: 'Item', href: '/tenants/products', icon: Package, roles: ['SUPERADMIN'] },
   { name: 'Kategori', href: '/tenants/categories', icon: Tags, roles: ['SUPERADMIN'] },
+  { name: 'Kustomisasi (Modifier)', href: '/tenants/modifiers', icon: SlidersHorizontal, roles: ['SUPERADMIN'] },
   { name: 'Stock', href: '/tenants/inventory', icon: Archive, roles: ['SUPERADMIN'] },
   { name: 'Riwayat Transaksi', href: '/tenants/transactions', icon: History, roles: ['SUPERADMIN', 'CASHIER'] },
   { name: 'Laporan', href: '/tenants/reports', icon: BarChart3, roles: ['SUPERADMIN'] },

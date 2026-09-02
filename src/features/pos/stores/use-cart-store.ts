@@ -8,6 +8,8 @@ export interface CartItem {
   price: number;
   quantity: number;
   imageUrl?: string | null;
+  modifiers?: any[];
+  notes?: string;
 }
 
 interface CartStore {
@@ -33,18 +35,22 @@ export const useCartStore = create<CartStore>()(
 
         addItem: (newItem) => {
         set((state) => {
-          const existingItem = state.items.find((i) => i.productId === newItem.productId);
+          const modString = newItem.modifiers ? JSON.stringify(newItem.modifiers.map((m: any) => m.id).sort()) : '';
+          const noteString = newItem.notes ? newItem.notes.trim().toLowerCase() : '';
+          const uniqueId = `${newItem.productId}-${modString}-${noteString}`;
+
+          const existingItem = state.items.find((i) => i.id === uniqueId);
           if (existingItem) {
             return {
               items: state.items.map((i) =>
-                i.productId === newItem.productId
+                i.id === uniqueId
                   ? { ...i, quantity: i.quantity + 1 }
                   : i
               ),
             };
           }
           return {
-            items: [...state.items, { ...newItem, id: crypto.randomUUID(), quantity: 1 }],
+            items: [...state.items, { ...newItem, id: uniqueId, quantity: 1 }],
           };
         });
       },

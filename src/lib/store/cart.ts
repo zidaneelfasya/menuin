@@ -2,11 +2,14 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 export type CartItem = {
-  id: string; // product id
+  cartItemId: string; // Unique ID for cart item (productId + modifiers + notes hash)
+  productId: string;
   name: string;
   price: number;
   quantity: number;
   imageUrl?: string | null;
+  modifiers?: any[];
+  notes?: string;
 };
 
 type CartState = {
@@ -19,9 +22,9 @@ type CartState = {
   setTenant: (slug: string) => void;
   setTableNumber: (table: string | null) => void;
   setOrderType: (type: 'DINE_IN' | 'TAKEAWAY' | 'DELIVERY') => void;
-  addItem: (item: Omit<CartItem, 'quantity'>) => void;
-  removeItem: (id: string) => void;
-  updateQuantity: (id: string, quantity: number) => void;
+  addItem: (item: Omit<CartItem, 'quantity' | 'cartItemId'>, quantity?: number) => void;
+  removeItem: (cartItemId: string) => void;
+  updateQuantity: (cartItemId: string, quantity: number) => void;
   clearCart: () => void;
   
   // Computed
@@ -48,29 +51,34 @@ export const useCartStore = create<CartState>()(
       setTableNumber: (table) => set({ tableNumber: table }),
       setOrderType: (type) => set({ orderType: type }),
       
-      addItem: (item) => set((state) => {
-        const existing = state.items.find((i) => i.id === item.id);
+      addItem: (item, quantity = 1) => set((state) => {
+        // Generate a unique cart item ID based on productId, modifiers, and notes
+        const modString = item.modifiers ? JSON.stringify(item.modifiers.map((m: any) => m.id).sort()) : '';
+        const noteString = item.notes ? item.notes.trim().toLowerCase() : '';
+        const cartItemId = `${item.productId}-${modString}-${noteString}`;
+
+        const existing = state.items.find((i) => i.cartItemId === cartItemId);
         if (existing) {
           return {
             items: state.items.map((i) => 
-              i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
+              i.cartItemId === cartItemId ? { ...i, quantity: i.quantity + quantity } : i
             )
           };
         }
-        return { items: [...state.items, { ...item, quantity: 1 }] };
+        return { items: [...state.items, { ...item, cartItemId, quantity }] };
       }),
       
-      removeItem: (id) => set((state) => ({
-        items: state.items.filter((i) => i.id !== id)
+      removeItem: (cartItemId) => set((state) => ({
+        items: state.items.filter((i) => i.cartItemId !== cartItemId)
       })),
       
-      updateQuantity: (id, quantity) => set((state) => {
+      updateQuantity: (cartItemId, quantity) => set((state) => {
         if (quantity <= 0) {
-          return { items: state.items.filter((i) => i.id !== id) };
+          return { items: state.items.filter((i) => i.cartItemId !== cartItemId) };
         }
         return {
           items: state.items.map((i) => 
-            i.id === id ? { ...i, quantity } : i
+            i.cartItemId === cartItemId ? { ...i, quantity } : i
           )
         };
       }),

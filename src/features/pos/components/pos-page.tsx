@@ -27,11 +27,13 @@ type Product = {
 export function POSPage({ 
   initialProducts, 
   initialCategories,
-  posSettings
+  posSettings,
+  modifierGroups
 }: { 
   initialProducts: Product[], 
   initialCategories: Category[],
-  posSettings: any
+  posSettings: any,
+  modifierGroups?: any[]
 }) {
   const [mounted, setMounted] = React.useState(false);
   const [isProcessing, setIsProcessing] = React.useState(false);
@@ -87,6 +89,8 @@ export function POSPage({
         quantity: item.quantity,
         price: item.price,
         subtotal: item.price * item.quantity,
+        modifiers: item.modifiers,
+        notes: item.notes,
       }))
     };
 
@@ -154,7 +158,7 @@ export function POSPage({
     <>
       <div className="flex h-full relative print:hidden w-full overflow-hidden">
         <div className="flex-1 min-w-0 h-full pb-20 lg:pb-0">
-          <ProductCatalog products={initialProducts} categories={initialCategories} />
+          <ProductCatalog products={initialProducts} categories={initialCategories} modifierGroups={modifierGroups || []} />
         </div>
 
         <div className="hidden lg:block w-[300px] xl:w-[350px] 2xl:w-[400px] h-full flex-shrink-0 ml-4 lg:ml-6 relative">

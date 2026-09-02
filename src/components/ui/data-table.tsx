@@ -24,12 +24,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface DataTableProps<TData, TValue> {
   columns: any;
   data: any[];
   searchKey?: string;
   searchPlaceholder?: string;
+  onRowClick?: (row: TData) => void;
 }
 
 export function DataTable<TData, TValue>({
@@ -37,6 +39,7 @@ export function DataTable<TData, TValue>({
   data,
   searchKey,
   searchPlaceholder = 'Cari...',
+  onRowClick,
 }: DataTableProps<TData, TValue>) {
   const [mounted, setMounted] = React.useState(false);
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -102,6 +105,8 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && 'selected'}
+                  onClick={() => onRowClick && onRowClick(row.original)}
+                  className={cn(onRowClick && 'cursor-pointer hover:bg-muted/50')}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
