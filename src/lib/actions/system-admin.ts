@@ -1,5 +1,6 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from '@/lib/actions/auth';
 import { db } from '@/lib/db';
 import { users, tenants, transactions, transactionItems, products, categories } from '@/lib/db/schema';
@@ -75,15 +76,15 @@ export async function getSystemAdminStats() {
       .limit(5);
 
     return {
-      totalDashboards,
-      paidDashboards,
-      freeDashboards,
-      totalUsers,
-      systemAdminCount,
-      superAdminCount,
-      cashierCount,
-      totalTransactions,
-      totalRevenue,
+      totalDashboards: Number(totalDashboardsRes[0]?.value || 0),
+      paidDashboards: Number(paidDashboardsRes[0]?.value || 0),
+      freeDashboards: Number(freeDashboardsRes[0]?.value || 0),
+      totalUsers: Number(totalUsersRes[0]?.value || 0),
+      systemAdminCount: Number(systemAdminCountRes[0]?.value || 0),
+      superAdminCount: Number(superAdminCountRes[0]?.value || 0),
+      cashierCount: Number(cashierCountRes[0]?.value || 0),
+      totalTransactions: Number(totalTransactionsRes[0]?.value || 0),
+      totalRevenue: Number(totalRevenueRes[0]?.value || 0),
       recentDashboards,
       recentUsers: recentUsersRaw,
     };
