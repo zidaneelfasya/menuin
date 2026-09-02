@@ -178,7 +178,7 @@ export function KanbanBoard({ initialOrders, tenantId }: KanbanBoardProps) {
                       <span className="font-black text-slate-700 bg-slate-100 px-2 py-0.5 rounded text-sm border border-slate-200">
                         {order.orderNumber || '#-'}
                       </span>
-                      {order.paymentMethod === 'ONLINE' && (
+                      {order.paymentStatus === 'PAID' && (
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 border border-emerald-200 uppercase tracking-wider">
                           Lunas
                         </span>

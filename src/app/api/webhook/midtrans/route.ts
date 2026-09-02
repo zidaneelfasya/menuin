@@ -14,6 +14,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing order_id" }, { status: 400 });
     }
 
+    // Midtrans dashboard test button sends mock order_id starting with 'payment_notif_test_'
+    if (transactionId.startsWith('payment_notif_test_')) {
+      return NextResponse.json({ success: true, message: "Test notification received successfully" });
+    }
+
     // 1. Fetch transaction to know the tenant
     const txResult = await db.select().from(transactions).where(eq(transactions.id, transactionId)).limit(1);
     if (txResult.length === 0) {
@@ -45,25 +50,30 @@ export async function POST(req: Request) {
     const fraudStatus = payload.fraud_status;
 
     let newStatus = transaction.status;
+    let newPaymentStatus = transaction.paymentStatus || 'PENDING';
 
     if (transactionStatus === 'capture') {
       if (fraudStatus === 'challenge') {
-        newStatus = 'PENDING'; // Need manual checking
+        newPaymentStatus = 'PENDING'; // Need manual checking
       } else if (fraudStatus === 'accept') {
+        newPaymentStatus = 'PAID';
         newStatus = tenant.orderProcessType === 'AUTO' ? 'COMPLETED' : 'NEW';
       }
     } else if (transactionStatus === 'settlement') {
+      newPaymentStatus = 'PAID';
       newStatus = tenant.orderProcessType === 'AUTO' ? 'COMPLETED' : 'NEW';
     } else if (transactionStatus === 'cancel' || transactionStatus === 'deny' || transactionStatus === 'expire') {
+      newPaymentStatus = 'CANCELED';
       newStatus = 'FAILED';
     } else if (transactionStatus === 'pending') {
-      newStatus = 'PENDING';
+      newPaymentStatus = 'PENDING';
+      // keep existing kitchen status (should be PENDING)
     }
 
     // Update Transaction
-    if (newStatus !== transaction.status) {
+    if (newStatus !== transaction.status || newPaymentStatus !== transaction.paymentStatus) {
       await db.update(transactions)
-        .set({ status: newStatus })
+        .set({ status: newStatus, paymentStatus: newPaymentStatus })
         .where(eq(transactions.id, transactionId));
     }
 

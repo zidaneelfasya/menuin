@@ -198,41 +198,10 @@ export function CheckoutClient({ tenantSlug, settings }: CheckoutClientProps) {
     // Append the query param for the local router redirect
     const fullStatusUrl = `${window.location.pathname.replace('/checkout', '/status')}?order=${encodeURIComponent(result.orderNumber || "")}`;
 
-    if (result.snapToken) {
-      if (window.snap) {
-        window.snap.pay(result.snapToken, {
-          onSuccess: function () {
-            setIsSuccess(true);
-            clearCart();
-            toast.success("Pembayaran berhasil!");
-            router.push(fullStatusUrl);
-          },
-          onPending: function () {
-            setIsSuccess(true);
-            clearCart();
-            toast.info("Menunggu pembayaran Anda");
-            router.push(fullStatusUrl);
-          },
-          onError: function () {
-            toast.error("Pembayaran gagal atau dibatalkan");
-            setIsLoading(false);
-          },
-          onClose: function () {
-            toast.error("Anda menutup jendela pembayaran");
-            setIsLoading(false);
-          }
-        });
-      } else {
-        toast.error("Sistem pembayaran belum siap. Silakan refresh dan coba lagi, atau cek halaman status untuk membayar.");
-        router.push(fullStatusUrl);
-        setIsLoading(false);
-      }
-    } else {
-      setIsSuccess(true);
-      clearCart();
-      toast.success("Pesanan berhasil dibuat!");
-      router.push(fullStatusUrl);
-    }
+    setIsSuccess(true);
+    clearCart();
+    toast.success("Pesanan berhasil dibuat! Silakan pilih metode pembayaran.");
+    router.push(fullStatusUrl);
   };
 
   return (
@@ -480,7 +449,7 @@ export function CheckoutClient({ tenantSlug, settings }: CheckoutClientProps) {
             {isLoading ? (
               <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Memproses...</>
             ) : (
-              `Bayar ${formatCurrency(grandTotal)}`
+              `Buat Pesanan - ${formatCurrency(grandTotal)}`
             )}
           </Button>
         </div>

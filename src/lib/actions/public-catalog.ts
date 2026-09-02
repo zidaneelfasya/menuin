@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { tenants, transactions, transactionItems, products } from "@/lib/db/schema";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, and } from "drizzle-orm";
 import { z } from "zod";
 
 const orderSchema = z.object({
@@ -168,5 +168,26 @@ export async function createOnlineOrder(formData: z.infer<typeof orderSchema>) {
   } catch (error) {
     console.error("Failed to create online order:", error);
     return { error: "Gagal membuat pesanan. Silakan coba lagi." };
+  }
+}
+
+export async function updateOrderPaymentToCash(orderNumber: string, tenantSlug: string) {
+  try {
+    const tenantResult = await db.select().from(tenants).where(eq(tenants.slug, tenantSlug)).limit(1);
+    if (tenantResult.length === 0) return { error: "Toko tidak ditemukan" };
+    
+    await db.update(transactions)
+      .set({ paymentMethod: 'CASH' })
+      .where(
+        and(
+          eq(transactions.orderNumber, orderNumber),
+          eq(transactions.tenantId, tenantResult[0].id)
+        )
+      );
+      
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to update payment to cash:", error);
+    return { error: "Gagal memproses pilihan pembayaran" };
   }
 }

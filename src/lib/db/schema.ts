@@ -129,6 +129,7 @@ export const transactions = pgTable('transactions', {
   grandTotal: decimal('grand_total', { precision: 12, scale: 2 }).notNull(),
   promoCode: text('promo_code'),
   paymentMethod: text('payment_method').notNull(),
+  paymentStatus: text('payment_status').notNull().default('PENDING'), // PENDING, PAID, CANCELED, REFUNDED
   status: text('status').notNull().default('COMPLETED'),
   source: text('source').default('POS').notNull(), // POS, ONLINE
   orderType: text('order_type').default('DINE_IN').notNull(), // DINE_IN, TAKEAWAY, DELIVERY, GRABFOOD, SHOPEEFOOD, GOFOOD
