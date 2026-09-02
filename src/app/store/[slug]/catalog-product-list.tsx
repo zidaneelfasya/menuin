@@ -16,16 +16,12 @@ type Product = {
   price: string;
   imageUrl: string | null;
   isFeatured: boolean | null;
-  imageUrl: string | null;
-  isFeatured: boolean | null;
   categoryId: string | null;
   modifierGroupIds?: string[];
 };
 
 type CatalogProductListProps = {
   productsByCategory: Record<string, Product[]>;
-  categories: { id: string; name: string }[];
-  featuredProducts: Product[];
   categories: { id: string; name: string }[];
   featuredProducts: Product[];
   tenantSlug: string;
@@ -64,7 +60,7 @@ export function CatalogProductList({ productsByCategory, categories, featuredPro
     }
   };
 
-  const renderProduct = (product: Product, horizontal: boolean = false) => {
+  const renderProduct = (product: Product, horizontal: boolean = false, isBestSellerVariant: boolean = false) => {
     const hasModifiers = product.modifierGroupIds && product.modifierGroupIds.length > 0;
     const cartItemsForProduct = items.filter(i => i.productId === product.id);
     const qty = cartItemsForProduct.reduce((sum, item) => sum + item.quantity, 0);
@@ -128,7 +124,7 @@ export function CatalogProductList({ productsByCategory, categories, featuredPro
                 <button 
                   className="w-full text-xs h-9 font-semibold rounded-xl bg-catalog-primary text-white shadow-sm hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-1"
                   onClick={() => addItem({
-                    id: product.id,
+                    productId: product.id,
                     name: product.name,
                     price: Number(product.price),
                     imageUrl: product.imageUrl

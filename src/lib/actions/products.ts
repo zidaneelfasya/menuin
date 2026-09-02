@@ -2,7 +2,7 @@
 
 import { db } from '@/lib/db';
 import { products, categories, productModifierGroups, modifierGroups } from '@/lib/db/schema';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, sql, desc } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { getCurrentUser } from './auth';
@@ -107,7 +107,7 @@ export async function createProduct(formData: z.infer<typeof productSchema>) {
       ? validatedData.barcode 
       : generateBarcode();
     
-    await db.insert(products).values({
+    const insertedProduct = await db.insert(products).values({
       tenantId: user.tenantId,
       name: validatedData.name,
       sku: validatedData.sku,

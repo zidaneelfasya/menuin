@@ -49,7 +49,7 @@ export function ProductCatalog({
   const [selectedProductForModal, setSelectedProductForModal] = React.useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
 
-  const handleAddToCart = (product: Product, modifiers: any[] = [], notes: string = '', quantity: number = 1) => {
+  const handleAddToCart = (product: { id: string, name: string, price: string | number }, modifiers: any[] = [], notes: string = '', quantity: number = 1) => {
     let extraPrice = 0;
     modifiers.forEach(m => extraPrice += Number(m.price));
     
@@ -57,7 +57,7 @@ export function ProductCatalog({
       addItem({ 
         productId: product.id, 
         name: product.name, 
-        price: parseFloat(product.price) + extraPrice, 
+        price: Number(product.price) + extraPrice, 
         modifiers,
         notes
       });

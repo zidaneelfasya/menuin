@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { ColumnDef } from '@tanstack/react-table';
-import { MoreHorizontal, Plus, Pencil, Trash2, Package, Image as ImageIcon, Printer } from 'lucide-react';
+import { MoreHorizontal, Plus, Pencil, Trash2, Package, Image as ImageIcon, Printer, Star } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
 const DataTable = dynamic(
@@ -88,6 +88,7 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
   const [selectedProduct, setSelectedProduct] = React.useState<Product | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
   const [imageFile, setImageFile] = React.useState<File | null>(null);
+  const [productsList, setProductsList] = React.useState<Product[]>(initialData);
 
   React.useEffect(() => {
     setProductsList(initialData);
@@ -388,18 +389,6 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
     },
   ];
 
-  const filteredData = React.useMemo(() => {
-    if (activeFilter === 'best_seller') {
-      return productsList.filter((p) => p.isFeatured);
-    }
-    if (activeFilter === 'low_stock') {
-      return productsList.filter((p) => p.stock <= p.minStock);
-    }
-    return productsList;
-  }, [productsList, activeFilter]);
-
-  const bestSellerCount = productsList.filter((p) => p.isFeatured).length;
-  const lowStockCount = productsList.filter((p) => p.stock <= p.minStock).length;
 
   const ProductForm = ({ onSubmit }: any) => (
     <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -561,10 +550,10 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
 
       <DataTable 
         columns={columns} 
-        data={initialData} 
+        data={productsList} 
         searchKey="name" 
         searchPlaceholder="Cari nama item..." 
-        onRowClick={(row) => handleEditClick(row)}
+        onRowClick={(row) => handleEditClick(row as Product)}
       />
 
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>

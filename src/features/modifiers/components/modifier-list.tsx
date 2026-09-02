@@ -93,7 +93,7 @@ export function ModifierList({ initialData }: { initialData: any[] }) {
   const handleSaveModifier = async () => {
     if (!activeGroup) return;
     try {
-      const payload = { name: modifierName, price: modifierPrice };
+      const payload = { name: modifierName, price: Number(modifierPrice) };
       const res = await createModifier(activeGroup.id, payload);
       if (res.success) {
         toast.success('Opsi ditambahkan');
