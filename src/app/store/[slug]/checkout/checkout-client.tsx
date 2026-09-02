@@ -167,41 +167,49 @@ export function CheckoutClient({ tenantSlug, settings }: CheckoutClientProps) {
 
     setIsLoading(true);
 
-    const statusUrl = window.location.pathname.replace('/checkout', '/status');
+    try {
+      const statusUrl = window.location.pathname.replace('/checkout', '/status');
 
-    const result = await createOnlineOrder({
-      tenantSlug,
-      orderType,
-      tableNumber: formData.tableNumber || undefined,
-      customerName: formData.customerName,
-      customerPhone: formData.customerPhone,
-      items: items.map(i => ({ 
-        id: i.productId, 
-        quantity: i.quantity,
-        modifiers: i.modifiers,
-        notes: i.notes
-      })),
-      paymentMethod: 'ONLINE',
-      returnUrl: `${window.location.origin}${statusUrl}`
-    });
+      const result = await createOnlineOrder({
+        tenantSlug,
+        orderType,
+        tableNumber: formData.tableNumber || undefined,
+        customerName: formData.customerName,
+        customerPhone: formData.customerPhone,
+        items: items.map(i => ({ 
+          id: i.productId, 
+          quantity: i.quantity,
+          modifiers: i.modifiers,
+          notes: i.notes
+        })),
+        paymentMethod: 'ONLINE',
+        returnUrl: `${window.location.origin}${statusUrl}`
+      });
 
-    if (result.error) {
-      toast.error(result.error);
+      if (result.error) {
+        toast.error(result.error);
+        setIsLoading(false);
+        return;
+      }
+
+      if (result.orderNumber) {
+        localStorage.setItem(`menuin_active_order_${tenantSlug}`, result.orderNumber);
+      }
+
+      // Append the query param for the local router redirect
+      const paymentUrl = `${window.location.pathname.replace('/checkout', '/payment')}?order=${encodeURIComponent(result.orderNumber || "")}`;
+
+      setIsSuccess(true);
+      clearCart();
+      toast.success("Pesanan berhasil dibuat! Silakan pilih metode pembayaran.");
+      
+      // Use window.location.href to guarantee navigation and prevent Next.js router transition hangs
+      window.location.href = paymentUrl;
+    } catch (error) {
+      console.error("Checkout error:", error);
+      toast.error("Terjadi kesalahan pada sistem. Silakan coba lagi.");
       setIsLoading(false);
-      return;
     }
-
-    if (result.orderNumber) {
-      localStorage.setItem(`menuin_active_order_${tenantSlug}`, result.orderNumber);
-    }
-
-    // Append the query param for the local router redirect
-    const fullStatusUrl = `${window.location.pathname.replace('/checkout', '/status')}?order=${encodeURIComponent(result.orderNumber || "")}`;
-
-    setIsSuccess(true);
-    clearCart();
-    toast.success("Pesanan berhasil dibuat! Silakan pilih metode pembayaran.");
-    router.push(fullStatusUrl);
   };
 
   return (

@@ -96,10 +96,7 @@ export async function updateCatalogOrdering(formData: FormData) {
   const tableNumberRequired = formData.get("tableNumberRequired") === "true";
   
   const orderProcessType = formData.get("orderProcessType") as string || "MANUAL";
-  
-  const midtransServerKey = formData.get("midtransServerKey") as string;
-  const midtransClientKey = formData.get("midtransClientKey") as string;
-  const midtransEnvironment = formData.get("midtransEnvironment") as string;
+  const onlinePaymentEnabled = formData.get("onlinePaymentEnabled") === "true";
 
   try {
     await db.update(tenants)
@@ -111,9 +108,7 @@ export async function updateCatalogOrdering(formData: FormData) {
         customerPhoneRequired,
         tableNumberRequired,
         orderProcessType,
-        midtransServerKey,
-        midtransClientKey,
-        midtransEnvironment
+        onlinePaymentEnabled
       })
       .where(eq(tenants.id, user.tenantId));
     

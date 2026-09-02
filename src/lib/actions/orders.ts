@@ -146,6 +146,7 @@ export async function getPublicOrderByNumber(orderNumber: string, tenantSlug: st
     tenantSettings: {
       midtransClientKey: tenant.midtransClientKey,
       midtransEnvironment: tenant.midtransEnvironment,
+      onlinePaymentEnabled: tenant.onlinePaymentEnabled,
     }
   };
 }

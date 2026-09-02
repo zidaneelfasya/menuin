@@ -140,3 +140,30 @@ export async function updateStoreGeneralSettings(formData: FormData) {
     return { success: false, error: 'Gagal menyimpan informasi toko' };
   }
 }
+
+export async function updatePaymentIntegration(formData: FormData) {
+  try {
+    const user = await getCurrentUser();
+    if (!user || !user.tenantId) return { success: false, error: 'Unauthorized' };
+
+    const midtransEnvironment = formData.get('midtransEnvironment') as string;
+    const midtransServerKey = formData.get('midtransServerKey') as string;
+    const midtransClientKey = formData.get('midtransClientKey') as string;
+
+    await db.update(tenants)
+      .set({
+        midtransEnvironment: midtransEnvironment || 'sandbox',
+        midtransServerKey: midtransServerKey || null,
+        midtransClientKey: midtransClientKey || null,
+        updatedAt: new Date(),
+      })
+      .where(eq(tenants.id, user.tenantId));
+
+    revalidatePath('/tenants/settings');
+    revalidatePath('/store/[slug]', 'layout');
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating payment integration settings:', error);
+    return { success: false, error: 'Gagal menyimpan integrasi pembayaran' };
+  }
+}

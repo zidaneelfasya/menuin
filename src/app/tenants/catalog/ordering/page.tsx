@@ -90,44 +90,25 @@ export default async function CatalogOrderingPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Integrasi Pembayaran (Midtrans)</CardTitle>
+            <CardTitle className="text-lg">Metode Pembayaran Pelanggan</CardTitle>
             <CardDescription>
-              Masukkan API Keys Midtrans agar dana pelanggan langsung masuk ke akun Anda.
-              Biarkan kosong jika belum siap menerima pembayaran online.
+              Tentukan bagaimana pelanggan dapat membayar pesanannya melalui katalog.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="midtransEnvironment">Environment</Label>
-              <select 
-                id="midtransEnvironment" 
-                name="midtransEnvironment"
-                defaultValue={settings.midtransEnvironment || "sandbox"}
-                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm"
-              >
-                <option value="sandbox">Sandbox (Testing)</option>
-                <option value="production">Production (Live)</option>
-              </select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="midtransServerKey">Server Key</Label>
-              <Input 
-                id="midtransServerKey" 
-                name="midtransServerKey" 
-                type="password"
-                defaultValue={settings.midtransServerKey || ""} 
-                placeholder="SB-Mid-server-..." 
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="midtransClientKey">Client Key</Label>
-              <Input 
-                id="midtransClientKey" 
-                name="midtransClientKey" 
-                defaultValue={settings.midtransClientKey || ""} 
-                placeholder="SB-Mid-client-..." 
+            <div className="flex items-center justify-between p-4 border rounded-xl bg-slate-50">
+              <div className="space-y-0.5">
+                <Label htmlFor="onlinePaymentEnabled" className="text-base font-bold cursor-pointer">Aktifkan Pembayaran Non-Tunai (Online)</Label>
+                <p className="text-sm text-muted-foreground max-w-md">
+                  Mengizinkan pelanggan membayar menggunakan GoPay, OVO, QRIS, dll. <br/>
+                  <span className="text-xs text-emerald-600 font-medium">Syarat: Anda harus sudah mengisi Kunci API Midtrans di menu <strong>Pengaturan</strong> utama.</span>
+                </p>
+              </div>
+              <Switch 
+                id="onlinePaymentEnabled" 
+                name="onlinePaymentEnabled" 
+                value="true" 
+                defaultChecked={settings.onlinePaymentEnabled} 
               />
             </div>
           </CardContent>

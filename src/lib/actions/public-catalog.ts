@@ -108,66 +108,102 @@ export async function createOnlineOrder(formData: z.infer<typeof orderSchema>) {
       }))
     );
 
-    // 5. Generate Midtrans Snap Token if configured
-    let snapToken = null;
-    if (tenant.midtransServerKey) {
-      const authString = Buffer.from(`${tenant.midtransServerKey}:`).toString('base64');
-      const apiUrl = tenant.midtransEnvironment === 'production' 
-        ? 'https://app.midtrans.com/snap/v1/transactions'
-        : 'https://app.sandbox.midtrans.com/snap/v1/transactions';
-      
-      const midtransPayload: any = {
-        transaction_details: {
-          order_id: newTransaction.id,
-          gross_amount: grandTotal
-        },
-        customer_details: {
-          first_name: data.customerName || "Customer",
-          phone: data.customerPhone || ""
-        }
-      };
-
-      if (data.returnUrl) {
-        midtransPayload.callbacks = {
-          finish: data.returnUrl,
-          error: data.returnUrl,
-          unfinish: data.returnUrl
-        };
-      }
-
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': `Basic ${authString}`
-        },
-        body: JSON.stringify(midtransPayload)
-      });
-
-      const midtransData = await response.json();
-      if (midtransData.token) {
-        snapToken = midtransData.token;
-        // Save snapToken to database to allow resume payment
-        await db.update(transactions)
-          .set({ snapToken })
-          .where(eq(transactions.id, newTransaction.id));
-      } else {
-        console.error("Midtrans Error:", midtransData);
-      }
-    }
-
     return { 
       success: true, 
       transactionId: newTransaction.id, 
       publicToken: newTransaction.publicToken,
       orderNumber: newTransaction.orderNumber,
-      snapToken 
+      snapToken: null 
     };
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Failed to create online order:", error);
-    return { error: "Gagal membuat pesanan. Silakan coba lagi." };
+    return { error: `Gagal membuat pesanan: ${error.message || String(error)}` };
+  }
+}
+
+export async function generatePaymentToken(orderNumber: string, tenantSlug: string, returnUrl?: string) {
+  try {
+    const tenantResult = await db.select().from(tenants).where(eq(tenants.slug, tenantSlug)).limit(1);
+    if (tenantResult.length === 0) return { error: "Toko tidak ditemukan" };
+    const tenant = tenantResult[0];
+
+    const orderResult = await db.select().from(transactions).where(
+      and(
+        eq(transactions.orderNumber, orderNumber),
+        eq(transactions.tenantId, tenant.id)
+      )
+    ).limit(1);
+
+    if (orderResult.length === 0) return { error: "Pesanan tidak ditemukan" };
+    const order = orderResult[0];
+
+    if (order.snapToken) {
+      return { success: true, snapToken: order.snapToken };
+    }
+
+    if (!tenant.midtransServerKey || !tenant.onlinePaymentEnabled) {
+      return { error: "Metode pembayaran online belum dikonfigurasi atau belum diaktifkan oleh toko ini" };
+    }
+
+    // Set method to ONLINE since they clicked Bayar Online
+    await db.update(transactions)
+      .set({ paymentMethod: 'ONLINE' })
+      .where(eq(transactions.id, order.id));
+
+    const authString = Buffer.from(`${tenant.midtransServerKey}:`).toString('base64');
+    const apiUrl = tenant.midtransEnvironment === 'production' 
+      ? 'https://app.midtrans.com/snap/v1/transactions'
+      : 'https://app.sandbox.midtrans.com/snap/v1/transactions';
+    
+    const midtransPayload: any = {
+      transaction_details: {
+        order_id: order.id,
+        gross_amount: Math.round(Number(order.grandTotal))
+      },
+      customer_details: {
+        first_name: order.customerName || "Customer",
+        phone: order.customerPhone || ""
+      }
+    };
+
+    if (returnUrl) {
+      midtransPayload.callbacks = {
+        finish: returnUrl,
+        error: returnUrl,
+        unfinish: returnUrl
+      };
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${authString}`
+      },
+      body: JSON.stringify(midtransPayload),
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    const midtransData = await response.json();
+    if (midtransData.token) {
+      const snapToken = midtransData.token;
+      await db.update(transactions)
+        .set({ snapToken })
+        .where(eq(transactions.id, order.id));
+      return { success: true, snapToken };
+    } else {
+      console.error("Midtrans Error:", midtransData);
+      return { error: "Gagal membuat token pembayaran dari Midtrans" };
+    }
+  } catch (error: any) {
+    console.error("Failed to generate payment token:", error);
+    return { error: `Gagal memproses pembayaran: ${error.message || String(error)}` };
   }
 }
 

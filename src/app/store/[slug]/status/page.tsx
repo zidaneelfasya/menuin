@@ -2,7 +2,6 @@
 
 import { use, useEffect, useState } from "react";
 import { getPublicOrderByNumber } from "@/lib/actions/orders";
-import { updateOrderPaymentToCash } from "@/lib/actions/public-catalog";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -106,23 +105,6 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
     }
   };
 
-  const handlePayCash = async () => {
-    setIsLoading(true);
-    try {
-      const res = await updateOrderPaymentToCash(order.orderNumber, unwrappedParams.slug);
-      if (res.error) {
-        toast.error(res.error);
-      } else {
-        toast.success("Silakan menuju kasir untuk melakukan pembayaran.");
-        fetchOrder(order.orderNumber, true);
-      }
-    } catch (err) {
-      toast.error("Gagal memproses pembayaran tunai.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const snapScriptUrl = order?.tenantSettings?.midtransEnvironment === "production"
     ? "https://app.midtrans.com/snap/snap.js"
     : "https://app.sandbox.midtrans.com/snap/snap.js";
@@ -219,35 +201,28 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
               })()}
             </div>
 
-            {order.status === 'PENDING' && (
+            {order.paymentStatus === 'PENDING' && (
               <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-3">
                 <div className="text-center mb-2">
                   <p className="text-sm font-bold text-gray-800">Menunggu Pembayaran</p>
-                  <p className="text-xs text-gray-500">Pilih metode pembayaran Anda</p>
                 </div>
                 {order.paymentMethod === 'CASH' ? (
                   <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl text-center text-sm font-medium">
                     Silakan menuju kasir untuk melakukan pembayaran sebesar <strong className="font-black">{formatCurrency(Number(order.grandTotal))}</strong> secara Tunai.
                   </div>
-                ) : (
+                ) : order.paymentMethod === 'ONLINE' && order.snapToken ? (
                   <div className="grid grid-cols-1 gap-3">
-                    {order.snapToken && (
-                      <Button 
-                        onClick={handlePayNow}
-                        className="w-full h-12 rounded-xl text-md font-bold bg-catalog-primary hover:bg-catalog-primary/90 text-white shadow-md"
-                      >
-                        Bayar Online (Otomatis)
-                      </Button>
-                    )}
+                    <div className="bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-xl text-center text-sm font-medium mb-2">
+                      Silakan lanjutkan pembayaran online Anda sebesar <strong className="font-black">{formatCurrency(Number(order.grandTotal))}</strong>.
+                    </div>
                     <Button 
-                      variant="outline"
-                      onClick={handlePayCash}
-                      className="w-full h-12 rounded-xl text-md font-bold border-2"
+                      onClick={handlePayNow}
+                      className="w-full h-12 rounded-xl text-md font-bold bg-catalog-primary hover:bg-catalog-primary/90 text-white shadow-md"
                     >
-                      Bayar Tunai (Di Kasir)
+                      Lanjutkan Pembayaran Online
                     </Button>
                   </div>
-                )}
+                ) : null}
               </div>
             )}
 

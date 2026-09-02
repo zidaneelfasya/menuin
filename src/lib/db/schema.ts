@@ -36,8 +36,8 @@ export const tenants = pgTable('tenants', {
   // Preferensi Tampilan
   posPinBestSellers: boolean('pos_pin_best_sellers').default(true).notNull(),
   
-  
   // Payment settings
+  onlinePaymentEnabled: boolean('online_payment_enabled').default(false).notNull(),
   midtransServerKey: text('midtrans_server_key'),
   midtransClientKey: text('midtrans_client_key'),
   midtransEnvironment: text('midtrans_environment').default('sandbox'),
