@@ -27,6 +27,7 @@ type Order = {
   status: string;
   orderType: string;
   paymentMethod: string;
+  paymentStatus: string;
   orderNumber: string | null;
   tableNumber: string | null;
   customerName: string | null;
