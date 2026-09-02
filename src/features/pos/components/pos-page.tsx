@@ -52,19 +52,35 @@ export function POSPage({
     setIsPaymentModalOpen(true);
   };
 
-  const handleConfirmPayment = async (cashReceived: number, change: number, customerDetails?: any) => {
+  const handleConfirmPayment = async (paymentData: {
+    cashReceived: number;
+    change: number;
+    paymentMethod: string;
+    orderType: string;
+    customerName?: string;
+    tableNumber?: string;
+    discount: number;
+    promoCode?: string;
+    tax: number;
+    serviceCharge: number;
+    platformFee: number;
+    grandTotal: number;
+  }) => {
     setIsProcessing(true);
     const toastId = toast.loading('Memproses transaksi...');
 
     const payload = {
       totalAmount: getTotal(),
-      discount: 0,
-      tax: posSettings?.posTaxRate ? (getTotal() * (parseFloat(posSettings.posTaxRate) / 100)) : 0,
-      grandTotal: getTotal() + (posSettings?.posTaxRate ? (getTotal() * (parseFloat(posSettings.posTaxRate) / 100)) : 0),
-      paymentMethod: 'cash',
-      customerName: customerDetails?.customerName,
-      tableNumber: customerDetails?.tableNumber,
-      orderType: customerDetails?.orderType || 'DINE_IN',
+      discount: paymentData.discount,
+      promoCode: paymentData.promoCode,
+      tax: paymentData.tax,
+      serviceCharge: paymentData.serviceCharge,
+      platformFee: paymentData.platformFee,
+      grandTotal: paymentData.grandTotal,
+      paymentMethod: paymentData.paymentMethod,
+      customerName: paymentData.customerName,
+      tableNumber: paymentData.tableNumber,
+      orderType: paymentData.orderType || 'DINE_IN',
       posKitchenSync: posSettings?.posKitchenSync || false,
       items: items.map(item => ({
         productId: item.productId,
@@ -84,10 +100,19 @@ export function POSPage({
       const newReceipt: ReceiptData = {
         transactionId: result.transactionId || 'TRX-UNKNOWN',
         date: new Date(),
-        cashierName: 'Kasir', // Should be fetched from session/auth in the future
-        totalAmount: payload.grandTotal,
-        cashReceived: cashReceived,
-        change: change,
+        cashierName: 'Kasir',
+        subtotal: getTotal(),
+        discount: paymentData.discount,
+        promoCode: paymentData.promoCode,
+        tax: paymentData.tax,
+        serviceCharge: paymentData.serviceCharge,
+        totalAmount: paymentData.grandTotal,
+        cashReceived: paymentData.cashReceived,
+        change: paymentData.change,
+        paymentMethod: paymentData.paymentMethod.toUpperCase(),
+        orderType: paymentData.orderType,
+        customerName: paymentData.customerName,
+        tableNumber: paymentData.tableNumber,
         items: items.map(item => ({
           name: item.name,
           quantity: item.quantity,
@@ -191,7 +216,7 @@ export function POSPage({
       <PaymentModal 
         isOpen={isPaymentModalOpen}
         onClose={() => setIsPaymentModalOpen(false)}
-        totalAmount={cartTotal}
+        subtotalAmount={cartTotal}
         onConfirm={handleConfirmPayment}
         posSettings={posSettings}
       />

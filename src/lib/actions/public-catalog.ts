@@ -11,6 +11,9 @@ const orderSchema = z.object({
   customerName: z.string().optional(),
   customerPhone: z.string().optional(),
   tableNumber: z.string().optional(),
+  promoName: z.string().optional(),
+  promoId: z.string().optional(),
+  discount: z.number().optional(),
   items: z.array(z.object({
     id: z.string(),
     quantity: z.number().min(1)
@@ -63,8 +66,9 @@ export async function createOnlineOrder(formData: z.infer<typeof orderSchema>) {
       });
     }
 
-    // Taxes/Discounts could be applied here. For now, simple total.
-    const grandTotal = subTotal;
+    // Apply promo discount if any
+    const discount = Math.max(0, Math.min(data.discount || 0, subTotal));
+    const grandTotal = Math.max(0, subTotal - discount);
 
     let initialStatus = 'PENDING';
     if (!tenant.midtransServerKey) {
@@ -78,6 +82,8 @@ export async function createOnlineOrder(formData: z.infer<typeof orderSchema>) {
       tenantId: tenant.id,
       userId: null, // Online order has no cashier user ID
       totalAmount: subTotal.toString(),
+      discount: discount.toString(),
+      promoCode: data.promoName || null,
       grandTotal: grandTotal.toString(),
       paymentMethod: data.paymentMethod,
       status: initialStatus,

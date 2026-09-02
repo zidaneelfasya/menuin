@@ -60,8 +60,17 @@ export async function proxy(req: NextRequest) {
       return await updateSession(req);
     }
 
-    // Rewrite to the store catalog route
-    const newPath = url.pathname === '/' ? `/store/${slug}` : `/store/${slug}${url.pathname}`;
+    // Rewrite to the store catalog route without duplicating /store/[slug]
+    let newPath = url.pathname;
+    if (url.pathname === '/') {
+      newPath = `/store/${slug}`;
+    } else if (url.pathname.startsWith(`/store/${slug}`)) {
+      newPath = url.pathname;
+    } else if (url.pathname.startsWith('/store/')) {
+      newPath = url.pathname;
+    } else {
+      newPath = `/store/${slug}${url.pathname}`;
+    }
 
     return NextResponse.rewrite(new URL(`${newPath}${url.search}`, req.url));
   }

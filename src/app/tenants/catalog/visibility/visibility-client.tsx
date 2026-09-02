@@ -39,44 +39,59 @@ export function VisibilityClient({ products }: { products: Product[] }) {
   };
 
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Nama Produk</TableHead>
-            <TableHead>Kategori</TableHead>
-            <TableHead className="text-center">Tersedia Online</TableHead>
-            <TableHead className="text-center">Produk Unggulan (Featured)</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {localProducts.map((product) => (
-            <TableRow key={product.id}>
-              <TableCell className="font-medium">{product.name}</TableCell>
-              <TableCell>{product.categoryName || '-'}</TableCell>
-              <TableCell className="text-center">
-                <Switch 
-                  checked={product.isAvailableOnline ?? false}
-                  onCheckedChange={() => handleToggle(product.id, 'isAvailableOnline', product.isAvailableOnline ?? false)}
-                />
-              </TableCell>
-              <TableCell className="text-center">
-                <Switch 
-                  checked={product.isFeatured ?? false}
-                  onCheckedChange={() => handleToggle(product.id, 'isFeatured', product.isFeatured ?? false)}
-                />
-              </TableCell>
-            </TableRow>
-          ))}
-          {localProducts.length === 0 && (
+    <div className="space-y-4">
+      <div className="bg-muted/40 border border-border p-3.5 rounded-xl text-xs text-muted-foreground flex items-center gap-2">
+        <span>Produk yang diaktifkan sebagai <b>Produk Unggulan (Best Seller)</b> akan otomatis diposisikan di deretan teratas pada Kasir POS dan Katalog Online.</span>
+      </div>
+
+      <div className="rounded-xl border bg-card overflow-hidden">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                Belum ada produk. Silakan tambah produk melalui menu Produk.
-              </TableCell>
+              <TableHead>Nama Produk</TableHead>
+              <TableHead>Kategori</TableHead>
+              <TableHead className="text-center">Tersedia Online</TableHead>
+              <TableHead className="text-center">Best Seller (Unggulan)</TableHead>
             </TableRow>
-          )}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {localProducts.map((product) => (
+              <TableRow key={product.id}>
+                <TableCell className="font-medium">
+                  <div className="flex items-center gap-2">
+                    <span>{product.name}</span>
+                    {product.isFeatured && (
+                      <span className="text-[10px] font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-md border border-primary/20">
+                        Best Seller
+                      </span>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>{product.categoryName || '-'}</TableCell>
+                <TableCell className="text-center">
+                  <Switch 
+                    checked={product.isAvailableOnline ?? false}
+                    onCheckedChange={() => handleToggle(product.id, 'isAvailableOnline', product.isAvailableOnline ?? false)}
+                  />
+                </TableCell>
+                <TableCell className="text-center">
+                  <Switch 
+                    checked={product.isFeatured ?? false}
+                    onCheckedChange={() => handleToggle(product.id, 'isFeatured', product.isFeatured ?? false)}
+                  />
+                </TableCell>
+              </TableRow>
+            ))}
+            {localProducts.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                  Belum ada produk. Silakan tambah produk melalui menu Produk.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

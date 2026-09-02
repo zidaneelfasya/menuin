@@ -11,9 +11,13 @@ type CheckoutPayload = {
   totalAmount: number;
   discount: number;
   tax: number;
+  serviceCharge?: number;
+  platformFee?: number;
   grandTotal: number;
+  promoCode?: string;
   paymentMethod: string;
   customerName?: string;
+  customerPhone?: string;
   tableNumber?: string;
   orderType?: string;
   posKitchenSync?: boolean;
@@ -51,14 +55,18 @@ export async function createTransaction(payload: CheckoutPayload) {
         tenantId,
         userId,
         totalAmount: payload.totalAmount.toString(),
-        discount: payload.discount.toString(),
-        tax: payload.tax.toString(),
+        discount: (payload.discount || 0).toString(),
+        tax: (payload.tax || 0).toString(),
+        serviceCharge: (payload.serviceCharge || 0).toString(),
+        platformFee: (payload.platformFee || 0).toString(),
         grandTotal: payload.grandTotal.toString(),
+        promoCode: payload.promoCode || null,
         paymentMethod: payload.paymentMethod,
         status: payload.posKitchenSync ? 'PENDING' : 'COMPLETED',
         source: 'POS',
         orderType: payload.orderType || 'DINE_IN',
         customerName: payload.customerName || null,
+        customerPhone: payload.customerPhone || null,
         tableNumber: payload.tableNumber || null,
         orderNumber,
       }).returning({ id: transactions.id });

@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createOnlineOrder } from "@/lib/actions/public-catalog";
+import { getPublicPromotions } from "@/lib/actions/promotions";
 import Script from "next/script";
-import { ArrowLeft, Loader2, Minus, Plus, Utensils, ShoppingBag, Car } from "lucide-react";
+import { ArrowLeft, Loader2, Minus, Plus, Utensils, ShoppingBag, Car, Tag, Sparkles, Check, X } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/utils/format";
@@ -46,11 +47,28 @@ export function CheckoutClient({ tenantSlug, settings }: CheckoutClientProps) {
   });
   const [isSuccess, setIsSuccess] = useState(false);
 
+  // Promotions
+  const [availablePromos, setAvailablePromos] = useState<any[]>([]);
+  const [appliedPromo, setAppliedPromo] = useState<{
+    id: string;
+    name: string;
+    type: string;
+    value: number;
+    discountAmount: number;
+  } | null>(null);
+
   useEffect(() => {
     setMounted(true);
     if (items.length === 0 && !isSuccess) {
       router.replace(`/store/${tenantSlug}`);
     }
+
+    // Fetch store promotions
+    getPublicPromotions(tenantSlug).then((res) => {
+      if (res.success && res.data) {
+        setAvailablePromos(res.data);
+      }
+    });
   }, [items.length, router, tenantSlug, isSuccess]);
 
   useEffect(() => {
@@ -64,11 +82,74 @@ export function CheckoutClient({ tenantSlug, settings }: CheckoutClientProps) {
     return () => window.removeEventListener('pageshow', onPageShow);
   }, []);
 
+  const subTotal = getTotalPrice();
+
+  // Recalculate promo discount whenever subtotal or applied promo changes
+  const promoDiscount = (() => {
+    if (!appliedPromo) return 0;
+    const promo = availablePromos.find(p => p.id === appliedPromo.id);
+    if (!promo) return 0;
+
+    const minOrder = parseFloat(promo.minOrder || '0');
+    if (subTotal < minOrder) return 0;
+
+    const promoVal = parseFloat(promo.value);
+    let disc = 0;
+    if (promo.type === 'PERCENTAGE') {
+      disc = (subTotal * promoVal) / 100;
+      if (promo.maxDiscount) {
+        const maxDisc = parseFloat(promo.maxDiscount);
+        if (disc > maxDisc) disc = maxDisc;
+      }
+    } else {
+      disc = promoVal;
+    }
+    return Math.min(disc, subTotal);
+  })();
+
+  const grandTotal = Math.max(0, subTotal - promoDiscount);
+
   if (!mounted) return null;
 
   const snapScriptUrl = settings.midtransEnvironment === "production"
     ? "https://app.midtrans.com/snap/snap.js"
     : "https://app.sandbox.midtrans.com/snap/snap.js";
+
+  const handleClaimPromo = (promo: any) => {
+    if (appliedPromo?.id === promo.id) {
+      setAppliedPromo(null);
+      toast.info('Promo dibatalkan');
+      return;
+    }
+
+    const minOrder = parseFloat(promo.minOrder || '0');
+    if (subTotal < minOrder) {
+      toast.error(`Minimal belanja Rp ${minOrder.toLocaleString('id-ID')} untuk klaim promo "${promo.name}"`);
+      return;
+    }
+
+    const promoVal = parseFloat(promo.value);
+    let disc = 0;
+    if (promo.type === 'PERCENTAGE') {
+      disc = (subTotal * promoVal) / 100;
+      if (promo.maxDiscount) {
+        const maxDisc = parseFloat(promo.maxDiscount);
+        if (disc > maxDisc) disc = maxDisc;
+      }
+    } else {
+      disc = promoVal;
+    }
+    disc = Math.min(disc, subTotal);
+
+    setAppliedPromo({
+      id: promo.id,
+      name: promo.name,
+      type: promo.type,
+      value: promoVal,
+      discountAmount: disc,
+    });
+    toast.success(`Promo "${promo.name}" berhasil diklaim! Hemat ${formatCurrency(disc)}`);
+  };
 
   const handleOrder = async () => {
     if (settings.customerNameRequired && !formData.customerName) {
@@ -92,6 +173,9 @@ export function CheckoutClient({ tenantSlug, settings }: CheckoutClientProps) {
       tableNumber: formData.tableNumber || undefined,
       customerName: formData.customerName,
       customerPhone: formData.customerPhone,
+      promoName: appliedPromo?.name,
+      promoId: appliedPromo?.id,
+      discount: promoDiscount,
       items: items.map(i => ({ id: i.id, quantity: i.quantity })),
       paymentMethod: 'ONLINE'
     });
@@ -108,13 +192,13 @@ export function CheckoutClient({ tenantSlug, settings }: CheckoutClientProps) {
           setIsSuccess(true);
           clearCart();
           toast.success("Pembayaran berhasil!");
-          router.push(`/status?order=${encodeURIComponent(result.orderNumber || "")}`);
+          router.push(`/store/${tenantSlug}/status?order=${encodeURIComponent(result.orderNumber || "")}`);
         },
         onPending: function () {
           setIsSuccess(true);
           clearCart();
           toast.info("Menunggu pembayaran Anda");
-          router.push(`/status?order=${encodeURIComponent(result.orderNumber || "")}`);
+          router.push(`/store/${tenantSlug}/status?order=${encodeURIComponent(result.orderNumber || "")}`);
         },
         onError: function () {
           toast.error("Pembayaran gagal atau dibatalkan");
@@ -129,7 +213,7 @@ export function CheckoutClient({ tenantSlug, settings }: CheckoutClientProps) {
       setIsSuccess(true);
       clearCart();
       toast.success("Pesanan berhasil dibuat!");
-      router.push(`/status?order=${encodeURIComponent(result.orderNumber || "")}`);
+      router.push(`/store/${tenantSlug}/status?order=${encodeURIComponent(result.orderNumber || "")}`);
     }
   };
 
@@ -181,9 +265,101 @@ export function CheckoutClient({ tenantSlug, settings }: CheckoutClientProps) {
           ))}
         </div>
 
-        <div className="border-t pt-4 flex justify-between font-bold text-lg text-gray-800">
-          <span>Total Keseluruhan</span>
-          <span className="text-catalog-primary">{formatCurrency(getTotalPrice())}</span>
+        {/* Promo Claim Section */}
+        {availablePromos.length > 0 && (
+          <div className="bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-transparent p-4 rounded-2xl border border-amber-200 dark:border-amber-900 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-amber-900 dark:text-amber-300 font-bold text-sm">
+                <Tag className="w-4 h-4 text-amber-600" />
+                <span>Klaim Promo & Diskon Toko</span>
+              </div>
+              {appliedPromo && (
+                <button
+                  onClick={() => setAppliedPromo(null)}
+                  className="text-xs text-red-600 font-semibold hover:underline flex items-center gap-0.5"
+                >
+                  <X className="w-3.5 h-3.5" /> Batalkan
+                </button>
+              )}
+            </div>
+
+            {appliedPromo ? (
+              <div className="flex items-center justify-between p-3 rounded-xl bg-green-500/10 border border-green-500/30 text-green-800 dark:text-green-300">
+                <div className="flex items-center gap-2">
+                  <div className="h-7 w-7 rounded-full bg-green-500/20 flex items-center justify-center text-green-700 font-bold">
+                    <Check className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-xs block">{appliedPromo.name}</span>
+                    <span className="text-[11px] text-green-700 dark:text-green-400">Promo berhasil diklaim</span>
+                  </div>
+                </div>
+                <span className="font-extrabold text-sm text-green-700 dark:text-green-300">
+                  -{formatCurrency(promoDiscount)}
+                </span>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  Pilih promo di bawah untuk klaim diskon belanja Anda:
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {availablePromos.map((promo) => {
+                    const minOrder = parseFloat(promo.minOrder || '0');
+                    const isEligible = subTotal >= minOrder;
+                    const val = parseFloat(promo.value);
+                    const tag = promo.type === 'PERCENTAGE' ? `Diskon ${val}%` : `Potongan ${formatCurrency(val)}`;
+
+                    return (
+                      <button
+                        key={promo.id}
+                        type="button"
+                        onClick={() => handleClaimPromo(promo)}
+                        className={`text-left p-3 rounded-xl border transition-all flex flex-col justify-between ${
+                          !isEligible
+                            ? 'opacity-60 bg-gray-50 border-dashed border-gray-200'
+                            : 'bg-white hover:border-amber-400 hover:shadow-sm border-gray-200 active:scale-[0.98]'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-1">
+                          <span className="font-bold text-xs text-gray-900 line-clamp-1">{promo.name}</span>
+                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 shrink-0">
+                            {tag}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-gray-500 mt-2 flex items-center justify-between">
+                          <span>{minOrder > 0 ? `Min. ${formatCurrency(minOrder)}` : 'Tanpa Minimum'}</span>
+                          <span className={`font-bold ${isEligible ? 'text-amber-700' : 'text-gray-400'}`}>
+                            {isEligible ? 'Klaim Promo' : 'Belum Memenuhi'}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Pricing Breakdown */}
+        <div className="border-t pt-4 space-y-2 text-sm">
+          <div className="flex justify-between text-gray-600">
+            <span>Subtotal Menu</span>
+            <span className="font-semibold text-gray-800">{formatCurrency(subTotal)}</span>
+          </div>
+
+          {promoDiscount > 0 && (
+            <div className="flex justify-between text-green-600 font-medium">
+              <span>Diskon Promo ({appliedPromo?.name})</span>
+              <span>-{formatCurrency(promoDiscount)}</span>
+            </div>
+          )}
+
+          <div className="border-t pt-2 flex justify-between font-bold text-lg text-gray-800">
+            <span>Total Pembayaran</span>
+            <span className="text-catalog-primary">{formatCurrency(grandTotal)}</span>
+          </div>
         </div>
 
         {/* Order Details Form */}
@@ -264,7 +440,7 @@ export function CheckoutClient({ tenantSlug, settings }: CheckoutClientProps) {
 
         <div className="pt-8 flex gap-3">
           <Button asChild variant="outline" className="w-14 h-14 rounded-2xl flex-shrink-0 border-2 border-gray-200 text-gray-600">
-            <Link href="/">
+            <Link href={`/store/${tenantSlug}`}>
               <ArrowLeft className="h-5 w-5" />
             </Link>
           </Button>
@@ -276,7 +452,7 @@ export function CheckoutClient({ tenantSlug, settings }: CheckoutClientProps) {
             {isLoading ? (
               <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Memproses...</>
             ) : (
-              `Bayar ${formatCurrency(getTotalPrice())}`
+              `Bayar ${formatCurrency(grandTotal)}`
             )}
           </Button>
         </div>
