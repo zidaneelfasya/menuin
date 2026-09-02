@@ -6,6 +6,7 @@ import { ReactNode } from "react";
 import { Inter } from "next/font/google";
 import { Search } from "lucide-react";
 import { connection } from "next/server";
+import { headers } from "next/headers";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -40,6 +41,13 @@ export default async function StoreLayout({
   const tenant = result[0];
   const primaryColor = tenant.primaryColor || "#f43f5e"; // Default to a nice rose red for food apps
 
+  const headersList = await headers();
+  const host = headersList.get('host') || "";
+  const isSubdomain = host.includes('.localhost') || host.includes('.menuin.id');
+  
+  const statusLink = isSubdomain ? '/status' : `/store/${tenant.slug}/status`;
+  const homeLink = isSubdomain ? '/' : `/store/${tenant.slug}`;
+
   return (
     <div className={inter.className} style={{ "--primary": primaryColor } as React.CSSProperties}>
       <style dangerouslySetInnerHTML={{__html: `
@@ -60,14 +68,14 @@ export default async function StoreLayout({
             
             {/* Cek Pesanan Button (Banner) */}
             <a 
-              href="/status"
+              href={statusLink}
               className="absolute top-4 right-4 bg-white/20 hover:bg-white/30 backdrop-blur-md text-white text-sm font-bold px-4 py-2 rounded-full border border-white/30 transition-all shadow-sm flex items-center gap-2 z-10"
             >
               <Search className="w-4 h-4" />
               <span>Cek Pesanan</span>
             </a>
 
-            <a href="/" className="absolute bottom-4 left-4 right-4 max-w-2xl mx-auto flex items-end gap-4 cursor-pointer hover:opacity-90 transition-opacity">
+            <a href={homeLink} className="absolute bottom-4 left-4 right-4 max-w-2xl mx-auto flex items-end gap-4 cursor-pointer hover:opacity-90 transition-opacity">
               {tenant.storeLogoUrl ? (
                 <img src={tenant.storeLogoUrl} alt={tenant.name} className="h-16 w-16 rounded-2xl object-cover border-2 border-white shadow-lg bg-white" />
               ) : (
@@ -88,7 +96,7 @@ export default async function StoreLayout({
         {!tenant.storeBannerUrl && (
           <header className="bg-white sticky top-0 z-40 border-b shadow-sm">
             <div className="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
-              <a href="/" className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
+              <a href={homeLink} className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
                 {tenant.storeLogoUrl ? (
                   <img src={tenant.storeLogoUrl} alt={tenant.name} className="h-10 w-10 rounded-full object-cover border" />
                 ) : (
@@ -105,7 +113,7 @@ export default async function StoreLayout({
               </a>
               
               <a 
-                href={`/store/${tenant.slug}/status`}
+                href={statusLink}
                 className="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold px-3 py-2 rounded-full border transition-all flex items-center gap-1.5 shrink-0"
               >
                 <Search className="w-3.5 h-3.5" />

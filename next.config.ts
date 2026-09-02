@@ -1,7 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // cacheComponents: true removed to allow dynamic = 'force-dynamic' in admin routes
+  experimental: {
+    serverActions: {
+      allowedOrigins: ['localhost:3000', '*.ngrok-free.app', '*.ngrok.app', '*.ngrok.dev']
+    }
+  }
 };
 
 export default nextConfig;

@@ -10,6 +10,13 @@ import { Loader2, Search, ArrowLeft, CheckCircle2, Clock, Utensils, ChefHat } fr
 import Link from "next/link";
 import { formatCurrency } from "@/lib/utils/format";
 import { toast } from "sonner";
+import Script from "next/script";
+
+declare global {
+  interface Window {
+    snap: any;
+  }
+}
 
 export default function OrderStatusPage({ params }: { params: Promise<{ slug: string }> }) {
   const unwrappedParams = use(params);
@@ -62,7 +69,7 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!orderNumber.trim()) return;
-    router.push(`/status?order=${encodeURIComponent(orderNumber)}`);
+    router.push(`${window.location.pathname}?order=${encodeURIComponent(orderNumber)}`);
   };
 
   const getStatusDisplay = (status: string) => {
@@ -75,8 +82,39 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
     }
   };
 
+  const handlePayNow = () => {
+    if (order?.snapToken && window.snap) {
+      window.snap.pay(order.snapToken, {
+        onSuccess: function () {
+          toast.success("Pembayaran berhasil!");
+          fetchOrder(order.orderNumber, true);
+        },
+        onPending: function () {
+          toast.info("Menunggu pembayaran Anda");
+          fetchOrder(order.orderNumber, true);
+        },
+        onError: function () {
+          toast.error("Pembayaran gagal atau dibatalkan");
+        },
+        onClose: function () {
+          toast.error("Anda menutup jendela pembayaran");
+        }
+      });
+    } else {
+      toast.error("Sistem pembayaran belum siap atau pesanan tidak valid.");
+    }
+  };
+
+  const snapScriptUrl = order?.tenantSettings?.midtransEnvironment === "production"
+    ? "https://app.midtrans.com/snap/snap.js"
+    : "https://app.sandbox.midtrans.com/snap/snap.js";
+
   return (
-    <div className="max-w-md mx-auto min-h-screen bg-gray-50 flex flex-col relative pb-24">
+    <>
+      {order?.tenantSettings?.midtransClientKey && (
+        <Script src={snapScriptUrl} data-client-key={order.tenantSettings.midtransClientKey} strategy="afterInteractive" />
+      )}
+      <div className="max-w-md mx-auto min-h-screen bg-gray-50 flex flex-col relative pb-24">
       {/* Header */}
       <div className="bg-white border-b px-4 py-4 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-3">
@@ -163,6 +201,21 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
               })()}
             </div>
 
+            {order.status === 'PENDING' && order.snapToken && (
+              <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-3">
+                <div className="text-center">
+                  <p className="text-sm font-bold text-gray-800">Menunggu Pembayaran</p>
+                  <p className="text-xs text-gray-500">Selesaikan pembayaran untuk memproses pesanan</p>
+                </div>
+                <Button 
+                  onClick={handlePayNow}
+                  className="w-full h-12 rounded-xl text-md font-bold bg-catalog-primary hover:bg-catalog-primary/90 text-white shadow-lg"
+                >
+                  Bayar Sekarang
+                </Button>
+              </div>
+            )}
+
             <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
               <h3 className="font-bold text-gray-800 mb-4 pb-2 border-b">Detail Item</h3>
               <div className="space-y-3">
@@ -186,6 +239,7 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 }

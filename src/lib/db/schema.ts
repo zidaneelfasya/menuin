@@ -1,4 +1,5 @@
 import { pgTable, text, timestamp, integer, decimal, boolean, uuid, uniqueIndex, pgEnum, json } from 'drizzle-orm/pg-core';
+import { relations } from 'drizzle-orm';
 
 export const tenants = pgTable('tenants', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -103,6 +104,7 @@ export const transactions = pgTable('transactions', {
   tableNumber: text('table_number'),
   publicToken: uuid('public_token').defaultRandom().unique(), // For public order tracking
   orderNumber: text('order_number').unique(), // For short human-readable order IDs
+  snapToken: text('snap_token'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
@@ -184,3 +186,14 @@ export const operatingHours = pgTable('operating_hours', {
   closeTime: text('close_time').notNull().default('22:00'),
   isClosed: boolean('is_closed').default(false).notNull(),
 });
+
+export const modifierGroupsRelations = relations(modifierGroups, ({ many }) => ({
+  modifiers: many(modifiers),
+}));
+
+export const modifiersRelations = relations(modifiers, ({ one }) => ({
+  group: one(modifierGroups, {
+    fields: [modifiers.groupId],
+    references: [modifierGroups.id],
+  }),
+}));

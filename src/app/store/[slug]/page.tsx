@@ -4,6 +4,7 @@ import { eq, and } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { CatalogProductList } from "./catalog-product-list";
 import { connection } from "next/server";
+import { ActiveOrderBanner } from "./active-order-banner";
 
 export default async function StorePage({
   params,
@@ -102,6 +103,7 @@ export default async function StorePage({
         featuredProducts={productsWithMods.filter(p => p.isFeatured)}
         modifierGroups={tenantModGroups}
       />
+      <ActiveOrderBanner tenantSlug={tenant.slug!} />
     </div>
   );
 }

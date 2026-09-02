@@ -17,7 +17,8 @@ const orderSchema = z.object({
     modifiers: z.array(z.any()).optional(),
     notes: z.string().optional()
   })).min(1),
-  paymentMethod: z.string().default('ONLINE')
+  paymentMethod: z.string().default('ONLINE'),
+  returnUrl: z.string().optional()
 });
 
 function generateOrderNumber() {
@@ -109,28 +110,42 @@ export async function createOnlineOrder(formData: z.infer<typeof orderSchema>) {
         ? 'https://app.midtrans.com/snap/v1/transactions'
         : 'https://app.sandbox.midtrans.com/snap/v1/transactions';
       
+      const midtransPayload: any = {
+        transaction_details: {
+          order_id: newTransaction.id,
+          gross_amount: grandTotal
+        },
+        customer_details: {
+          first_name: data.customerName || "Customer",
+          phone: data.customerPhone || ""
+        }
+      };
+
+      if (data.returnUrl) {
+        midtransPayload.callbacks = {
+          finish: data.returnUrl,
+          error: data.returnUrl,
+          unfinish: data.returnUrl
+        };
+      }
+
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Accept': 'application/json',
+          'Content-Type': 'application/json',
           'Authorization': `Basic ${authString}`
         },
-        body: JSON.stringify({
-          transaction_details: {
-            order_id: newTransaction.id,
-            gross_amount: grandTotal
-          },
-          customer_details: {
-            first_name: data.customerName || "Customer",
-            phone: data.customerPhone || ""
-          }
-        })
+        body: JSON.stringify(midtransPayload)
       });
 
       const midtransData = await response.json();
       if (midtransData.token) {
         snapToken = midtransData.token;
+        // Save snapToken to database to allow resume payment
+        await db.update(transactions)
+          .set({ snapToken })
+          .where(eq(transactions.id, newTransaction.id));
       } else {
         console.error("Midtrans Error:", midtransData);
       }

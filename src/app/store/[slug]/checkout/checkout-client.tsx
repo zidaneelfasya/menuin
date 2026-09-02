@@ -86,6 +86,8 @@ export function CheckoutClient({ tenantSlug, settings }: CheckoutClientProps) {
 
     setIsLoading(true);
 
+    const statusUrl = window.location.pathname.replace('/checkout', '/status');
+
     const result = await createOnlineOrder({
       tenantSlug,
       orderType,
@@ -98,7 +100,8 @@ export function CheckoutClient({ tenantSlug, settings }: CheckoutClientProps) {
         modifiers: i.modifiers,
         notes: i.notes
       })),
-      paymentMethod: 'ONLINE'
+      paymentMethod: 'ONLINE',
+      returnUrl: `${window.location.origin}${statusUrl}`
     });
 
     if (result.error) {
@@ -107,41 +110,54 @@ export function CheckoutClient({ tenantSlug, settings }: CheckoutClientProps) {
       return;
     }
 
-    if (result.snapToken && window.snap) {
-      window.snap.pay(result.snapToken, {
-        onSuccess: function () {
-          setIsSuccess(true);
-          clearCart();
-          toast.success("Pembayaran berhasil!");
-          router.push(`/status?order=${encodeURIComponent(result.orderNumber || "")}`);
-        },
-        onPending: function () {
-          setIsSuccess(true);
-          clearCart();
-          toast.info("Menunggu pembayaran Anda");
-          router.push(`/status?order=${encodeURIComponent(result.orderNumber || "")}`);
-        },
-        onError: function () {
-          toast.error("Pembayaran gagal atau dibatalkan");
-          setIsLoading(false);
-        },
-        onClose: function () {
-          toast.error("Anda menutup jendela pembayaran");
-          setIsLoading(false);
-        }
-      });
+    if (result.orderNumber) {
+      localStorage.setItem(`menuin_active_order_${tenantSlug}`, result.orderNumber);
+    }
+
+    // Append the query param for the local router redirect
+    const fullStatusUrl = `${window.location.pathname.replace('/checkout', '/status')}?order=${encodeURIComponent(result.orderNumber || "")}`;
+
+    if (result.snapToken) {
+      if (window.snap) {
+        window.snap.pay(result.snapToken, {
+          onSuccess: function () {
+            setIsSuccess(true);
+            clearCart();
+            toast.success("Pembayaran berhasil!");
+            router.push(fullStatusUrl);
+          },
+          onPending: function () {
+            setIsSuccess(true);
+            clearCart();
+            toast.info("Menunggu pembayaran Anda");
+            router.push(fullStatusUrl);
+          },
+          onError: function () {
+            toast.error("Pembayaran gagal atau dibatalkan");
+            setIsLoading(false);
+          },
+          onClose: function () {
+            toast.error("Anda menutup jendela pembayaran");
+            setIsLoading(false);
+          }
+        });
+      } else {
+        toast.error("Sistem pembayaran belum siap. Silakan refresh dan coba lagi, atau cek halaman status untuk membayar.");
+        router.push(fullStatusUrl);
+        setIsLoading(false);
+      }
     } else {
       setIsSuccess(true);
       clearCart();
       toast.success("Pesanan berhasil dibuat!");
-      router.push(`/status?order=${encodeURIComponent(result.orderNumber || "")}`);
+      router.push(fullStatusUrl);
     }
   };
 
   return (
     <>
       {settings.midtransClientKey && (
-        <Script src={snapScriptUrl} data-client-key={settings.midtransClientKey} strategy="lazyOnload" />
+        <Script src={snapScriptUrl} data-client-key={settings.midtransClientKey} strategy="afterInteractive" />
       )}
       
       <div className="space-y-8">

@@ -20,7 +20,7 @@ async function main() {
   const sql = postgres(connectionString, { prepare: false });
   
   try {
-    const migrationSQL = fs.readFileSync('drizzle/0002_nasty_mimic.sql', 'utf8');
+    const migrationSQL = fs.readFileSync('drizzle/0003_tense_sharon_ventura.sql', 'utf8');
     
     console.log("Executing SQL...");
     // Split the SQL script into statements if needed, or run as a single string

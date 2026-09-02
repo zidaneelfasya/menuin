@@ -142,6 +142,10 @@ export async function getPublicOrderByNumber(orderNumber: string, tenantSlug: st
 
   return {
     ...tx,
-    items
+    items,
+    tenantSettings: {
+      midtransClientKey: tenant.midtransClientKey,
+      midtransEnvironment: tenant.midtransEnvironment,
+    }
   };
 }
