@@ -7,7 +7,7 @@ type LowStockAlertsProps = {
 
 export function AlertsSection({ products }: LowStockAlertsProps) {
   return (
-    <Card className="rounded-2xl shadow-sm border-border/50 border-l-4 border-l-orange-500 h-full">
+    <Card className="rounded-xl shadow-sm border-border/50 border-l-4 border-l-orange-500 h-full">
       <CardHeader className="pb-3">
         <CardTitle className="text-base font-semibold flex items-center text-orange-600">
           <AlertTriangle className="w-5 h-5 mr-2" />

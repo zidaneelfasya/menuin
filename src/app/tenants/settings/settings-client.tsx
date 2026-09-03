@@ -21,7 +21,8 @@ import {
   Info,
   Eye,
   EyeOff,
-  Copy
+  Copy,
+  LayoutTemplate
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { 
@@ -31,8 +32,9 @@ import {
   updateStoreGeneralSettings,
   updatePaymentIntegration
 } from '@/lib/actions/settings';
+import { PosSettingsForm } from './pos-settings-form';
 
-export function SettingsClient({ tenant }: { tenant: any }) {
+export function SettingsClient({ tenant, catalogSettings }: { tenant: any, catalogSettings: any }) {
   const [isSavingTax, setIsSavingTax] = React.useState(false);
   const [isSavingPlatform, setIsSavingPlatform] = React.useState(false);
   const [isSavingDisplay, setIsSavingDisplay] = React.useState(false);
@@ -58,6 +60,29 @@ export function SettingsClient({ tenant }: { tenant: any }) {
   const [midtransEnvironment, setMidtransEnvironment] = React.useState(tenant?.midtransEnvironment || 'sandbox');
   const [midtransServerKey, setMidtransServerKey] = React.useState(tenant?.midtransServerKey || '');
   const [midtransClientKey, setMidtransClientKey] = React.useState(tenant?.midtransClientKey || '');
+
+  const hasStoreChanges = 
+    storeName !== (tenant?.name || '') ||
+    storeDescription !== (tenant?.storeDescription || '') ||
+    primaryColor !== (tenant?.primaryColor || '#2563EB');
+
+  const hasTaxChanges = 
+    taxName !== (tenant?.taxName || 'Pajak (PB1)') ||
+    posTaxRate !== (tenant?.posTaxRate?.toString() || '0') ||
+    serviceChargeRate !== (tenant?.serviceChargeRate?.toString() || '0');
+
+  const hasPlatformChanges = 
+    grabFoodFeeRate !== (tenant?.grabFoodFeeRate?.toString() || '20') ||
+    shopeeFoodFeeRate !== (tenant?.shopeeFoodFeeRate?.toString() || '20') ||
+    goFoodFeeRate !== (tenant?.goFoodFeeRate?.toString() || '20');
+
+  const hasDisplayChanges = 
+    posPinBestSellers !== (tenant?.posPinBestSellers ?? true);
+
+  const hasPaymentChanges = 
+    midtransEnvironment !== (tenant?.midtransEnvironment || 'sandbox') ||
+    midtransServerKey !== (tenant?.midtransServerKey || '') ||
+    midtransClientKey !== (tenant?.midtransClientKey || '');
 
   // Handlers
   const handleSaveTax = async (e: React.FormEvent) => {
@@ -219,6 +244,18 @@ export function SettingsClient({ tenant }: { tenant: any }) {
               </div>
             </div>
           </TabsTrigger>
+          <TabsTrigger 
+            value="pos" 
+            className="justify-start px-4 py-3 rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none hover:bg-slate-100 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <LayoutTemplate className="h-5 w-5" />
+              <div className="flex flex-col items-start">
+                <span className="font-semibold text-sm">Pengaturan POS</span>
+                <span className="font-normal text-xs text-muted-foreground opacity-80">Alur Pesanan Kasir</span>
+              </div>
+            </div>
+          </TabsTrigger>
           
         </TabsList>
 
@@ -278,7 +315,7 @@ export function SettingsClient({ tenant }: { tenant: any }) {
                   </div>
 
                   <div className="flex justify-end pt-4">
-                    <Button type="submit" disabled={isSavingStore} className="min-w-[150px] h-11">
+                    <Button disabled={isSavingStore || !hasStoreChanges} type="submit" size="lg" className="min-w-[150px] shadow-sm">
                       {isSavingStore ? (
                         <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Menyimpan...</>
                       ) : (
@@ -360,7 +397,7 @@ export function SettingsClient({ tenant }: { tenant: any }) {
                   </div>
 
                   <div className="flex justify-end pt-4">
-                    <Button type="submit" disabled={isSavingTax} className="min-w-[150px] h-11">
+                    <Button disabled={isSavingTax || !hasTaxChanges} type="submit" size="lg" className="min-w-[150px] shadow-sm">
                       {isSavingTax ? (
                         <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Menyimpan...</>
                       ) : (
@@ -468,7 +505,7 @@ export function SettingsClient({ tenant }: { tenant: any }) {
                   </div>
 
                   <div className="flex justify-end pt-4">
-                    <Button type="submit" disabled={isSavingPlatform} className="min-w-[150px] h-11">
+                    <Button disabled={isSavingPlatform || !hasPlatformChanges} type="submit" size="lg" className="min-w-[150px] shadow-sm">
                       {isSavingPlatform ? (
                         <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Menyimpan...</>
                       ) : (
@@ -570,7 +607,7 @@ export function SettingsClient({ tenant }: { tenant: any }) {
                   </div>
 
                   <div className="flex justify-end pt-4 border-t border-emerald-100">
-                    <Button type="submit" disabled={isSavingPayment} className="min-w-[150px] h-11 bg-emerald-600 hover:bg-emerald-700 text-white">
+                    <Button type="submit" disabled={isSavingPayment || !hasPaymentChanges} className="min-w-[150px] h-11 bg-emerald-600 hover:bg-emerald-700 text-white">
                       {isSavingPayment ? (
                         <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Mengamankan Kunci...</>
                       ) : (
@@ -617,7 +654,7 @@ export function SettingsClient({ tenant }: { tenant: any }) {
                   </div>
 
                   <div className="flex justify-end pt-4">
-                    <Button type="submit" disabled={isSavingDisplay} className="min-w-[150px] h-11">
+                    <Button disabled={isSavingDisplay || !hasDisplayChanges} type="submit" size="lg" className="min-w-[150px] shadow-sm">
                       {isSavingDisplay ? (
                         <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Menyimpan...</>
                       ) : (
@@ -628,6 +665,11 @@ export function SettingsClient({ tenant }: { tenant: any }) {
                 </CardContent>
               </Card>
             </form>
+          </TabsContent>
+
+          {/* TAB 6: POS SETTINGS */}
+          <TabsContent value="pos" className="mt-0 outline-none">
+            <PosSettingsForm initialData={catalogSettings} />
           </TabsContent>
 
         </div>

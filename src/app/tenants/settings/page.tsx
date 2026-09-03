@@ -2,22 +2,28 @@ import { Metadata } from 'next';
 import { Suspense } from 'react';
 import { getTenantSettings } from '@/lib/actions/settings';
 import { SettingsClient } from './settings-client';
-import { TableSkeleton } from '@/components/ui/table-skeleton';
+import { SettingsSkeleton } from '@/components/ui/settings-skeleton';
+import { getTenantCatalogSettings } from '@/lib/actions/catalog';
 
 export const metadata: Metadata = {
   title: 'Pengaturan Toko & Pajak - Bolu Anisa POS',
 };
 
 async function SettingsDataWrapper() {
-  const result = await getTenantSettings();
+  const [result, catalogResult] = await Promise.all([
+    getTenantSettings(),
+    getTenantCatalogSettings()
+  ]);
   const tenant = result.success ? result.data : null;
-  return <SettingsClient tenant={tenant} />;
+  return <SettingsClient tenant={tenant} catalogSettings={catalogResult} />;
 }
 
 export default function Page() {
   return (
-    <Suspense fallback={<div className="p-6"><TableSkeleton /></div>}>
-      <SettingsDataWrapper />
-    </Suspense>
+    <div className="p-6">
+      <Suspense fallback={<SettingsSkeleton />}>
+        <SettingsDataWrapper />
+      </Suspense>
+    </div>
   );
 }

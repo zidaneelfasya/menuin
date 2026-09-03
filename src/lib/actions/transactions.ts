@@ -91,7 +91,7 @@ export async function createTransaction(payload: CheckoutPayload) {
     
     revalidatePath('/tenants/transactions');
     revalidatePath('/tenants/inventory');
-    revalidatePath('/tenants/products');
+    revalidatePath('/tenants/items');
     revalidatePath('/tenants/dashboard');
     revalidatePath('/tenants/orders');
     

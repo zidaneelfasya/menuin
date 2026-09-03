@@ -1,109 +1,93 @@
-<a href="https://demo-nextjs-with-supabase.vercel.app/">
-  <img alt="Next.js and Supabase Starter Kit - the fastest way to build apps with Next.js and Supabase" src="https://demo-nextjs-with-supabase.vercel.app/opengraph-image.png">
-  <h1 align="center">Next.js and Supabase Starter Kit</h1>
-</a>
+# 🚀 MENUIN - Modern F&B SaaS Platform
 
-<p align="center">
- The fastest way to build apps with Next.js and Supabase
-</p>
+**Menuin** adalah platform *Software as a Service* (SaaS) Point of Sale (POS) dan manajemen pesanan cerdas, dirancang khusus untuk bisnis Food & Beverage (F&B) modern seperti kafe, restoran, dan franchise.
 
-<p align="center">
-  <a href="#features"><strong>Features</strong></a> ·
-  <a href="#demo"><strong>Demo</strong></a> ·
-  <a href="#deploy-to-vercel"><strong>Deploy to Vercel</strong></a> ·
-  <a href="#clone-and-run-locally"><strong>Clone and run locally</strong></a> ·
-  <a href="#feedback-and-issues"><strong>Feedback and issues</strong></a>
-  <a href="#more-supabase-examples"><strong>More Examples</strong></a>
-</p>
-<br/>
+Sistem ini mengintegrasikan aplikasi Kasir (POS) berkecepatan tinggi dengan sistem **QR Order Mandiri** (Self-Service) di meja pelanggan, yang semuanya saling sinkron secara real-time ke dapur (Kitchen Display) dan laporan analitik *owner* (Dashboard).
 
-## Features
+---
 
-- Works across the entire [Next.js](https://nextjs.org) stack
-  - App Router
-  - Pages Router
-  - Proxy
-  - Client
-  - Server
-  - It just works!
-- supabase-ssr. A package to configure Supabase Auth to use cookies
-- Password-based authentication block installed via the [Supabase UI Library](https://supabase.com/ui/docs/nextjs/password-based-auth)
-- Styling with [Tailwind CSS](https://tailwindcss.com)
-- Components with [shadcn/ui](https://ui.shadcn.com/)
-- Optional deployment with [Supabase Vercel Integration and Vercel deploy](#deploy-your-own)
-  - Environment variables automatically assigned to Vercel project
+## ✨ Fitur Unggulan
 
-## Demo
+Menuin didesain dengan berfokus pada kecepatan operasional, estetika visual (UI/UX yang mewah dan interaktif), serta kelengkapan fitur enterprise:
 
-You can view a fully working demo at [demo-nextjs-with-supabase.vercel.app](https://demo-nextjs-with-supabase.vercel.app/).
+1. **📱 Smart QR Ordering (Tanpa Aplikasi):** Pelanggan cukup *scan* QR code di meja untuk membuka menu interaktif, menyesuaikan pesanan (catatan, tambahan topping), dan membayar langsung secara online (QRIS/E-Wallet).
+2. **⚡ High-Speed POS Cashier:** Sistem kasir terpadu yang didesain meminimalisir jumlah klik, bekerja mulus mencatat transaksi tunai, kartu debit, hingga integrasi pesanan *online food* (GrabFood, GoFood, ShopeeFood).
+3. **🔄 Real-Time Kitchen Sync:** Pesanan yang masuk melalui QR meja maupun POS kasir akan seketika (instant) muncul di *Kitchen Display* tanpa perlu mencetak kertas secara manual.
+4. **📊 Analytics & Shift Audit:** Pantau pendapatan secara *live*, analisa item paling laku (Best Seller), serta kelola pembukuan Shift (buka/tutup kasir) secara akurat untuk meminimalisir kebocoran kas.
+5. **🏢 Multi-Branch & Role Management:** Dapat menaungi banyak outlet/cabang sekaligus, dengan hak akses (Role-Based Access Control) seperti Superadmin, Store Manager, dan Kasir.
+6. **🎨 Premium UI/UX:** Transisi antar halaman yang sangat responsif, sistem desain ala *Bento grid*, efek *liquid glass*, animasi mikro (Framer Motion) yang membuat pengalaman pengguna lebih nyata dan berkelas.
 
-## Deploy to Vercel
+---
 
-Vercel deployment will guide you through creating a Supabase account and project.
+## 🛠️ Stack Teknologi (Tech Stack)
 
-After installation of the Supabase integration, all relevant environment variables will be assigned to the project so the deployment is fully functioning.
+Aplikasi dibangun di atas pondasi web-modern terbaik saat ini:
+- **Framework:** Next.js (App Router), React 19.
+- **Styling:** Tailwind CSS + Shadcn UI + Radix UI.
+- **Animation:** Framer Motion (Transisi, Micro-interactions).
+- **State Management:** Zustand & React Context.
+- **Database:** PostgreSQL diakses via Drizzle ORM.
+- **Auth & Backend Services:** Supabase (Postgres & Authentication).
+- **Payment Gateway:** Integrasi Midtrans (Sandbox & Production ready).
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&project-name=nextjs-with-supabase&repository-name=nextjs-with-supabase&demo-title=nextjs-with-supabase&demo-description=This+starter+configures+Supabase+Auth+to+use+cookies%2C+making+the+user%27s+session+available+throughout+the+entire+Next.js+app+-+Client+Components%2C+Server+Components%2C+Route+Handlers%2C+Server+Actions+and+Middleware.&demo-url=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2F&external-id=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&demo-image=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2Fopengraph-image.png)
+---
 
-The above will also clone the Starter kit to your GitHub, you can clone that locally and develop locally.
+## 🗺️ Struktur Route (Navigasi Halaman)
 
-If you wish to just develop locally and not deploy to Vercel, [follow the steps below](#clone-and-run-locally).
+Aplikasi ini dibagi menjadi beberapa *flow* rute:
 
-## Clone and run locally
+### 🌐 Publik & Autentikasi
+- `/` - **Landing Page**: Beranda pemasaran, presentasi fitur, harga (Pricing), dan testimoni pengguna.
+- `/auth/login` - **Sign In**: Masuk ke dalam sistem (baik bagi Kasir maupun Owner).
+- `/auth/signup` - **Registrasi**: Mendaftar untuk uji coba gratis (Free Trial) atau tenant baru.
 
-1. You'll first need a Supabase project which can be made [via the Supabase dashboard](https://database.new)
+### 🏪 Area Tenant (Dashboard Owner & Kasir)
+Semua rute di bawah ini berada di dalam `/tenants/` dan membutuhkan login.
 
-2. Create a Next.js app using the Supabase Starter template npx command
+- `/tenants/dashboard` - **Ringkasan (Dashboard)**: Grafik penjualan live, metrik transaksi hari ini.
+- `/tenants/pos` - **Aplikasi Kasir (POS)**: Tampilan operasional kasir untuk memproses transaksi.
+- `/tenants/orders` - **Pesanan Dapur**: Sinkronisasi tiket pesanan aktif untuk persiapan dapur.
+- `/tenants/katalog` - **Katalog**: Pengaturan etalase dan visibilitas produk unggulan (Best Seller).
+- `/tenants/items` - **Item/Menu**: Database master seluruh produk makanan dan minuman.
+- `/tenants/categories` - **Kategori**: Mengelompokkan item (misal: "Kopi", "Camilan").
+- `/tenants/modifiers` - **Kustomisasi (Modifier)**: Ekstra opsional seperti tingkat kemanisan, jenis susu, atau topping.
+- `/tenants/inventory` - **Stok**: Pencatatan gudang, *low-stock alerts*, stok keluar/masuk.
+- `/tenants/transactions` - **Riwayat Transaksi**: Daftar struk historis dan pencarian nomor pesanan.
+- `/tenants/reports` - **Laporan**: Analitik penjualan mendalam, laporan harian, bulanan.
+- `/tenants/finance` - **Keuangan**: Settlement dana dan perputaran kas toko.
+- `/tenants/promotions` - **Promo**: Mengatur voucher atau persentase diskon.
+- `/tenants/users` - **Kasir Toko (Staff)**: Manajemen karyawan dan penetapan akses *role*.
+- `/tenants/settings` - **Pengaturan Global**: Konfigurasi nama toko, pajak (PB1 10%), Service Charge, Kredensial Midtrans, dan potongan komisi Ojol.
 
-   ```bash
-   npx create-next-app --example with-supabase with-supabase-app
-   ```
+### 🍽️ Customer Facing (QR Menu)
+- `/table/:id` (atau rute setara) - Menu digital unik untuk setiap pelanggan yang melakukan *scan* QR.
 
-   ```bash
-   yarn create next-app --example with-supabase with-supabase-app
-   ```
+---
 
-   ```bash
-   pnpm create next-app --example with-supabase with-supabase-app
-   ```
+## 💡 Mengapa Menggunakan Menuin? (Keunggulan)
 
-3. Use `cd` to change into the app's directory
+1. **Zero-Latency Feel:** Navigasi terasa super mulus tanpa blank loading. Menggunakan kustomisasi *Page Transition* (seperti efek layar biru liquid-fill) yang menutupi proses fetch data demi *perceived performance* (kinerja visual) yang tinggi.
+2. **Pajak & Potongan Otomatis:** Perhitungan tagihan kasir tidak butuh kalkulator. PB1, *Service Charge*, maupun estimasi pendapatan bersih dari GrabFood/GoFood otomatis terhitung di sistem.
+3. **Lebih dari Sekadar POS:** Aplikasi ini menyatukan sistem *Self-Order* pelanggan dan mesin kasir dalam satu *database* terpusat, hal ini mencegah antrean panjang dan menurunkan tingkat kesalahan *human error*.
 
-   ```bash
-   cd with-supabase-app
-   ```
+---
 
-4. Rename `.env.example` to `.env.local` and update the following:
+### Cara Menjalankan Secara Lokal (Development)
 
-  ```env
-  NEXT_PUBLIC_SUPABASE_URL=[INSERT SUPABASE PROJECT URL]
-  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=[INSERT SUPABASE PROJECT API PUBLISHABLE OR ANON KEY]
-  ```
-  > [!NOTE]
-  > This example uses `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, which refers to Supabase's new **publishable** key format.
-  > Both legacy **anon** keys and new **publishable** keys can be used with this variable name during the transition period. Supabase's dashboard may show `NEXT_PUBLIC_SUPABASE_ANON_KEY`; its value can be used in this example.
-  > See the [full announcement](https://github.com/orgs/supabase/discussions/29260) for more information.
+Pastikan variabel lingkungan (`.env.local`) yang memuat koneksi Postgres, Supabase, dan Drizzle sudah lengkap.
 
-  Both `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` can be found in [your Supabase project's API settings](https://supabase.com/dashboard/project/_?showConnect=true)
+```bash
+# 1. Install seluruh dependensi
+npm install
 
-5. You can now run the Next.js local development server:
+# 2. Push / Sync Schema Database
+npm run db:push
 
-   ```bash
-   npm run dev
-   ```
+# 3. (Opsional) Jalankan data seeding
+npm run db:seed
 
-   The starter kit should now be running on [localhost:3000](http://localhost:3000/).
+# 4. Mulai server Next.js 
+npm run dev
+```
 
-6. This template comes with the default shadcn/ui style initialized. If you instead want other ui.shadcn styles, delete `components.json` and [re-install shadcn/ui](https://ui.shadcn.com/docs/installation/next)
-
-> Check out [the docs for Local Development](https://supabase.com/docs/guides/getting-started/local-development) to also run Supabase locally.
-
-## Feedback and issues
-
-Please file feedback and issues over on the [Supabase GitHub org](https://github.com/supabase/supabase/issues/new/choose).
-
-## More Supabase examples
-
-- [Next.js Subscription Payments Starter](https://github.com/vercel/nextjs-subscription-payments)
-- [Cookie-based Auth and the Next.js 13 App Router (free course)](https://youtube.com/playlist?list=PL5S4mPUpp4OtMhpnp93EFSo42iQ40XjbF)
-- [Supabase Auth and the Next.js App Router](https://github.com/supabase/supabase/tree/master/examples/auth/nextjs)
+Buka `http://localhost:3000` di *browser* Anda untuk menjelajahi platform MENUIN.

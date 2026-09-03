@@ -146,7 +146,7 @@ export async function importProducts(formData: FormData) {
       await db.insert(products).values(batch).onConflictDoNothing(); // prevent crashing on duplicate SKU/barcode if any clash
     }
 
-    revalidatePath('/tenants/products');
+    revalidatePath('/tenants/items');
     revalidatePath('/tenants/inventory');
     revalidatePath('/tenants/pos');
     

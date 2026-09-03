@@ -9,11 +9,11 @@ export function CatalogNav() {
   const pathname = usePathname();
 
   const navItems = [
-    { href: "/tenants/catalog", icon: Store, label: "Status & Overview", exact: true },
-    { href: "/tenants/catalog/appearance", icon: Paintbrush, label: "Tampilan Storefront" },
-    { href: "/tenants/catalog/visibility", icon: Eye, label: "Visibilitas Produk" },
-    { href: "/tenants/catalog/ordering", icon: Settings, label: "Pengaturan Pesanan" },
-    { href: "/tenants/catalog/tables", icon: QrCode, label: "Meja & QR Code" },
+    { href: "/tenants/katalog", icon: Store, label: "Status & Overview", exact: true },
+    { href: "/tenants/katalog/appearance", icon: Paintbrush, label: "Tampilan Storefront" },
+    { href: "/tenants/katalog/visibility", icon: Eye, label: "Visibilitas Produk" },
+    { href: "/tenants/katalog/ordering", icon: Settings, label: "Pengaturan Pesanan" },
+    { href: "/tenants/katalog/tables", icon: QrCode, label: "Meja & QR Code" },
   ];
 
   return (

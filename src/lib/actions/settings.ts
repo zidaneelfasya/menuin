@@ -49,7 +49,7 @@ export async function updateTaxAndFeeSettings(formData: FormData) {
       .where(eq(tenants.id, user.tenantId));
 
     revalidatePath('/tenants/settings');
-    revalidatePath('/tenants/pos/settings');
+    revalidatePath('/tenants/settings');
     revalidatePath('/tenants/pos');
     return { success: true };
   } catch (error) {
@@ -77,7 +77,7 @@ export async function updatePlatformFeeSettings(formData: FormData) {
       .where(eq(tenants.id, user.tenantId));
 
     revalidatePath('/tenants/settings');
-    revalidatePath('/tenants/pos/settings');
+    revalidatePath('/tenants/settings');
     revalidatePath('/tenants/pos');
     return { success: true };
   } catch (error) {
@@ -102,7 +102,7 @@ export async function updateDisplaySettings(formData: FormData) {
 
     revalidatePath('/tenants/settings');
     revalidatePath('/tenants/pos');
-    revalidatePath('/tenants/products');
+    revalidatePath('/tenants/items');
     return { success: true };
   } catch (error) {
     console.error('Error updating display settings:', error);

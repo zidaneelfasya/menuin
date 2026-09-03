@@ -35,6 +35,8 @@ const quicksand = Quicksand({
   display: "swap",
 });
 
+import { PageTransitionProvider } from "@/components/providers/page-transition-provider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -49,8 +51,10 @@ export default function RootLayout({
           enableSystem={false}
           disableTransitionOnChange
         >
-          {children}
-          <Toaster />
+          <PageTransitionProvider>
+            {children}
+            <Toaster />
+          </PageTransitionProvider>
         </ThemeProvider>
       </body>
     </html>

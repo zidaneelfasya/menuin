@@ -42,7 +42,7 @@ export async function updateCatalogStatus(formData: FormData) {
       })
       .where(eq(tenants.id, user.tenantId));
     
-    revalidatePath("/tenants/catalog");
+    revalidatePath("/tenants/katalog");
     return { success: true };
   } catch (error: any) {
     if (error.code === '23505') { // Unique violation
@@ -74,7 +74,7 @@ export async function updateCatalogAppearance(formData: FormData) {
       })
       .where(eq(tenants.id, user.tenantId));
     
-    revalidatePath("/tenants/catalog/appearance");
+    revalidatePath("/tenants/katalog/appearance");
     return { success: true };
   } catch (error) {
     console.error("Failed to update appearance:", error);
@@ -112,7 +112,7 @@ export async function updateCatalogOrdering(formData: FormData) {
       })
       .where(eq(tenants.id, user.tenantId));
     
-    revalidatePath("/tenants/catalog/ordering");
+    revalidatePath("/tenants/katalog/ordering");
     return { success: true };
   } catch (error) {
     console.error("Failed to update ordering settings:", error);
@@ -132,7 +132,7 @@ export async function toggleProductVisibility(productId: string, field: 'isAvail
       .set({ [field]: value })
       .where(and(eq(products.id, productId), eq(products.tenantId, user.tenantId)));
     
-    revalidatePath("/tenants/catalog/visibility");
+    revalidatePath("/tenants/katalog/visibility");
     return { success: true };
   } catch (error) {
     console.error("Failed to toggle visibility:", error);
@@ -159,7 +159,7 @@ export async function addTenantTable(formData: FormData) {
       tenantId: user.tenantId,
       name
     });
-    revalidatePath("/tenants/catalog/tables");
+    revalidatePath("/tenants/katalog/tables");
     return { success: true };
   } catch (error) {
     console.error("Failed to add table:", error);
@@ -173,7 +173,7 @@ export async function deleteTenantTable(tableId: string) {
 
   try {
     await db.delete(tables).where(and(eq(tables.id, tableId), eq(tables.tenantId, user.tenantId)));
-    revalidatePath("/tenants/catalog/tables");
+    revalidatePath("/tenants/katalog/tables");
     return { success: true };
   } catch (error) {
     console.error("Failed to delete table:", error);

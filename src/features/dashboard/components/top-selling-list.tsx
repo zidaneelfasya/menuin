@@ -7,7 +7,7 @@ type TopSellingListProps = {
 
 export function TopSellingList({ products }: TopSellingListProps) {
   return (
-    <Card className="rounded-2xl shadow-sm border-border/50 h-full">
+    <Card className="rounded-xl shadow-sm border-border/50 h-full">
       <CardHeader>
         <CardTitle className="text-base font-semibold">Produk Terlaris</CardTitle>
       </CardHeader>

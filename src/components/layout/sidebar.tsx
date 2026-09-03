@@ -36,8 +36,8 @@ const navItems = [
   { name: 'Dashboard', href: '/tenants/dashboard', icon: LayoutDashboard, roles: ['SUPERADMIN'] },
   { name: 'Kasir (POS)', href: '/tenants/pos', icon: ShoppingCart, roles: ['SUPERADMIN', 'CASHIER'] },
   { name: 'Pesanan Dapur', href: '/tenants/orders', icon: ChefHat, roles: ['SUPERADMIN', 'CASHIER'] },
-  { name: 'Katalog', href: '/tenants/catalog', icon: Store, roles: ['SUPERADMIN'] },
-  { name: 'Item', href: '/tenants/products', icon: Package, roles: ['SUPERADMIN'] },
+  { name: 'Katalog', href: '/tenants/katalog', icon: Store, roles: ['SUPERADMIN'] },
+  { name: 'Item', href: '/tenants/items', icon: Package, roles: ['SUPERADMIN'] },
   { name: 'Kategori', href: '/tenants/categories', icon: Tags, roles: ['SUPERADMIN'] },
   { name: 'Kustomisasi (Modifier)', href: '/tenants/modifiers', icon: SlidersHorizontal, roles: ['SUPERADMIN'] },
   { name: 'Stock', href: '/tenants/inventory', icon: Archive, roles: ['SUPERADMIN'] },
@@ -47,14 +47,16 @@ const navItems = [
   { name: 'Promo', href: '/tenants/promotions', icon: Percent, roles: ['SUPERADMIN'] },
   { name: 'Kasir Toko', href: '/tenants/users', icon: UserCircle, roles: ['SUPERADMIN'] },
   { name: 'Pengaturan', href: '/tenants/settings', icon: Settings, roles: ['SUPERADMIN'] },
-  { name: 'Pengaturan Kasir', href: '/tenants/pos/settings', icon: Settings, roles: ['SUPERADMIN'] },
   { name: 'Pembelian', href: '/tenants/purchases', icon: ShoppingBag, roles: ['SUPERADMIN'] },
 ];
+
+import { usePageTransition } from '../providers/page-transition-provider';
 
 function SidebarContent({ collapsed, setCollapsed, user }: { collapsed: boolean; setCollapsed?: (val: boolean) => void; user: UserProfile }) {
   const pathname = usePathname();
   const router = useRouter();
   const { incomingOrders } = useRealtimeOrder();
+  const { navigateWithTransition } = usePageTransition();
 
   const handleLogout = async () => {
     const supabase = createClient();
@@ -92,17 +94,24 @@ function SidebarContent({ collapsed, setCollapsed, user }: { collapsed: boolean;
           {navItems.filter(item => !item.roles || item.roles.includes(user.role as any)).map((item) => {
             const isActive = pathname.startsWith(item.href);
             return (
-              <Link key={item.name} href={item.href}>
+              <Link 
+                key={item.name} 
+                href={item.href}
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigateWithTransition(item.href);
+                }}
+              >
                 <div
                   className={cn(
                     'flex items-center px-3 py-2.5 rounded-xl transition-all duration-200 group relative',
                     isActive 
-                      ? 'bg-primary text-primary-foreground shadow-md' 
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                      ? 'bg-primary/10 text-primary font-medium' 
+                      : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground font-medium'
                   )}
                   title={collapsed ? item.name : undefined}
                 >
-                  <item.icon className={cn('h-5 w-5 flex-shrink-0', isActive ? 'text-primary-foreground' : 'text-muted-foreground group-hover:text-foreground')} />
+                  <item.icon className={cn('h-5 w-5 flex-shrink-0', isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground')} />
                   {!collapsed && (
                     <span className="ml-3 font-medium text-sm flex-1">{item.name}</span>
                   )}

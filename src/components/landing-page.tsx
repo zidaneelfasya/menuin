@@ -38,6 +38,7 @@ import PricingTableDark from "@/components/ui/pricing-table-dark";
 import FaqEditorial from "@/components/ui/faq-editorial";
 import FooterReadyToBegin from "@/components/ui/footer-ready-to-begin";
 import FooterSuperfluidStyle from "@/components/ui/footer-superfluid-style";
+import { usePageTransition } from "@/components/providers/page-transition-provider";
 
 
 
@@ -880,6 +881,7 @@ export default function LandingPage({
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
+  const { navigateWithTransition } = usePageTransition();
   const marqueeContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -1071,13 +1073,17 @@ export default function LandingPage({
           <div className="hidden md:flex items-center gap-4">
             {isLoggedIn ? (
               <a
-                href="/tenants/pos"
+                href="/tenants/dashboard"
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigateWithTransition('/tenants/dashboard');
+                }}
                 className="h-10 pl-2 pr-4 flex items-center rounded-full bg-slate-900 text-white text-[13px] font-semibold hover:bg-slate-800 transition-all gap-2.5 shadow-sm group"
               >
                 <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-[#0E59F9] to-[#3B82F6] text-white flex items-center justify-center font-bold text-[12px] shadow-sm">
                   {userInitial}
                 </div>
-                <span>Open POS Register</span>
+                <span>Open Dashboard</span>
                 <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
               </a>
             ) : (
@@ -1117,11 +1123,19 @@ export default function LandingPage({
             <div className="h-px bg-slate-100" />
             <div className="flex flex-col gap-3">
               {isLoggedIn ? (
-                <a href="/pos" className="flex items-center justify-center gap-2.5 h-11 rounded-full bg-slate-900 text-white text-[14px] font-semibold">
+                <a 
+                  href="/tenants/dashboard" 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setMobileOpen(false);
+                    navigateWithTransition('/tenants/dashboard');
+                  }}
+                  className="flex items-center justify-center gap-2.5 h-11 rounded-full bg-slate-900 text-white text-[14px] font-semibold"
+                >
                   <div className="w-6 h-6 rounded-full bg-[#0E59F9] text-white flex items-center justify-center font-bold text-[11px]">
                     {userInitial}
                   </div>
-                  <span>Open POS Register</span>
+                  <span>Open Dashboard</span>
                 </a>
               ) : (
                 <>
@@ -1173,10 +1187,16 @@ export default function LandingPage({
           <FadeIn delay={0.3}>
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
               <a
-                href={isLoggedIn ? "/pos" : "/auth/signup"}
+                href={isLoggedIn ? "/tenants/dashboard" : "/auth/signup"}
+                onClick={(e) => {
+                  if (isLoggedIn) {
+                    e.preventDefault();
+                    navigateWithTransition('/tenants/dashboard');
+                  }
+                }}
                 className="h-12 px-7 flex items-center justify-center rounded-full bg-[#0E59F9] text-white text-[15px] font-semibold hover:bg-[#0C4CD6] transition-all shadow-md shadow-blue-500/20 hover:shadow-lg w-full sm:w-auto gap-2"
               >
-                <span>{isLoggedIn ? "Open POS Register" : "Get Started Free"}</span>
+                <span>{isLoggedIn ? "Open Dashboard" : "Get Started Free"}</span>
                 <ArrowRight className="w-4 h-4" />
               </a>
               <a

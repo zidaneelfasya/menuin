@@ -106,48 +106,40 @@ export function DashboardPage({ metrics, chartData, topProducts, lowStockProduct
 
       {/* Metrics Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="rounded-2xl shadow-sm border-border/50 bg-gradient-to-br from-card to-card/50">
+        <Card className="rounded-xl shadow-sm border-border/50">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Omzet</CardTitle>
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <DollarSign className="w-4 h-4 text-primary" />
-            </div>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Omzet</CardTitle>
+            <DollarSign className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(metrics.totalOmzet)}</div>
           </CardContent>
         </Card>
         
-        <Card className="rounded-2xl shadow-sm border-border/50 bg-gradient-to-br from-card to-card/50">
+        <Card className="rounded-xl shadow-sm border-border/50">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Laba</CardTitle>
-            <div className="p-2 bg-green-500/10 rounded-lg">
-              <Activity className="w-4 h-4 text-green-500" />
-            </div>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Laba</CardTitle>
+            <Activity className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{formatCurrency(metrics.totalLaba)}</div>
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl shadow-sm border-border/50 bg-gradient-to-br from-card to-card/50">
+        <Card className="rounded-xl shadow-sm border-border/50">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Transaksi</CardTitle>
-            <div className="p-2 bg-blue-500/10 rounded-lg">
-              <ShoppingCart className="w-4 h-4 text-blue-500" />
-            </div>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Transaksi Berhasil</CardTitle>
+            <ShoppingCart className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{metrics.totalTransactions}</div>
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl shadow-sm border-border/50 bg-gradient-to-br from-card to-card/50">
+        <Card className="rounded-xl shadow-sm border-border/50">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Katalog Produk</CardTitle>
-            <div className="p-2 bg-orange-500/10 rounded-lg">
-              <Package className="w-4 h-4 text-orange-500" />
-            </div>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Item</CardTitle>
+            <Package className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{metrics.totalProduk} pcs</div>
@@ -158,7 +150,7 @@ export function DashboardPage({ metrics, chartData, topProducts, lowStockProduct
       {/* Row 2: Chart & Top Selling */}
       <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4">
         {/* Sales Chart */}
-        <Card className="col-span-1 md:col-span-2 lg:col-span-3 rounded-2xl shadow-sm border-border/50">
+        <Card className="col-span-1 md:col-span-2 lg:col-span-3 rounded-xl shadow-sm border-border/50">
           <CardHeader>
             <CardTitle className="text-base font-semibold">Grafik Penjualan</CardTitle>
           </CardHeader>

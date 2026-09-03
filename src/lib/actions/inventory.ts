@@ -36,7 +36,7 @@ export async function adjustStock(formData: z.infer<typeof adjustStockSchema>) {
       
 
     revalidatePath('/tenants/inventory');
-    revalidatePath('/tenants/products');
+    revalidatePath('/tenants/items');
     revalidatePath('/tenants/pos');
 
     return { success: true };

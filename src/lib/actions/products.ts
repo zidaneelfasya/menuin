@@ -85,9 +85,9 @@ export async function toggleProductBestSeller(productId: string, isFeatured: boo
       .set({ isFeatured, updatedAt: new Date() })
       .where(and(eq(products.id, productId), eq(products.tenantId, user.tenantId)));
 
-    revalidatePath('/tenants/products');
+    revalidatePath('/tenants/items');
     revalidatePath('/tenants/pos');
-    revalidatePath('/tenants/catalog/visibility');
+    revalidatePath('/tenants/katalog/visibility');
     return { success: true };
   } catch (error) {
     console.error('Error toggling best seller status:', error);
@@ -130,7 +130,7 @@ export async function createProduct(formData: z.infer<typeof productSchema>) {
       );
     }
     
-    revalidatePath('/tenants/products');
+    revalidatePath('/tenants/items');
     revalidatePath('/tenants/pos');
     revalidatePath('/tenants/inventory');
     return { success: true };
@@ -173,7 +173,7 @@ export async function updateProduct(id: string, formData: z.infer<typeof product
       );
     }
     
-    revalidatePath('/tenants/products');
+    revalidatePath('/tenants/items');
     revalidatePath('/tenants/pos');
     revalidatePath('/tenants/inventory');
     return { success: true };
@@ -191,7 +191,7 @@ export async function deleteProduct(id: string) {
     await db.delete(productModifierGroups).where(eq(productModifierGroups.productId, id));
     await db.delete(products).where(and(eq(products.id, id), eq(products.tenantId, user.tenantId)));
     
-    revalidatePath('/tenants/products');
+    revalidatePath('/tenants/items');
     revalidatePath('/tenants/pos');
     revalidatePath('/tenants/inventory');
     return { success: true };

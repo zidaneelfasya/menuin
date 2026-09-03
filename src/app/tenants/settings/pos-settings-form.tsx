@@ -25,6 +25,17 @@ export function PosSettingsForm({ initialData }: { initialData: any }) {
   const [goFoodFeeRate, setGoFoodFeeRate] = useState(initialData.goFoodFeeRate?.toString() || "20");
   const [posPinBestSellers, setPosPinBestSellers] = useState(initialData.posPinBestSellers ?? true);
 
+  const hasChanges = 
+    posKitchenSync !== (initialData.posKitchenSync ?? false) ||
+    posOrderTypeSelection !== (initialData.posOrderTypeSelection || "MANUAL") ||
+    posTaxRate !== (initialData.posTaxRate?.toString() || "0") ||
+    taxName !== (initialData.taxName || "Pajak (PB1)") ||
+    serviceChargeRate !== (initialData.serviceChargeRate?.toString() || "0") ||
+    grabFoodFeeRate !== (initialData.grabFoodFeeRate?.toString() || "20") ||
+    shopeeFoodFeeRate !== (initialData.shopeeFoodFeeRate?.toString() || "20") ||
+    goFoodFeeRate !== (initialData.goFoodFeeRate?.toString() || "20") ||
+    posPinBestSellers !== (initialData.posPinBestSellers ?? true);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
@@ -236,7 +247,7 @@ export function PosSettingsForm({ initialData }: { initialData: any }) {
       </Card>
 
       <div className="flex justify-end">
-        <Button disabled={isSaving} type="submit" size="lg" className="min-w-[150px] shadow-sm">
+        <Button disabled={isSaving || !hasChanges} type="submit" size="lg" className="min-w-[150px] shadow-sm">
           {isSaving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Menyimpan...</> : <><Save className="mr-2 h-4 w-4" /> Simpan Pengaturan Kasir</>}
         </Button>
       </div>

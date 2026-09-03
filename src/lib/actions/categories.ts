@@ -41,7 +41,7 @@ export async function createCategory(formData: z.infer<typeof categorySchema>) {
     });
     
     revalidatePath('/tenants/categories');
-    revalidatePath('/tenants/products');
+    revalidatePath('/tenants/items');
     return { success: true };
   } catch (error) {
     console.error('Error creating category:', error);
@@ -66,7 +66,7 @@ export async function updateCategory(id: string, formData: z.infer<typeof catego
       .where(and(eq(categories.id, id), eq(categories.tenantId, user.tenantId)));
     
     revalidatePath('/tenants/categories');
-    revalidatePath('/tenants/products');
+    revalidatePath('/tenants/items');
     return { success: true };
   } catch (error) {
     console.error('Error updating category:', error);
@@ -82,7 +82,7 @@ export async function deleteCategory(id: string) {
     await db.delete(categories).where(and(eq(categories.id, id), eq(categories.tenantId, user.tenantId)));
     
     revalidatePath('/tenants/categories');
-    revalidatePath('/tenants/products');
+    revalidatePath('/tenants/items');
     return { success: true };
   } catch (error) {
     console.error('Error deleting category:', error);

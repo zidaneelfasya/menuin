@@ -152,7 +152,7 @@ export function KanbanBoard({ initialOrders, tenantId }: KanbanBoardProps) {
     const columnOrders = orders.filter(o => o.status === status);
 
     return (
-      <div className="flex-1 min-w-[320px] bg-slate-50/50 rounded-2xl p-4 flex flex-col h-[calc(100vh-140px)] border">
+      <div className="flex-1 min-w-[320px] bg-slate-50/50 rounded-xl p-4 flex flex-col h-[calc(100vh-140px)] border">
         <div className={`flex items-center justify-between mb-4 pb-4 border-b-2 ${color}`}>
           <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
             {icon} {title}

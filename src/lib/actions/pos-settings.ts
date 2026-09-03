@@ -39,7 +39,7 @@ export async function updatePosSettings(formData: FormData) {
       })
       .where(eq(tenants.id, user.tenantId));
     
-    revalidatePath("/tenants/pos/settings");
+    revalidatePath("/tenants/settings");
     revalidatePath("/tenants/settings");
     revalidatePath("/tenants/pos");
     return { success: true };

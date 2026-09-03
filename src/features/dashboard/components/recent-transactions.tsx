@@ -15,7 +15,7 @@ type RecentTransactionsProps = {
 
 export function RecentTransactions({ transactions }: RecentTransactionsProps) {
   return (
-    <Card className="rounded-2xl shadow-sm border-border/50">
+    <Card className="rounded-xl shadow-sm border-border/50">
       <CardHeader>
         <CardTitle className="text-base font-semibold">Transaksi Terbaru</CardTitle>
       </CardHeader>
