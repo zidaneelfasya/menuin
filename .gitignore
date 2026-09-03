@@ -12,7 +12,7 @@
 
 /.agents
 /.skills
-/skills-lock.json
+skills-lock.json
 
 # testing
 /coverage
