@@ -32,34 +32,19 @@ export function RealtimeOrderProvider({ children, tenantId }: { children: ReactN
 
   const [dismissedPopupIds, setDismissedPopupIds] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    if (!tenantId) return;
-
-    // We can use a looping audio by setting loop = true, but we'll manage playing/stopping it.
-    const audio = new Audio('/notification.mp3');
-    audio.loop = true;
-
-    // Only play audio if there is an incoming order that is NOT dismissed
-    const hasUnnotifiedOrders = incomingOrders.some(o => !dismissedPopupIds.has(o.id));
-
-    if (hasUnnotifiedOrders) {
-      audio.play().catch(e => console.log('Audio auto-play blocked', e));
-    } else {
-      audio.pause();
-      audio.currentTime = 0;
-    }
-
-    return () => {
-      audio.pause();
-      audio.currentTime = 0;
-    };
-  }, [incomingOrders, dismissedPopupIds, tenantId]);
+  // Audio is now played imperatively when a new order arrives, see below.
 
   useEffect(() => {
     // If the user visits the orders page, clear the badge (they've "read" them)
     if (pathname === '/tenants/orders') {
       setIncomingOrders([]);
       setDismissedPopupIds(new Set());
+      
+      // Also clear them when they navigate away from this page
+      return () => {
+        setIncomingOrders([]);
+        setDismissedPopupIds(new Set());
+      };
     }
   }, [pathname]);
 
@@ -120,6 +105,8 @@ export function RealtimeOrderProvider({ children, tenantId }: { children: ReactN
                   return newSet;
                 });
                 toast.success(`Pesanan Baru Masuk!`);
+                const audio = new Audio('/notification.mp3');
+                audio.play().catch(e => console.log('Audio auto-play blocked', e));
               }
               
               if (pathname === '/tenants/pos' || pathname === '/tenants/transactions' || pathname === '/tenants/orders') {

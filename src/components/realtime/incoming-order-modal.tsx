@@ -17,10 +17,10 @@ export function IncomingOrderModal({ activeOrders }: { activeOrders: any[] }) {
 
   useEffect(() => {
     if (!currentOrder) return;
-    // Auto-dismiss after 15 seconds to not block the screen permanently
+    // Auto-dismiss after 5 seconds to not block the screen permanently
     const timer = setTimeout(() => {
       dismissPopup(currentOrder.id);
-    }, 15000);
+    }, 5000);
     return () => clearTimeout(timer);
   }, [currentOrder, dismissPopup]);
 
@@ -40,7 +40,10 @@ export function IncomingOrderModal({ activeOrders }: { activeOrders: any[] }) {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[100] flex flex-col gap-3 pointer-events-none w-full max-w-[360px]">
+    <div 
+      className="fixed top-20 right-6 flex flex-col gap-3 pointer-events-none w-full max-w-[360px]"
+      style={{ zIndex: 999999 }}
+    >
       <AnimatePresence mode="popLayout">
         <motion.div 
           key={currentOrder.id}
@@ -141,7 +144,7 @@ export function IncomingOrderModal({ activeOrders }: { activeOrders: any[] }) {
           <motion.div 
             initial={{ width: "100%" }}
             animate={{ width: "0%" }}
-            transition={{ duration: 15, ease: "linear" }}
+            transition={{ duration: 5, ease: "linear" }}
             className="absolute bottom-0 left-0 h-1 bg-blue-400"
           />
         </motion.div>
