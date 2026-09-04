@@ -82,8 +82,9 @@ export function RealtimeOrderProvider({ children, tenantId }: { children: ReactN
           const tx = payload.new as any;
           const isNewInsert = payload.eventType === 'INSERT' && tx.status === 'NEW';
           const isPaidUpdate = payload.eventType === 'UPDATE' && tx.status === 'NEW';
+          const isPendingInsert = payload.eventType === 'INSERT' && tx.status === 'PENDING';
 
-          if (isNewInsert || isPaidUpdate) {
+          if (isNewInsert || isPaidUpdate || isPendingInsert) {
             // Check if already in queue
             setIncomingOrders(prev => {
               if (prev.find(o => o.id === tx.id)) return prev;
@@ -95,21 +96,39 @@ export function RealtimeOrderProvider({ children, tenantId }: { children: ReactN
 
             // Fetch full order with items
             const fullOrder = await getOrderById(tx.id);
-            if (fullOrder && fullOrder.status === 'NEW') {
+            if (fullOrder && (fullOrder.status === 'NEW' || fullOrder.status === 'PENDING')) {
               setIncomingOrders(prev => {
-                if (prev.find(o => o.id === fullOrder.id)) return prev;
+                const existingIndex = prev.findIndex(o => o.id === fullOrder.id);
+                if (existingIndex >= 0) {
+                  const newOrders = [...prev];
+                  newOrders[existingIndex] = fullOrder;
+                  return newOrders;
+                }
                 return [...prev, fullOrder];
               });
 
-              toast.success(`Pesanan Baru Masuk!`);
+              if (isPendingInsert) {
+                setDismissedPopupIds(prev => {
+                  const newSet = new Set(prev);
+                  newSet.add(fullOrder.id); // dismiss popup for pending
+                  return newSet;
+                });
+              } else {
+                setDismissedPopupIds(prev => {
+                  const newSet = new Set(prev);
+                  newSet.delete(fullOrder.id); // show popup for NEW
+                  return newSet;
+                });
+                toast.success(`Pesanan Baru Masuk!`);
+              }
               
               if (pathname === '/tenants/pos' || pathname === '/tenants/transactions' || pathname === '/tenants/orders') {
                 router.refresh();
               }
             }
           } else if (payload.eventType === 'UPDATE') {
-            // If the order status is no longer NEW, remove it from queue (e.g. accepted on another device)
-            if (tx.status !== 'NEW') {
+            // If the order status is no longer NEW or PENDING, remove it from queue (e.g. accepted on another device)
+            if (tx.status !== 'NEW' && tx.status !== 'PENDING') {
               setIncomingOrders(prev => prev.filter(o => o.id !== tx.id));
               setDismissedPopupIds(prev => {
                 const newSet = new Set(prev);

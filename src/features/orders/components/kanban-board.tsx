@@ -106,7 +106,13 @@ export function KanbanBoard({ initialOrders, tenantId }: KanbanBoardProps) {
       if (!['PENDING', 'NEW', 'PROCESSING', 'READY'].includes(newStatus)) {
         return prev.filter(o => o.id !== orderId); // removing from board if completed
       }
-      return prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o);
+      return prev.map(o => {
+        if (o.id === orderId) {
+          const isConfirming = o.status === 'PENDING' && newStatus === 'NEW';
+          return { ...o, status: newStatus, paymentStatus: isConfirming ? 'PAID' : o.paymentStatus };
+        }
+        return o;
+      });
     });
 
     const res = await updateOrderStatus(orderId, newStatus);

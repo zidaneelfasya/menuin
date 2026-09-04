@@ -11,20 +11,23 @@ export const metadata: Metadata = {
 };
 
 import { getTenantCatalogSettings } from '@/lib/actions/catalog';
+import { getActiveShift } from '@/lib/actions/shifts';
 
 async function POSDataWrapper() {
-  const [productsResult, categoriesResult, tenantSettings, modifiersResult] = await Promise.all([
+  const [productsResult, categoriesResult, tenantSettings, modifiersResult, activeShiftResult] = await Promise.all([
     getProducts(),
     getCategories(),
     getTenantCatalogSettings(),
     getModifierGroups(),
+    getActiveShift()
   ]);
 
   const products = productsResult.success && productsResult.data ? productsResult.data : [];
   const categories = categoriesResult.success && categoriesResult.data ? categoriesResult.data : [];
   const modifierGroups = modifiersResult.success && modifiersResult.data ? modifiersResult.data : [];
+  const activeShift = activeShiftResult.success ? activeShiftResult.data : null;
 
-  return <POSPage initialProducts={products} initialCategories={categories} posSettings={tenantSettings} modifierGroups={modifierGroups} />;
+  return <POSPage initialProducts={products} initialCategories={categories} posSettings={tenantSettings} modifierGroups={modifierGroups} activeShift={activeShift} />;
 }
 
 export default function Page() {

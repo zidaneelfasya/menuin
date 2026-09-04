@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/drawer';
 import { PaymentModal } from './payment-modal';
 import { ReceiptPrinter, ReceiptData } from './receipt-printer';
+import { StartShiftModal } from './start-shift-modal';
 
 type Category = { id: string; name: string; };
 type Product = {
@@ -28,17 +29,21 @@ export function POSPage({
   initialProducts, 
   initialCategories,
   posSettings,
-  modifierGroups
+  modifierGroups,
+  activeShift
 }: { 
   initialProducts: Product[], 
   initialCategories: Category[],
   posSettings: any,
-  modifierGroups?: any[]
+  modifierGroups?: any[],
+  activeShift?: any
 }) {
   const [mounted, setMounted] = React.useState(false);
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = React.useState(false);
+  const [isStartShiftModalOpen, setIsStartShiftModalOpen] = React.useState(false);
   const [receiptData, setReceiptData] = React.useState<ReceiptData | null>(null);
+  const [currentShift, setCurrentShift] = React.useState(activeShift);
   
   const { items, clearCart, getTotal } = useCartStore();
 
@@ -49,6 +54,11 @@ export function POSPage({
   const handleCheckoutClick = () => {
     if (items.length === 0) {
       toast.error('Keranjang kosong!');
+      return;
+    }
+    if (!currentShift) {
+      toast.warning('Silakan mulai shift terlebih dahulu.');
+      setIsStartShiftModalOpen(true);
       return;
     }
     setIsPaymentModalOpen(true);
@@ -223,6 +233,15 @@ export function POSPage({
         subtotalAmount={cartTotal}
         onConfirm={handleConfirmPayment}
         posSettings={posSettings}
+      />
+      
+      <StartShiftModal
+        isOpen={isStartShiftModalOpen}
+        onClose={() => setIsStartShiftModalOpen(false)}
+        onSuccess={() => {
+           // Reload page to get new shift data
+           window.location.reload();
+        }}
       />
       
       <ReceiptPrinter data={receiptData} />

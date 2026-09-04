@@ -41,6 +41,7 @@ const navItems = [
   { name: 'Kategori', href: '/tenants/categories', icon: Tags, roles: ['SUPERADMIN'] },
   { name: 'Kustomisasi (Modifier)', href: '/tenants/modifiers', icon: SlidersHorizontal, roles: ['SUPERADMIN'] },
   { name: 'Stock', href: '/tenants/inventory', icon: Archive, roles: ['SUPERADMIN'] },
+  { name: 'Manajemen Shift', href: '/tenants/shifts', icon: Wallet, roles: ['SUPERADMIN', 'CASHIER'] },
   { name: 'Riwayat Transaksi', href: '/tenants/transactions', icon: History, roles: ['SUPERADMIN', 'CASHIER'] },
   { name: 'Laporan', href: '/tenants/reports', icon: BarChart3, roles: ['SUPERADMIN'] },
   { name: 'Keuangan', href: '/tenants/finance', icon: Wallet, roles: ['SUPERADMIN'] },

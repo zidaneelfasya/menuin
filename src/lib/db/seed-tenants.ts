@@ -88,7 +88,7 @@ const TENANTS_DATA: TenantDef[] = [
     name: 'Kopi Senja Utama',
     isPaid: true,
     users: [
-      { name: 'Zidane Elfasya', email: 'elfasyazidan1@gmail.com', role: 'SUPERADMIN' },
+      { name: 'Zidane Elfasya', email: 'zidaneelfasya@gmail.com', role: 'SUPERADMIN' },
       { name: 'Budi Santoso (Owner)', email: 'owner.kopi@menuin.com', role: 'SUPERADMIN' },
       { name: 'Rian Pratama (Kasir Pagi)', email: 'kasir.kopi@menuin.com', role: 'CASHIER' },
       { name: 'Siti Rahma (Kasir Sore)', email: 'kasir2.kopi@menuin.com', role: 'CASHIER' },
@@ -357,10 +357,19 @@ async function seedTenants() {
   try {
     // 1. Bersihkan transaksi, produk, kategori lama
     console.log('🧹 Membersihkan database lama...');
+    await db.delete(schema.cashMovements);
     await db.delete(schema.transactionItems);
+    await db.delete(schema.payments);
     await db.delete(schema.transactions);
+    await db.delete(schema.shifts);
+    await db.delete(schema.productModifierGroups);
+    await db.delete(schema.modifiers);
+    await db.delete(schema.modifierGroups);
     await db.delete(schema.products);
     await db.delete(schema.categories);
+    await db.delete(schema.promotions);
+    await db.delete(schema.tables);
+    await db.delete(schema.operatingHours);
     await db.delete(schema.users);
     await db.delete(schema.tenants);
 
@@ -442,8 +451,25 @@ async function seedTenants() {
 
       console.log(`   📦 Disimpan: ${tenantData.categories.length} Kategori, ${allCreatedProducts.length} Produk.`);
 
+      // 8. Buat Shift Aktif (Cashier)
+      console.log(`     ⏰ Membuka Shift untuk Kasir...`);
+      const [activeShift] = await db.insert(schema.shifts).values({
+        tenantId: newTenant.id,
+        userId: cashierUser.id,
+        startingCash: '200000',
+        status: 'ACTIVE'
+      }).returning();
+
+      // Kasir nambahin kembalian 50rb
+      await db.insert(schema.cashMovements).values({
+        shiftId: activeShift.id,
+        type: 'IN',
+        amount: '50000',
+        description: 'Tambah uang koin kembalian',
+      });
+
       // 3d. Simulasi Transaksi 30 Hari Terakhir
-      console.log(`   🛒 Membuat simulasi transaksi 30 hari terakhir...`);
+      console.log(`     💰 Membuat dummy transaksi...`);
       const transactionsToInsert: any[] = [];
       const transactionItemsToInsert: any[] = [];
 
@@ -494,17 +520,21 @@ async function seedTenants() {
 
           const isQris = Math.random() > 0.45;
           const paymentMethod = isQris ? 'qris' : 'cash';
+          const isCash = paymentMethod === 'cash';
 
           transactionsToInsert.push({
             id: txId,
-            tenantId,
+            tenantId: newTenant.id,
             userId: cashierUser.id,
+            shiftId: activeShift.id,
             totalAmount: grandTotal.toString(),
-            discount: '0',
-            tax: '0',
             grandTotal: grandTotal.toString(),
             paymentMethod,
+            paymentStatus: isCash ? 'PAID' : 'PENDING',
             status: 'COMPLETED',
+            source: 'POS',
+            orderType: 'DINE_IN',
+            orderNumber: `ORD-${txId.slice(0,8)}-${t}`,
             createdAt: txDate,
           });
         }

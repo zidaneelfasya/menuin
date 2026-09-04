@@ -117,10 +117,35 @@ export const products = pgTable('products', {
   };
 });
 
+export const shifts = pgTable('shifts', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
+  userId: uuid('user_id').references(() => users.id).notNull(),
+  startTime: timestamp('start_time').defaultNow().notNull(),
+  endTime: timestamp('end_time'),
+  startingCash: decimal('starting_cash', { precision: 12, scale: 2 }).notNull().default('0'),
+  actualCash: decimal('actual_cash', { precision: 12, scale: 2 }), // Uang aktual di laci saat shift ditutup
+  expectedCash: decimal('expected_cash', { precision: 12, scale: 2 }), // Modal awal + transaksi CASH + cash in - cash out
+  cashDifference: decimal('cash_difference', { precision: 12, scale: 2 }), // Selisih (actual - expected)
+  status: text('status').notNull().default('ACTIVE'), // ACTIVE, ENDED
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const cashMovements = pgTable('cash_movements', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  shiftId: uuid('shift_id').references(() => shifts.id).notNull(),
+  type: text('type').notNull(), // IN, OUT
+  amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
+  description: text('description').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
 export const transactions = pgTable('transactions', {
   id: uuid('id').primaryKey().defaultRandom(),
   tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
   userId: uuid('user_id').references(() => users.id),
+  shiftId: uuid('shift_id').references(() => shifts.id), // Link to shift
   totalAmount: decimal('total_amount', { precision: 12, scale: 2 }).notNull(),
   discount: decimal('discount', { precision: 12, scale: 2 }).default('0'),
   tax: decimal('tax', { precision: 12, scale: 2 }).default('0'),

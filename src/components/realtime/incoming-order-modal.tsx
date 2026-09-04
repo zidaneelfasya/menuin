@@ -5,7 +5,7 @@ import { formatCurrency, formatDate } from "@/lib/utils/format";
 import { updateOrderStatus } from "@/lib/actions/orders";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
-import { Loader2, ChefHat, Check, User, Hash, X } from "lucide-react";
+import { Loader2, ChefHat, Check, User, Hash, X, Clock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function IncomingOrderModal({ activeOrders }: { activeOrders: any[] }) {
@@ -17,10 +17,10 @@ export function IncomingOrderModal({ activeOrders }: { activeOrders: any[] }) {
 
   useEffect(() => {
     if (!currentOrder) return;
-    // Auto-dismiss after 3 seconds to not block the screen
+    // Auto-dismiss after 15 seconds to not block the screen permanently
     const timer = setTimeout(() => {
       dismissPopup(currentOrder.id);
-    }, 3000);
+    }, 15000);
     return () => clearTimeout(timer);
   }, [currentOrder, dismissPopup]);
 
@@ -40,100 +40,110 @@ export function IncomingOrderModal({ activeOrders }: { activeOrders: any[] }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <AnimatePresence mode="wait">
+    <div className="fixed bottom-6 right-6 z-[100] flex flex-col gap-3 pointer-events-none w-full max-w-[360px]">
+      <AnimatePresence mode="popLayout">
         <motion.div 
           key={currentOrder.id}
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.9, y: -20 }}
-          className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 relative"
+          exit={{ opacity: 0, scale: 0.9, y: 20 }}
+          transition={{ type: "spring", stiffness: 400, damping: 30 }}
+          className="pointer-events-auto bg-white/95 backdrop-blur-xl border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.12)] rounded-2xl overflow-hidden relative flex flex-col"
         >
-          {/* Header */}
-          <div className="bg-blue-600 p-6 text-white flex flex-col items-center justify-center text-center relative overflow-hidden">
-            <button 
-              onClick={() => dismissPopup(currentOrder.id)}
-              className="absolute top-4 right-4 z-20 bg-black/20 hover:bg-black/40 p-2 rounded-full transition-colors text-white"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white to-transparent" />
-            <div className="bg-white/20 p-3 rounded-full mb-3 backdrop-blur-sm relative z-10">
-              <ChefHat className="w-10 h-10" />
-            </div>
-            <h2 className="text-2xl font-black tracking-tight relative z-10">PESANAN BARU MASUK!</h2>
-            <p className="font-medium text-blue-100 mt-1 relative z-10">{currentOrder.orderType.replace('_', ' ')}</p>
-          </div>
-
-          {/* Body */}
-          <div className="p-6">
-            <div className="flex justify-between items-center mb-6 bg-slate-50 p-4 rounded-xl border border-slate-100">
-              <div className="flex items-center gap-3">
-                <div className="bg-blue-100 text-blue-600 p-2 rounded-lg">
-                  {currentOrder.tableNumber ? <Hash className="w-5 h-5" /> : <User className="w-5 h-5" />}
+          {/* Top color bar */}
+          <div className="h-1.5 w-full bg-blue-600" />
+          
+          <div className="p-4 space-y-4">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="bg-blue-100 text-blue-700 p-1.5 rounded-lg shadow-sm">
+                  <ChefHat className="w-4 h-4" />
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">
-                    {currentOrder.tableNumber ? 'Meja' : 'Pelanggan'}
-                  </p>
-                  <p className="font-bold text-slate-900 text-lg leading-tight">
-                    {currentOrder.tableNumber ? currentOrder.tableNumber : (currentOrder.customerName || 'Tamu')}
-                  </p>
+                  <h3 className="font-bold text-slate-800 text-sm leading-none tracking-tight">Pesanan Baru</h3>
+                  <span className="text-[10px] font-semibold text-blue-600 uppercase tracking-wider">{currentOrder.orderType.replace('_', ' ')}</span>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Waktu Pesan</p>
-                <p className="font-bold text-slate-900 leading-tight">
-                  {formatDate(currentOrder.createdAt).split(' ')[1]}
-                </p>
+              <div className="flex items-center gap-2">
+                {activeOrders.length > 1 && (
+                  <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+                    1 of {activeOrders.length}
+                  </span>
+                )}
+                <button 
+                  onClick={() => dismissPopup(currentOrder.id)} 
+                  className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1 rounded-full transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
             </div>
 
-            <div className="space-y-4 max-h-[30vh] overflow-y-auto pr-2 scrollbar-hide">
-              <h3 className="font-bold text-slate-800 border-b pb-2">Daftar Item:</h3>
+            {/* Customer Info */}
+            <div className="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-100/80 shadow-inner">
+              <div className="flex items-center gap-3">
+                <div className="text-slate-400">
+                  {currentOrder.tableNumber ? <Hash className="w-4 h-4" /> : <User className="w-4 h-4" />}
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                    {currentOrder.tableNumber ? 'Meja' : 'Pelanggan'}
+                  </span>
+                  <span className="font-extrabold text-slate-900 text-sm">
+                    {currentOrder.tableNumber || currentOrder.customerName || 'Tamu'}
+                  </span>
+                </div>
+              </div>
+              <div className="text-right flex flex-col">
+                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Total</span>
+                <span className="font-black text-blue-600 text-sm">{formatCurrency(Number(currentOrder.grandTotal))}</span>
+              </div>
+            </div>
+
+            {/* Item List */}
+            <div className="space-y-2 max-h-[100px] overflow-y-auto pr-2 text-xs scrollbar-thin scrollbar-thumb-slate-200">
               {currentOrder.items.map((item: any, idx: number) => (
-                <div key={idx} className="flex justify-between items-start text-sm">
-                  <div className="flex gap-3">
-                    <span className="font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md min-w-[28px] text-center">{item.quantity}x</span> 
+                <div key={idx} className="flex justify-between items-start">
+                  <div className="flex gap-2">
+                    <span className="font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded text-[10px] min-w-[24px] text-center">{item.quantity}x</span> 
                     <span className="font-semibold text-slate-700">{item.productName}</span>
                   </div>
-                  <span className="text-slate-500 font-medium">{formatCurrency(Number(item.subtotal))}</span>
+                  <span className="text-slate-500 font-medium whitespace-nowrap ml-2">{formatCurrency(Number(item.subtotal))}</span>
                 </div>
               ))}
             </div>
-            
-            <div className="mt-6 pt-4 border-t border-dashed flex justify-between items-center">
-              <span className="text-slate-500 font-bold">Total Pembayaran</span>
-              <span className="text-2xl font-black text-blue-600">{formatCurrency(Number(currentOrder.grandTotal))}</span>
+
+            {/* Actions */}
+            <div className="flex gap-2 pt-1">
+              <button 
+                onClick={() => dismissPopup(currentOrder.id)} 
+                className="flex-1 py-2.5 text-xs font-bold text-slate-600 bg-white border-2 border-slate-200 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center justify-center gap-1.5"
+              >
+                <Clock className="w-3.5 h-3.5" /> Nanti Saja
+              </button>
+              <button 
+                onClick={handleAccept} 
+                disabled={isLoading}
+                className="flex-1 py-2.5 text-xs font-bold text-white bg-blue-600 border-2 border-blue-600 rounded-xl hover:bg-blue-700 hover:border-blue-700 shadow-md shadow-blue-500/20 transition-all flex items-center justify-center gap-1.5 disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {isLoading ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Check className="w-3.5 h-3.5" /> 
+                )}
+                Terima
+              </button>
             </div>
           </div>
 
-          {/* Footer Action */}
-          <div className="p-4 bg-slate-50 border-t flex flex-col gap-3 relative pb-5">
-            <button
-              onClick={handleAccept}
-              disabled={isLoading}
-              className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-600/20 transition-all flex justify-center items-center gap-2 text-lg disabled:opacity-70"
-            >
-              {isLoading ? (
-                <><Loader2 className="w-6 h-6 animate-spin" /> Memproses...</>
-              ) : (
-                <><Check className="w-6 h-6" /> Terima & Mulai Dimasak</>
-              )}
-            </button>
-            {incomingOrders.length > 1 && (
-              <p className="text-center text-xs font-bold text-slate-500">
-                + {incomingOrders.length - 1} pesanan lainnya menunggu...
-              </p>
-            )}
-            
-            <motion.div 
-              initial={{ width: "100%" }}
-              animate={{ width: "0%" }}
-              transition={{ duration: 3, ease: "linear" }}
-              className="absolute bottom-0 left-0 h-1.5 bg-blue-500"
-            />
-          </div>
+          {/* Progress Bar (Timer) */}
+          <motion.div 
+            initial={{ width: "100%" }}
+            animate={{ width: "0%" }}
+            transition={{ duration: 15, ease: "linear" }}
+            className="absolute bottom-0 left-0 h-1 bg-blue-400"
+          />
         </motion.div>
       </AnimatePresence>
     </div>

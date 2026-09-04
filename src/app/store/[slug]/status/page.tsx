@@ -34,8 +34,13 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
     if (!isSilent) setIsLoading(true);
     setError("");
     
+    let formattedOrderNum = orderNum.trim().toUpperCase();
+    if (!formattedOrderNum.startsWith('#')) {
+      formattedOrderNum = '#' + formattedOrderNum;
+    }
+
     try {
-      const data = await getPublicOrderByNumber(orderNum, unwrappedParams.slug);
+      const data = await getPublicOrderByNumber(formattedOrderNum, unwrappedParams.slug);
       if (data) {
         setOrder(data);
       } else {

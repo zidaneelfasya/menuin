@@ -58,8 +58,18 @@ export async function updateOrderStatus(transactionId: string, newStatus: string
   if (!user || !user.tenantId) throw new Error("Unauthorized");
 
   try {
+    const [tx] = await db.select().from(transactions).where(and(eq(transactions.id, transactionId), eq(transactions.tenantId, user.tenantId)));
+    if (!tx) return { error: "Pesanan tidak ditemukan." };
+
+    const updates: any = { status: newStatus };
+    
+    // If confirming a PENDING order, mark it as PAID (cashier has received the money)
+    if (tx.status === 'PENDING' && newStatus === 'NEW') {
+      updates.paymentStatus = 'PAID';
+    }
+
     await db.update(transactions)
-      .set({ status: newStatus })
+      .set(updates)
       .where(and(eq(transactions.id, transactionId), eq(transactions.tenantId, user.tenantId)));
     
     // Auto-complete all items if order is marked ready or completed

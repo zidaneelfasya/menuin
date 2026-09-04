@@ -40,7 +40,7 @@ export default function PaymentSelectionPage({ params }: { params: Promise<{ slu
         if (data) {
           // If already paid or cancelled, or method already selected (and not ONLINE pending), go to status
           if (data.paymentStatus === 'PAID' || data.status === 'CANCELLED' || (data.paymentMethod === 'CASH')) {
-            router.replace(`/store/${unwrappedParams.slug}/status?order=${orderNumber}`);
+            router.replace(`/store/${unwrappedParams.slug}/status?order=${encodeURIComponent(orderNumber)}`);
             return;
           }
           setOrder(data);
@@ -66,7 +66,7 @@ export default function PaymentSelectionPage({ params }: { params: Promise<{ slu
         setIsProcessing(false);
       } else {
         toast.success("Metode pembayaran tunai dipilih. Silakan menuju kasir.");
-        window.location.href = `/store/${unwrappedParams.slug}/status?order=${orderNumber}`;
+        window.location.href = `/store/${unwrappedParams.slug}/status?order=${encodeURIComponent(orderNumber)}`;
       }
     } catch (err) {
       toast.error("Gagal memproses pembayaran tunai.");
@@ -77,7 +77,7 @@ export default function PaymentSelectionPage({ params }: { params: Promise<{ slu
   const handlePayOnline = async () => {
     setIsProcessing(true);
     try {
-      const returnUrl = `${window.location.origin}/store/${unwrappedParams.slug}/status?order=${orderNumber}`;
+      const returnUrl = `${window.location.origin}/store/${unwrappedParams.slug}/status?order=${encodeURIComponent(orderNumber)}`;
       const res = await generatePaymentToken(orderNumber, unwrappedParams.slug, returnUrl);
       
       if (res.error) {
@@ -153,7 +153,7 @@ export default function PaymentSelectionPage({ params }: { params: Promise<{ slu
         <div className="bg-white border-b px-4 py-4 flex items-center justify-between sticky top-0 z-10">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" asChild className="h-10 w-10 shrink-0 rounded-full hover:bg-gray-100">
-              <Link href={`/store/${unwrappedParams.slug}/status?order=${orderNumber}`}>
+              <Link href={`/store/${unwrappedParams.slug}/status?order=${encodeURIComponent(orderNumber)}`}>
                 <ArrowLeft className="h-5 w-5" />
               </Link>
             </Button>

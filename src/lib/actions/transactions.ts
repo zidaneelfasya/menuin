@@ -2,9 +2,10 @@
 
 import { db } from '@/lib/db';
 import { transactions, transactionItems, products } from '@/lib/db/schema';
-import { eq, desc, sql } from 'drizzle-orm';
+import { eq, desc, sql, and } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from './auth';
+import { shifts } from '@/lib/db/schema';
 
 // We'll trust the checkout payload from the client to have this structure
 type CheckoutPayload = {
@@ -52,10 +53,25 @@ export async function createTransaction(payload: CheckoutPayload) {
     const result = await db.transaction(async (tx) => {
       const orderNumber = generateOrderNumber();
 
+      // Find active shift
+      const activeShifts = await tx
+        .select()
+        .from(shifts)
+        .where(
+          and(
+            eq(shifts.tenantId, tenantId),
+            eq(shifts.status, 'ACTIVE')
+          )
+        )
+        .limit(1);
+        
+      const shiftId = activeShifts.length > 0 ? activeShifts[0].id : null;
+
       // 1. Create Transaction record
       const [newTx] = await tx.insert(transactions).values({
         tenantId,
         userId,
+        shiftId,
         totalAmount: payload.totalAmount.toString(),
         discount: (payload.discount || 0).toString(),
         tax: (payload.tax || 0).toString(),
@@ -63,8 +79,9 @@ export async function createTransaction(payload: CheckoutPayload) {
         platformFee: (payload.platformFee || 0).toString(),
         grandTotal: payload.grandTotal.toString(),
         promoCode: payload.promoCode || null,
-        paymentMethod: payload.paymentMethod,
-        status: payload.posKitchenSync ? 'PENDING' : 'COMPLETED',
+        paymentMethod: (payload.paymentMethod || 'CASH').toUpperCase(),
+        paymentStatus: 'PAID', // POS transactions are always paid immediately
+        status: 'PROCESSING', // POS orders directly go to kitchen as PROCESSING
         source: 'POS',
         orderType: payload.orderType || 'DINE_IN',
         customerName: payload.customerName || null,
