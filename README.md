@@ -74,20 +74,31 @@ Semua rute di bawah ini berada di dalam `/tenants/` dan membutuhkan login.
 
 ### Cara Menjalankan Secara Lokal (Development)
 
-Pastikan variabel lingkungan (`.env.local`) yang memuat koneksi Postgres, Supabase, dan Drizzle sudah lengkap.
+Proyek ini menggunakan arsitektur **Monorepo** (NPM Workspaces) dengan struktur:
+- `apps/web`: Aplikasi web utama (Next.js)
+- `apps/mobile`: Aplikasi mobile (Expo / React Native)
+- `packages/*`: Modul dan konfigurasi yang dibagikan antar aplikasi (Permissions, Types, Utils, Validation).
+
+Pastikan variabel lingkungan (`.env.local`) yang memuat koneksi Postgres, Supabase, dan Drizzle sudah lengkap di dalam `apps/web/.env.local`.
 
 ```bash
-# 1. Install seluruh dependensi
+# 1. Install seluruh dependensi untuk semua aplikasi dan packages
 npm install
 
-# 2. Push / Sync Schema Database
-npm run db:push
+# 2. Push / Sync Schema Database (Web)
+npm run db:push --workspace=web
 
-# 3. (Opsional) Jalankan data seeding
-npm run db:seed
+# 3. (Opsional) Jalankan data seeding (Web)
+npm run db:seed --workspace=web
 
-# 4. Mulai server Next.js 
+# 4. Mulai server Next.js (Web)
 npm run dev
+
+# 5. Mulai server Expo (Mobile) - Buka di terminal terpisah
+npm run start --workspace=@menuin/mobile
+# atau untuk platform spesifik:
+# npm run android --workspace=@menuin/mobile
+# npm run ios --workspace=@menuin/mobile
 ```
 
-Buka `http://localhost:3000` di *browser* Anda untuk menjelajahi platform MENUIN.
+Buka `http://localhost:3000` di *browser* Anda untuk menjelajahi platform MENUIN versi web, dan gunakan aplikasi **Expo Go** di smartphone Anda untuk memindai QR code dan membuka aplikasi mobile.
