@@ -5,17 +5,20 @@ import { SettingsClient } from './settings-client';
 import { SettingsSkeleton } from '@/components/ui/settings-skeleton';
 import { getTenantCatalogSettings } from '@/lib/actions/catalog';
 
+import { getCurrentUser } from '@/lib/actions/auth';
+
 export const metadata: Metadata = {
   title: 'Pengaturan Toko & Pajak - Bolu Anisa POS',
 };
 
 async function SettingsDataWrapper() {
-  const [result, catalogResult] = await Promise.all([
+  const [result, catalogResult, user] = await Promise.all([
     getTenantSettings(),
-    getTenantCatalogSettings()
+    getTenantCatalogSettings(),
+    getCurrentUser(),
   ]);
   const tenant = result.success ? result.data : null;
-  return <SettingsClient tenant={tenant} catalogSettings={catalogResult} />;
+  return <SettingsClient tenant={tenant} catalogSettings={catalogResult} userRole={user?.role} />;
 }
 
 export default function Page() {

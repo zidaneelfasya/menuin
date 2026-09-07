@@ -132,6 +132,8 @@ export function POSPage({
           quantity: item.quantity,
           price: item.price,
           subtotal: item.price * item.quantity,
+          notes: item.notes,
+          modifiers: item.modifiers,
         }))
       };
       
@@ -244,7 +246,7 @@ export function POSPage({
         }}
       />
       
-      <ReceiptPrinter data={receiptData} />
+      <ReceiptPrinter data={receiptData} settings={posSettings} />
     </>
   );
 }

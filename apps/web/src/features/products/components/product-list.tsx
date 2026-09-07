@@ -82,7 +82,7 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
         prev.map((p) => (p.id === product.id ? { ...p, isFeatured: currentValue } : p))
       );
     } else {
-      toast.success(newValue ? `⭐ ${product.name} dijadikan Best Seller!` : `${product.name} dihapus dari Best Seller.`);
+      toast.success(newValue ? `${product.name} dijadikan Best Seller.` : `${product.name} dihapus dari Best Seller.`);
     }
   };
 

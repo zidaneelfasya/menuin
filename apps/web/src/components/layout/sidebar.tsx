@@ -46,11 +46,10 @@ const getNavItems = (outletKey: string) => [
   { name: 'Manajemen Shift', href: `/outlet/${outletKey}/shifts`, icon: Wallet, roles: ['OWNER', 'MANAGER'] },
   { name: 'Riwayat Transaksi', href: `/outlet/${outletKey}/transactions`, icon: History, roles: ['OWNER', 'MANAGER'] },
   { name: 'Laporan', href: `/outlet/${outletKey}/reports`, icon: BarChart3, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Keuangan', href: `/outlet/${outletKey}/finance`, icon: Wallet, roles: ['OWNER', 'MANAGER'] },
   { name: 'Promo', href: `/outlet/${outletKey}/promotions`, icon: Percent, roles: ['OWNER', 'MANAGER'] },
   { name: 'Manajemen Tim', href: `/outlet/${outletKey}/team`, icon: UserCircle, roles: ['OWNER'] },
   { name: 'POS & Devices', href: `/outlet/${outletKey}/settings/devices`, icon: Smartphone, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Pengaturan', href: `/outlet/${outletKey}/settings`, icon: Settings, roles: ['OWNER'] },
+  { name: 'Pengaturan', href: `/outlet/${outletKey}/settings`, icon: Settings, roles: ['OWNER', 'MANAGER'] },
 ];
 
 import { usePageTransition } from '../providers/page-transition-provider';

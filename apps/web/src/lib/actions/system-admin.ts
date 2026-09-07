@@ -23,9 +23,6 @@ function getAdminClient() {
   });
 }
 
-// -------------------------------------------------------------
-// STATS & OVERVIEW
-// -------------------------------------------------------------
 export async function getSystemAdminStats() {
   const user = await getCurrentUser();
   if (!user || (user.role as string) !== 'SYSTEM_ADMIN' && (user.role as string) !== 'OWNER') {
@@ -99,9 +96,6 @@ export async function getSystemAdminStats() {
   }
 }
 
-// -------------------------------------------------------------
-// TENANTS CRUD
-// -------------------------------------------------------------
 export async function getSystemTenants() {
   const user = await getCurrentUser();
   if (!user || (user.role as string) !== 'SYSTEM_ADMIN' && (user.role as string) !== 'OWNER') {
@@ -153,11 +147,9 @@ export async function createSystemTenant(data: {
     const tier = data.subscriptionTier || (data.isPaid ? 'PRO' : 'FREE');
     const outletKey = `OUTLET-${data.slug.trim().toUpperCase()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
-    // Ensure business exists or use a dummy business record if required
     const [newTenant] = await db
       .insert(tenants)
       .values({
-        businessId: user.id, // Fallback to current user / membership ID
         name: data.name.trim(),
         slug: data.slug.trim(),
         outletKey,

@@ -22,7 +22,12 @@ import {
   Eye,
   EyeOff,
   Copy,
-  LayoutTemplate
+  LayoutTemplate,
+  Printer,
+  ReceiptText,
+  UtensilsCrossed,
+  ChefHat,
+  QrCode
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { 
@@ -30,16 +35,31 @@ import {
   updatePlatformFeeSettings, 
   updateDisplaySettings, 
   updateStoreGeneralSettings,
-  updatePaymentIntegration
+  updatePaymentIntegration,
+  updateReceiptSettings,
+  updateKitchenTicketSettings
 } from '@/lib/actions/settings';
 import { PosSettingsForm } from './pos-settings-form';
 
-export function SettingsClient({ tenant, catalogSettings }: { tenant: any, catalogSettings: any }) {
+export function SettingsClient({ 
+  tenant, 
+  catalogSettings, 
+  userRole 
+}: { 
+  tenant: any; 
+  catalogSettings: any; 
+  userRole?: string;
+}) {
+  const isOwner = userRole === 'OWNER' || userRole === 'MANAGER' || userRole === 'SYSTEM_ADMIN' || !userRole;
+  const isOwnerOnly = userRole === 'OWNER' || userRole === 'SYSTEM_ADMIN' || !userRole;
+
   const [isSavingTax, setIsSavingTax] = React.useState(false);
   const [isSavingPlatform, setIsSavingPlatform] = React.useState(false);
   const [isSavingDisplay, setIsSavingDisplay] = React.useState(false);
   const [isSavingStore, setIsSavingStore] = React.useState(false);
   const [isSavingPayment, setIsSavingPayment] = React.useState(false);
+  const [isSavingReceipt, setIsSavingReceipt] = React.useState(false);
+  const [isSavingKitchen, setIsSavingKitchen] = React.useState(false);
   const [showServerKey, setShowServerKey] = React.useState(false);
 
   // Form states
@@ -60,6 +80,30 @@ export function SettingsClient({ tenant, catalogSettings }: { tenant: any, catal
   const [midtransEnvironment, setMidtransEnvironment] = React.useState(tenant?.midtransEnvironment || 'sandbox');
   const [midtransServerKey, setMidtransServerKey] = React.useState(tenant?.midtransServerKey || '');
   const [midtransClientKey, setMidtransClientKey] = React.useState(tenant?.midtransClientKey || '');
+
+  // Receipt form states
+  const [receiptLogoUrl, setReceiptLogoUrl] = React.useState(tenant?.receiptLogoUrl || '');
+  const [receiptHeader, setReceiptHeader] = React.useState(tenant?.receiptHeader || '');
+  const [receiptFooter, setReceiptFooter] = React.useState(tenant?.receiptFooter || 'Terima kasih atas kunjungan Anda!\nFollow IG kami @menuin.app');
+  const [receiptShowLogo, setReceiptShowLogo] = React.useState(tenant?.receiptShowLogo ?? true);
+  const [receiptShowCustomer, setReceiptShowCustomer] = React.useState(tenant?.receiptShowCustomer ?? true);
+  const [receiptShowCashier, setReceiptShowCashier] = React.useState(tenant?.receiptShowCashier ?? true);
+  const [receiptShowTable, setReceiptShowTable] = React.useState(tenant?.receiptShowTable ?? true);
+  const [receiptShowNotes, setReceiptShowNotes] = React.useState(tenant?.receiptShowNotes ?? true);
+  const [receiptCustomNote, setReceiptCustomNote] = React.useState(tenant?.receiptCustomNote || 'WiFi: TamuResto / Pass: selamatmakan');
+
+  // Kitchen Ticket form states
+  const [kitchenPrintEnabled, setKitchenPrintEnabled] = React.useState(tenant?.kitchenPrintEnabled ?? false);
+  const [kitchenTicketTitle, setKitchenTicketTitle] = React.useState(tenant?.kitchenTicketTitle || 'TIKET DAPUR');
+  const [kitchenTicketNotes, setKitchenTicketNotes] = React.useState(tenant?.kitchenTicketNotes || 'Harap segera disajikan panas');
+  const [kitchenShowCustomer, setKitchenShowCustomer] = React.useState(tenant?.kitchenShowCustomer ?? true);
+  const [kitchenShowCashier, setKitchenShowCashier] = React.useState(tenant?.kitchenShowCashier ?? true);
+  const [kitchenShowTable, setKitchenShowTable] = React.useState(tenant?.kitchenShowTable ?? true);
+  const [kitchenShowNotes, setKitchenShowNotes] = React.useState(tenant?.kitchenShowNotes ?? true);
+  const [kitchenAutoCut, setKitchenAutoCut] = React.useState(tenant?.kitchenAutoCut ?? true);
+
+  // Preview sub-tab state ('customer' | 'kitchen')
+  const [previewTab, setPreviewTab] = React.useState<'customer' | 'kitchen'>('customer');
 
   const hasStoreChanges = 
     storeName !== (tenant?.name || '') ||
@@ -84,7 +128,73 @@ export function SettingsClient({ tenant, catalogSettings }: { tenant: any, catal
     midtransServerKey !== (tenant?.midtransServerKey || '') ||
     midtransClientKey !== (tenant?.midtransClientKey || '');
 
+  const hasReceiptChanges = 
+    receiptLogoUrl !== (tenant?.receiptLogoUrl || '') ||
+    receiptHeader !== (tenant?.receiptHeader || '') ||
+    receiptFooter !== (tenant?.receiptFooter || 'Terima kasih atas kunjungan Anda!\nFollow IG kami @menuin.app') ||
+    receiptShowLogo !== (tenant?.receiptShowLogo ?? true) ||
+    receiptShowCustomer !== (tenant?.receiptShowCustomer ?? true) ||
+    receiptShowCashier !== (tenant?.receiptShowCashier ?? true) ||
+    receiptShowTable !== (tenant?.receiptShowTable ?? true) ||
+    receiptShowNotes !== (tenant?.receiptShowNotes ?? true) ||
+    receiptCustomNote !== (tenant?.receiptCustomNote || 'WiFi: TamuResto / Pass: selamatmakan');
+
+  const hasKitchenChanges =
+    kitchenPrintEnabled !== (tenant?.kitchenPrintEnabled ?? false) ||
+    kitchenTicketTitle !== (tenant?.kitchenTicketTitle || 'TIKET DAPUR') ||
+    kitchenTicketNotes !== (tenant?.kitchenTicketNotes || 'Harap segera disajikan panas') ||
+    kitchenShowCustomer !== (tenant?.kitchenShowCustomer ?? true) ||
+    kitchenShowCashier !== (tenant?.kitchenShowCashier ?? true) ||
+    kitchenShowTable !== (tenant?.kitchenShowTable ?? true) ||
+    kitchenShowNotes !== (tenant?.kitchenShowNotes ?? true) ||
+    kitchenAutoCut !== (tenant?.kitchenAutoCut ?? true);
+
   // Handlers
+  const handleSaveReceipt = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingReceipt(true);
+    const fd = new FormData();
+    fd.append('receiptLogoUrl', receiptLogoUrl);
+    fd.append('receiptHeader', receiptHeader);
+    fd.append('receiptFooter', receiptFooter);
+    fd.append('receiptShowLogo', receiptShowLogo.toString());
+    fd.append('receiptShowCustomer', receiptShowCustomer.toString());
+    fd.append('receiptShowCashier', receiptShowCashier.toString());
+    fd.append('receiptShowTable', receiptShowTable.toString());
+    fd.append('receiptShowNotes', receiptShowNotes.toString());
+    fd.append('receiptCustomNote', receiptCustomNote);
+
+    const res = await updateReceiptSettings(fd);
+    setIsSavingReceipt(false);
+    if (res.success) {
+      toast.success('Pengaturan kustomisasi struk berhasil disimpan');
+    } else {
+      toast.error(res.error || 'Gagal menyimpan pengaturan struk');
+    }
+  };
+
+  const handleSaveKitchen = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingKitchen(true);
+    const fd = new FormData();
+    fd.append('kitchenPrintEnabled', kitchenPrintEnabled.toString());
+    fd.append('kitchenTicketTitle', kitchenTicketTitle);
+    fd.append('kitchenTicketNotes', kitchenTicketNotes);
+    fd.append('kitchenShowCustomer', kitchenShowCustomer.toString());
+    fd.append('kitchenShowCashier', kitchenShowCashier.toString());
+    fd.append('kitchenShowTable', kitchenShowTable.toString());
+    fd.append('kitchenShowNotes', kitchenShowNotes.toString());
+    fd.append('kitchenAutoCut', kitchenAutoCut.toString());
+
+    const res = await updateKitchenTicketSettings(fd);
+    setIsSavingKitchen(false);
+    if (res.success) {
+      toast.success('Pengaturan tiket dapur berhasil disimpan');
+    } else {
+      toast.error(res.error || 'Gagal menyimpan pengaturan tiket dapur');
+    }
+  };
+
   const handleSaveTax = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSavingTax(true);
@@ -96,7 +206,7 @@ export function SettingsClient({ tenant, catalogSettings }: { tenant: any, catal
     const res = await updateTaxAndFeeSettings(fd);
     setIsSavingTax(false);
     if (res.success) {
-      toast.success('Pengaturan pajak & biaya layanan berhasil disimpan!');
+      toast.success('Pengaturan pajak & biaya layanan berhasil disimpan');
     } else {
       toast.error(res.error || 'Gagal menyimpan pengaturan');
     }
@@ -113,7 +223,7 @@ export function SettingsClient({ tenant, catalogSettings }: { tenant: any, catal
     const res = await updatePlatformFeeSettings(fd);
     setIsSavingPlatform(false);
     if (res.success) {
-      toast.success('Potongan komisi platform online food berhasil disimpan!');
+      toast.success('Potongan komisi platform online food berhasil disimpan');
     } else {
       toast.error(res.error || 'Gagal menyimpan pengaturan');
     }
@@ -128,7 +238,7 @@ export function SettingsClient({ tenant, catalogSettings }: { tenant: any, catal
     const res = await updateDisplaySettings(fd);
     setIsSavingDisplay(false);
     if (res.success) {
-      toast.success('Pengaturan tampilan Best Seller berhasil disimpan!');
+      toast.success('Pengaturan tampilan Best Seller berhasil disimpan');
     } else {
       toast.error(res.error || 'Gagal menyimpan pengaturan');
     }
@@ -145,7 +255,7 @@ export function SettingsClient({ tenant, catalogSettings }: { tenant: any, catal
     const res = await updateStoreGeneralSettings(fd);
     setIsSavingStore(false);
     if (res.success) {
-      toast.success('Informasi toko berhasil disimpan!');
+      toast.success('Informasi toko berhasil disimpan');
     } else {
       toast.error(res.error || 'Gagal menyimpan informasi');
     }
@@ -162,7 +272,7 @@ export function SettingsClient({ tenant, catalogSettings }: { tenant: any, catal
     const res = await updatePaymentIntegration(fd);
     setIsSavingPayment(false);
     if (res.success) {
-      toast.success('Pengaturan integrasi pembayaran (Midtrans) berhasil disimpan!');
+      toast.success('Pengaturan integrasi pembayaran (Midtrans) berhasil disimpan');
     } else {
       toast.error(res.error || 'Gagal menyimpan integrasi pembayaran');
     }
@@ -171,9 +281,9 @@ export function SettingsClient({ tenant, catalogSettings }: { tenant: any, catal
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Pengaturan Global</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Pengaturan Outlet</h1>
         <p className="text-sm text-muted-foreground">
-          Kelola profil toko, integrasi pembayaran, pengaturan pajak, dan biaya operasional.
+          Kelola profil toko, integrasi pembayaran, format cetak struk kasir, tiket dapur, dan biaya operasional.
         </p>
       </div>
 
@@ -219,18 +329,20 @@ export function SettingsClient({ tenant, catalogSettings }: { tenant: any, catal
             </div>
           </TabsTrigger>
 
-          <TabsTrigger 
-            value="payment" 
-            className="justify-start px-4 py-3 rounded-xl data-[state=active]:bg-emerald-500/10 data-[state=active]:text-emerald-700 data-[state=active]:shadow-none hover:bg-slate-100 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <CreditCard className="h-5 w-5" />
-              <div className="flex flex-col items-start">
-                <span className="font-semibold text-sm">Integrasi Pembayaran</span>
-                <span className="font-normal text-xs text-muted-foreground opacity-80">Keamanan & Midtrans API</span>
+          {isOwnerOnly && (
+            <TabsTrigger 
+              value="payment" 
+              className="justify-start px-4 py-3 rounded-xl data-[state=active]:bg-emerald-500/10 data-[state=active]:text-emerald-700 data-[state=active]:shadow-none hover:bg-slate-100 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <CreditCard className="h-5 w-5" />
+                <div className="flex flex-col items-start">
+                  <span className="font-semibold text-sm">Integrasi Pembayaran</span>
+                  <span className="font-normal text-xs text-muted-foreground opacity-80">Keamanan & Midtrans API</span>
+                </div>
               </div>
-            </div>
-          </TabsTrigger>
+            </TabsTrigger>
+          )}
 
           <TabsTrigger 
             value="bestseller" 
@@ -244,6 +356,7 @@ export function SettingsClient({ tenant, catalogSettings }: { tenant: any, catal
               </div>
             </div>
           </TabsTrigger>
+
           <TabsTrigger 
             value="pos" 
             className="justify-start px-4 py-3 rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none hover:bg-slate-100 transition-colors"
@@ -253,6 +366,19 @@ export function SettingsClient({ tenant, catalogSettings }: { tenant: any, catal
               <div className="flex flex-col items-start">
                 <span className="font-semibold text-sm">Pengaturan POS</span>
                 <span className="font-normal text-xs text-muted-foreground opacity-80">Alur Pesanan Kasir</span>
+              </div>
+            </div>
+          </TabsTrigger>
+
+          <TabsTrigger 
+            value="receipt" 
+            className="justify-start px-4 py-3 rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none hover:bg-slate-100 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <Printer className="h-5 w-5" />
+              <div className="flex flex-col items-start">
+                <span className="font-semibold text-sm">Struk & Tiket Dapur</span>
+                <span className="font-normal text-xs text-muted-foreground opacity-80">Kasir & Kitchen Slip</span>
               </div>
             </div>
           </TabsTrigger>
@@ -273,53 +399,54 @@ export function SettingsClient({ tenant, catalogSettings }: { tenant: any, catal
                 <CardContent className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-3">
-                      <Label htmlFor="storeName" className="font-semibold">Nama Toko / Resto <span className="text-destructive">*</span></Label>
+                      <Label htmlFor="storeName" className="font-semibold text-sm">Nama Toko / Outlet</Label>
                       <Input
                         id="storeName"
                         value={storeName}
                         onChange={(e) => setStoreName(e.target.value)}
-                        placeholder="Bolu Anisa"
-                        className="bg-slate-50/50 h-11"
+                        placeholder="Contoh: Kopi Kenangan"
+                        className="bg-slate-50/50"
+                        required
                       />
                     </div>
-
                     <div className="space-y-3">
-                      <Label htmlFor="primaryColor" className="font-semibold">Warna Utama Tema</Label>
-                      <div className="flex items-center gap-3">
+                      <Label htmlFor="primaryColor" className="font-semibold text-sm">Warna Tema Utama</Label>
+                      <div className="flex gap-3">
                         <Input
                           id="primaryColor"
                           type="color"
                           value={primaryColor}
                           onChange={(e) => setPrimaryColor(e.target.value)}
-                          className="w-14 h-11 p-1 cursor-pointer bg-slate-50/50 rounded-lg"
+                          className="w-12 h-10 p-1 cursor-pointer bg-slate-50/50"
                         />
                         <Input
                           value={primaryColor}
                           onChange={(e) => setPrimaryColor(e.target.value)}
-                          className="font-mono bg-slate-50/50 flex-1 uppercase h-11"
+                          className="bg-slate-50/50 font-mono uppercase"
+                          maxLength={7}
                         />
                       </div>
                     </div>
                   </div>
 
                   <div className="space-y-3">
-                    <Label htmlFor="storeDescription" className="font-semibold">Deskripsi Toko</Label>
+                    <Label htmlFor="storeDescription" className="font-semibold text-sm">Deskripsi Toko</Label>
                     <Textarea
                       id="storeDescription"
-                      rows={4}
+                      rows={3}
                       value={storeDescription}
                       onChange={(e) => setStoreDescription(e.target.value)}
-                      placeholder="Tuliskan deskripsi singkat mengenai toko / menu Anda..."
-                      className="bg-slate-50/50 resize-none"
+                      placeholder="Tuliskan deskripsi singkat mengenai outlet Anda..."
+                      className="bg-slate-50/50"
                     />
                   </div>
 
-                  <div className="flex justify-end pt-4">
-                    <Button disabled={isSavingStore || !hasStoreChanges} type="submit" size="lg" className="min-w-[150px] shadow-sm">
+                  <div className="flex justify-end pt-4 border-t">
+                    <Button disabled={isSavingStore || !hasStoreChanges} type="submit" size="lg" className="min-w-[140px] shadow-sm">
                       {isSavingStore ? (
                         <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Menyimpan...</>
                       ) : (
-                        <><Save className="mr-2 h-4 w-4" /> Simpan Profil Toko</>
+                        <><Save className="mr-2 h-4 w-4" /> Simpan Profil</>
                       )}
                     </Button>
                   </div>
@@ -328,80 +455,65 @@ export function SettingsClient({ tenant, catalogSettings }: { tenant: any, catal
             </form>
           </TabsContent>
 
-          {/* TAB 2: PAJAK & SERVICE CHARGE */}
+          {/* TAB 2: PAJAK & BIAYA LAYANAN */}
           <TabsContent value="tax" className="mt-0 outline-none">
             <form onSubmit={handleSaveTax} className="space-y-6">
               <Card className="border-0 shadow-sm ring-1 ring-slate-200">
                 <CardHeader className="pb-4">
-                  <CardTitle className="text-xl">Konfigurasi Pajak & Biaya Layanan</CardTitle>
+                  <CardTitle className="text-xl">Pajak Restoran & Biaya Layanan</CardTitle>
                   <CardDescription>
-                    Pajak dan biaya layanan akan otomatis dihitung saat kasir memproses transaksi atau saat pelanggan memesan via katalog online.
+                    Atur tarif pajak PB1 atau service charge yang otomatis dihitung pada setiap pesanan POS.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                  <div className="space-y-3">
+                    <Label htmlFor="taxName" className="font-semibold text-sm">Nama Label Pajak</Label>
+                    <Input
+                      id="taxName"
+                      value={taxName}
+                      onChange={(e) => setTaxName(e.target.value)}
+                      placeholder="Contoh: Pajak Restoran (PB1)"
+                      className="bg-slate-50/50"
+                    />
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-3 md:col-span-2">
-                      <Label htmlFor="taxName" className="font-semibold">Nama Pajak</Label>
+                    <div className="space-y-3">
+                      <Label htmlFor="posTaxRate" className="font-semibold text-sm">Persentase Pajak (%)</Label>
                       <Input
-                        id="taxName"
-                        value={taxName}
-                        onChange={(e) => setTaxName(e.target.value)}
-                        placeholder="Contoh: Pajak Resto (PB1) atau PPN"
-                        className="bg-slate-50/50 h-11"
+                        id="posTaxRate"
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="100"
+                        value={posTaxRate}
+                        onChange={(e) => setPosTaxRate(e.target.value)}
+                        placeholder="10"
+                        className="bg-slate-50/50"
                       />
-                      <p className="text-xs text-muted-foreground">Label yang akan dicetak di struk kasir.</p>
                     </div>
-
                     <div className="space-y-3">
-                      <Label htmlFor="posTaxRate" className="font-semibold">Tarif Pajak (%)</Label>
-                      <div className="relative">
-                        <Input
-                          id="posTaxRate"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          max="100"
-                          value={posTaxRate}
-                          onChange={(e) => setPosTaxRate(e.target.value)}
-                          className="bg-slate-50/50 pr-8 h-11"
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-semibold">%</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground">Masukkan 0 jika sudah termasuk pajak.</p>
-                    </div>
-
-                    <div className="space-y-3">
-                      <Label htmlFor="serviceChargeRate" className="font-semibold">Biaya Layanan / Service Charge (%)</Label>
-                      <div className="relative">
-                        <Input
-                          id="serviceChargeRate"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          max="100"
-                          value={serviceChargeRate}
-                          onChange={(e) => setServiceChargeRate(e.target.value)}
-                          className="bg-slate-50/50 pr-8 h-11"
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-semibold">%</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground">Biaya tambahan operasional (opsional).</p>
+                      <Label htmlFor="serviceChargeRate" className="font-semibold text-sm">Biaya Layanan / Service (%)</Label>
+                      <Input
+                        id="serviceChargeRate"
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="100"
+                        value={serviceChargeRate}
+                        onChange={(e) => setServiceChargeRate(e.target.value)}
+                        placeholder="5"
+                        className="bg-slate-50/50"
+                      />
                     </div>
                   </div>
 
-                  <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 p-4 rounded-xl flex items-start gap-3 mt-4">
-                    <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-                    <div className="text-sm text-blue-900 dark:text-blue-300 leading-relaxed">
-                      <strong>Contoh Perhitungan:</strong> Jika Subtotal = Rp 100.000, Pajak = 10%, Service Charge = 5%, maka total tagihan kasir menjadi <strong>Rp 115.000</strong>.
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end pt-4">
-                    <Button disabled={isSavingTax || !hasTaxChanges} type="submit" size="lg" className="min-w-[150px] shadow-sm">
+                  <div className="flex justify-end pt-4 border-t">
+                    <Button disabled={isSavingTax || !hasTaxChanges} type="submit" size="lg" className="min-w-[140px] shadow-sm">
                       {isSavingTax ? (
                         <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Menyimpan...</>
                       ) : (
-                        <><Save className="mr-2 h-4 w-4" /> Simpan Pengaturan Pajak</>
+                        <><Save className="mr-2 h-4 w-4" /> Simpan Pajak</>
                       )}
                     </Button>
                   </div>
@@ -410,106 +522,65 @@ export function SettingsClient({ tenant, catalogSettings }: { tenant: any, catal
             </form>
           </TabsContent>
 
-          {/* TAB 3: POTONGAN KOMISI ONLINE FOOD */}
+          {/* TAB 3: KOMISI ONLINE FOOD */}
           <TabsContent value="platform" className="mt-0 outline-none">
             <form onSubmit={handleSavePlatformFees} className="space-y-6">
               <Card className="border-0 shadow-sm ring-1 ring-slate-200">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-xl">Potongan Komisi Online Food</CardTitle>
                   <CardDescription>
-                    Tentukan persentase potongan komisi platform. Sistem otomatis mengkalkulasi potongan dan estimasi pendapatan bersih.
+                    Potongan komisi yang dikenakan oleh platform pesan-antar makanan. Digunakan untuk perhitungan pendapatan bersih laporan penjualan.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* GrabFood */}
-                    <div className="p-5 border rounded-xl bg-slate-50/50 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-sm text-green-700 dark:text-green-400 flex items-center gap-2">
-                          <span className="w-3 h-3 rounded-full bg-green-500"></span>
-                          GrabFood
-                        </span>
-                        <span className="text-xs bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 px-2.5 py-1 rounded-md font-mono font-bold">
-                          {grabFoodFeeRate}%
-                        </span>
-                      </div>
-                      <Label htmlFor="grabFoodFeeRate" className="text-xs text-muted-foreground mt-2 block">Persentase Potongan</Label>
-                      <div className="relative">
-                        <Input
-                          id="grabFoodFeeRate"
-                          type="number"
-                          step="0.1"
-                          min="0"
-                          max="100"
-                          value={grabFoodFeeRate}
-                          onChange={(e) => setGrabFoodFeeRate(e.target.value)}
-                          className="bg-white pr-8 font-semibold h-11"
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold">%</span>
-                      </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-3">
+                      <Label htmlFor="grabFoodFeeRate" className="font-semibold text-sm">GrabFood (%)</Label>
+                      <Input
+                        id="grabFoodFeeRate"
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="100"
+                        value={grabFoodFeeRate}
+                        onChange={(e) => setGrabFoodFeeRate(e.target.value)}
+                        className="bg-slate-50/50"
+                      />
                     </div>
-
-                    {/* ShopeeFood */}
-                    <div className="p-5 border rounded-xl bg-slate-50/50 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-sm text-orange-700 dark:text-orange-400 flex items-center gap-2">
-                          <span className="w-3 h-3 rounded-full bg-orange-500"></span>
-                          ShopeeFood
-                        </span>
-                        <span className="text-xs bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400 px-2.5 py-1 rounded-md font-mono font-bold">
-                          {shopeeFoodFeeRate}%
-                        </span>
-                      </div>
-                      <Label htmlFor="shopeeFoodFeeRate" className="text-xs text-muted-foreground mt-2 block">Persentase Potongan</Label>
-                      <div className="relative">
-                        <Input
-                          id="shopeeFoodFeeRate"
-                          type="number"
-                          step="0.1"
-                          min="0"
-                          max="100"
-                          value={shopeeFoodFeeRate}
-                          onChange={(e) => setShopeeFoodFeeRate(e.target.value)}
-                          className="bg-white pr-8 font-semibold h-11"
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold">%</span>
-                      </div>
+                    <div className="space-y-3">
+                      <Label htmlFor="shopeeFoodFeeRate" className="font-semibold text-sm">ShopeeFood (%)</Label>
+                      <Input
+                        id="shopeeFoodFeeRate"
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="100"
+                        value={shopeeFoodFeeRate}
+                        onChange={(e) => setShopeeFoodFeeRate(e.target.value)}
+                        className="bg-slate-50/50"
+                      />
                     </div>
-
-                    {/* GoFood */}
-                    <div className="p-5 border rounded-xl bg-slate-50/50 space-y-3 md:col-span-2 md:w-1/2 mx-auto">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-sm text-red-700 dark:text-red-400 flex items-center gap-2">
-                          <span className="w-3 h-3 rounded-full bg-red-500"></span>
-                          GoFood
-                        </span>
-                        <span className="text-xs bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 px-2.5 py-1 rounded-md font-mono font-bold">
-                          {goFoodFeeRate}%
-                        </span>
-                      </div>
-                      <Label htmlFor="goFoodFeeRate" className="text-xs text-muted-foreground mt-2 block">Persentase Potongan</Label>
-                      <div className="relative">
-                        <Input
-                          id="goFoodFeeRate"
-                          type="number"
-                          step="0.1"
-                          min="0"
-                          max="100"
-                          value={goFoodFeeRate}
-                          onChange={(e) => setGoFoodFeeRate(e.target.value)}
-                          className="bg-white pr-8 font-semibold h-11"
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold">%</span>
-                      </div>
+                    <div className="space-y-3">
+                      <Label htmlFor="goFoodFeeRate" className="font-semibold text-sm">GoFood (%)</Label>
+                      <Input
+                        id="goFoodFeeRate"
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="100"
+                        value={goFoodFeeRate}
+                        onChange={(e) => setGoFoodFeeRate(e.target.value)}
+                        className="bg-slate-50/50"
+                      />
                     </div>
                   </div>
 
-                  <div className="flex justify-end pt-4">
-                    <Button disabled={isSavingPlatform || !hasPlatformChanges} type="submit" size="lg" className="min-w-[150px] shadow-sm">
+                  <div className="flex justify-end pt-4 border-t">
+                    <Button disabled={isSavingPlatform || !hasPlatformChanges} type="submit" size="lg" className="min-w-[140px] shadow-sm">
                       {isSavingPlatform ? (
                         <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Menyimpan...</>
                       ) : (
-                        <><Save className="mr-2 h-4 w-4" /> Simpan Potongan Online Food</>
+                        <><Save className="mr-2 h-4 w-4" /> Simpan Potongan</>
                       )}
                     </Button>
                   </div>
@@ -517,148 +588,117 @@ export function SettingsClient({ tenant, catalogSettings }: { tenant: any, catal
               </Card>
             </form>
           </TabsContent>
-          
-          {/* TAB 4: INTEGRASI PEMBAYARAN (MIDTRANS) */}
-          <TabsContent value="payment" className="mt-0 outline-none">
-            <form onSubmit={handleSavePayment} className="space-y-6">
-              <Card className="border border-emerald-100 shadow-sm ring-1 ring-emerald-500/20 bg-emerald-50/30">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-xl text-emerald-900 flex items-center gap-2">
-                    <CreditCard className="h-5 w-5" />
-                    Kredensial Keamanan Pembayaran
-                  </CardTitle>
-                  <CardDescription className="text-emerald-700/80">
-                    Kunci rahasia API Midtrans Anda disimpan dengan sangat terenkripsi di modul ini. Jangan pernah membagikan <strong>Server Key</strong> kepada siapapun.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  
-                  <div className="space-y-3">
-                    <Label htmlFor="midtransEnvironment" className="font-semibold text-emerald-900">Lingkungan Server (Environment)</Label>
-                    <select 
-                      id="midtransEnvironment" 
-                      value={midtransEnvironment}
-                      onChange={(e) => setMidtransEnvironment(e.target.value)}
-                      className="flex h-11 w-full items-center justify-between rounded-md border border-emerald-200 bg-white px-3 py-2 text-sm focus:ring-emerald-500"
-                    >
-                      <option value="sandbox">Sandbox (Testing / Percobaan)</option>
-                      <option value="production">Production (Live / Uang Asli)</option>
-                    </select>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <Label htmlFor="midtransClientKey" className="font-semibold text-emerald-900">Client Key (Publik)</Label>
-                    <Input 
-                      id="midtransClientKey" 
-                      value={midtransClientKey} 
-                      onChange={(e) => setMidtransClientKey(e.target.value)}
-                      placeholder="SB-Mid-client-xxxxxxxxx" 
-                      className="bg-white border-emerald-200 font-mono h-11"
-                    />
-                  </div>
 
-                  <div className="space-y-3">
-                    <Label htmlFor="midtransServerKey" className="font-semibold text-emerald-900 flex justify-between">
-                      <span>Server Key (Sangat Rahasia)</span>
-                      <span className="text-xs font-normal text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">Disembunyikan di Frontend</span>
-                    </Label>
-                    <div className="relative">
-                      <Input 
-                        id="midtransServerKey" 
-                        type={showServerKey ? "text" : "password"}
-                        value={midtransServerKey} 
-                        onChange={(e) => setMidtransServerKey(e.target.value)}
-                        placeholder="SB-Mid-server-xxxxxxxxx" 
-                        className="bg-white border-emerald-200 font-mono h-11 pr-24"
-                      />
-                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                        <Button 
-                          type="button"
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
-                          onClick={() => setShowServerKey(!showServerKey)}
-                          title={showServerKey ? "Sembunyikan" : "Tampilkan"}
-                        >
-                          {showServerKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </Button>
-                        <Button 
-                          type="button"
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
-                          onClick={() => {
-                            navigator.clipboard.writeText(midtransServerKey);
-                            toast.success("Server Key disalin ke clipboard!");
-                          }}
-                          title="Copy"
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
+          {/* TAB 4: INTEGRASI MIDTRANS (KHUSUS OWNER) */}
+          {isOwnerOnly && (
+            <TabsContent value="payment" className="mt-0 outline-none">
+              <form onSubmit={handleSavePayment} className="space-y-6">
+                <Card className="border-0 shadow-sm ring-1 ring-slate-200">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 bg-emerald-500/10 text-emerald-600 rounded-xl flex items-center justify-center">
+                        <CreditCard className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-xl">Integrasi Midtrans Snap</CardTitle>
+                        <CardDescription>
+                          Konfigurasi kredensial Payment Gateway Midtrans untuk pembayaran QRIS & Virtual Account.
+                        </CardDescription>
                       </div>
                     </div>
-                  </div>
-                  
-                  <div className="bg-emerald-100/50 p-4 rounded-xl flex items-start gap-3 mt-4 border border-emerald-200">
-                    <Info className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
-                    <div className="text-sm text-emerald-800 leading-relaxed">
-                      <strong>Info Penting:</strong> Setelah kunci Midtrans disimpan di sini, Anda masih perlu menghidupkan tuas <strong>"Aktifkan Pembayaran Non-Tunai (Online)"</strong> di menu <strong>Katalog &gt; Pesanan & Pembayaran</strong> agar pelanggan bisa membayarnya.
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="space-y-3">
+                      <Label htmlFor="midtransEnvironment" className="font-semibold text-sm">Environment Mode</Label>
+                      <select
+                        id="midtransEnvironment"
+                        value={midtransEnvironment}
+                        onChange={(e) => setMidtransEnvironment(e.target.value)}
+                        className="w-full h-10 px-3 rounded-md border border-input bg-slate-50/50 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                      >
+                        <option value="sandbox">Sandbox (Pengujian / Demo)</option>
+                        <option value="production">Production (Live Transaksi Nyata)</option>
+                      </select>
                     </div>
-                  </div>
 
-                  <div className="flex justify-end pt-4 border-t border-emerald-100">
-                    <Button type="submit" disabled={isSavingPayment || !hasPaymentChanges} className="min-w-[150px] h-11 bg-emerald-600 hover:bg-emerald-700 text-white">
-                      {isSavingPayment ? (
-                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Mengamankan Kunci...</>
-                      ) : (
-                        <><Save className="mr-2 h-4 w-4" /> Simpan Kredensial Midtrans</>
-                      )}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </form>
-          </TabsContent>
+                    <div className="space-y-3">
+                      <Label htmlFor="midtransClientKey" className="font-semibold text-sm">Midtrans Client Key</Label>
+                      <Input
+                        id="midtransClientKey"
+                        value={midtransClientKey}
+                        onChange={(e) => setMidtransClientKey(e.target.value)}
+                        placeholder="SB-Mid-client-..."
+                        className="bg-slate-50/50 font-mono text-sm"
+                      />
+                    </div>
 
-          {/* TAB 5: BEST SELLER & URUTAN */}
+                    <div className="space-y-3">
+                      <Label htmlFor="midtransServerKey" className="font-semibold text-sm">Midtrans Server Key</Label>
+                      <div className="relative">
+                        <Input
+                          id="midtransServerKey"
+                          type={showServerKey ? 'text' : 'password'}
+                          value={midtransServerKey}
+                          onChange={(e) => setMidtransServerKey(e.target.value)}
+                          placeholder="SB-Mid-server-..."
+                          className="bg-slate-50/50 font-mono text-sm pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowServerKey(!showServerKey)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          {showServerKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end pt-4 border-t">
+                      <Button disabled={isSavingPayment || !hasPaymentChanges} type="submit" size="lg" className="min-w-[140px] shadow-sm">
+                        {isSavingPayment ? (
+                          <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Menyimpan...</>
+                        ) : (
+                          <><Save className="mr-2 h-4 w-4" /> Simpan Kredensial</>
+                        )}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </form>
+            </TabsContent>
+          )}
+
+          {/* TAB 5: PREFERENSI TAMPILAN */}
           <TabsContent value="bestseller" className="mt-0 outline-none">
             <form onSubmit={handleSaveDisplay} className="space-y-6">
               <Card className="border-0 shadow-sm ring-1 ring-slate-200">
                 <CardHeader className="pb-4">
-                  <CardTitle className="text-xl">Pengaturan Best Seller (Produk Unggulan)</CardTitle>
+                  <CardTitle className="text-xl">Preferensi Tampilan Katalog POS</CardTitle>
                   <CardDescription>
-                    Atur bagaimana produk Best Seller diprioritaskan di layar Kasir POS dan Katalog Online.
+                    Sesuaikan urutan dan tata letak produk di katalog kasir.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="flex items-center justify-between p-5 border rounded-xl bg-slate-50/50">
+                  <div className="flex items-center justify-between p-4 border rounded-xl bg-slate-50/50">
                     <div className="space-y-1">
-                      <Label className="text-base font-semibold">Tampilkan Best Seller di Posisi Paling Atas</Label>
-                      <p className="text-sm text-muted-foreground max-w-lg leading-relaxed">
-                        Produk yang ditandai sebagai <b>⭐ Best Seller (Unggulan)</b> akan selalu muncul di baris paling atas pada halaman Kasir POS dan Storefront untuk mempercepat proses transaksi.
+                      <Label htmlFor="posPinBestSellers" className="font-semibold text-sm">Sematkan Menu Terlaris di Atas</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Tampilkan produk dengan penjualan tertinggi di baris paling awal katalog kasir.
                       </p>
                     </div>
-                    <Switch checked={posPinBestSellers} onCheckedChange={setPosPinBestSellers} />
+                    <Switch
+                      id="posPinBestSellers"
+                      checked={posPinBestSellers}
+                      onCheckedChange={setPosPinBestSellers}
+                    />
                   </div>
 
-                  <div className="border rounded-xl p-5 bg-card space-y-4">
-                    <h4 className="font-semibold text-sm flex items-center gap-2">
-                      <Layers className="h-4 w-4 text-primary" />
-                      Cara Menandai Produk Sebagai Best Seller:
-                    </h4>
-                    <ul className="text-sm text-muted-foreground space-y-3 list-disc list-inside">
-                      <li>Buka menu <b>Produk</b> di sidebar, lalu klik icon bintang <b>⭐ Best Seller</b> pada baris produk yang ingin diunggulkan.</li>
-                      <li>Atau buka menu <b>Katalog &gt; Visibilitas & Unggulan</b> dan aktifkan toggle "Produk Unggulan".</li>
-                      <li>Produk unggulan akan otomatis memiliki lencana berkilau ⭐ Best Seller di POS Kasir.</li>
-                    </ul>
-                  </div>
-
-                  <div className="flex justify-end pt-4">
-                    <Button disabled={isSavingDisplay || !hasDisplayChanges} type="submit" size="lg" className="min-w-[150px] shadow-sm">
+                  <div className="flex justify-end pt-4 border-t">
+                    <Button disabled={isSavingDisplay || !hasDisplayChanges} type="submit" size="lg" className="min-w-[140px] shadow-sm">
                       {isSavingDisplay ? (
                         <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Menyimpan...</>
                       ) : (
-                        <><Save className="mr-2 h-4 w-4" /> Simpan Pengaturan Tampilan</>
+                        <><Save className="mr-2 h-4 w-4" /> Simpan Preferensi</>
                       )}
                     </Button>
                   </div>
@@ -667,10 +707,559 @@ export function SettingsClient({ tenant, catalogSettings }: { tenant: any, catal
             </form>
           </TabsContent>
 
-          {/* TAB 6: POS SETTINGS */}
+          {/* TAB 6: PENGATURAN POS */}
           <TabsContent value="pos" className="mt-0 outline-none">
-            <PosSettingsForm initialData={catalogSettings} />
+            <PosSettingsForm initialData={catalogSettings || {}} />
           </TabsContent>
+
+          {/* TAB 7: STRUK KASIR & TIKET DAPUR */}
+          <TabsContent value="receipt" className="mt-0 outline-none">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                
+                {/* FORM CONTROLS (7 COLS) */}
+                <div className="lg:col-span-7 space-y-6">
+                  
+                  <Tabs defaultValue="customer_receipt" className="w-full">
+                    <TabsList className="grid grid-cols-2 w-full mb-4 bg-slate-100 p-1 rounded-xl">
+                      <TabsTrigger value="customer_receipt" className="rounded-lg text-xs font-semibold py-2">
+                        <ReceiptText className="h-4 w-4 mr-2" /> Struk Pelanggan
+                      </TabsTrigger>
+                      <TabsTrigger value="kitchen_ticket" className="rounded-lg text-xs font-semibold py-2">
+                        <ChefHat className="h-4 w-4 mr-2" /> Tiket Dapur (Slip)
+                      </TabsTrigger>
+                    </TabsList>
+
+                    {/* SUB-FORM 1: STRUK PELANGGAN */}
+                    <TabsContent value="customer_receipt" className="mt-0">
+                      <form onSubmit={handleSaveReceipt} className="space-y-6">
+                        <Card className="border-0 shadow-sm ring-1 ring-slate-200">
+                          <CardHeader className="pb-4">
+                            <CardTitle className="text-lg flex items-center gap-2">
+                              <ReceiptText className="h-5 w-5 text-primary" />
+                              Format Struk Pembayaran Pelanggan
+                            </CardTitle>
+                            <CardDescription>
+                              Sesuaikan logo, alamat, footer, dan informasi pembayaran pada struk kasir termal.
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-5">
+                            {/* LOGO URL */}
+                            <div className="space-y-2">
+                              <Label htmlFor="receiptLogoUrl" className="font-semibold text-xs uppercase tracking-wider text-slate-700">
+                                URL / Link Gambar Logo Struk
+                              </Label>
+                              <Input
+                                id="receiptLogoUrl"
+                                type="url"
+                                value={receiptLogoUrl}
+                                onChange={(e) => setReceiptLogoUrl(e.target.value)}
+                                placeholder="https://example.com/logo.png"
+                                className="bg-slate-50/50 text-sm h-10"
+                              />
+                              <p className="text-xs text-muted-foreground">
+                                Masukkan link langsung gambar logo. Kosongkan jika ingin menggunakan logo utama toko.
+                              </p>
+                            </div>
+
+                            {/* HEADER */}
+                            <div className="space-y-2">
+                              <Label htmlFor="receiptHeader" className="font-semibold text-xs uppercase tracking-wider text-slate-700">
+                                Header Struk (Alamat & Kontak)
+                              </Label>
+                              <Textarea
+                                id="receiptHeader"
+                                rows={3}
+                                value={receiptHeader}
+                                onChange={(e) => setReceiptHeader(e.target.value)}
+                                placeholder="Jl. Merdeka No. 45, Jakarta Pusat&#10;Telp: 0812-3456-7890"
+                                className="bg-slate-50/50 font-mono text-xs resize-none"
+                              />
+                            </div>
+
+                            {/* FOOTER */}
+                            <div className="space-y-2">
+                              <Label htmlFor="receiptFooter" className="font-semibold text-xs uppercase tracking-wider text-slate-700">
+                                Footer Struk (Pesan Penutup)
+                              </Label>
+                              <Textarea
+                                id="receiptFooter"
+                                rows={2}
+                                value={receiptFooter}
+                                onChange={(e) => setReceiptFooter(e.target.value)}
+                                placeholder="Terima kasih atas kunjungan Anda!&#10;Follow IG: @boluanisa_official"
+                                className="bg-slate-50/50 font-mono text-xs resize-none"
+                              />
+                            </div>
+
+                            {/* CUSTOM NOTE / WIFI */}
+                            <div className="space-y-2">
+                              <Label htmlFor="receiptCustomNote" className="font-semibold text-xs uppercase tracking-wider text-slate-700">
+                                Catatan Khusus / Info WiFi
+                              </Label>
+                              <Input
+                                id="receiptCustomNote"
+                                value={receiptCustomNote}
+                                onChange={(e) => setReceiptCustomNote(e.target.value)}
+                                placeholder="WiFi: TamuResto / Pass: selamatmakan"
+                                className="bg-slate-50/50 text-sm h-10"
+                              />
+                            </div>
+
+                            {/* TOGGLES */}
+                            <div className="pt-3 border-t space-y-3">
+                              <h4 className="font-semibold text-xs uppercase tracking-wider text-slate-700">Tampilan Elemen:</h4>
+
+                              <div className="flex items-center justify-between p-3 border rounded-xl bg-slate-50/50">
+                                <div className="space-y-0.5">
+                                  <Label className="font-medium text-sm">Logo Toko di Header</Label>
+                                  <p className="text-xs text-muted-foreground">Cetak logo di bagian paling atas struk</p>
+                                </div>
+                                <Switch checked={receiptShowLogo} onCheckedChange={setReceiptShowLogo} />
+                              </div>
+
+                              <div className="flex items-center justify-between p-3 border rounded-xl bg-slate-50/50">
+                                <div className="space-y-0.5">
+                                  <Label className="font-medium text-sm">Nama Kasir</Label>
+                                  <p className="text-xs text-muted-foreground">Tampilkan nama kasir yang melayani</p>
+                                </div>
+                                <Switch checked={receiptShowCashier} onCheckedChange={setReceiptShowCashier} />
+                              </div>
+
+                              <div className="flex items-center justify-between p-3 border rounded-xl bg-slate-50/50">
+                                <div className="space-y-0.5">
+                                  <Label className="font-medium text-sm">Nama Pelanggan</Label>
+                                  <p className="text-xs text-muted-foreground">Tampilkan nama pemesan</p>
+                                </div>
+                                <Switch checked={receiptShowCustomer} onCheckedChange={setReceiptShowCustomer} />
+                              </div>
+
+                              <div className="flex items-center justify-between p-3 border rounded-xl bg-slate-50/50">
+                                <div className="space-y-0.5">
+                                  <Label className="font-medium text-sm">Nomor Meja</Label>
+                                  <p className="text-xs text-muted-foreground">Tampilkan nomor meja (Dine In)</p>
+                                </div>
+                                <Switch checked={receiptShowTable} onCheckedChange={setReceiptShowTable} />
+                              </div>
+
+                              <div className="flex items-center justify-between p-3 border rounded-xl bg-slate-50/50">
+                                <div className="space-y-0.5">
+                                  <Label className="font-medium text-sm">Catatan Item & WiFi</Label>
+                                  <p className="text-xs text-muted-foreground">Cetak baris catatan item dan kotak info WiFi</p>
+                                </div>
+                                <Switch checked={receiptShowNotes} onCheckedChange={setReceiptShowNotes} />
+                              </div>
+                            </div>
+
+                            <div className="flex justify-end pt-4 border-t">
+                              <Button disabled={isSavingReceipt || !hasReceiptChanges} type="submit" size="lg" className="min-w-[170px] shadow-sm">
+                                {isSavingReceipt ? (
+                                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Menyimpan...</>
+                                ) : (
+                                  <><Save className="mr-2 h-4 w-4" /> Simpan Struk Pelanggan</>
+                                )}
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </form>
+                    </TabsContent>
+
+                    {/* SUB-FORM 2: TIKET DAPUR (KITCHEN SLIP) */}
+                    <TabsContent value="kitchen_ticket" className="mt-0">
+                      <form onSubmit={handleSaveKitchen} className="space-y-6">
+                        <Card className="border-0 shadow-sm ring-1 ring-slate-200">
+                          <CardHeader className="pb-4">
+                            <CardTitle className="text-lg flex items-center gap-2">
+                              <ChefHat className="h-5 w-5 text-orange-600" />
+                              Format Tiket Pesanan Dapur (Kitchen Slip)
+                            </CardTitle>
+                            <CardDescription>
+                              Salinan tiket ringkas khusus koki/barista tanpa mencantumkan harga dan nominal uang.
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-5">
+                            
+                            {/* MASTER TOGGLE */}
+                            <div className="flex items-center justify-between p-4 border-2 border-orange-200 rounded-xl bg-orange-50/40">
+                              <div className="space-y-1">
+                                <Label className="font-bold text-sm text-orange-950">Otomatis Cetak Tiket Dapur Saat Bayar</Label>
+                                <p className="text-xs text-muted-foreground">
+                                  Jika aktif, sistem otomatis mencetak salinan tiket pesanan untuk tim dapur setiap transaksi kasir selesai.
+                                </p>
+                              </div>
+                              <Switch checked={kitchenPrintEnabled} onCheckedChange={setKitchenPrintEnabled} />
+                            </div>
+
+                            {/* TITLE */}
+                            <div className="space-y-2">
+                              <Label htmlFor="kitchenTicketTitle" className="font-semibold text-xs uppercase tracking-wider text-slate-700">
+                                Judul Tiket Dapur
+                              </Label>
+                              <Input
+                                id="kitchenTicketTitle"
+                                value={kitchenTicketTitle}
+                                onChange={(e) => setKitchenTicketTitle(e.target.value)}
+                                placeholder="TIKET DAPUR / BAR"
+                                className="bg-slate-50/50 text-sm h-10 font-bold"
+                              />
+                            </div>
+
+                            {/* NOTES */}
+                            <div className="space-y-2">
+                              <Label htmlFor="kitchenTicketNotes" className="font-semibold text-xs uppercase tracking-wider text-slate-700">
+                                Catatan Kaki Dapur
+                              </Label>
+                              <Input
+                                id="kitchenTicketNotes"
+                                value={kitchenTicketNotes}
+                                onChange={(e) => setKitchenTicketNotes(e.target.value)}
+                                placeholder="Harap periksa kelengkapan pesanan sebelum disajikan"
+                                className="bg-slate-50/50 text-sm h-10"
+                              />
+                            </div>
+
+                            {/* TOGGLES */}
+                            <div className="pt-3 border-t space-y-3">
+                              <h4 className="font-semibold text-xs uppercase tracking-wider text-slate-700">Tampilan Elemen Tiket Dapur:</h4>
+
+                              <div className="flex items-center justify-between p-3 border rounded-xl bg-slate-50/50">
+                                <div className="space-y-0.5">
+                                  <Label className="font-medium text-sm">Nomor Meja & Channel</Label>
+                                  <p className="text-xs text-muted-foreground">Cetak nomor meja dan tipe order (Dine In / Take Away) dengan ukuran besar</p>
+                                </div>
+                                <Switch checked={kitchenShowTable} onCheckedChange={setKitchenShowTable} />
+                              </div>
+
+                              <div className="flex items-center justify-between p-3 border rounded-xl bg-slate-50/50">
+                                <div className="space-y-0.5">
+                                  <Label className="font-medium text-sm">Nama Pelanggan</Label>
+                                  <p className="text-xs text-muted-foreground">Tampilkan nama pemesan di tiket dapur</p>
+                                </div>
+                                <Switch checked={kitchenShowCustomer} onCheckedChange={setKitchenShowCustomer} />
+                              </div>
+
+                              <div className="flex items-center justify-between p-3 border rounded-xl bg-slate-50/50">
+                                <div className="space-y-0.5">
+                                  <Label className="font-medium text-sm">Nama Kasir / Waitstaff</Label>
+                                  <p className="text-xs text-muted-foreground">Tampilkan nama staf pembuat pesanan</p>
+                                </div>
+                                <Switch checked={kitchenShowCashier} onCheckedChange={setKitchenShowCashier} />
+                              </div>
+
+                              <div className="flex items-center justify-between p-3 border rounded-xl bg-slate-50/50">
+                                <div className="space-y-0.5">
+                                  <Label className="font-medium text-sm">Catatan Modifiers & Item Khusus</Label>
+                                  <p className="text-xs text-muted-foreground">Cetak instruksi memasak (contoh: Pedas Level 3, Less Ice, Tanpa Bawang)</p>
+                                </div>
+                                <Switch checked={kitchenShowNotes} onCheckedChange={setKitchenShowNotes} />
+                              </div>
+
+                              <div className="flex items-center justify-between p-3 border rounded-xl bg-slate-50/50">
+                                <div className="space-y-0.5">
+                                  <Label className="font-medium text-sm">Pemisah Gunting Kertas</Label>
+                                  <p className="text-xs text-muted-foreground">Cetak garis pemotong jika menggunakan 1 printer thermal bersama</p>
+                                </div>
+                                <Switch checked={kitchenAutoCut} onCheckedChange={setKitchenAutoCut} />
+                              </div>
+                            </div>
+
+                            <div className="flex justify-end pt-4 border-t">
+                              <Button disabled={isSavingKitchen || !hasKitchenChanges} type="submit" size="lg" className="min-w-[170px] shadow-sm">
+                                {isSavingKitchen ? (
+                                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Menyimpan...</>
+                                ) : (
+                                  <><Save className="mr-2 h-4 w-4" /> Simpan Tiket Dapur</>
+                                )}
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </form>
+                    </TabsContent>
+                  </Tabs>
+
+                </div>
+
+                {/* LIVE RECEIPT & TICKET PREVIEW (5 COLS) */}
+                <div className="lg:col-span-5">
+                  <div className="sticky top-6 space-y-3">
+                    
+                    {/* PREVIEW SWITCHER */}
+                    <div className="flex items-center justify-between bg-slate-100 p-1 rounded-xl">
+                      <button
+                        type="button"
+                        onClick={() => setPreviewTab('customer')}
+                        className={`flex-1 text-xs font-semibold py-1.5 px-3 rounded-lg transition-all ${previewTab === 'customer' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-600 hover:text-slate-900'}`}
+                      >
+                        Preview Struk Kasir
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewTab('kitchen')}
+                        className={`flex-1 text-xs font-semibold py-1.5 px-3 rounded-lg transition-all ${previewTab === 'kitchen' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-600 hover:text-slate-900'}`}
+                      >
+                        Preview Tiket Dapur
+                      </button>
+                    </div>
+
+                    {/* PREVIEW 1: STRUK PELANGGAN */}
+                    {previewTab === 'customer' && (
+                      <div className="bg-white p-6 rounded-2xl shadow-xl border border-slate-200/80 font-mono text-xs leading-relaxed text-slate-900 transition-all select-none" style={{ fontFamily: "'JetBrains Mono', 'SF Mono', 'Roboto Mono', 'Menlo', 'Consolas', monospace" }}>
+                        {/* HEADER LOGO & NAME */}
+                        <div className="text-center space-y-1 pb-3 border-b border-dashed border-slate-300">
+                          {receiptShowLogo && (
+                            <div className="flex justify-center mb-2">
+                              {(receiptLogoUrl || tenant?.storeLogoUrl) ? (
+                                <img 
+                                  src={receiptLogoUrl || tenant?.storeLogoUrl} 
+                                  alt="Logo" 
+                                  className="h-10 w-10 object-contain rounded-full border border-slate-200" 
+                                  onError={(e) => {
+                                    (e.target as HTMLElement).style.display = 'none';
+                                  }}
+                                />
+                              ) : (
+                                <div className="h-10 w-10 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xs tracking-wider">
+                                  {tenant?.name?.slice(0, 2)?.toUpperCase() || 'MN'}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          <div className="font-bold text-sm tracking-wider uppercase">
+                            {tenant?.name || 'NAMA OUTLET RESTO'}
+                          </div>
+                          {receiptHeader ? (
+                            <div className="text-[11px] text-slate-600 whitespace-pre-line leading-normal">
+                              {receiptHeader}
+                            </div>
+                          ) : (
+                            <div className="text-[11px] text-slate-400 italic">
+                              (Alamat outlet belum diatur)
+                            </div>
+                          )}
+                        </div>
+
+                        {/* ORDER INFO */}
+                        <div className="py-2 text-[11px] border-b border-dashed border-slate-300 space-y-0.5">
+                          <div className="flex justify-between">
+                            <span className="text-slate-600">WAKTU</span>
+                            <span>{new Date().toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })} 14:30</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-slate-600">NO. STRUK</span>
+                            <span className="font-bold">#TRX-8921</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-slate-600">CHANNEL</span>
+                            <span>DINE_IN</span>
+                          </div>
+                          {receiptShowCashier && (
+                            <div className="flex justify-between">
+                              <span className="text-slate-600">KASIR</span>
+                              <span>Sarah</span>
+                            </div>
+                          )}
+                          {receiptShowCustomer && (
+                            <div className="flex justify-between">
+                              <span className="text-slate-600">PELANGGAN</span>
+                              <span>Bpk. Hendra</span>
+                            </div>
+                          )}
+                          {receiptShowTable && (
+                            <div className="flex justify-between">
+                              <span className="text-slate-600">MEJA</span>
+                              <span className="font-bold">NO. 05</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between">
+                            <span className="text-slate-600">METODE</span>
+                            <span>QRIS</span>
+                          </div>
+                        </div>
+
+                        {/* ITEMS LIST */}
+                        <div className="py-2.5 border-b border-dashed border-slate-300 space-y-1.5">
+                          <div>
+                            <div className="flex justify-between font-bold text-[11px]">
+                              <span>Nasi Goreng Spesial</span>
+                            </div>
+                            <div className="flex justify-between text-[11px] text-slate-700">
+                              <span>1 x 35.000</span>
+                              <span>35.000</span>
+                            </div>
+                            {receiptShowNotes && (
+                              <div className="text-[10px] text-slate-500 pl-2">
+                                - Pedas Level 2, Telur Dadar
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <div className="flex justify-between font-bold text-[11px]">
+                              <span>Es Teh Manis</span>
+                            </div>
+                            <div className="flex justify-between text-[11px] text-slate-700">
+                              <span>2 x 8.000</span>
+                              <span>16.000</span>
+                            </div>
+                            {receiptShowNotes && (
+                              <div className="text-[10px] text-slate-500 pl-2">
+                                - Less Sugar, Less Ice
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* SUMMARY */}
+                        <div className="py-2 text-[11px] space-y-0.5 border-b border-dashed border-slate-300 text-slate-700">
+                          <div className="flex justify-between">
+                            <span>Subtotal</span>
+                            <span>51.000</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Pajak (PB1)</span>
+                            <span>5.100</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Layanan</span>
+                            <span>2.500</span>
+                          </div>
+                        </div>
+
+                        {/* TOTAL */}
+                        <div className="py-2 border-b border-slate-900">
+                          <div className="flex justify-between font-bold text-sm text-slate-900">
+                            <span>TOTAL</span>
+                            <span>Rp 58.600</span>
+                          </div>
+                        </div>
+
+                        {/* PAYMENT DETAILS */}
+                        <div className="py-2 text-[11px] border-b border-dashed border-slate-300 space-y-0.5 text-slate-700">
+                          <div className="flex justify-between">
+                            <span>Bayar</span>
+                            <span>58.600</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Kembali</span>
+                            <span>0</span>
+                          </div>
+                        </div>
+
+                        {/* CUSTOM NOTE BOX */}
+                        {receiptShowNotes && receiptCustomNote && (
+                          <div className="my-2.5 p-2 border border-slate-300 rounded text-center text-[10px] text-slate-700">
+                            {receiptCustomNote}
+                          </div>
+                        )}
+
+                        {/* FOOTER */}
+                        <div className="text-center pt-2 space-y-1">
+                          {receiptFooter ? (
+                            <div className="text-[10px] text-slate-600 whitespace-pre-line leading-relaxed">
+                              {receiptFooter}
+                            </div>
+                          ) : (
+                            <div className="text-[10px] font-bold tracking-wider text-slate-700">TERIMA KASIH</div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* PREVIEW 2: TIKET PESANAN DAPUR (KITCHEN SLIP) */}
+                    {previewTab === 'kitchen' && (
+                      <div className="bg-white p-6 rounded-2xl shadow-xl border border-slate-200/80 font-mono text-xs leading-relaxed text-slate-900 transition-all select-none" style={{ fontFamily: "'JetBrains Mono', 'SF Mono', 'Roboto Mono', 'Menlo', 'Consolas', monospace" }}>
+                        
+                        {/* KITCHEN HEADER */}
+                        <div className="text-center space-y-1 pb-2.5 border-b border-slate-900">
+                          <div className="font-bold text-sm tracking-wider uppercase">
+                            {kitchenTicketTitle || 'TIKET DAPUR'}
+                          </div>
+                          <div className="text-[10px] text-slate-500">
+                            {new Date().toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })} 14:30:22
+                          </div>
+                        </div>
+
+                        {/* TABLE & CHANNEL */}
+                        <div className="py-2 border-b border-dashed border-slate-300 space-y-0.5 text-[11px]">
+                          <div className="flex justify-between">
+                            <span className="text-slate-600">CHANNEL</span>
+                            <span className="font-bold">DINE_IN</span>
+                          </div>
+                          {kitchenShowTable && (
+                            <div className="flex justify-between text-sm font-bold pt-0.5">
+                              <span>MEJA</span>
+                              <span>NO. 05</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between">
+                            <span className="text-slate-600">NO. ORDER</span>
+                            <span className="font-bold">#TRX-8921</span>
+                          </div>
+                          {kitchenShowCustomer && (
+                            <div className="flex justify-between">
+                              <span className="text-slate-600">PELANGGAN</span>
+                              <span>Bpk. Hendra</span>
+                            </div>
+                          )}
+                          {kitchenShowCashier && (
+                            <div className="flex justify-between">
+                              <span className="text-slate-600">KASIR</span>
+                              <span>Sarah</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* KITCHEN ITEMS LIST */}
+                        <div className="py-2.5 border-b border-dashed border-slate-300 space-y-2">
+                          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                            Pesanan Masak:
+                          </div>
+
+                          <div className="space-y-0.5 pb-1 border-b border-slate-100">
+                            <div className="flex justify-between items-baseline font-bold text-[11px]">
+                              <span>Nasi Goreng Spesial</span>
+                              <span>x1</span>
+                            </div>
+                            {kitchenShowNotes && (
+                              <div className="text-[10px] text-slate-700 pl-2 font-medium">
+                                * Catatan: Pedas Level 2, Telur Dadar
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="space-y-0.5">
+                            <div className="flex justify-between items-baseline font-bold text-[11px]">
+                              <span>Es Teh Manis</span>
+                              <span>x2</span>
+                            </div>
+                            {kitchenShowNotes && (
+                              <div className="text-[10px] text-slate-700 pl-2 font-medium">
+                                * Catatan: Less Sugar, Less Ice
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* TOTAL QTY COUNT */}
+                        <div className="py-2 flex justify-between font-bold text-[11px] border-b border-slate-900">
+                          <span>TOTAL ITEM</span>
+                          <span>3 Pcs</span>
+                        </div>
+
+                        {/* KITCHEN FOOTER NOTE */}
+                        {kitchenTicketNotes && (
+                          <div className="mt-2.5 p-2 border border-slate-300 rounded text-center text-[10px] text-slate-700">
+                            {kitchenTicketNotes}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                  </div>
+                </div>
+
+              </div>
+            </TabsContent>
 
         </div>
       </Tabs>

@@ -66,6 +66,27 @@ export const tenants = pgTable('tenants', {
   midtransClientKey: text('midtrans_client_key'),
   midtransEnvironment: text('midtrans_environment').default('sandbox'),
 
+  // Custom Receipt & Kitchen Ticket Settings (OWNER / MANAGER)
+  receiptHeader: text('receipt_header'),
+  receiptFooter: text('receipt_footer'),
+  receiptLogoUrl: text('receipt_logo_url'),
+  receiptShowLogo: boolean('receipt_show_logo').default(true).notNull(),
+  receiptShowCustomer: boolean('receipt_show_customer').default(true).notNull(),
+  receiptShowCashier: boolean('receipt_show_cashier').default(true).notNull(),
+  receiptShowTable: boolean('receipt_show_table').default(true).notNull(),
+  receiptShowNotes: boolean('receipt_show_notes').default(true).notNull(),
+  receiptCustomNote: text('receipt_custom_note'),
+
+  // Kitchen Ticket Settings
+  kitchenPrintEnabled: boolean('kitchen_print_enabled').default(false).notNull(),
+  kitchenTicketTitle: text('kitchen_ticket_title').default('TIKET DAPUR'),
+  kitchenTicketNotes: text('kitchen_ticket_notes'),
+  kitchenShowCustomer: boolean('kitchen_show_customer').default(true).notNull(),
+  kitchenShowCashier: boolean('kitchen_show_cashier').default(true).notNull(),
+  kitchenShowTable: boolean('kitchen_show_table').default(true).notNull(),
+  kitchenShowNotes: boolean('kitchen_show_notes').default(true).notNull(),
+  kitchenAutoCut: boolean('kitchen_auto_cut').default(true).notNull(),
+
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });

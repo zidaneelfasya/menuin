@@ -1,10 +1,7 @@
-import { UnderDevelopment } from '@/components/ui/under-development';
-import { Metadata } from 'next';
-import { requireFeature } from '@/lib/actions/auth-context';
+import { redirect } from 'next/navigation';
 
-export const metadata: Metadata = { title: 'Keuangan - Bolu Anisa POS' };
-
-export default async function Page() {
-  await requireFeature('FINANCE');
-  return <UnderDevelopment title="Keuangan" />;
+export default async function Page({ params }: { params: Promise<{ outletKey: string }> }) {
+  const { outletKey } = await params;
+  redirect(`/outlet/${outletKey}/reports`);
 }
+
