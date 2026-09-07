@@ -43,6 +43,13 @@
       "when": 1788755330478,
       "tag": "0005_slim_joseph",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788762885209,
+      "tag": "0006_heavy_maginty",
+      "breakpoints": true
     }
   ]
 }

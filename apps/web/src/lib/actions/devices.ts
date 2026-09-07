@@ -61,7 +61,7 @@ export async function revokeDeviceAction(deviceId: string) {
     // Also delete any active sessions
     await db.delete(posSessions).where(eq(posSessions.deviceId, deviceId));
 
-    revalidatePath('/tenants/settings/devices');
+    if (context?.tenant?.outletKey) { revalidatePath(`/outlet/${context.tenant.outletKey}`, "layout"); }
     return { success: true };
   } catch (error: any) {
     return { error: error.message || 'Failed to revoke device' };

@@ -107,12 +107,7 @@ export async function createTransaction(payload: CheckoutPayload) {
       return newTx.id;
     });
     
-    revalidatePath('/tenants/transactions');
-    revalidatePath('/tenants/inventory');
-    revalidatePath('/tenants/items');
-    revalidatePath('/tenants/dashboard');
-    revalidatePath('/tenants/orders');
-    
+    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
     return { success: true, transactionId: result };
   } catch (error) {
     console.error('Error creating transaction:', error);

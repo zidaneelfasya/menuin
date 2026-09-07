@@ -1,79 +1,40 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-import { updateSession } from '@/lib/supabase/middleware';
+import { NextResponse, type NextRequest } from 'next/server';
+import { updateSession } from './lib/supabase/middleware';
+
+export async function proxy(request: NextRequest) {
+  // 1. Extract outletKey if the request is for an outlet route
+  const pathname = request.nextUrl.pathname;
+  
+  if (pathname.startsWith('/outlet/')) {
+    const parts = pathname.split('/');
+    // parts[0] = "", parts[1] = "outlet", parts[2] = "[outletKey]"
+    if (parts.length >= 3 && parts[2]) {
+      const outletKey = parts[2];
+      // Inject header into the request that server components will see
+      request.headers.set('x-menuin-outlet-key', outletKey);
+    }
+  }
+
+  // 2. Run the Supabase auth middleware
+  const response = await updateSession(request);
+
+  // Note: To ensure Next.js Server Components receive the header we just set,
+  // we must pass the modified request headers to the response. 
+  // Next 13+ requires setting x-middleware-request-<header> to forward headers 
+  // to the downstream request if we didn't use NextResponse.next({ request }).
+  // updateSession already uses NextResponse.next({ request }), so it's forwarded.
+
+  return response;
+}
 
 export const config = {
   matcher: [
     /*
-     * Match all paths except for:
-     * 1. /api routes
-     * 2. /_next (Next.js internals)
-     * 3. /_static (inside /public)
-     * 4. static files with extensions (e.g. .svg, .png, .jpg, .ico, etc.)
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
      */
-    '/((?!api/|_next/|_static/|_vercel|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|mp3|css|js|map|txt)).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
-
-const RESERVED_SUBDOMAINS = [
-  'www',
-  'app',
-  'api',
-  'admin',
-  'dashboard',
-  'auth',
-  'docs',
-  'status',
-  'support',
-  'mail',
-  'billing',
-  'webhook',
-];
-
-export async function proxy(req: NextRequest) {
-  const url = req.nextUrl;
-
-  // Get hostname of request (e.g. demo.localhost:3000, demo.menuin.id)
-  let hostname = req.headers.get('host');
-
-  if (!hostname) {
-    return await updateSession(req);
-  }
-
-  // Strip port if exists
-  hostname = hostname.split(':')[0];
-
-  // Define allowed domains (localhost and production domain)
-  const allowedDomains = ['localhost', 'menuin.id'];
-
-  // Check if the current hostname is a subdomain
-  const isSubdomain = allowedDomains.some((domain) =>
-    hostname.endsWith(`.${domain}`)
-  );
-
-  if (isSubdomain) {
-    // Extract the subdomain (slug)
-    const slug = hostname.split('.')[0];
-
-    // Block reserved subdomains
-    if (RESERVED_SUBDOMAINS.includes(slug)) {
-      return await updateSession(req);
-    }
-
-    // Rewrite to the store catalog route without duplicating /store/[slug]
-    let newPath = url.pathname;
-    if (url.pathname === '/') {
-      newPath = `/store/${slug}`;
-    } else if (url.pathname.startsWith(`/store/${slug}`)) {
-      newPath = url.pathname;
-    } else if (url.pathname.startsWith('/store/')) {
-      newPath = url.pathname;
-    } else {
-      newPath = `/store/${slug}${url.pathname}`;
-    }
-
-    return NextResponse.rewrite(new URL(`${newPath}${url.search}`, req.url));
-  }
-
-  return await updateSession(req);
-}

@@ -4,17 +4,17 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getAvailableTenants } from './auth';
 
-export async function setTenantContextAction(tenantId: string) {
+export async function setTenantContextAction(outletKey: string) {
   // Ensure the user actually has access to this tenant
   const tenants = await getAvailableTenants();
-  const hasAccess = tenants.some(t => t.tenantId === tenantId);
+  const hasAccess = tenants.some(t => t.outletKey === outletKey);
 
   if (!hasAccess) {
     throw new Error('Forbidden: You do not have access to this tenant.');
   }
 
   const cookieStore = await cookies();
-  cookieStore.set('menuin_tenant_id', tenantId, {
+  cookieStore.set('menuin_last_outlet', outletKey, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
@@ -22,7 +22,7 @@ export async function setTenantContextAction(tenantId: string) {
     maxAge: 30 * 24 * 60 * 60, // 30 days
   });
 
-  redirect('/tenants');
+  redirect(`/outlet/${outletKey}/dashboard`);
 }
 
 export async function createTenantAction(formData: FormData) {
@@ -38,9 +38,13 @@ export async function createTenantAction(formData: FormData) {
     
     const account = await getAuthenticatedAccount();
     
+    const crypto = await import('crypto');
+    const outletKey = crypto.randomBytes(10).toString('hex').toUpperCase();
+
     // Create new tenant
     const [newTenant] = await db.insert(tenants).values({
       name: restaurantName,
+      outletKey,
     }).returning();
 
     // Generate a random 6 digit PIN

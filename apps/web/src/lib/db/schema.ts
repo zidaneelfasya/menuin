@@ -21,17 +21,10 @@ export const accounts = pgTable('accounts', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
-export const businesses = pgTable('businesses', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  accountId: uuid('account_id').references(() => accounts.id).unique().notNull(),
-  name: text('name').notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
-});
+
 
 export const tenants = pgTable('tenants', {
   id: uuid('id').primaryKey().defaultRandom(),
-  businessId: uuid('business_id').references(() => businesses.id).notNull(),
   name: text('name').notNull(),
   outletKey: text('outlet_key').unique().notNull(),
   slug: text('slug').unique(),

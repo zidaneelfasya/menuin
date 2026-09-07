@@ -39,9 +39,7 @@ export async function updatePosSettings(formData: FormData) {
       })
       .where(eq(tenants.id, user.tenantId));
     
-    revalidatePath("/tenants/settings");
-    revalidatePath("/tenants/settings");
-    revalidatePath("/tenants/pos");
+    if (user?.outletKey) revalidatePath(`/outlet/${user.outletKey}`, "layout");
     return { success: true };
   } catch (error) {
     console.error("Failed to update POS settings:", error);

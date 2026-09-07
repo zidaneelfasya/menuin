@@ -33,7 +33,7 @@ export async function GET(req: Request) {
     const staff = await db.select({
       id: memberships.id,
       role: memberships.role,
-      name: accounts.fullName,
+      name: accounts.name,
     })
     .from(memberships)
     .innerJoin(accounts, eq(memberships.accountId, accounts.id))

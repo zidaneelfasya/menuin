@@ -81,7 +81,7 @@ export async function updateOrderStatus(transactionId: string, newStatus: string
         .where(eq(transactionItems.transactionId, transactionId));
     }
 
-    revalidatePath("/tenants/orders");
+    if (user?.outletKey) revalidatePath(`/outlet/${user.outletKey}`, "layout");
     return { success: true };
   } catch (error) {
     console.error("Failed to update order status:", error);
@@ -98,7 +98,7 @@ export async function updateOrderItemStatus(itemId: string, isCompleted: boolean
       .set({ isCompleted })
       .where(eq(transactionItems.id, itemId));
     
-    revalidatePath("/tenants/orders");
+    if (user?.outletKey) revalidatePath(`/outlet/${user.outletKey}`, "layout");
     return { success: true };
   } catch (error) {
     console.error("Failed to update order item status:", error);

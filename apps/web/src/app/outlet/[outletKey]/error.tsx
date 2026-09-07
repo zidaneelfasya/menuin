@@ -30,7 +30,7 @@ export default function TenantsError({
         </p>
         <div className="flex gap-4">
           <Link
-            href="/tenants/dashboard"
+            href="/select-tenant"
             className="rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
           >
             Kembali ke Dashboard
@@ -52,7 +52,7 @@ export default function TenantsError({
         </p>
         <div className="flex gap-4">
           <Link
-            href="/tenants/dashboard"
+            href="/select-tenant"
             className="rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
           >
             Kembali ke Dashboard
@@ -79,7 +79,7 @@ export default function TenantsError({
           Coba Lagi
         </button>
         <Link
-          href="/tenants/dashboard"
+          href="/select-tenant"
           className="rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
         >
           Kembali ke Dashboard
