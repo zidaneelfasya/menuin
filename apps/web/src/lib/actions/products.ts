@@ -77,9 +77,7 @@ export async function toggleProductBestSeller(productId: string, isFeatured: boo
       .set({ isFeatured, updatedAt: new Date() })
       .where(and(eq(products.id, productId), eq(products.tenantId, user.tenantId)));
 
-    revalidatePath('/tenants/items');
-    revalidatePath('/tenants/pos');
-    revalidatePath('/tenants/katalog/visibility');
+    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
     return { success: true };
   } catch (error) {
     console.error('Error toggling best seller status:', error);
@@ -123,9 +121,7 @@ export async function createProduct(formData: z.infer<typeof productSchema>) {
       );
     }
     
-    revalidatePath('/tenants/items');
-    revalidatePath('/tenants/pos');
-    revalidatePath('/tenants/inventory');
+    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
     return { success: true };
   } catch (error) {
     console.error('Error creating product:', error);
@@ -167,9 +163,7 @@ export async function updateProduct(id: string, formData: z.infer<typeof product
       );
     }
     
-    revalidatePath('/tenants/items');
-    revalidatePath('/tenants/pos');
-    revalidatePath('/tenants/inventory');
+    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
     return { success: true };
   } catch (error) {
     console.error('Error updating product:', error);
@@ -188,9 +182,7 @@ export async function deleteProduct(id: string) {
     // Non-blocking audit log
     AuditService.log('DELETE', 'products', id).catch(console.error);
     
-    revalidatePath('/tenants/items');
-    revalidatePath('/tenants/pos');
-    revalidatePath('/tenants/inventory');
+    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
     return { success: true };
   } catch (error) {
     console.error('Error deleting product:', error);

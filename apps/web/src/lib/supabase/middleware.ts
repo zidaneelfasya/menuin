@@ -54,7 +54,7 @@ export async function updateSession(request: NextRequest) {
   // 2. Protected routes that require authentication
   const isProtectedRoute =
     pathname.startsWith('/system-admin') ||
-    pathname.startsWith('/tenants') ||
+    pathname.startsWith('/outlet') ||
     pathname.startsWith('/pos');
 
   if (isProtectedRoute && !user) {

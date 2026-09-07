@@ -1,19 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import { Store, Paintbrush, Eye, Settings, QrCode } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function CatalogNav() {
   const pathname = usePathname();
+  const params = useParams();
+  const outletKey = params.outletKey as string;
 
   const navItems = [
-    { href: "/tenants/katalog", icon: Store, label: "Status & Overview", exact: true },
-    { href: "/tenants/katalog/appearance", icon: Paintbrush, label: "Tampilan Storefront" },
-    { href: "/tenants/katalog/visibility", icon: Eye, label: "Visibilitas Produk" },
-    { href: "/tenants/katalog/ordering", icon: Settings, label: "Pengaturan Pesanan" },
-    { href: "/tenants/katalog/tables", icon: QrCode, label: "Meja & QR Code" },
+    { href: `/outlet/${outletKey}/katalog`, icon: Store, label: "Status & Overview", exact: true },
+    { href: `/outlet/${outletKey}/katalog/appearance`, icon: Paintbrush, label: "Tampilan Storefront" },
+    { href: `/outlet/${outletKey}/katalog/visibility`, icon: Eye, label: "Visibilitas Produk" },
+    { href: `/outlet/${outletKey}/katalog/ordering`, icon: Settings, label: "Pengaturan Pesanan" },
+    { href: `/outlet/${outletKey}/katalog/tables`, icon: QrCode, label: "Meja & QR Code" },
   ];
 
   return (

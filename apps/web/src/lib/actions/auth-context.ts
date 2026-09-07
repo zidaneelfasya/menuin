@@ -1,4 +1,4 @@
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { db } from '@/lib/db';
 import { accounts, memberships, tenants, subscriptions } from '@/lib/db/schema';
@@ -48,15 +48,27 @@ export async function getAuthenticatedAccount() {
   return account;
 }
 
-export async function getActiveTenant() {
-  const cookieStore = await cookies();
-  const activeTenantId = cookieStore.get('menuin_tenant_id')?.value;
 
-  if (!activeTenantId) return null;
+export async function getActiveTenant() {
+  const headersList = await headers();
+  const routeOutletKey = headersList.get('x-menuin-outlet-key');
+
+  if (routeOutletKey) {
+    const [tenant] = await db.select()
+      .from(tenants)
+      .where(eq(tenants.outletKey, routeOutletKey))
+      .limit(1);
+    return tenant || null;
+  }
+
+  const cookieStore = await cookies();
+  const lastOutletKey = cookieStore.get('menuin_last_outlet')?.value;
+
+  if (!lastOutletKey) return null;
 
   const [tenant] = await db.select()
     .from(tenants)
-    .where(eq(tenants.id, activeTenantId))
+    .where(eq(tenants.outletKey, lastOutletKey))
     .limit(1);
     
   return tenant || null;
@@ -120,6 +132,7 @@ export type AuthContext = {
     id: string;
     name: string;
     slug: string | null;
+    outletKey: string;
   };
   membership: {
     id: string;
@@ -162,6 +175,7 @@ export async function getCurrentContext(): Promise<AuthContext | null> {
         id: tenant.id,
         name: tenant.name,
         slug: tenant.slug,
+        outletKey: tenant.outletKey,
       },
       membership: {
         id: membership.id,

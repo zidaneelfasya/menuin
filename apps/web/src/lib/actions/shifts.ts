@@ -172,9 +172,7 @@ export async function startShift(startingCash: number) {
       status: 'ACTIVE'
     }).returning();
 
-    revalidatePath('/tenants/shifts');
-    revalidatePath('/tenants/pos');
-    
+    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
     return { success: true, data: newShift };
   } catch (error) {
     console.error('Error starting shift:', error);
@@ -227,9 +225,7 @@ export async function endShift(shiftId: string, actualCash: number) {
       cashDifference: cashDifference.toString()
     }).where(eq(shifts.id, shiftId));
 
-    revalidatePath('/tenants/shifts');
-    revalidatePath('/tenants/pos');
-    
+    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
     return { success: true };
   } catch (error) {
     console.error('Error ending shift:', error);
@@ -251,7 +247,7 @@ export async function addCashMovement(shiftId: string, type: 'IN' | 'OUT', amoun
       description
     });
 
-    revalidatePath('/tenants/shifts');
+    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
     return { success: true };
   } catch (error) {
     console.error('Error adding cash movement:', error);

@@ -34,24 +34,23 @@ import { UserProfile, signOutAction } from '@/lib/actions/auth';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { useRealtimeOrder } from '@/components/providers/realtime-order-provider';
 
-const navItems = [
-  { name: 'Dashboard', href: '/tenants/dashboard', icon: LayoutDashboard, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Kasir (POS)', href: '/tenants/pos', icon: ShoppingCart, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Pesanan Dapur', href: '/tenants/orders', icon: ChefHat, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Katalog', href: '/tenants/katalog', icon: Store, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Item', href: '/tenants/items', icon: Package, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Kategori', href: '/tenants/categories', icon: Tags, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Kustomisasi', href: '/tenants/modifiers', icon: SlidersHorizontal, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Stock', href: '/tenants/inventory', icon: Archive, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Manajemen Shift', href: '/tenants/shifts', icon: Wallet, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Riwayat Transaksi', href: '/tenants/transactions', icon: History, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Laporan', href: '/tenants/reports', icon: BarChart3, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Keuangan', href: '/tenants/finance', icon: Wallet, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Promo', href: '/tenants/promotions', icon: Percent, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Manajemen Tim', href: '/tenants/team', icon: UserCircle, roles: ['OWNER'] },
-  { name: 'POS & Devices', href: '/tenants/settings/devices', icon: Smartphone, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Pengaturan', href: '/tenants/settings', icon: Settings, roles: ['OWNER'] },
-  
+const getNavItems = (outletKey: string) => [
+  { name: 'Dashboard', href: `/outlet/${outletKey}/dashboard`, icon: LayoutDashboard, roles: ['OWNER', 'MANAGER'] },
+  { name: 'Kasir (POS)', href: `/outlet/${outletKey}/pos`, icon: ShoppingCart, roles: ['OWNER', 'MANAGER'] },
+  { name: 'Pesanan Dapur', href: `/outlet/${outletKey}/orders`, icon: ChefHat, roles: ['OWNER', 'MANAGER'] },
+  { name: 'Katalog', href: `/outlet/${outletKey}/katalog`, icon: Store, roles: ['OWNER', 'MANAGER'] },
+  { name: 'Item', href: `/outlet/${outletKey}/items`, icon: Package, roles: ['OWNER', 'MANAGER'] },
+  { name: 'Kategori', href: `/outlet/${outletKey}/categories`, icon: Tags, roles: ['OWNER', 'MANAGER'] },
+  { name: 'Kustomisasi', href: `/outlet/${outletKey}/modifiers`, icon: SlidersHorizontal, roles: ['OWNER', 'MANAGER'] },
+  { name: 'Stock', href: `/outlet/${outletKey}/inventory`, icon: Archive, roles: ['OWNER', 'MANAGER'] },
+  { name: 'Manajemen Shift', href: `/outlet/${outletKey}/shifts`, icon: Wallet, roles: ['OWNER', 'MANAGER'] },
+  { name: 'Riwayat Transaksi', href: `/outlet/${outletKey}/transactions`, icon: History, roles: ['OWNER', 'MANAGER'] },
+  { name: 'Laporan', href: `/outlet/${outletKey}/reports`, icon: BarChart3, roles: ['OWNER', 'MANAGER'] },
+  { name: 'Keuangan', href: `/outlet/${outletKey}/finance`, icon: Wallet, roles: ['OWNER', 'MANAGER'] },
+  { name: 'Promo', href: `/outlet/${outletKey}/promotions`, icon: Percent, roles: ['OWNER', 'MANAGER'] },
+  { name: 'Manajemen Tim', href: `/outlet/${outletKey}/team`, icon: UserCircle, roles: ['OWNER'] },
+  { name: 'POS & Devices', href: `/outlet/${outletKey}/settings/devices`, icon: Smartphone, roles: ['OWNER', 'MANAGER'] },
+  { name: 'Pengaturan', href: `/outlet/${outletKey}/settings`, icon: Settings, roles: ['OWNER'] },
 ];
 
 import { usePageTransition } from '../providers/page-transition-provider';
@@ -95,7 +94,7 @@ function SidebarContent({ collapsed, setCollapsed, user }: { collapsed: boolean;
       {/* Navigation */}
       <div className="flex-1 overflow-y-auto py-6 px-3 scrollbar-hide">
         <nav className="space-y-1.5">
-          {navItems.filter(item => !item.roles || item.roles.includes(user.role as any)).map((item) => {
+          {getNavItems(user.outletKey || 'unknown').filter(item => !item.roles || item.roles.includes(user.role as any)).map((item) => {
             const isActive = pathname.startsWith(item.href);
             return (
               <Link 
@@ -119,7 +118,7 @@ function SidebarContent({ collapsed, setCollapsed, user }: { collapsed: boolean;
                   {!collapsed && (
                     <span className="ml-3 font-medium text-sm flex-1">{item.name}</span>
                   )}
-                  {item.href === '/tenants/orders' && incomingOrders.length > 0 && (
+                  {item.href.includes('/orders') && incomingOrders.length > 0 && (
                     <span className={cn(
                       "absolute bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded-full",
                       collapsed ? "top-0 right-0 translate-x-1 -translate-y-1" : "right-3 top-1/2 -translate-y-1/2"

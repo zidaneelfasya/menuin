@@ -97,7 +97,7 @@ export function RealtimeOrderProvider({ children, tenantId }: { children: ReactN
                 audio.play().catch(e => console.log('Audio auto-play blocked', e));
               }
               
-              if (pathname === '/tenants/pos' || pathname === '/tenants/transactions' || pathname === '/tenants/orders') {
+              if (pathname.includes('/pos') || pathname.includes('/transactions') || pathname.includes('/orders')) {
                 router.refresh();
               }
             }

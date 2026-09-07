@@ -1,5 +1,10 @@
 import { redirect } from 'next/navigation';
 
-export default function TenantsPage() {
-  redirect('/tenants/dashboard');
+interface Props {
+  params: Promise<{ outletKey: string }>;
+}
+
+export default async function OutletRootPage({ params }: Props) {
+  const { outletKey } = await params;
+  redirect(`/outlet/${outletKey}/dashboard`);
 }
