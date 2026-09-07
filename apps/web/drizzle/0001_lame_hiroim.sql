@@ -1,0 +1,2 @@
+ALTER TABLE "transactions" ADD COLUMN "shift_id" uuid;--> statement-breakpoint
+ALTER TABLE "transactions" ADD CONSTRAINT "transactions_tenant_id_shift_id_shifts_tenant_id_id_fk" FOREIGN KEY ("tenant_id","shift_id") REFERENCES "public"."shifts"("tenant_id","id") ON DELETE no action ON UPDATE no action;
