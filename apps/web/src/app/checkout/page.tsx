@@ -127,7 +127,7 @@ function CheckoutContent() {
               if (res.error) {
                 setError(res.error);
               } else {
-                router.push("/tenants/pos");
+                router.push("/select-tenant");
               }
             } catch (err: any) {
               setError("Gagal memperbarui status pembayaran: " + err.message);

@@ -6,6 +6,7 @@ import { memberships, tenants, accounts } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { getCurrentContext } from './auth-context';
 import { v4 as uuidv4 } from 'uuid';
+import crypto from 'crypto';
 
 export type UserRole = 'OWNER' | 'MANAGER' | 'CASHIER' | 'STAFF';
 
@@ -29,6 +30,7 @@ export type UserProfile = {
   name: string;
   role: UserRole;
   tenantId: string | null;
+  outletKey: string | null;
   restaurantName: string | null;
   isPaid: boolean;
 };
@@ -70,6 +72,7 @@ export async function getAvailableTenants() {
     tenantId: row.tenant.id,
     name: row.tenant.name,
     slug: row.tenant.slug,
+    outletKey: row.tenant.outletKey,
   }));
 }
 
@@ -83,6 +86,7 @@ export async function getCurrentUser(): Promise<UserProfile | null> {
     name: context.account.name,
     role: context.membership.role,
     tenantId: context.tenant.id,
+    outletKey: context.tenant.outletKey,
     restaurantName: context.tenant.name,
     isPaid: !context.entitlements.isLocked,
   };
@@ -136,8 +140,10 @@ export async function signUpAction(formData: FormData) {
     });
 
     // 3. Create the new tenant
+    const outletKey = crypto.randomBytes(10).toString('hex'); // 20 characters
     const [newTenant] = await db.insert(tenants).values({
       name: restaurantName,
+      outletKey: outletKey,
       // subscriptionTier is deprecated, subscription will be handled separately
     }).returning();
 

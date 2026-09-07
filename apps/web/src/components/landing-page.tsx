@@ -1073,10 +1073,10 @@ export default function LandingPage({
           <div className="hidden md:flex items-center gap-4">
             {isLoggedIn ? (
               <a
-                href="/tenants/dashboard"
+                href="/select-tenant"
                 onClick={(e) => {
                   e.preventDefault();
-                  navigateWithTransition('/tenants/dashboard');
+                  navigateWithTransition('/select-tenant');
                 }}
                 className="h-10 pl-2 pr-4 flex items-center rounded-full bg-slate-900 text-white text-[13px] font-semibold hover:bg-slate-800 transition-all gap-2.5 shadow-sm group"
               >
@@ -1124,11 +1124,11 @@ export default function LandingPage({
             <div className="flex flex-col gap-3">
               {isLoggedIn ? (
                 <a 
-                  href="/tenants/dashboard" 
+                  href="/select-tenant" 
                   onClick={(e) => {
                     e.preventDefault();
                     setMobileOpen(false);
-                    navigateWithTransition('/tenants/dashboard');
+                    navigateWithTransition('/select-tenant');
                   }}
                   className="flex items-center justify-center gap-2.5 h-11 rounded-full bg-slate-900 text-white text-[14px] font-semibold"
                 >
@@ -1187,11 +1187,11 @@ export default function LandingPage({
           <FadeIn delay={0.3}>
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
               <a
-                href={isLoggedIn ? "/tenants/dashboard" : "/auth/signup"}
+                href={isLoggedIn ? "/select-tenant" : "/auth/signup"}
                 onClick={(e) => {
                   if (isLoggedIn) {
                     e.preventDefault();
-                    navigateWithTransition('/tenants/dashboard');
+                    navigateWithTransition('/select-tenant');
                   }
                 }}
                 className="h-12 px-7 flex items-center justify-center rounded-full bg-[#0E59F9] text-white text-[15px] font-semibold hover:bg-[#0C4CD6] transition-all shadow-md shadow-blue-500/20 hover:shadow-lg w-full sm:w-auto gap-2"

@@ -47,7 +47,7 @@ export async function createModifierGroup(formData: z.infer<typeof modifierGroup
       ...validated
     });
     
-    revalidatePath('/tenants/modifiers');
+    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
     return { success: true };
   } catch (error) {
     console.error('Error creating group:', error);
@@ -69,7 +69,7 @@ export async function updateModifierGroup(id: string, formData: z.infer<typeof m
       })
       .where(and(eq(modifierGroups.id, id), eq(modifierGroups.tenantId, user.tenantId)));
     
-    revalidatePath('/tenants/modifiers');
+    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
     return { success: true };
   } catch (error) {
     console.error('Error updating group:', error);
@@ -89,7 +89,7 @@ export async function deleteModifierGroup(id: string) {
     await db.delete(modifiers).where(eq(modifiers.groupId, id));
     await db.delete(modifierGroups).where(eq(modifierGroups.id, id));
     
-    revalidatePath('/tenants/modifiers');
+    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
     return { success: true };
   } catch (error) {
     console.error('Error deleting group:', error);
@@ -114,7 +114,7 @@ export async function createModifier(groupId: string, formData: z.infer<typeof m
       price: validated.price.toString(),
     });
     
-    revalidatePath('/tenants/modifiers');
+    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
     return { success: true };
   } catch (error) {
     console.error('Error creating modifier:', error);
@@ -128,7 +128,7 @@ export async function deleteModifier(id: string) {
     if (!user || !user.tenantId) return { success: false, error: 'Unauthorized' };
     
     await db.delete(modifiers).where(eq(modifiers.id, id));
-    revalidatePath('/tenants/modifiers');
+    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
     return { success: true };
   } catch (error) {
     console.error('Error deleting modifier:', error);

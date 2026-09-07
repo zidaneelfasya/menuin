@@ -48,9 +48,7 @@ export async function updateTaxAndFeeSettings(formData: FormData) {
       })
       .where(eq(tenants.id, user.tenantId));
 
-    revalidatePath('/tenants/settings');
-    revalidatePath('/tenants/settings');
-    revalidatePath('/tenants/pos');
+    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
     return { success: true };
   } catch (error) {
     console.error('Error updating tax and fee settings:', error);
@@ -76,9 +74,7 @@ export async function updatePlatformFeeSettings(formData: FormData) {
       })
       .where(eq(tenants.id, user.tenantId));
 
-    revalidatePath('/tenants/settings');
-    revalidatePath('/tenants/settings');
-    revalidatePath('/tenants/pos');
+    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
     return { success: true };
   } catch (error) {
     console.error('Error updating platform fees:', error);
@@ -100,9 +96,7 @@ export async function updateDisplaySettings(formData: FormData) {
       })
       .where(eq(tenants.id, user.tenantId));
 
-    revalidatePath('/tenants/settings');
-    revalidatePath('/tenants/pos');
-    revalidatePath('/tenants/items');
+    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
     return { success: true };
   } catch (error) {
     console.error('Error updating display settings:', error);
@@ -132,8 +126,7 @@ export async function updateStoreGeneralSettings(formData: FormData) {
       })
       .where(eq(tenants.id, user.tenantId));
 
-    revalidatePath('/tenants/settings');
-    revalidatePath('/tenants/dashboard');
+    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
     return { success: true };
   } catch (error) {
     console.error('Error updating store settings:', error);
@@ -159,7 +152,7 @@ export async function updatePaymentIntegration(formData: FormData) {
       })
       .where(eq(tenants.id, user.tenantId));
 
-    revalidatePath('/tenants/settings');
+    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
     revalidatePath('/store/[slug]', 'layout');
     return { success: true };
   } catch (error) {

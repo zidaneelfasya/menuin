@@ -50,7 +50,8 @@ async function main() {
     console.log('Inserting dashboard and memberships...');
     const [tenant] = await db.insert(schema.tenants).values({
       name: 'Stress Test Tenant',
-      subscriptionTier: 'PRO',
+      outletKey: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 9),
+        subscriptionTier: 'PRO',
       slug: 'stresstest',
     }).returning();
     const tenantId = tenant.id;

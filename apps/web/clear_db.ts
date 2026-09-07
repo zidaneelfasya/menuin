@@ -4,7 +4,7 @@ import postgres from 'postgres';
 config({ path: '.env.local' });
 
 async function clearDB() {
-  const sql = postgres(process.env.DATABASE_URL, { ssl: 'require' });
+  const sql = postgres(process.env.DATABASE_URL!, { ssl: 'require' });
 
   try {
     const tenants = await sql`SELECT count(*) FROM tenants;`;

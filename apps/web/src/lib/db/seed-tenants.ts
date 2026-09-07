@@ -420,7 +420,8 @@ async function seedTenants() {
         .insert(schema.tenants)
         .values({
           name: tenantData.name,
-          subscriptionTier: tenantData.isPaid ? 'PRO' : 'FREE',
+          outletKey: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 9),
+        subscriptionTier: tenantData.isPaid ? 'PRO' : 'FREE',
         })
         .returning();
 

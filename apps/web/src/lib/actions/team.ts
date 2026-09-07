@@ -145,7 +145,7 @@ export async function changeRoleAction(membershipId: string, newRole: 'MANAGER' 
   
   try {
     await db.update(memberships).set({ role: newRole }).where(eq(memberships.id, membershipId));
-    revalidatePath('/tenants/team');
+    if (context?.tenant?.outletKey) { revalidatePath(`/outlet/${context.tenant.outletKey}`, "layout"); }
     return { success: true };
   } catch (error: any) {
     return { error: error.message || 'Failed to change role' };
@@ -169,7 +169,7 @@ export async function removeMemberAction(membershipId: string) {
   try {
     // Delete membership. (In a real app you might soft delete or reassign data)
     await db.delete(memberships).where(eq(memberships.id, membershipId));
-    revalidatePath('/tenants/team');
+    if (context?.tenant?.outletKey) { revalidatePath(`/outlet/${context.tenant.outletKey}`, "layout"); }
     return { success: true };
   } catch (error: any) {
     return { error: error.message || 'Failed to remove member' };

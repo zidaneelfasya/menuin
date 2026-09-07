@@ -35,10 +35,7 @@ export async function adjustStock(formData: z.infer<typeof adjustStockSchema>) {
       .where(and(eq(products.id, productId), eq(products.tenantId, user.tenantId)));
       
 
-    revalidatePath('/tenants/inventory');
-    revalidatePath('/tenants/items');
-    revalidatePath('/tenants/pos');
-
+    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
     return { success: true };
   } catch (error) {
     console.error('Error adjusting stock:', error);

@@ -6,7 +6,7 @@ import path from 'path';
 config({ path: '.env.local' });
 
 async function runMigration() {
-  const sql = postgres(process.env.DATABASE_URL, { ssl: 'require' });
+  const sql = postgres(process.env.DATABASE_URL!, { ssl: 'require' });
 
   try {
     const migrationFile = path.join(process.cwd(), 'drizzle', 'manual_upgrade.sql');

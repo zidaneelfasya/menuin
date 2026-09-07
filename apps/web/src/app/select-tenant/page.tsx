@@ -19,7 +19,7 @@ export default async function SelectTenantPage() {
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {tenants.map((tenant) => (
-            <form action={setTenantContextAction.bind(null, tenant.tenantId)} key={tenant.tenantId}>
+            <form action={setTenantContextAction.bind(null, tenant.outletKey)} key={tenant.tenantId}>
               <button className="w-full text-left" type="submit">
                 <Card className="h-full hover:border-primary/50 hover:shadow-md transition-all cursor-pointer bg-card flex flex-col group">
                   <CardHeader className="pb-2">
