@@ -24,7 +24,9 @@ import {
   ChevronRight,
   Store,
   ChefHat,
-  SlidersHorizontal
+  SlidersHorizontal,
+  ArrowRightLeft,
+  Smartphone
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
@@ -47,6 +49,7 @@ const navItems = [
   { name: 'Keuangan', href: '/tenants/finance', icon: Wallet, roles: ['OWNER', 'MANAGER'] },
   { name: 'Promo', href: '/tenants/promotions', icon: Percent, roles: ['OWNER', 'MANAGER'] },
   { name: 'Manajemen Tim', href: '/tenants/team', icon: UserCircle, roles: ['OWNER'] },
+  { name: 'POS & Devices', href: '/tenants/settings/devices', icon: Smartphone, roles: ['OWNER', 'MANAGER'] },
   { name: 'Pengaturan', href: '/tenants/settings', icon: Settings, roles: ['OWNER'] },
   
 ];
@@ -139,13 +142,21 @@ function SidebarContent({ collapsed, setCollapsed, user }: { collapsed: boolean;
               <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold flex-shrink-0 uppercase">
                 {user.name.charAt(0)}
               </div>
-              <div className="ml-3 overflow-hidden">
+              <div className="ml-3 overflow-hidden flex-1">
                 <p className="text-sm font-semibold truncate">{user.name}</p>
-                <p className="text-xs text-muted-foreground truncate">{user.role}</p>
+                <p className="text-xs text-muted-foreground truncate">{user.role} &bull; {user.restaurantName}</p>
               </div>
             </div>
           )}
-          <div className={cn('flex items-center gap-1', collapsed && 'flex-col')}>
+          <div className={cn('flex items-center gap-1 mt-2', collapsed && 'flex-col')}>
+            <Link href="/select-tenant" passHref>
+              <button 
+                className={cn('text-muted-foreground hover:text-primary transition-colors h-9 w-9 flex items-center justify-center', collapsed && 'bg-muted rounded-full')}
+                title="Switch Workspace"
+              >
+                <ArrowRightLeft size={collapsed ? 18 : 20} />
+              </button>
+            </Link>
             <ThemeSwitcher />
             <button 
               onClick={handleLogout}

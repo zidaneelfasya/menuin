@@ -22,7 +22,11 @@ async function main() {
   console.log(`Mencari tenant untuk email: ${targetEmail}`);
 
   // Find membership
-  const userMemberships = await db.select().from(schema.memberships).where(eq(schema.memberships.email, targetEmail));
+  const userMemberships = await db.select({
+    tenantId: schema.memberships.tenantId
+  }).from(schema.memberships)
+  .innerJoin(schema.accounts, eq(schema.memberships.accountId, schema.accounts.id))
+  .where(eq(schema.accounts.email, targetEmail));
   
   if (userMemberships.length === 0) {
     console.error('User membership tidak ditemukan. Harap login/register terlebih dahulu di aplikasi web.');

@@ -1,10 +1,10 @@
 'use server';
 
 import { db } from '@/lib/db';
-import { memberships, invitations } from '@/lib/db/schema';
+import { memberships, invitations, accounts } from '@/lib/db/schema';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { createClient } from '@/lib/supabase/server';
 import { eq } from 'drizzle-orm';
-import { redirect } from 'next/navigation';
 
 export async function completeSetupAction(formData: FormData) {
   const name = formData.get('name') as string;
@@ -13,7 +13,7 @@ export async function completeSetupAction(formData: FormData) {
   const inviteId = formData.get('inviteId') as string;
   const role = formData.get('role') as string;
 
-  if (!name || !inviteId) {
+  if (!inviteId) {
     return { error: 'Missing required fields' };
   }
 
@@ -24,61 +24,104 @@ export async function completeSetupAction(formData: FormData) {
       return { error: 'Invalid or expired invitation' };
     }
 
-    let authUserId: string | null = null;
-    
-    // 2. Dashboard access roles need a Supabase Auth identity
-    if (role === 'OWNER' || role === 'MANAGER') {
-      if (!password) {
-        return { error: 'Password is required for this role' };
-      }
+    // 2. Check if the user already has a Menuin Account
+    const existingAccounts = await db
+      .select()
+      .from(accounts)
+      .where(eq(accounts.email, invite.email))
+      .limit(1);
+
+    const existingAccount = existingAccounts.length > 0 ? existingAccounts[0] : null;
+
+    let accountIdToUse;
+    let displayNameToUse = name;
+
+    const supabase = await createClient();
+
+    if (existingAccount) {
+      accountIdToUse = existingAccount.id;
+      displayNameToUse = existingAccount.name; // Use existing name if name is not provided
       
+      // Check if user is already logged in with this email
+      const { data: { user } } = await supabase.auth.getUser();
+      const isLoggedIn = user && user.email === invite.email;
+      
+      if (!isLoggedIn) {
+        if (!password) {
+          return { error: 'Please provide your password to confirm your identity.' };
+        }
+        
+        // Log the user in to prove identity
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: invite.email,
+          password: password,
+        });
+        
+        if (signInError) {
+          return { error: 'Invalid password. Please try again.' };
+        }
+      }
+
+    } else {
+      // 3. For new users, create a Supabase Auth identity for their global Account
+      if (!name) {
+        return { error: 'Name is required for new accounts' };
+      }
+
       const adminAuthClient = createAdminClient().auth.admin;
       
-      // Try to create the user, or if they exist, we might get an error
-      // In a real app we'd check if they exist first. Here we assume new users.
+      // For STAFF/CASHIER, they might not have provided a password in setup,
+      // so we can generate a random one if it's missing.
+      const userPassword = password || crypto.randomUUID();
+      
       const { data: authData, error: authError } = await adminAuthClient.createUser({
         email: invite.email,
-        password: password,
+        password: userPassword,
         email_confirm: true, // Auto confirm
         user_metadata: { name }
       });
       
       if (authError) {
-        // If user already exists, it throws an error
-        // A robust implementation would link the existing user
-        return { error: authError.message || 'Failed to create dashboard identity' };
+        return { error: authError.message || 'Failed to create global identity' };
       }
       
-      if (authData.user) {
-        authUserId = authData.user.id;
-      }
+      const authUserId = authData.user.id;
+
+      // Log them in immediately so their session starts
+      await supabase.auth.signInWithPassword({
+        email: invite.email,
+        password: userPassword,
+      });
+
+      // 4. Create Account in Database
+      accountIdToUse = crypto.randomUUID();
+      
+      await db.insert(accounts).values({
+        id: accountIdToUse,
+        authUserId: authUserId,
+        email: invite.email,
+        name: name,
+      });
     }
 
-    // 3. Create the Membership in Database
-    const username = invite.email.split('@')[0];
-    
-    // In a real app, hash the PIN. For now, store directly as requested by legacy code
     const pinHash = pin ? pin : null; 
     
+    // 5. Create Membership
     await db.insert(memberships).values({
       tenantId: invite.tenantId,
-      authUserId: authUserId,
-      username: username,
-      displayName: name,
-      email: invite.email,
+      accountId: accountIdToUse,
+      displayName: displayNameToUse,
       pinHash: pinHash,
       role: invite.role,
       status: 'ACTIVE'
     });
 
-    // 4. Mark invitation as accepted
+    // 6. Mark invitation as accepted
     await db.update(invitations).set({ status: 'ACCEPTED' }).where(eq(invitations.id, invite.id));
 
+    return { success: true };
   } catch (error: any) {
     console.error("Setup error:", error);
     return { error: 'Internal server error during setup' };
   }
-
-  // Redirect to login on success so they can log in with their new credentials
-  redirect('/auth/login?setup=success');
 }

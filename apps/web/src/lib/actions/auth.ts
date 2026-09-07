@@ -2,8 +2,10 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { db } from '@/lib/db';
-import { memberships, tenants } from '@/lib/db/schema';
+import { memberships, tenants, accounts } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { getCurrentContext } from './auth-context';
+import { v4 as uuidv4 } from 'uuid';
 
 export type UserRole = 'OWNER' | 'MANAGER' | 'CASHIER' | 'STAFF';
 
@@ -32,62 +34,57 @@ export type UserProfile = {
 };
 
 export async function getCurrentMembership(): Promise<MembershipProfile | null> {
-  const supabase = await createClient();
-  const { data: { user }, error } = await supabase.auth.getUser();
-
-  if (!user || !user.id) return null;
-
-  let result;
-  try {
-    // Cari membership berdasarkan Supabase Auth ID
-    result = await db
-      .select({
-        member: memberships,
-        tenant: tenants,
-      })
-      .from(memberships)
-      .innerJoin(tenants, eq(memberships.tenantId, tenants.id))
-      .where(eq(memberships.authUserId, user.id))
-      .limit(1);
-  } catch (error) {
-    console.error('Failed to query membership and tenant:', error);
-    return null;
-  }
-
-  if (result.length === 0) {
-    // It's possible the user signed up but hasn't completed setup, or was deleted
-    console.error('Membership not found in database for auth user:', user.id);
-    return null;
-  }
-
-  const data = result[0];
+  const context = await getCurrentContext();
+  if (!context) return null;
 
   return {
-    id: data.member.id,
-    tenantId: data.tenant.id,
-    authUserId: data.member.authUserId,
-    username: data.member.username,
-    displayName: data.member.displayName,
-    email: data.member.email,
-    role: data.member.role as UserRole,
-    status: data.member.status,
-    restaurantName: data.tenant.name,
-    subscriptionTier: data.tenant.subscriptionTier,
+    id: context.membership.id,
+    tenantId: context.tenant.id,
+    authUserId: context.account.authUserId,
+    username: context.account.email.split('@')[0],
+    displayName: context.account.name,
+    email: context.account.email,
+    role: context.membership.role,
+    status: context.membership.status,
+    restaurantName: context.tenant.name,
+    subscriptionTier: context.subscription?.plan || 'FREE',
   };
 }
 
+export async function getAvailableTenants() {
+  const { getAuthenticatedAccount } = await import('./auth-context');
+  const account = await getAuthenticatedAccount(); // Throws AuthError if not logged in
+  
+  const results = await db
+    .select({
+      member: memberships,
+      tenant: tenants,
+    })
+    .from(memberships)
+    .innerJoin(tenants, eq(memberships.tenantId, tenants.id))
+    .where(eq(memberships.accountId, account.id));
+
+  return results.map(row => ({
+    membershipId: row.member.id,
+    role: row.member.role,
+    tenantId: row.tenant.id,
+    name: row.tenant.name,
+    slug: row.tenant.slug,
+  }));
+}
+
 export async function getCurrentUser(): Promise<UserProfile | null> {
-  const membership = await getCurrentMembership();
-  if (!membership) return null;
+  const context = await getCurrentContext();
+  if (!context) return null;
   
   return {
-    id: membership.id, // Using membership ID instead of global user ID
-    email: membership.email || '',
-    name: membership.displayName,
-    role: membership.role,
-    tenantId: membership.tenantId,
-    restaurantName: membership.restaurantName,
-    isPaid: membership.subscriptionTier !== 'FREE',
+    id: context.membership.id, // Using membership ID instead of global user ID
+    email: context.account.email,
+    name: context.account.name,
+    role: context.membership.role,
+    tenantId: context.tenant.id,
+    restaurantName: context.tenant.name,
+    isPaid: !context.entitlements.isLocked,
   };
 }
 
@@ -104,6 +101,12 @@ export async function signUpAction(formData: FormData) {
 
   if (!email || !password || !restaurantName || !name) {
     return { error: 'All fields are required' };
+  }
+
+  // Check if account already exists
+  const existingAccount = await db.select().from(accounts).where(eq(accounts.email, email)).limit(1);
+  if (existingAccount.length > 0) {
+    return { error: 'Email already registered. Please log in.' };
   }
 
   const supabase = await createClient();
@@ -123,20 +126,27 @@ export async function signUpAction(formData: FormData) {
   }
 
   try {
-    // 2. Create the new tenant
+    // 2. Create the Account
+    const newAccountId = uuidv4();
+    await db.insert(accounts).values({
+      id: newAccountId,
+      authUserId: authData.user.id,
+      email,
+      name,
+    });
+
+    // 3. Create the new tenant
     const [newTenant] = await db.insert(tenants).values({
       name: restaurantName,
-      subscriptionTier: 'FREE', // Default
+      // subscriptionTier is deprecated, subscription will be handled separately
     }).returning();
 
-    // 3. Create the Owner membership linked to the tenant
+    // 4. Create the Owner membership linked to the tenant
     const username = email.split('@')[0];
     await db.insert(memberships).values({
       tenantId: newTenant.id,
-      authUserId: authData.user.id,
-      username, // Use email prefix as default username
+      accountId: newAccountId,
       displayName: name,
-      email,
       role: 'OWNER',
       status: 'ACTIVE',
     });
@@ -152,12 +162,14 @@ export async function getTenantDetailsByEmail(email: string) {
   try {
     const result = await db
       .select({
+        account: accounts,
         member: memberships,
         tenant: tenants,
       })
       .from(memberships)
       .innerJoin(tenants, eq(memberships.tenantId, tenants.id))
-      .where(eq(memberships.email, email))
+      .innerJoin(accounts, eq(memberships.accountId, accounts.id))
+      .where(eq(accounts.email, email))
       .limit(1);
 
     if (result.length === 0) {
@@ -165,10 +177,11 @@ export async function getTenantDetailsByEmail(email: string) {
     }
 
     return {
-      email: result[0].member.email,
+      email: result[0].account.email,
       name: result[0].member.displayName,
       restaurantName: result[0].tenant.name,
       subscriptionTier: result[0].tenant.subscriptionTier,
+      tenantId: result[0].tenant.id,
     };
   } catch (error) {
     console.error('Failed to get tenant details:', error);
@@ -181,7 +194,8 @@ export async function markTenantAsPaidAction(email: string) {
     const userProfile = await db
       .select({ member: memberships })
       .from(memberships)
-      .where(eq(memberships.email, email))
+      .innerJoin(accounts, eq(memberships.accountId, accounts.id))
+      .where(eq(accounts.email, email))
       .limit(1);
       
     if (userProfile.length === 0) {
@@ -189,7 +203,36 @@ export async function markTenantAsPaidAction(email: string) {
     }
     const tenantId = userProfile[0].member.tenantId;
 
-    await db.update(tenants).set({ subscriptionTier: 'PRO' }).where(eq(tenants.id, tenantId));
+    const { subscriptions } = await import('@/lib/db/schema');
+    const { and } = await import('drizzle-orm');
+    const { v4: uuidv4 } = await import('uuid');
+
+    const now = new Date();
+    const currentPeriodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    await db.transaction(async (tx) => {
+      // Mark existing ACTIVE subscriptions as EXPIRED
+      await tx.update(subscriptions)
+        .set({ status: 'EXPIRED' })
+        .where(
+          and(
+            eq(subscriptions.tenantId, tenantId),
+            eq(subscriptions.status, 'ACTIVE')
+          )
+        );
+
+      // Insert new ACTIVE subscription
+      const newSubId = uuidv4();
+      await tx.insert(subscriptions).values({
+        id: newSubId,
+        tenantId,
+        plan: 'PRO',
+        status: 'ACTIVE',
+        currentPeriodStart: now,
+        currentPeriodEnd,
+      });
+    });
+
     return { success: true };
   } catch (error: any) {
     console.error('Failed to update subscription:', error);

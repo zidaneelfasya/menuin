@@ -33,22 +33,58 @@ function randomInt(min: number, max: number) {
 }
 
 // Helper to register user in Supabase Auth if URL & Key are available
-async function registerSupabaseAuth(email: string, password: string = 'password123', name: string) {
+async function registerSupabaseAuth(email: string, password: string = 'password123', name: string): Promise<string> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!supabaseUrl || !anonKey) return;
 
+  if (!supabaseUrl || !anonKey) {
+    const authUserId = uuidv4();
+    await client`
+      INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at) 
+      VALUES (${authUserId}, ${email}, ${JSON.stringify({ name })}, now(), now())
+      ON CONFLICT (id) DO NOTHING
+    `;
+    return authUserId;
+  }
+  
   try {
     const supabase = createClient(supabaseUrl, anonKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
-    await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { name } },
     });
+    
+    if (data?.user?.id) {
+      return data.user.id;
+    }
+    
+    if (error && error.message.includes('already registered')) {
+      const { data: signInData } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (signInData?.user?.id) return signInData.user.id;
+    }
+    
+    const authUserId = uuidv4();
+    await client`
+      INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at) 
+      VALUES (${authUserId}, ${email}, ${JSON.stringify({ name })}, now(), now())
+      ON CONFLICT (id) DO NOTHING
+    `;
+    return authUserId;
   } catch (err) {
-    // Ignore if already registered
+    console.error('Supabase auth error:', err);
+    const authUserId = uuidv4();
+    await client`
+      INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at) 
+      VALUES (${authUserId}, ${email}, ${JSON.stringify({ name })}, now(), now())
+      ON CONFLICT (id) DO NOTHING
+    `;
+    return authUserId;
   }
 }
 
@@ -394,14 +430,18 @@ async function seedTenants() {
       const tenantUsers: (typeof schema.memberships.$inferSelect)[] = [];
       for (const u of tenantData.users) {
         await registerSupabaseAuth(u.email, 'password123', u.name);
-        // Supabase Auth ID might not be easily queryable via insert, so we skip authUserId in seeds or set to uuid
+        const [account] = await db.insert(schema.accounts).values({
+          authUserId: uuidv4(),
+          email: u.email,
+          name: u.name,
+        }).returning();
+
         const [createdUser] = await db
           .insert(schema.memberships)
           .values({
             tenantId,
-            username: u.email.split('@')[0],
+            accountId: account.id,
             displayName: u.name,
-            email: u.email,
             pinHash: '1234', // default pin
             role: u.role as any,
           })

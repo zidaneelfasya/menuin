@@ -15,6 +15,34 @@
       "when": 1788649360210,
       "tag": "0001_lame_hiroim",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788661048361,
+      "tag": "0002_sudden_terror",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1788661676224,
+      "tag": "0003_young_sharon_carter",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1788665400395,
+      "tag": "0004_odd_magma",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1788755330478,
+      "tag": "0005_slim_joseph",
+      "breakpoints": true
     }
   ]
 }

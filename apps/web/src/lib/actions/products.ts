@@ -6,6 +6,7 @@ import { eq, and, sql, desc } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { getCurrentUser } from './auth';
+import { AuditService } from '@/lib/services/audit.service';
 
 import { productSchema } from '@menuin/validation';
 
@@ -183,6 +184,9 @@ export async function deleteProduct(id: string) {
 
     await db.delete(productModifierGroups).where(eq(productModifierGroups.productId, id));
     await db.delete(products).where(and(eq(products.id, id), eq(products.tenantId, user.tenantId)));
+    
+    // Non-blocking audit log
+    AuditService.log('DELETE', 'products', id).catch(console.error);
     
     revalidatePath('/tenants/items');
     revalidatePath('/tenants/pos');

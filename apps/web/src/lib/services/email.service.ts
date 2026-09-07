@@ -18,7 +18,7 @@ export class EmailService {
 
     try {
       const { data, error } = await resend.emails.send({
-        from: 'Menuin <onboarding@resend.dev>', // Use default resend dev email for testing
+        from: 'Menuin <noreply@boluanisa.store>', // Use verified domain
         to: [toEmail],
         subject: `You have been invited to join ${tenantName} on Menuin`,
         html: `

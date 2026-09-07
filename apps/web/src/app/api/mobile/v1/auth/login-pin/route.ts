@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { UserService } from '@/lib/services/user.service';
 import { db } from '@/lib/db';
-import { memberships, tenants } from '@/lib/db/schema';
+import { memberships, tenants, accounts } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import * as jwt from 'jsonwebtoken';
 
@@ -30,13 +30,15 @@ export async function POST(request: Request) {
     const [membershipRecord] = await db
       .select({
         member: memberships,
-        tenant: tenants
+        tenant: tenants,
+        account: accounts
       })
       .from(memberships)
       .innerJoin(tenants, eq(memberships.tenantId, tenants.id))
+      .innerJoin(accounts, eq(memberships.accountId, accounts.id))
       .where(
         and(
-          eq(memberships.username, username),
+          eq(accounts.email, username),
           eq(memberships.tenantId, tenantId)
         )
       )
@@ -62,7 +64,7 @@ export async function POST(request: Request) {
     const token = jwt.sign(
       { 
         sub: membershipRecord.member.id, // Token subject is now Membership ID
-        username: membershipRecord.member.username,
+        username: membershipRecord.account.email.split('@')[0],
         role: membershipRecord.member.role,
         tenantId: membershipRecord.member.tenantId 
       }, 
@@ -80,7 +82,7 @@ export async function POST(request: Request) {
       user: {
         id: membershipRecord.member.id,
         name: membershipRecord.member.displayName,
-        username: membershipRecord.member.username,
+        username: membershipRecord.account.email.split('@')[0],
         role: membershipRecord.member.role,
         tenantId: membershipRecord.member.tenantId,
         tenantName: membershipRecord.tenant.name,

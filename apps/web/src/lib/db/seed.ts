@@ -54,10 +54,25 @@ async function main() {
     }).returning();
     const tenantId = tenant.id;
 
+    const authUserId = uuidv4();
+    
+    // Insert into auth.users manually to satisfy the foreign key constraint
+    await client`
+      INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at) 
+      VALUES (${authUserId}, 'admin@kopikenangan.test', '{"name": "Admin User"}', now(), now())
+      ON CONFLICT (id) DO NOTHING
+    `;
+
+    const [account] = await db.insert(schema.accounts).values({
+      authUserId: authUserId,
+      email: 'admin@kopikenangan.test',
+      name: 'Admin User',
+    }).returning();
+
     const [membership] = await db.insert(schema.memberships).values({
       tenantId,
+      accountId: account.id,
       displayName: 'Admin User',
-      username: 'admin',
       role: 'OWNER',
     }).returning();
 

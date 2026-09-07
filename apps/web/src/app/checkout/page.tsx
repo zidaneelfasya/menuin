@@ -19,6 +19,7 @@ function CheckoutContent() {
 
   const [businessName, setBusinessName] = useState("");
   const [email, setEmail] = useState("");
+  const [tenantId, setTenantId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [tableNumber, setTableNumber] = useState(searchParams.get('table') || '');
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +33,7 @@ function CheckoutContent() {
         if (details) {
           setBusinessName(details.restaurantName);
           setEmail(details.email || '');
+          setTenantId(details.tenantId || '');
           return;
         }
       }
@@ -105,6 +107,7 @@ function CheckoutContent() {
           plan,
           email,
           businessName,
+          tenantId,
         }),
       });
 
