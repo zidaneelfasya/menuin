@@ -54,8 +54,8 @@ export function FinanceClient({ initialData }: { initialData: FinancialData }) {
     try {
       const res = await getFinancialReportData({
         period: selectedPeriod,
-        startDate: customStart || startDate,
-        endDate: customEnd || endDate,
+        startDate: selectedPeriod === 'custom' ? (customStart || startDate) : undefined,
+        endDate: selectedPeriod === 'custom' ? (customEnd || endDate) : undefined,
       });
 
       if (res.success && res.data) {
@@ -488,11 +488,20 @@ export function FinanceClient({ initialData }: { initialData: FinancialData }) {
                         {trx.customerName || '-'}
                       </td>
                       <td className="py-3 px-4 font-sans">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 text-slate-800 border">
-                          {trx.paymentMethod || 'TUNAI'}
-                        </span>
-                        {isCanceled && (
-                          <span className="ml-1 text-[9px] text-red-600 font-bold uppercase">(Batal)</span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 text-slate-800 border">
+                            {trx.paymentMethod || 'TUNAI'}
+                          </span>
+                          {isCanceled && (
+                            <span className="px-1.5 py-0.5 text-[9px] text-red-700 bg-red-100 rounded font-bold uppercase border border-red-200">
+                              BATAL
+                            </span>
+                          )}
+                        </div>
+                        {isCanceled && trx.voidReason && (
+                          <div className="text-[10px] text-red-600 italic not-line-through mt-0.5">
+                            Alasan: {trx.voidReason}
+                          </div>
                         )}
                       </td>
                       <td className="py-3 px-4 text-right text-slate-600">

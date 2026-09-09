@@ -1,15 +1,32 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import * as React from "react";
+import { useState, useEffect, useMemo } from "react";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
 import { updateOrderStatus, updateOrderItemStatus } from "@/lib/actions/orders";
 import { toast } from "sonner";
-import { Clock, Utensils, CheckCircle2, ChevronRight, Check, Wallet, Search, XCircle } from "lucide-react";
+import { 
+  Clock, 
+  ChefHat, 
+  CheckCircle2, 
+  ChevronRight, 
+  Check, 
+  CreditCard, 
+  Search, 
+  XCircle, 
+  UtensilsCrossed, 
+  Store, 
+  ShoppingBag,
+  User,
+  AlertCircle
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 type OrderItem = {
   id: string;
@@ -46,6 +63,7 @@ export function KanbanBoard({ initialOrders, tenantId }: KanbanBoardProps) {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState<"ALL" | "DINE_IN" | "TAKEAWAY" | "ONLINE">("ALL");
   const router = useRouter();
 
   // Update local state when props change
@@ -68,10 +86,6 @@ export function KanbanBoard({ initialOrders, tenantId }: KanbanBoardProps) {
           filter: `tenant_id=eq.${tenantId}`
         },
         (payload) => {
-          // A full production app would re-fetch the data or manually patch the state.
-          // For simplicity in UI, we can just reload the page or trigger a router.refresh() 
-          // But patching state is faster:
-          
           if (payload.eventType === 'INSERT') {
             const newTx = payload.new as any;
             if (['PENDING', 'NEW', 'PROCESSING', 'READY'].includes(newTx.status)) {
@@ -100,13 +114,13 @@ export function KanbanBoard({ initialOrders, tenantId }: KanbanBoardProps) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [tenantId]);
+  }, [tenantId, router]);
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     // Optimistic UI update
     setOrders(prev => {
       if (!['PENDING', 'NEW', 'PROCESSING', 'READY'].includes(newStatus)) {
-        return prev.filter(o => o.id !== orderId); // removing from board if completed
+        return prev.filter(o => o.id !== orderId);
       }
       return prev.map(o => {
         if (o.id === orderId) {
@@ -120,9 +134,9 @@ export function KanbanBoard({ initialOrders, tenantId }: KanbanBoardProps) {
     const res = await updateOrderStatus(orderId, newStatus);
     if (res.error) {
       toast.error(res.error);
-      router.refresh(); // Revert
+      router.refresh();
     } else {
-      toast.success("Status pesanan diubah.");
+      toast.success("Status pesanan diperbarui");
       if (selectedOrder && selectedOrder.id === orderId) {
         setIsDialogOpen(false);
       }
@@ -152,89 +166,156 @@ export function KanbanBoard({ initialOrders, tenantId }: KanbanBoardProps) {
     const res = await updateOrderItemStatus(itemId, isCompleted);
     if (res.error) {
       toast.error(res.error);
-      router.refresh(); // Revert
+      router.refresh();
     }
   };
 
-  const renderColumn = (title: string, status: string, nextStatus: string, actionText: string, icon: any, color: string) => {
-    const columnOrders = orders.filter(o => {
-      if (o.status !== status) return false;
-      if (!searchQuery) return true;
+  const filteredOrders = useMemo(() => {
+    return orders.filter(o => {
+      // Type filter
+      if (typeFilter === "DINE_IN" && o.orderType !== "DINE_IN") return false;
+      if (typeFilter === "TAKEAWAY" && o.orderType !== "TAKE_AWAY" && o.orderType !== "TAKEAWAY") return false;
+      if (typeFilter === "ONLINE" && o.orderType !== "ONLINE") return false;
+
+      // Search query
+      if (!searchQuery.trim()) return true;
       const q = searchQuery.toLowerCase();
-      return (o.orderNumber?.toLowerCase().includes(q) || o.customerName?.toLowerCase().includes(q));
+      return (
+        o.orderNumber?.toLowerCase().includes(q) || 
+        o.customerName?.toLowerCase().includes(q) ||
+        (o.tableNumber && `meja ${o.tableNumber}`.toLowerCase().includes(q))
+      );
     });
+  }, [orders, typeFilter, searchQuery]);
+
+  const renderColumn = (
+    title: string, 
+    status: string, 
+    nextStatus: string, 
+    actionText: string, 
+    icon: React.ReactNode, 
+    accentColor: { badge: string; dot: string; button: string }
+  ) => {
+    const columnOrders = filteredOrders.filter(o => o.status === status);
 
     return (
-      <div className="flex-1 min-w-[320px] bg-slate-50/50 rounded-xl p-4 flex flex-col h-[calc(100vh-140px)] border">
-        <div className={`flex items-center justify-between mb-4 pb-4 border-b-2 ${color}`}>
-          <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
-            {icon} {title}
-          </h3>
-          <span className="bg-white text-slate-700 font-bold px-3 py-1 rounded-full shadow-sm border text-sm">
+      <div className="flex-1 min-w-[310px] max-w-[380px] bg-muted/30 border rounded-2xl p-3.5 flex flex-col h-[calc(100vh-170px)] shadow-2xs">
+        {/* Column Header */}
+        <div className="flex items-center justify-between pb-3 mb-3 border-b px-1">
+          <div className="flex items-center gap-2">
+            <span className={`w-2.5 h-2.5 rounded-full ${accentColor.dot}`} />
+            <h3 className="font-semibold text-sm text-foreground flex items-center gap-1.5">
+              {icon}
+              {title}
+            </h3>
+          </div>
+          <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded-full bg-background border text-foreground shadow-2xs">
             {columnOrders.length}
           </span>
         </div>
 
-        <div className="flex-1 overflow-y-auto space-y-4 pr-2 scrollbar-hide">
+        {/* Order Cards List */}
+        <div className="flex-1 overflow-y-auto space-y-3 pr-1 scrollbar-hide">
           {columnOrders.length === 0 ? (
-            <div className="h-32 flex flex-col items-center justify-center text-slate-400 text-sm">
-              <span className="text-2xl mb-2 opacity-50">🍽️</span>
-              Belum ada pesanan
+            <div className="h-44 flex flex-col items-center justify-center text-muted-foreground/70 text-xs text-center p-4">
+              <UtensilsCrossed className="w-6 h-6 mb-2 opacity-40" />
+              <span>Tidak ada pesanan di antrean ini</span>
             </div>
           ) : (
-            columnOrders.map(order => (
-              <div key={order.id} onClick={() => { setSelectedOrder(order); setIsDialogOpen(true); }} className="cursor-pointer bg-white rounded-xl p-4 shadow-sm border border-slate-200 hover:shadow-md transition-shadow relative overflow-hidden group">
-                <div className={`absolute left-0 top-0 bottom-0 w-1 ${color.replace('border-', 'bg-').split(' ')[0]}`} />
-                
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-black text-slate-700 bg-slate-100 px-2 py-0.5 rounded text-sm border border-slate-200">
-                        {order.orderNumber || '#-'}
-                      </span>
-                      {order.paymentStatus === 'PAID' && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 border border-emerald-200 uppercase tracking-wider">
-                          Lunas
+            columnOrders.map(order => {
+              const completedCount = order.items.filter(i => i.isCompleted).length;
+              const totalCount = order.items.length;
+              const allDone = totalCount > 0 && completedCount === totalCount;
+
+              return (
+                <div 
+                  key={order.id} 
+                  onClick={() => { setSelectedOrder(order); setIsDialogOpen(true); }} 
+                  className="group cursor-pointer bg-card rounded-xl p-3.5 border border-border/80 hover:border-primary/50 hover:shadow-md transition-all relative overflow-hidden"
+                >
+                  {/* Top Row: Table / Order Type + Time */}
+                  <div className="flex justify-between items-start gap-2 mb-2">
+                    <div>
+                      <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                        <span className="font-mono font-bold text-xs px-1.5 py-0.5 rounded bg-muted text-foreground border">
+                          {order.orderNumber || '#-'}
                         </span>
+                        {order.paymentStatus === 'PAID' ? (
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200/50">
+                            Lunas
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border border-amber-200/50">
+                            Belum Bayar
+                          </span>
+                        )}
+                      </div>
+                      
+                      <div className="font-bold text-sm text-foreground">
+                        {order.tableNumber ? `Meja ${order.tableNumber}` : (
+                          order.orderType === 'TAKE_AWAY' || order.orderType === 'TAKEAWAY' ? 'Bawa Pulang (Takeaway)' :
+                          order.orderType === 'ONLINE' ? 'Pesanan Online' : 'Makan di Tempat'
+                        )}
+                      </div>
+                      
+                      {order.customerName && (
+                        <div className="text-xs text-muted-foreground font-medium flex items-center gap-1 mt-0.5">
+                          <User className="w-3 h-3" /> {order.customerName}
+                        </div>
                       )}
                     </div>
-                    <div className="font-bold text-lg text-slate-900">
-                      {order.tableNumber ? `Meja ${order.tableNumber}` : order.orderType.replace('_', ' ')}
-                    </div>
-                    {order.customerName && (
-                      <div className="text-sm text-slate-500 font-medium">An. {order.customerName}</div>
-                    )}
-                  </div>
-                  <div className="text-xs font-semibold text-slate-500 bg-slate-50 border px-2 py-1 rounded-md">
-                    {formatDate(order.createdAt).split(' ')[1]}
-                  </div>
-                </div>
 
-                <div className="space-y-2 mb-4">
-                  {order.items.map((item, idx) => (
-                    <div key={idx} className="flex justify-between text-sm">
-                      <span className={`text-slate-600 ${item.isCompleted ? 'line-through opacity-50' : ''}`}><span className="font-semibold text-slate-900">{item.quantity}x</span> {item.productName}</span>
+                    <div className="text-[11px] font-mono text-muted-foreground bg-muted/50 px-2 py-0.5 rounded border shrink-0">
+                      {formatDate(order.createdAt).split(' ')[1]}
                     </div>
-                  ))}
-                </div>
+                  </div>
 
-                <div className="pt-3 border-t flex items-center justify-between">
-                  <span className="font-bold text-slate-800">{formatCurrency(Number(order.grandTotal))}</span>
-                  
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); handleStatusChange(order.id, nextStatus); }}
-                    className={`flex items-center gap-1.5 px-4 py-2 rounded-lg font-bold text-sm text-white transition-all active:scale-95 shadow-sm ${
-                      status === 'PENDING' ? 'bg-purple-600 hover:bg-purple-700' :
-                      status === 'NEW' ? 'bg-blue-600 hover:bg-blue-700' :
-                      status === 'PROCESSING' ? 'bg-amber-500 hover:bg-amber-600' :
-                      'bg-emerald-600 hover:bg-emerald-700'
-                    }`}
-                  >
-                    {actionText} {status === 'READY' ? <Check className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                  </button>
+                  {/* Items Checklist */}
+                  <div className="space-y-1.5 my-3 pt-2 border-t border-dashed">
+                    {order.items.map((item) => (
+                      <div 
+                        key={item.id} 
+                        className="flex items-start justify-between text-xs py-0.5"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleItem(order.id, item.id, !item.isCompleted);
+                        }}
+                      >
+                        <div className="flex items-start gap-2 flex-1 pr-2">
+                          <div className={`w-3.5 h-3.5 rounded border mt-0.5 flex items-center justify-center shrink-0 transition-colors ${
+                            item.isCompleted ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground/40'
+                          }`}>
+                            {item.isCompleted && <Check className="w-2.5 h-2.5" />}
+                          </div>
+                          <span className={`leading-tight ${item.isCompleted ? 'line-through text-muted-foreground/60' : 'text-foreground font-medium'}`}>
+                            <span className="font-bold font-mono">{item.quantity}x</span> {item.productName}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Footer: Price + Action Button */}
+                  <div className="pt-2.5 border-t flex items-center justify-between gap-2">
+                    <span className="font-bold text-xs font-mono text-foreground">
+                      {formatCurrency(Number(order.grandTotal))}
+                    </span>
+                    
+                    <Button 
+                      size="sm"
+                      onClick={(e) => { 
+                        e.stopPropagation(); 
+                        handleStatusChange(order.id, nextStatus); 
+                      }}
+                      className={`h-8 text-xs font-semibold gap-1 px-3 shadow-2xs ${accentColor.button}`}
+                    >
+                      {actionText}
+                      {status === 'READY' ? <Check className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
@@ -242,101 +323,241 @@ export function KanbanBoard({ initialOrders, tenantId }: KanbanBoardProps) {
   };
 
   return (
-    <div className="flex flex-col h-full gap-4">
-      <div className="relative w-full max-w-md shrink-0">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <Input 
-          placeholder="Cari nama pemesan atau nomor pesanan..." 
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9 border-slate-200 bg-white"
-        />
+    <div className="flex flex-col h-full gap-3">
+      {/* Search & Filter Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+        <div className="relative w-full sm:max-w-xs">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input 
+            placeholder="Cari meja, no order, nama..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 h-9 text-xs bg-card"
+          />
+        </div>
+
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+          <button
+            onClick={() => setTypeFilter("ALL")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              typeFilter === "ALL" 
+                ? "bg-foreground text-background shadow-xs font-semibold" 
+                : "bg-muted/50 text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Semua
+          </button>
+          <button
+            onClick={() => setTypeFilter("DINE_IN")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              typeFilter === "DINE_IN" 
+                ? "bg-foreground text-background shadow-xs font-semibold" 
+                : "bg-muted/50 text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Dine In (Meja)
+          </button>
+          <button
+            onClick={() => setTypeFilter("TAKEAWAY")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              typeFilter === "TAKEAWAY" 
+                ? "bg-foreground text-background shadow-xs font-semibold" 
+                : "bg-muted/50 text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Bawa Pulang
+          </button>
+          <button
+            onClick={() => setTypeFilter("ONLINE")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              typeFilter === "ONLINE" 
+                ? "bg-foreground text-background shadow-xs font-semibold" 
+                : "bg-muted/50 text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Online
+          </button>
+        </div>
       </div>
-      <div className="flex gap-6 overflow-x-auto pb-4 flex-1 min-h-0">
-        {renderColumn('Menunggu Pembayaran', 'PENDING', 'NEW', 'Konfirmasi', <Wallet className="w-5 h-5 text-purple-500" />, 'border-purple-500')}
-      {renderColumn('Pesanan Baru', 'NEW', 'PROCESSING', 'Proses', <Clock className="w-5 h-5 text-blue-500" />, 'border-blue-500')}
-      {renderColumn('Sedang Dimasak', 'PROCESSING', 'READY', 'Siap', <Utensils className="w-5 h-5 text-amber-500" />, 'border-amber-500')}
-      {renderColumn('Siap Disajikan', 'READY', 'COMPLETED', 'Selesai', <CheckCircle2 className="w-5 h-5 text-emerald-500" />, 'border-emerald-500')}
-      
+
+      {/* Kanban Board Columns */}
+      <div className="flex gap-4 overflow-x-auto pb-2 flex-1 min-h-0">
+        {renderColumn(
+          'Menunggu Bayar', 
+          'PENDING', 
+          'NEW', 
+          'Konfirmasi', 
+          <CreditCard className="w-4 h-4 text-purple-600" />,
+          { 
+            badge: 'bg-purple-50 text-purple-700', 
+            dot: 'bg-purple-500', 
+            button: 'bg-purple-600 hover:bg-purple-700 text-white' 
+          }
+        )}
+        
+        {renderColumn(
+          'Pesanan Baru', 
+          'NEW', 
+          'PROCESSING', 
+          'Mulai Siapkan', 
+          <Clock className="w-4 h-4 text-blue-600" />,
+          { 
+            badge: 'bg-blue-50 text-blue-700', 
+            dot: 'bg-blue-500', 
+            button: 'bg-blue-600 hover:bg-blue-700 text-white' 
+          }
+        )}
+        
+        {renderColumn(
+          'Sedang Disiapkan', 
+          'PROCESSING', 
+          'READY', 
+          'Tandai Siap', 
+          <ChefHat className="w-4 h-4 text-amber-600" />,
+          { 
+            badge: 'bg-amber-50 text-amber-700', 
+            dot: 'bg-amber-500', 
+            button: 'bg-amber-600 hover:bg-amber-700 text-white' 
+          }
+        )}
+        
+        {renderColumn(
+          'Siap Disajikan', 
+          'READY', 
+          'COMPLETED', 
+          'Selesaikan', 
+          <CheckCircle2 className="w-4 h-4 text-emerald-600" />,
+          { 
+            badge: 'bg-emerald-50 text-emerald-700', 
+            dot: 'bg-emerald-500', 
+            button: 'bg-emerald-600 hover:bg-emerald-700 text-white' 
+          }
+        )}
+      </div>
+
+      {/* Order Detail Modal */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Detail Pesanan {selectedOrder?.orderNumber || ''}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <span>Detail Pesanan</span>
+              <span className="font-mono text-primary">{selectedOrder?.orderNumber || ''}</span>
+            </DialogTitle>
+            <DialogDescription>
+              Waktu: {selectedOrder ? formatDate(selectedOrder.createdAt) : ''}
+            </DialogDescription>
           </DialogHeader>
+
           {selectedOrder && (
-            <div className="space-y-6 pt-4">
-              <div className="flex justify-between bg-slate-50 p-4 rounded-xl border border-slate-100">
+            <div className="space-y-4 pt-2">
+              {/* Order Info Card */}
+              <div className="grid grid-cols-2 gap-2 bg-muted/40 p-3 rounded-xl border text-xs">
                 <div>
-                  <div className="text-sm text-slate-500">Tipe Pesanan</div>
-                  <div className="font-bold text-slate-800">{selectedOrder.tableNumber ? `Meja ${selectedOrder.tableNumber}` : selectedOrder.orderType.replace('_', ' ')}</div>
-                </div>
-                {selectedOrder.customerName && (
-                  <div className="text-right">
-                    <div className="text-sm text-slate-500">Atas Nama</div>
-                    <div className="font-bold text-slate-800">{selectedOrder.customerName}</div>
-                  </div>
-                )}
-              </div>
-              
-              <div>
-                <h4 className="font-bold text-slate-800 mb-4 pb-2 border-b flex justify-between">
-                  <span>Daftar Menu</span>
-                  <span className="text-sm font-normal text-slate-500">
-                    {selectedOrder.items.filter(i => i.isCompleted).length} / {selectedOrder.items.length} selesai
+                  <span className="text-muted-foreground block mb-0.5">Tipe Pesanan</span>
+                  <span className="font-semibold text-foreground">
+                    {selectedOrder.tableNumber ? `Meja ${selectedOrder.tableNumber}` : selectedOrder.orderType.replace('_', ' ')}
                   </span>
-                </h4>
-                <div className="space-y-4">
+                </div>
+                <div>
+                  <span className="text-muted-foreground block mb-0.5">Pelanggan</span>
+                  <span className="font-semibold text-foreground">
+                    {selectedOrder.customerName || 'Tamu / Umum'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground block mb-0.5">Metode Bayar</span>
+                  <span className="font-semibold text-foreground">
+                    {selectedOrder.paymentMethod || 'CASH'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground block mb-0.5">Status Pembayaran</span>
+                  <span className="font-semibold text-emerald-600">
+                    {selectedOrder.paymentStatus === 'PAID' ? 'LUNAS' : 'BELUM LUNAS'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Items List */}
+              <div>
+                <div className="flex items-center justify-between pb-2 mb-2 border-b">
+                  <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
+                    Daftar Menu
+                  </h4>
+                  <span className="text-[11px] text-muted-foreground">
+                    {selectedOrder.items.filter(i => i.isCompleted).length} dari {selectedOrder.items.length} selesai
+                  </span>
+                </div>
+
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                   {selectedOrder.items.map((item) => (
-                    <div key={item.id} className="flex items-start gap-4 p-2 hover:bg-slate-50 rounded-lg transition-colors">
-                      <Checkbox 
-                        id={`item-${item.id}`} 
-                        checked={item.isCompleted} 
-                        onCheckedChange={(checked) => handleToggleItem(selectedOrder.id, item.id, checked as boolean)}
-                        className="mt-1 w-5 h-5"
-                      />
-                      <label 
-                        htmlFor={`item-${item.id}`}
-                        className={`flex-1 cursor-pointer leading-tight ${item.isCompleted ? 'text-slate-400 line-through' : 'text-slate-800'}`}
-                      >
-                        <span className="font-bold mr-2">{item.quantity}x</span> 
-                        {item.productName}
-                      </label>
+                    <div 
+                      key={item.id} 
+                      className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/40 transition-colors text-xs"
+                      onClick={() => handleToggleItem(selectedOrder.id, item.id, !item.isCompleted)}
+                    >
+                      <div className="flex items-center gap-2.5 flex-1 cursor-pointer">
+                        <Checkbox 
+                          id={`modal-item-${item.id}`} 
+                          checked={item.isCompleted} 
+                          onCheckedChange={(checked) => handleToggleItem(selectedOrder.id, item.id, checked as boolean)}
+                          className="w-4 h-4"
+                        />
+                        <label 
+                          htmlFor={`modal-item-${item.id}`}
+                          className={`cursor-pointer leading-tight ${item.isCompleted ? 'text-muted-foreground line-through' : 'text-foreground font-medium'}`}
+                        >
+                          <span className="font-bold font-mono">{item.quantity}x</span> {item.productName}
+                        </label>
+                      </div>
+                      <span className="font-mono text-muted-foreground">{formatCurrency(Number(item.subtotal))}</span>
                     </div>
                   ))}
                 </div>
               </div>
-              
-              <div className="pt-4 border-t flex flex-col gap-2">
-                <button
-                  onClick={() => {
-                    const status = selectedOrder.status;
-                    const next = status === 'PENDING' ? 'NEW' : status === 'NEW' ? 'PROCESSING' : status === 'PROCESSING' ? 'READY' : 'COMPLETED';
-                    handleStatusChange(selectedOrder.id, next);
-                  }}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm"
-                >
-                  <CheckCircle2 className="w-5 h-5" /> 
-                  {selectedOrder.status === 'PENDING' ? 'Konfirmasi Pembayaran' : 
-                   selectedOrder.status === 'NEW' ? 'Mulai Proses Pesanan' :
-                   selectedOrder.status === 'PROCESSING' ? 'Tandai Siap Disajikan' : 'Selesaikan Pesanan'}
-                </button>
-                <button
-                  onClick={() => {
-                    if (confirm("Apakah Anda yakin ingin membatalkan pesanan ini?")) {
-                      handleStatusChange(selectedOrder.id, 'FAILED');
-                    }
-                  }}
-                  className="w-full bg-red-50 hover:bg-red-100 text-red-600 font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm"
-                >
-                  <XCircle className="w-5 h-5" />
-                  Batalkan Pesanan
-                </button>
+
+              {/* Total & Action Buttons */}
+              <div className="pt-3 border-t space-y-3">
+                <div className="flex justify-between items-center text-sm font-bold">
+                  <span>Total Tagihan</span>
+                  <span className="font-mono text-primary text-base">
+                    {formatCurrency(Number(selectedOrder.grandTotal))}
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <Button
+                    onClick={() => {
+                      const status = selectedOrder.status;
+                      const next = status === 'PENDING' ? 'NEW' : status === 'NEW' ? 'PROCESSING' : status === 'PROCESSING' ? 'READY' : 'COMPLETED';
+                      handleStatusChange(selectedOrder.id, next);
+                    }}
+                    className="w-full h-10 font-semibold gap-2"
+                  >
+                    <CheckCircle2 className="w-4 h-4" /> 
+                    {selectedOrder.status === 'PENDING' ? 'Konfirmasi Pembayaran' : 
+                     selectedOrder.status === 'NEW' ? 'Mulai Siapkan Pesanan' :
+                     selectedOrder.status === 'PROCESSING' ? 'Tandai Siap Disajikan' : 'Selesaikan Pesanan'}
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      if (confirm("Apakah Anda yakin ingin membatalkan pesanan ini?")) {
+                        handleStatusChange(selectedOrder.id, 'FAILED');
+                      }
+                    }}
+                    className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 text-xs h-9"
+                  >
+                    <XCircle className="w-3.5 h-3.5 mr-1" />
+                    Batalkan Pesanan
+                  </Button>
+                </div>
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
-      </div>
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { PromotionsClient } from './promotions-client';
 import { TableSkeleton } from '@/components/ui/table-skeleton';
 
 export const metadata: Metadata = {
-  title: 'Manajemen Promo & Diskon - Bolu Anisa POS',
+  title: 'Diskon & Promo - Menuin',
 };
 
 async function PromotionsDataWrapper() {

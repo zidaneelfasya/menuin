@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ShieldAlert } from 'lucide-react';
 import { requireFeature } from '@/lib/actions/auth-context';
 
-export const metadata: Metadata = { title: 'Stok - Bolu Anisa POS' };
+export const metadata: Metadata = { title: 'Stok Bahan - Menuin' };
 
 async function InventoryDataWrapper() {
   await requireFeature('INVENTORY');

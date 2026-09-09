@@ -4,7 +4,7 @@ import { Suspense } from 'react';
 import { getCategories } from '@/lib/actions/categories';
 import { TableSkeleton } from '@/components/ui/table-skeleton';
 
-export const metadata: Metadata = { title: 'Kategori - Bolu Anisa POS' };
+export const metadata: Metadata = { title: 'Kategori - Menuin' };
 
 import { connection } from "next/server";
 import { requireFeature } from '@/lib/actions/auth-context';

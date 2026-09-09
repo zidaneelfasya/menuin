@@ -8,7 +8,7 @@ import { getTenantCatalogSettings } from '@/lib/actions/catalog';
 import { getCurrentUser } from '@/lib/actions/auth';
 
 export const metadata: Metadata = {
-  title: 'Pengaturan Toko & Pajak - Bolu Anisa POS',
+  title: 'Pengaturan Toko & Pajak - Menuin',
 };
 
 async function SettingsDataWrapper() {

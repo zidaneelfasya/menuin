@@ -3,10 +3,10 @@ import { PaymentGate } from '@/components/payment-gate';
 import { getCurrentUser } from '@/lib/actions/auth';
 import { Metadata } from 'next';
 import { Suspense } from 'react';
-import { 
-  getDashboardMetrics, 
-  getSalesChartData, 
-  getTopSellingProducts, 
+import {
+  getDashboardMetrics,
+  getSalesChartData,
+  getTopSellingProducts,
   getLowStockProducts,
   getRecentTransactions
 } from '@/lib/actions/dashboard';
@@ -14,7 +14,7 @@ import { TableSkeleton } from '@/components/ui/table-skeleton';
 import { connection } from 'next/server';
 
 export const metadata: Metadata = {
-  title: 'Dashboard Eksekutif - Bolu Anisa POS',
+  title: 'Dashboard - Menuin',
 };
 
 type Props = {
@@ -31,7 +31,7 @@ async function DashboardDataWrapper({ searchParams }: Props) {
 
   const params = await searchParams;
   const tab = typeof params.tab === 'string' ? params.tab : 'harian';
-  
+
   let startDate = new Date();
   let endDate = new Date();
   let groupBy: 'day' | 'month' | 'year' = 'day';
@@ -72,14 +72,14 @@ async function DashboardDataWrapper({ searchParams }: Props) {
   const metrics = metricsRes.success && metricsRes.data ? metricsRes.data : {
     totalTransactions: 0, totalOmzet: 0, totalLaba: 0, totalProduk: 0
   };
-  
+
   const chartData = chartRes.success && chartRes.data ? chartRes.data : [];
   const topProducts = topProductsRes.success && topProductsRes.data ? topProductsRes.data : [];
   const lowStockProducts = lowStockRes.success && lowStockRes.data ? lowStockRes.data : [];
   const recentTransactions = recentTxRes.success && recentTxRes.data ? recentTxRes.data : [];
 
   return (
-    <DashboardPage 
+    <DashboardPage
       metrics={metrics}
       chartData={chartData}
       topProducts={topProducts}

@@ -11,6 +11,7 @@ import { formatCurrency } from '@/lib/utils/format';
 import { startShift, endShift, addCashMovement } from '@/lib/actions/shifts';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import Link from 'next/link';
 import { 
   Wallet, 
   LogOut, 
@@ -20,6 +21,7 @@ import {
   User, 
   History, 
   ShoppingBag, 
+  ShoppingCart,
   CreditCard, 
   Banknote,
   Eye,
@@ -47,7 +49,18 @@ import {
 
 const quickDenominations = [100000, 200000, 300000, 500000, 1000000];
 
-export function ShiftDashboard({ activeShift, shiftHistory }: { activeShift: any, shiftHistory: any[] }) {
+export function ShiftDashboard({ 
+  activeShift, 
+  shiftHistory,
+  userRole = 'CASHIER',
+  outletKey = ''
+}: { 
+  activeShift: any; 
+  shiftHistory: any[];
+  userRole?: string;
+  outletKey?: string;
+}) {
+  const isOwnerOrManager = userRole === 'OWNER' || userRole === 'MANAGER';
   const [isStartModalOpen, setIsStartModalOpen] = React.useState(false);
   const [isEndModalOpen, setIsEndModalOpen] = React.useState(false);
   const [isMovementModalOpen, setIsMovementModalOpen] = React.useState(false);
@@ -107,29 +120,49 @@ export function ShiftDashboard({ activeShift, shiftHistory }: { activeShift: any
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto p-4 md:p-6 pb-24">
-      {/* Header Tokopedia Merchant Style */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-            <Banknote className="w-6 h-6 text-primary" />
-            Manajemen Shift Kasir
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+              <Banknote className="w-6 h-6 text-primary" />
+              Shift Kasir
+            </h1>
+            {isOwnerOrManager && (
+              <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-xs">
+                Mode Pemantauan
+              </Badge>
+            )}
+          </div>
           <p className="text-xs md:text-sm text-muted-foreground mt-1">
-            Pantau arus kas masuk/keluar, rekonsiliasi laci kasir, dan riwayat shift harian secara akurat.
+            {isOwnerOrManager
+              ? 'Pantau rincian shift kasir secara detail dan real-time saat operasional berjalan.'
+              : 'Kelola kas laci, catat kas masuk/keluar, dan setor uang saat menutup shift kasir.'}
           </p>
         </div>
 
         {!activeShift ? (
           <Button onClick={() => { setAmountInput(''); setIsStartModalOpen(true); }} className="gap-2 shadow-xs">
             <PlusCircle className="w-4 h-4" />
-            Mulai Shift Baru
+            {isOwnerOrManager ? 'Buka Shift Manual' : 'Buka Shift Baru'}
           </Button>
         ) : (
           <div className="flex items-center gap-2">
             <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white gap-1.5 px-3 py-1.5 text-xs font-medium shadow-xs">
               <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-              Shift Aktif Berjalan
+              {isOwnerOrManager ? 'Shift Sedang Berlangsung' : 'Shift Anda Aktif'}
             </Badge>
+            {isOwnerOrManager && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-xs gap-1.5 h-8"
+                onClick={() => setSelectedShiftId(activeShift.id)}
+              >
+                <Eye className="w-3.5 h-3.5 text-primary" />
+                Rincian Audit
+              </Button>
+            )}
           </div>
         )}
       </div>
@@ -138,7 +171,7 @@ export function ShiftDashboard({ activeShift, shiftHistory }: { activeShift: any
         <TabsList className="h-10 p-1 bg-muted/60 border">
           <TabsTrigger value="current" className="text-xs md:text-sm gap-2 px-4">
             <Clock className="w-4 h-4" />
-            Shift Saat Ini
+            {isOwnerOrManager ? 'Shift Berjalan' : 'Shift Saat Ini'}
             {activeShift && (
               <span className="w-2 h-2 rounded-full bg-emerald-500" />
             )}
@@ -153,6 +186,32 @@ export function ShiftDashboard({ activeShift, shiftHistory }: { activeShift: any
         <TabsContent value="current" className="m-0 space-y-6">
           {activeShift ? (
             <div className="space-y-6">
+              {/* Owner/Manager Live Monitoring Banner */}
+              {isOwnerOrManager && (
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <Sparkles className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-semibold text-foreground">Pemantauan Langsung (Live Monitoring)</h4>
+                      <p className="text-xs text-muted-foreground">
+                        Shift kasir sedang aktif. Semua transaksi, uang masuk/keluar, dan estimasi kas diperbarui secara real-time.
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs gap-1.5 bg-background hover:bg-muted shrink-0"
+                    onClick={() => setSelectedShiftId(activeShift.id)}
+                  >
+                    <Eye className="w-3.5 h-3.5 text-primary" />
+                    Lihat Rincian Lengkap
+                  </Button>
+                </div>
+              )}
+
               {/* Active Shift Header Bar */}
               <div className="rounded-xl border bg-card p-4 md:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-start md:items-center gap-3">
@@ -169,9 +228,9 @@ export function ShiftDashboard({ activeShift, shiftHistory }: { activeShift: any
                         Dimulai: {format(new Date(activeShift.startTime), 'dd MMM yyyy, HH:mm', { locale: id })}
                       </span>
                       {activeShift.cashierName && (
-                        <span className="text-xs text-muted-foreground flex items-center gap-1 font-medium">
-                          <User className="w-3.5 h-3.5" />
-                          {activeShift.cashierName}
+                        <span className="text-xs text-foreground flex items-center gap-1 font-semibold">
+                          <User className="w-3.5 h-3.5 text-primary" />
+                          Kasir: {activeShift.cashierName}
                         </span>
                       )}
                     </div>
@@ -183,6 +242,14 @@ export function ShiftDashboard({ activeShift, shiftHistory }: { activeShift: any
 
                 {/* Actions Toolbar */}
                 <div className="flex flex-wrap items-center gap-2">
+                  {!isOwnerOrManager && outletKey && (
+                    <Link href={`/outlet/${outletKey}/pos`}>
+                      <Button size="sm" className="text-xs gap-1.5 shadow-xs">
+                        <ShoppingCart className="w-3.5 h-3.5" />
+                        Buka Kasir (POS)
+                      </Button>
+                    </Link>
+                  )}
                   <Button 
                     variant="outline" 
                     size="sm"
@@ -221,7 +288,7 @@ export function ShiftDashboard({ activeShift, shiftHistory }: { activeShift: any
                     }}
                   >
                     <LogOut className="w-3.5 h-3.5" />
-                    Akhiri Shift
+                    {isOwnerOrManager ? 'Tutup Shift Kasir' : 'Akhiri Shift'}
                   </Button>
                 </div>
               </div>
@@ -542,14 +609,18 @@ export function ShiftDashboard({ activeShift, shiftHistory }: { activeShift: any
                 <Wallet className="w-7 h-7" />
               </div>
               <div>
-                <h3 className="font-bold text-base md:text-lg">Tidak Ada Shift Aktif</h3>
-                <p className="text-xs md:text-sm text-muted-foreground mt-1 max-w-[360px]">
-                  Buka shift kasir terlebih dahulu untuk mulai mencatat transaksi penjualan dan rekonsiliasi kas di POS.
+                <h3 className="font-bold text-base md:text-lg">
+                  {isOwnerOrManager ? 'Tidak Ada Shift Kasir yang Aktif' : 'Shift Kasir Belum Dibuka'}
+                </h3>
+                <p className="text-xs md:text-sm text-muted-foreground mt-1 max-w-[400px]">
+                  {isOwnerOrManager
+                    ? 'Saat kasir membuka shift di meja kasir (POS), rincian transaksi dan uang kas akan otomatis terpantau di sini secara real-time.'
+                    : 'Buka shift kasir dengan memasukkan modal awal laci untuk mulai melayani transaksi penjualan di POS.'}
                 </p>
               </div>
-              <Button onClick={() => { setAmountInput(''); setIsStartModalOpen(true); }} size="default" className="mt-4 px-6 gap-2 shadow-xs">
+              <Button onClick={() => { setAmountInput(''); setIsStartModalOpen(true); }} size="default" className="mt-2 px-6 gap-2 shadow-xs">
                 <PlusCircle className="w-4 h-4" />
-                Buka Shift Sekarang
+                {isOwnerOrManager ? 'Buka Shift Manual' : 'Buka Shift Kasir Sekarang'}
               </Button>
             </div>
           )}

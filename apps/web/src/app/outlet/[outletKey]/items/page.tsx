@@ -8,7 +8,7 @@ import { TableSkeleton } from '@/components/ui/table-skeleton';
 import { requireFeature } from '@/lib/actions/auth-context';
 
 export const metadata: Metadata = {
-  title: 'Item - Bolu Anisa POS',
+  title: 'Daftar Menu - Menuin',
 };
 
 async function ProductsDataWrapper() {

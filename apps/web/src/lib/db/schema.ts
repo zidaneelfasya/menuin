@@ -345,6 +345,10 @@ export const transactions = pgTable('transactions', {
   publicToken: uuid('public_token').defaultRandom().unique(), // For public order tracking
   orderNumber: text('order_number'), // Tenant-scoped unique
   snapToken: text('snap_token'),
+  // Anti-Void Fraud Audit Fields
+  voidReason: text('void_reason'),
+  voidedAt: timestamp('voided_at', { withTimezone: true }),
+  voidedByMembershipId: uuid('voided_by_membership_id'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => {
   return {

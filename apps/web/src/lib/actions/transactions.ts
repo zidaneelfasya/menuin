@@ -135,3 +135,93 @@ export async function getTransactions() {
     return { success: false, error: 'Gagal mengambil data transaksi.' };
   }
 }
+
+export async function voidTransaction(payload: { transactionId: string; reason: string; restock?: boolean }) {
+  try {
+    const user = await getCurrentUser();
+    if (!user || !user.tenantId) {
+      return { success: false, error: 'Unauthorized: Sesi tidak ditemukan.' };
+    }
+
+    const tenantId = user.tenantId;
+
+    if (user.role !== 'OWNER' && user.role !== 'MANAGER' && (user.role as string) !== 'SYSTEM_ADMIN') {
+      return { success: false, error: 'Hanya OWNER atau MANAGER yang memiliki otorisasi untuk membatalkan (void) transaksi.' };
+    }
+
+    if (!payload.reason || payload.reason.trim().length < 3) {
+      return { success: false, error: 'Wajib menyertakan alasan pembatalan transaksi secara jelas.' };
+    }
+
+    const [trx] = await db
+      .select()
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.id, payload.transactionId),
+          eq(transactions.tenantId, tenantId)
+        )
+      )
+      .limit(1);
+
+    if (!trx) {
+      return { success: false, error: 'Transaksi tidak ditemukan.' };
+    }
+
+    if (trx.status === 'CANCELLED' || trx.paymentStatus === 'CANCELED') {
+      return { success: false, error: 'Transaksi ini sudah pernah dibatalkan sebelumnya.' };
+    }
+
+    await db.transaction(async (tx) => {
+      // 1. Update status to CANCELLED with immutable audit fields
+      await tx
+        .update(transactions)
+        .set({
+          status: 'CANCELLED',
+          paymentStatus: 'CANCELED',
+          voidReason: payload.reason.trim(),
+          voidedAt: new Date(),
+          voidedByMembershipId: user.id,
+        })
+        .where(eq(transactions.id, trx.id));
+
+      // 2. Optional restock of items
+      if (payload.restock !== false) {
+        const items = await tx
+          .select()
+          .from(transactionItems)
+          .where(eq(transactionItems.transactionId, trx.id));
+
+        for (const item of items) {
+          await tx
+            .update(products)
+            .set({
+              stock: sql`${products.stock} + ${item.quantity}`,
+              updatedAt: new Date(),
+            })
+            .where(
+              and(
+                eq(products.id, item.productId),
+                eq(products.tenantId, tenantId)
+              )
+            );
+        }
+      }
+    });
+
+    if (user && typeof user === 'object' && 'outletKey' in user) {
+      revalidatePath(`/outlet/${user.outletKey}/transactions`, 'page');
+      revalidatePath(`/outlet/${user.outletKey}/reports`, 'page');
+      revalidatePath(`/outlet/${user.outletKey}/orders`, 'page');
+    }
+
+    return {
+      success: true,
+      message: `Transaksi ${trx.orderNumber || trx.id.slice(0, 8)} berhasil dibatalkan dan tercatat dalam log audit anti-fraud.`,
+    };
+  } catch (error: any) {
+    console.error('Error voiding transaction:', error);
+    return { success: false, error: error.message || 'Gagal membatalkan transaksi.' };
+  }
+}
+

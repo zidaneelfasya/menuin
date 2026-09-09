@@ -7,7 +7,7 @@ import { getModifierGroups } from '@/lib/actions/modifiers';
 import { POSSkeleton } from '@/features/pos/components/pos-skeleton';
 
 export const metadata: Metadata = {
-  title: 'Kasir - Bolu Anisa POS',
+  title: 'Kasir - Menuin',
 };
 
 import { getTenantCatalogSettings } from '@/lib/actions/catalog';

@@ -36,20 +36,20 @@ import { useRealtimeOrder } from '@/components/providers/realtime-order-provider
 
 const getNavItems = (outletKey: string) => [
   { name: 'Dashboard', href: `/outlet/${outletKey}/dashboard`, icon: LayoutDashboard, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Kasir (POS)', href: `/outlet/${outletKey}/pos`, icon: ShoppingCart, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Pesanan Dapur', href: `/outlet/${outletKey}/orders`, icon: ChefHat, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Katalog', href: `/outlet/${outletKey}/katalog`, icon: Store, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Item', href: `/outlet/${outletKey}/items`, icon: Package, roles: ['OWNER', 'MANAGER'] },
+  { name: 'Kasir (POS)', href: `/outlet/${outletKey}/pos`, icon: ShoppingCart, roles: ['OWNER', 'MANAGER', 'CASHIER'] },
+  { name: 'Pesanan Masuk', href: `/outlet/${outletKey}/orders`, icon: ChefHat, roles: ['OWNER', 'MANAGER', 'CASHIER'] },
+  { name: 'Katalog Menu', href: `/outlet/${outletKey}/katalog`, icon: Store, roles: ['OWNER', 'MANAGER'] },
+  { name: 'Daftar Menu', href: `/outlet/${outletKey}/items`, icon: Package, roles: ['OWNER', 'MANAGER'] },
   { name: 'Kategori', href: `/outlet/${outletKey}/categories`, icon: Tags, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Kustomisasi', href: `/outlet/${outletKey}/modifiers`, icon: SlidersHorizontal, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Stock', href: `/outlet/${outletKey}/inventory`, icon: Archive, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Manajemen Shift', href: `/outlet/${outletKey}/shifts`, icon: Wallet, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Riwayat Transaksi', href: `/outlet/${outletKey}/transactions`, icon: History, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Laporan', href: `/outlet/${outletKey}/reports`, icon: BarChart3, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Promo', href: `/outlet/${outletKey}/promotions`, icon: Percent, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Manajemen Tim', href: `/outlet/${outletKey}/team`, icon: UserCircle, roles: ['OWNER'] },
-  { name: 'POS & Devices', href: `/outlet/${outletKey}/settings/devices`, icon: Smartphone, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Pengaturan', href: `/outlet/${outletKey}/settings`, icon: Settings, roles: ['OWNER', 'MANAGER'] },
+  { name: 'Topping & Varian', href: `/outlet/${outletKey}/modifiers`, icon: SlidersHorizontal, roles: ['OWNER', 'MANAGER'] },
+  { name: 'Stok Bahan', href: `/outlet/${outletKey}/inventory`, icon: Archive, roles: ['OWNER', 'MANAGER'] },
+  { name: 'Shift Kasir', href: `/outlet/${outletKey}/shifts`, icon: Wallet, roles: ['OWNER', 'MANAGER', 'CASHIER'] },
+  { name: 'Riwayat Transaksi', href: `/outlet/${outletKey}/transactions`, icon: History, roles: ['OWNER', 'MANAGER', 'CASHIER'] },
+  { name: 'Laporan Penjualan', href: `/outlet/${outletKey}/reports`, icon: BarChart3, roles: ['OWNER', 'MANAGER'] },
+  { name: 'Diskon & Promo', href: `/outlet/${outletKey}/promotions`, icon: Percent, roles: ['OWNER', 'MANAGER'] },
+  { name: 'Tim & Karyawan', href: `/outlet/${outletKey}/team`, icon: UserCircle, roles: ['OWNER'] },
+  { name: 'Perangkat Kasir', href: `/outlet/${outletKey}/settings/devices`, icon: Smartphone, roles: ['OWNER', 'MANAGER'] },
+  { name: 'Pengaturan Toko', href: `/outlet/${outletKey}/settings`, icon: Settings, roles: ['OWNER', 'MANAGER'] },
 ];
 
 import { usePageTransition } from '../providers/page-transition-provider';
@@ -150,7 +150,7 @@ function SidebarContent({ collapsed, setCollapsed, user }: { collapsed: boolean;
             <Link href="/select-tenant" passHref>
               <button 
                 className={cn('text-muted-foreground hover:text-primary transition-colors h-9 w-9 flex items-center justify-center', collapsed && 'bg-muted rounded-full')}
-                title="Switch Workspace"
+                title="Ganti Toko / Cabang"
               >
                 <ArrowRightLeft size={collapsed ? 18 : 20} />
               </button>
@@ -159,7 +159,7 @@ function SidebarContent({ collapsed, setCollapsed, user }: { collapsed: boolean;
             <button 
               onClick={handleLogout}
               className={cn('text-muted-foreground hover:text-destructive transition-colors h-9 w-9 flex items-center justify-center', collapsed && 'bg-muted rounded-full')}
-              title="Logout"
+              title="Keluar"
             >
               <LogOut size={collapsed ? 18 : 20} />
             </button>

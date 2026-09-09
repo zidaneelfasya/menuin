@@ -83,21 +83,21 @@ export function DevicesClient({ initialDevices, canManage }: { initialDevices: D
     <div className="space-y-4">
       {canManage && (
         <div className="flex justify-end">
-          <Button onClick={handleGenerateCode} disabled={isLoading} className="bg-blue-600 hover:bg-blue-700">
-            <Plus className="w-4 h-4 mr-2" />
-            Tambah Perangkat
+          <Button onClick={handleGenerateCode} disabled={isLoading} className="gap-2">
+            <Plus className="w-4 h-4" />
+            Tautkan Perangkat Baru
           </Button>
         </div>
       )}
 
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-card border border-border rounded-xl shadow-xs overflow-hidden">
         {devices.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
-            Belum ada perangkat POS yang terhubung.
+          <div className="p-8 text-center text-muted-foreground text-sm">
+            Belum ada perangkat kasir yang tertaut ke outlet ini.
           </div>
         ) : (
           <table className="w-full text-sm text-left">
-            <thead className="bg-gray-50/50 text-xs uppercase text-gray-500 font-medium">
+            <thead className="bg-muted/40 text-xs uppercase text-muted-foreground font-medium">
               <tr>
                 <th className="px-6 py-4">Perangkat</th>
                 <th className="px-6 py-4">Status</th>
@@ -105,32 +105,32 @@ export function DevicesClient({ initialDevices, canManage }: { initialDevices: D
                 <th className="px-6 py-4 text-right">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-border/50">
               {devices.map((device) => (
-                <tr key={device.id} className="hover:bg-gray-50/50 transition-colors">
+                <tr key={device.id} className="hover:bg-muted/30 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-50 text-blue-600">
+                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary">
                         <Laptop className="w-5 h-5" />
                       </div>
                       <div>
-                        <div className="font-medium text-gray-900">{device.name}</div>
-                        <div className="text-xs text-gray-500">ID: {device.deviceIdentifier}</div>
+                        <div className="font-medium text-foreground">{device.name}</div>
+                        <div className="text-xs text-muted-foreground">ID: {device.deviceIdentifier}</div>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     {device.status === 'ACTIVE' ? (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
                         Aktif
                       </span>
                     ) : (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground">
                         {device.status}
                       </span>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-gray-500">
+                  <td className="px-6 py-4 text-muted-foreground">
                     {device.lastSeenAt ? new Date(device.lastSeenAt).toLocaleString('id-ID') : '-'}
                   </td>
                   <td className="px-6 py-4 text-right">
@@ -139,16 +139,16 @@ export function DevicesClient({ initialDevices, canManage }: { initialDevices: D
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" className="h-8 w-8 p-0">
                             <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4 text-gray-500" />
+                            <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem 
                             onClick={() => handleRevoke(device.id)}
-                            className="text-red-600 focus:text-red-700 focus:bg-red-50 cursor-pointer"
+                            className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer"
                           >
                             <Trash2 className="mr-2 h-4 w-4" />
-                            Cabut Perangkat
+                            Putuskan Sambungan
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -164,9 +164,9 @@ export function DevicesClient({ initialDevices, canManage }: { initialDevices: D
       <Dialog open={isPairingModalOpen} onOpenChange={setIsPairingModalOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-center">Hubungkan Perangkat</DialogTitle>
+            <DialogTitle className="text-center">Tautkan Perangkat Kasir</DialogTitle>
             <DialogDescription className="text-center">
-              Masukkan kode ini di aplikasi POS atau scan QR Code berikut.
+              Masukkan kode pairing ini di aplikasi POS atau scan QR Code berikut.
             </DialogDescription>
           </DialogHeader>
 

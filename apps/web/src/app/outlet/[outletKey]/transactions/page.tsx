@@ -4,7 +4,7 @@ import { Suspense } from 'react';
 import { getTransactions } from '@/lib/actions/transactions';
 import { TableSkeleton } from '@/components/ui/table-skeleton';
 
-export const metadata: Metadata = { title: 'Riwayat Transaksi - Bolu Anisa POS' };
+export const metadata: Metadata = { title: 'Riwayat Transaksi - Menuin' };
 
 async function TransactionDataWrapper() {
   const result = await getTransactions();

@@ -1,7 +1,11 @@
 import { getDevicesAction } from '@/lib/actions/devices';
 import { DevicesClient } from './devices-client';
 import { requireTenantAccess } from '@/lib/actions/auth-context';
-import { redirect } from 'next/navigation';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Perangkat Kasir - Menuin',
+};
 
 export default async function DevicesPage() {
   const context = await requireTenantAccess();
@@ -14,9 +18,9 @@ export default async function DevicesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-gray-900">POS & Devices</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">Tautkan Perangkat Kasir</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Kelola perangkat kasir (Point of Sale) yang terhubung ke outlet ini.
+          Tautkan smartphone, tablet, atau mesin POS kasir yang terhubung ke outlet ini.
         </p>
       </div>
 

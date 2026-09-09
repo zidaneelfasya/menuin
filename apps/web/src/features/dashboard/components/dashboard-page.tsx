@@ -86,8 +86,8 @@ export function DashboardPage({ metrics, chartData, topProducts, lowStockProduct
     <div className="space-y-6 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Dashboard Eksekutif</h1>
-          <p className="text-sm text-muted-foreground">Ringkasan performa bisnis dan operasional toko.</p>
+          <h1 className="text-2xl font-bold tracking-tight">Ringkasan Toko</h1>
+          <p className="text-sm text-muted-foreground">Ringkasan performa penjualan dan operasional restoran.</p>
         </div>
         
         <div className="flex flex-col sm:flex-row items-center gap-3">
@@ -108,7 +108,7 @@ export function DashboardPage({ metrics, chartData, topProducts, lowStockProduct
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="rounded-xl shadow-sm border-border/50">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Omzet</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Penjualan</CardTitle>
             <DollarSign className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -118,7 +118,7 @@ export function DashboardPage({ metrics, chartData, topProducts, lowStockProduct
         
         <Card className="rounded-xl shadow-sm border-border/50">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Laba</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Keuntungan Bersih</CardTitle>
             <Activity className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -128,7 +128,7 @@ export function DashboardPage({ metrics, chartData, topProducts, lowStockProduct
 
         <Card className="rounded-xl shadow-sm border-border/50">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Transaksi Berhasil</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Pesanan Selesai</CardTitle>
             <ShoppingCart className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -138,7 +138,7 @@ export function DashboardPage({ metrics, chartData, topProducts, lowStockProduct
 
         <Card className="rounded-xl shadow-sm border-border/50">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Item</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Produk Terjual</CardTitle>
             <Package className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
