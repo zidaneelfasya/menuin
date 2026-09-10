@@ -7,6 +7,15 @@ export function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
+export function formatNumber(amount: number): string {
+  return new Intl.NumberFormat('id-ID').format(amount);
+}
+
+export function parseCurrencyInput(value: string): number {
+  const digits = value.replace(/\D/g, '');
+  return digits ? parseInt(digits, 10) : 0;
+}
+
 export function formatDate(dateString: Date | string): string {
   const date = new Date(dateString);
   return new Intl.DateTimeFormat('id-ID', {
@@ -17,3 +26,4 @@ export function formatDate(dateString: Date | string): string {
     minute: '2-digit'
   }).format(date);
 }
+
