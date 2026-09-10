@@ -40,11 +40,15 @@ export async function createTenantAction(formData: FormData) {
     
     const crypto = await import('crypto');
     const outletKey = crypto.randomBytes(10).toString('hex').toUpperCase();
+    const baseSlug = restaurantName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+    const randomSuffix = crypto.randomBytes(3).toString('hex');
+    const slug = baseSlug ? `${baseSlug}-${randomSuffix}` : `outlet-${randomSuffix}`;
 
     // Create new tenant
     const [newTenant] = await db.insert(tenants).values({
       name: restaurantName,
       outletKey,
+      slug,
     }).returning();
 
     // Generate a random 6 digit PIN

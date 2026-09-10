@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { products, categories, productModifierGroups, modifierGroups, tenants, transactions, transactionItems, shifts } from '@/lib/db/schema';
+import { products, categories, productModifierGroups, modifierGroups, modifiers, tenants, transactions, transactionItems, shifts } from '@/lib/db/schema';
 import { eq, desc, and } from 'drizzle-orm';
 import * as jwt from 'jsonwebtoken';
 
@@ -42,6 +42,20 @@ export async function GET(req: NextRequest) {
     // 2. Fetch Modifier Groups
     const modifierGroupsData = await db.select().from(modifierGroups).where(eq(modifierGroups.tenantId, tenantId));
     
+    // Fetch individual modifiers
+    const allModifiers = await db.select().from(modifiers).where(eq(modifiers.tenantId, tenantId));
+    
+    const modifierGroupsWithOptions = modifierGroupsData.map(group => ({
+      ...group,
+      options: allModifiers
+        .filter(m => m.groupId === group.id)
+        .map(m => ({
+          id: m.id,
+          name: m.name,
+          price: Number(m.price)
+        }))
+    }));
+    
     // 3. Fetch Products
     const productsData = await db
       .select({
@@ -75,7 +89,7 @@ export async function GET(req: NextRequest) {
       data: {
         categories: categoriesData,
         products: productsWithModifiers,
-        modifierGroups: modifierGroupsData,
+        modifierGroups: modifierGroupsWithOptions,
         settings: tenantSettings[0] || null
       }
     });

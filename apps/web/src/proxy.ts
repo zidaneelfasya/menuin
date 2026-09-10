@@ -2,6 +2,20 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { updateSession } from './lib/supabase/middleware';
 
 export async function proxy(request: NextRequest) {
+  const url = request.nextUrl.clone();
+  const hostname = request.headers.get('host') || '';
+
+  const currentHost = hostname.split(':')[0]; // remove port
+  const isLocalhost = currentHost.endsWith('localhost');
+  const baseDomain = isLocalhost ? 'localhost' : 'menuin.id';
+
+  let subdomain = null;
+  if (currentHost !== baseDomain && currentHost !== `www.${baseDomain}`) {
+    if (currentHost.endsWith(`.${baseDomain}`)) {
+      subdomain = currentHost.replace(`.${baseDomain}`, '');
+    }
+  }
+
   // 1. Extract outletKey if the request is for an outlet route
   const pathname = request.nextUrl.pathname;
   
@@ -15,8 +29,19 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // 2. Run the Supabase auth middleware
-  const response = await updateSession(request);
+  // 2. Rewrite if it's a subdomain (Storefront)
+  let customResponse;
+  const isInternal = pathname.startsWith('/api') || pathname.startsWith('/_next') || pathname.startsWith('/auth');
+  const isAlreadyStore = pathname.startsWith('/store');
+  
+  if (subdomain && !isInternal && !isAlreadyStore) {
+    // Rewrite all root/subdomain paths to /store/[subdomain]
+    url.pathname = `/store/${subdomain}${url.pathname === '/' ? '' : url.pathname}`;
+    customResponse = NextResponse.rewrite(url, { request: { headers: request.headers } });
+  }
+
+  // 3. Run the Supabase auth middleware
+  const response = await updateSession(request, customResponse);
 
   // Note: To ensure Next.js Server Components receive the header we just set,
   // we must pass the modified request headers to the response. 

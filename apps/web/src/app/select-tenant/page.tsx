@@ -13,7 +13,7 @@ export default async function SelectTenantPage() {
     <div className="flex min-h-screen w-full flex-col bg-muted/40 items-center justify-center p-4">
       <div className="w-full max-w-3xl space-y-8">
         <div className="text-center space-y-2">
-          <h1 className="text-4xl font-bold tracking-tight">Select a Workspace</h1>
+          <h1 className="text-4xl font-bold tracking-tight">Select an Outlet</h1>
           <p className="text-muted-foreground text-lg">Choose a restaurant to manage or create a new one.</p>
         </div>
 
@@ -33,7 +33,7 @@ export default async function SelectTenantPage() {
                   </CardHeader>
                   <CardContent className="mt-auto pt-4">
                     <p className="text-sm text-muted-foreground flex items-center justify-between">
-                      <span>Enter workspace</span>
+                      <span>Enter Outlet</span>
                       <span className="opacity-0 group-hover:opacity-100 transition-opacity translate-x-2 group-hover:translate-x-0">&rarr;</span>
                     </p>
                   </CardContent>
@@ -48,7 +48,7 @@ export default async function SelectTenantPage() {
                 <Plus className="h-6 w-6 text-primary" />
               </div>
               <h3 className="font-semibold text-lg">New Restaurant</h3>
-              <p className="text-sm text-muted-foreground">Create a new workspace</p>
+              <p className="text-sm text-muted-foreground">Create a new Outlet</p>
             </Card>
           </Link>
         </div>
