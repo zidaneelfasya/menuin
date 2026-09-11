@@ -62,10 +62,10 @@ export function AdaptiveBottomBar({
       ? 'pos'
       : 'standard');
 
-  const bottomPadding = Platform.OS === 'ios' ? Math.max(insets.bottom, isPhoneLandscape ? 4 : 8) : (isPhoneLandscape ? 4 : 8);
-  const centerButtonSize = isPhoneLandscape ? 44 : isTablet ? 56 : 52;
-  const centerButtonTop = isPhoneLandscape ? -16 : isTablet ? -22 : -20;
-  const centerIconSize = isPhoneLandscape ? 22 : isTablet ? 28 : 24;
+  const bottomPadding = Platform.OS === 'ios' ? Math.max(insets.bottom, isPhoneLandscape ? 4 : 6) : (isPhoneLandscape ? 4 : 6);
+  const centerButtonSize = isPhoneLandscape ? 44 : isTablet ? 54 : 50;
+  const centerButtonTop = isPhoneLandscape ? -16 : isTablet ? -20 : -18;
+  const centerIconSize = isPhoneLandscape ? 20 : isTablet ? 26 : 22;
 
   const navigateTo = (path: string) => {
     if (isMenuOpen && onToggleMenu) {
@@ -89,13 +89,13 @@ export function AdaptiveBottomBar({
       style={[
         styles.barContainer,
         {
-          minHeight: isPhoneLandscape ? 46 : isTablet ? 62 : 56,
+          minHeight: isPhoneLandscape ? 44 : isTablet ? 56 : 52,
           paddingBottom: bottomPadding,
-          paddingLeft: Math.max(insets.left, isPhoneLandscape ? 16 : 8),
-          paddingRight: Math.max(insets.right, isPhoneLandscape ? 16 : 8),
+          paddingLeft: Math.max(insets.left, isPhoneLandscape ? 12 : 8),
+          paddingRight: Math.max(insets.right, isPhoneLandscape ? 12 : 8),
         },
       ]}
-      className="bg-white border-t border-gray-200/90 shadow-lg pt-2 z-50"
+      className="bg-white border-t border-gray-200/90 shadow-sm pt-1.5 z-50"
     >
       {/* Elevated Floating Center Hamburger / X Button */}
       <View
@@ -128,38 +128,33 @@ export function AdaptiveBottomBar({
         </TouchableOpacity>
       </View>
 
-      {/* Mode 1: POINT OF SALES (POS) - 4 Tabs: Home, Orders, Custom, Settings */}
+      {/* Mode 1: POINT OF SALES (POS) - 4 Full-Width Evenly Distributed Tabs */}
       {currentMode === 'pos' && (
-        <View
-          style={{
-            maxWidth: isTablet ? 720 : '100%',
-            width: '100%',
-            alignSelf: 'center',
-          }}
-          className="flex-row items-center justify-between px-1"
-        >
+        <View className="flex-row items-center w-full">
           {/* Left Wing (Home & Orders) */}
-          <View className="flex-row items-center flex-1 justify-around pr-8">
+          <View className="flex-row items-center flex-1 gap-1 sm:gap-2">
             {/* Tab 1: Home */}
             <TouchableOpacity
               onPress={() => navigateTo('/(main)/(cashier)/pos')}
-              activeOpacity={0.7}
-              style={{
-                backgroundColor: isHomeActive ? '#eff4ff' : 'transparent',
-              }}
-              className="flex-row items-center justify-center py-1.5 px-3.5 rounded-full"
+              activeOpacity={0.75}
+              className={`flex-1 flex-row items-center justify-center py-2 sm:py-2.5 px-2 rounded-xl transition-colors ${
+                isHomeActive
+                  ? 'bg-[#edf5fe] border border-blue-200/80 shadow-2xs'
+                  : 'bg-transparent active:bg-gray-100/80'
+              }`}
             >
               <Home
-                size={18}
-                color={isHomeActive ? MENUIN_BLUE : '#6b7280'}
-                strokeWidth={isHomeActive ? 2.5 : 2}
+                size={isTablet ? 19 : 17}
+                color={isHomeActive ? MENUIN_BLUE : '#64748b'}
+                strokeWidth={isHomeActive ? 2.6 : 2}
               />
               <Text
                 style={{
-                  color: isHomeActive ? MENUIN_BLUE : '#6b7280',
-                  fontWeight: isHomeActive ? '700' : '500',
+                  color: isHomeActive ? MENUIN_BLUE : '#64748b',
+                  fontWeight: isHomeActive ? '800' : '600',
                 }}
-                className="text-xs ml-1.5"
+                className="text-xs sm:text-sm ml-2 tracking-tight"
+                numberOfLines={1}
               >
                 Home
               </Text>
@@ -168,29 +163,31 @@ export function AdaptiveBottomBar({
             {/* Tab 2: Orders */}
             <TouchableOpacity
               onPress={() => navigateTo('/(main)/(cashier)/pos/orders')}
-              activeOpacity={0.7}
-              style={{
-                backgroundColor: isOrdersActive ? '#eff4ff' : 'transparent',
-              }}
-              className="flex-row items-center justify-center py-1.5 px-3.5 rounded-full relative"
+              activeOpacity={0.75}
+              className={`flex-1 flex-row items-center justify-center py-2 sm:py-2.5 px-2 rounded-xl relative transition-colors ${
+                isOrdersActive
+                  ? 'bg-[#edf5fe] border border-blue-200/80 shadow-2xs'
+                  : 'bg-transparent active:bg-gray-100/80'
+              }`}
             >
               <Receipt
-                size={18}
-                color={isOrdersActive ? MENUIN_BLUE : '#6b7280'}
-                strokeWidth={isOrdersActive ? 2.5 : 2}
+                size={isTablet ? 19 : 17}
+                color={isOrdersActive ? MENUIN_BLUE : '#64748b'}
+                strokeWidth={isOrdersActive ? 2.6 : 2}
               />
               <Text
                 style={{
-                  color: isOrdersActive ? MENUIN_BLUE : '#6b7280',
-                  fontWeight: isOrdersActive ? '700' : '500',
+                  color: isOrdersActive ? MENUIN_BLUE : '#64748b',
+                  fontWeight: isOrdersActive ? '800' : '600',
                 }}
-                className="text-xs ml-1.5"
+                className="text-xs sm:text-sm ml-2 tracking-tight"
+                numberOfLines={1}
               >
                 Orders
               </Text>
               {newOrdersCount > 0 && (
-                <View className="absolute -top-1 right-0 min-w-[16px] h-4 px-1 rounded-full bg-red-500 items-center justify-center border border-white">
-                  <Text className="text-[9px] font-bold text-white leading-none">
+                <View className="absolute top-1.5 right-2 min-w-[16px] h-4 px-1 rounded-full bg-rose-500 items-center justify-center border border-white">
+                  <Text className="text-[9px] font-black text-white leading-none">
                     {newOrdersCount}
                   </Text>
                 </View>
@@ -198,31 +195,33 @@ export function AdaptiveBottomBar({
             </TouchableOpacity>
           </View>
 
-          {/* Spacer for Center Button */}
-          <View style={{ width: 48 }} />
+          {/* Center Spacer for Floating Button */}
+          <View style={{ width: centerButtonSize + 14 }} pointerEvents="none" />
 
           {/* Right Wing (Custom & Settings) */}
-          <View className="flex-row items-center flex-1 justify-around pl-8">
-            {/* Tab 3: Custom Numpad */}
+          <View className="flex-row items-center flex-1 gap-1 sm:gap-2">
+            {/* Tab 3: Custom */}
             <TouchableOpacity
               onPress={() => navigateTo('/(main)/(cashier)/pos/custom')}
-              activeOpacity={0.7}
-              style={{
-                backgroundColor: isCustomActive ? '#eff4ff' : 'transparent',
-              }}
-              className="flex-row items-center justify-center py-1.5 px-3.5 rounded-full"
+              activeOpacity={0.75}
+              className={`flex-1 flex-row items-center justify-center py-2 sm:py-2.5 px-2 rounded-xl transition-colors ${
+                isCustomActive
+                  ? 'bg-[#edf5fe] border border-blue-200/80 shadow-2xs'
+                  : 'bg-transparent active:bg-gray-100/80'
+              }`}
             >
               <LayoutGrid
-                size={18}
-                color={isCustomActive ? MENUIN_BLUE : '#6b7280'}
-                strokeWidth={isCustomActive ? 2.5 : 2}
+                size={isTablet ? 19 : 17}
+                color={isCustomActive ? MENUIN_BLUE : '#64748b'}
+                strokeWidth={isCustomActive ? 2.6 : 2}
               />
               <Text
                 style={{
-                  color: isCustomActive ? MENUIN_BLUE : '#6b7280',
-                  fontWeight: isCustomActive ? '700' : '500',
+                  color: isCustomActive ? MENUIN_BLUE : '#64748b',
+                  fontWeight: isCustomActive ? '800' : '600',
                 }}
-                className="text-xs ml-1.5"
+                className="text-xs sm:text-sm ml-2 tracking-tight"
+                numberOfLines={1}
               >
                 Custom
               </Text>
@@ -231,23 +230,25 @@ export function AdaptiveBottomBar({
             {/* Tab 4: Settings */}
             <TouchableOpacity
               onPress={() => navigateTo('/(main)/(cashier)/settings')}
-              activeOpacity={0.7}
-              style={{
-                backgroundColor: isSettingsActive ? '#eff4ff' : 'transparent',
-              }}
-              className="flex-row items-center justify-center py-1.5 px-3.5 rounded-full"
+              activeOpacity={0.75}
+              className={`flex-1 flex-row items-center justify-center py-2 sm:py-2.5 px-2 rounded-xl transition-colors ${
+                isSettingsActive
+                  ? 'bg-[#edf5fe] border border-blue-200/80 shadow-2xs'
+                  : 'bg-transparent active:bg-gray-100/80'
+              }`}
             >
               <Settings
-                size={18}
-                color={isSettingsActive ? MENUIN_BLUE : '#6b7280'}
-                strokeWidth={isSettingsActive ? 2.5 : 2}
+                size={isTablet ? 19 : 17}
+                color={isSettingsActive ? MENUIN_BLUE : '#64748b'}
+                strokeWidth={isSettingsActive ? 2.6 : 2}
               />
               <Text
                 style={{
-                  color: isSettingsActive ? MENUIN_BLUE : '#6b7280',
-                  fontWeight: isSettingsActive ? '700' : '500',
+                  color: isSettingsActive ? MENUIN_BLUE : '#64748b',
+                  fontWeight: isSettingsActive ? '800' : '600',
                 }}
-                className="text-xs ml-1.5"
+                className="text-xs sm:text-sm ml-2 tracking-tight"
+                numberOfLines={1}
               >
                 Settings
               </Text>
@@ -256,23 +257,16 @@ export function AdaptiveBottomBar({
         </View>
       )}
 
-      {/* Mode 2: DASHBOARD - Outlet Branding on Left, Shift on Right */}
+      {/* Mode 2: DASHBOARD - Outlet Branding on Left, Shift on Right (Full Width) */}
       {currentMode === 'dashboard' && (
-        <View
-          style={{
-            maxWidth: isTablet ? 720 : '100%',
-            width: '100%',
-            alignSelf: 'center',
-          }}
-          className="flex-row items-center justify-between px-3 py-1"
-        >
+        <View className="flex-row items-center w-full px-1">
           {/* Left Wing: Outlet Logo & Name */}
-          <View className="flex-row items-center flex-1 pr-6">
+          <View className="flex-row items-center flex-1 pr-2">
             <View
               style={{ backgroundColor: MENUIN_BLUE }}
-              className="w-9 h-9 rounded-xl items-center justify-center mr-2.5 shadow-2xs"
+              className="w-8 h-8 rounded-xl items-center justify-center mr-2.5 shadow-2xs"
             >
-              <Text className="text-white font-black text-sm">
+              <Text className="text-white font-black text-xs">
                 {user?.tenantName?.charAt(0) || user?.name?.charAt(0) || 'M'}
               </Text>
             </View>
@@ -292,13 +286,13 @@ export function AdaptiveBottomBar({
             </View>
           </View>
 
-          {/* Spacer for Center Button */}
-          <View style={{ width: 52 }} />
+          {/* Center Spacer for Floating Button */}
+          <View style={{ width: centerButtonSize + 14 }} pointerEvents="none" />
 
           {/* Right Wing: Shift Status Pill & Kasir Shortcut */}
-          <View className="flex-row items-center justify-end flex-1 pl-6 gap-2">
+          <View className="flex-row items-center justify-end flex-1 pl-2 gap-2">
             <View
-              className={`px-2.5 py-1 rounded-full border flex-row items-center ${
+              className={`px-3 py-1.5 rounded-xl border flex-row items-center ${
                 activeShift
                   ? 'bg-emerald-50 border-emerald-200'
                   : 'bg-amber-50 border-amber-200'
@@ -310,7 +304,7 @@ export function AdaptiveBottomBar({
                 }`}
               />
               <Text
-                className={`text-[10px] font-bold ${
+                className={`text-[11px] font-bold ${
                   activeShift ? 'text-emerald-800' : 'text-amber-800'
                 }`}
               >
@@ -321,11 +315,11 @@ export function AdaptiveBottomBar({
             <TouchableOpacity
               onPress={() => navigateTo('/(main)/(cashier)/pos')}
               activeOpacity={0.7}
-              style={{ backgroundColor: '#e8f5fa', borderColor: '#bce1ef' }}
-              className="px-2.5 py-1 rounded-full border flex-row items-center"
+              style={{ backgroundColor: '#edf5fe', borderColor: '#bfdbfe' }}
+              className="px-3.5 py-1.5 rounded-xl border flex-row items-center active:bg-blue-100"
             >
-              <Store size={12} color={MENUIN_BLUE} className="mr-1" />
-              <Text style={{ color: MENUIN_BLUE }} className="text-[10px] font-bold">
+              <Store size={13} color={MENUIN_BLUE} className="mr-1.5" />
+              <Text style={{ color: MENUIN_BLUE }} className="text-xs font-black">
                 Buka POS
               </Text>
             </TouchableOpacity>
@@ -333,40 +327,33 @@ export function AdaptiveBottomBar({
         </View>
       )}
 
-      {/* Mode 3: STANDARD (Riwayat, Items, Shift, etc.) */}
+      {/* Mode 3: STANDARD (Riwayat, Items, Shift, etc. - Full Width) */}
       {currentMode === 'standard' && (
-        <View
-          style={{
-            maxWidth: isTablet ? 720 : '100%',
-            width: '100%',
-            alignSelf: 'center',
-          }}
-          className="flex-row items-center justify-between px-3 py-1"
-        >
+        <View className="flex-row items-center w-full px-1">
           {/* Left Wing: Back to Dashboard */}
           <TouchableOpacity
             onPress={() => navigateTo('/(main)/(cashier)/dashboard')}
-            activeOpacity={0.7}
-            className="flex-row items-center py-1.5 px-3 rounded-full bg-gray-50 border border-gray-200"
+            activeOpacity={0.75}
+            className="flex-1 flex-row items-center justify-center py-2 sm:py-2.5 px-3 rounded-xl bg-gray-50/90 border border-gray-200/80 active:bg-gray-100"
           >
-            <Home size={14} color="#4b5563" />
-            <Text className="text-xs font-semibold text-gray-700 ml-1.5">
+            <Home size={16} color="#4b5563" />
+            <Text className="text-xs sm:text-sm font-bold text-gray-700 ml-2">
               Dashboard
             </Text>
           </TouchableOpacity>
 
-          {/* Spacer for Center Button */}
-          <View style={{ width: 52 }} />
+          {/* Center Spacer for Floating Button */}
+          <View style={{ width: centerButtonSize + 14 }} pointerEvents="none" />
 
           {/* Right Wing: Quick go to POS */}
           <TouchableOpacity
             onPress={() => navigateTo('/(main)/(cashier)/pos')}
-            activeOpacity={0.7}
-            style={{ backgroundColor: '#e8f5fa', borderColor: '#bce1ef' }}
-            className="flex-row items-center py-1.5 px-3 rounded-full border"
+            activeOpacity={0.75}
+            style={{ backgroundColor: '#edf5fe', borderColor: '#bfdbfe' }}
+            className="flex-1 flex-row items-center justify-center py-2 sm:py-2.5 px-3 rounded-xl border active:bg-blue-100"
           >
-            <Store size={14} color={MENUIN_BLUE} />
-            <Text style={{ color: MENUIN_BLUE }} className="text-xs font-bold ml-1.5">
+            <Store size={16} color={MENUIN_BLUE} />
+            <Text style={{ color: MENUIN_BLUE }} className="text-xs sm:text-sm font-black ml-2">
               Kasir (POS)
             </Text>
           </TouchableOpacity>
