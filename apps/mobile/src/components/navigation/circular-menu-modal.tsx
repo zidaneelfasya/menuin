@@ -6,11 +6,11 @@ import {
   StyleSheet,
   useWindowDimensions,
   Platform,
+  Image,
   Modal,
   Animated,
   Easing,
 } from 'react-native';
-import { Image as ExpoImage } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, usePathname, useNavigation } from 'expo-router';
 import { AdaptiveBottomBar } from './adaptive-bottom-bar';
@@ -356,17 +356,14 @@ export function CircularMenuModal({ isOpen, onClose, anchorY }: CircularMenuModa
                 justifyContent: 'center',
               }}
             >
-              <ExpoImage
+              <Image
                 source={require('@/assets/images/menuin-putih.png')}
                 style={{
                   width: logoVisualHeight,
                   height: logoVisualWidth,
                   transform: [{ rotate: '90deg' }],
                 }}
-                contentFit="contain"
-                priority="high"
-                cachePolicy="memory-disk"
-                transition={0}
+                resizeMode="contain"
               />
             </View>
           </View>

@@ -2,7 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import { Slot } from 'expo-router';
 
-export default function ShiftLayout() {
+export default function SettingsLayout() {
   return (
     <View style={{ flex: 1, backgroundColor: '#f8fafc' }}>
       <Slot />

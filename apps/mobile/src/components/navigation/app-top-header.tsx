@@ -6,10 +6,10 @@ import {
   Modal,
   Alert,
   Platform,
+  Image,
   StyleSheet,
   useWindowDimensions,
 } from 'react-native';
-import { Image as ExpoImage } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Store, ChevronDown, Unlink, User, ShieldCheck, X, Info, CheckCircle2 } from 'lucide-react-native';
@@ -88,6 +88,14 @@ export function AppTopHeader() {
         }}
         className="bg-white border-b border-gray-200/90 shadow-2xs z-30"
       >
+        {/* Hidden pre-warm for white logo so native memory cache is warm with zero pop-in */}
+        <View pointerEvents="none" style={{ width: 0, height: 0, opacity: 0, position: 'absolute' }}>
+          <Image
+            source={require('@/assets/images/menuin-putih.png')}
+            style={{ width: 1, height: 1 }}
+          />
+        </View>
+
         {/* SISI TENGAH: LOGO MENUIN BEWARNA BIRU (ABSOLUTELY CENTERED INDEPENDENT OF LEFT/RIGHT WIDTHS) */}
         <View
           pointerEvents="none"
@@ -102,15 +110,13 @@ export function AppTopHeader() {
             },
           ]}
         >
-          <ExpoImage
+          <Image
             source={require('@/assets/images/menuin.png')}
             style={{
               width: isTablet ? 110 : 88,
               height: isTablet ? 26 : 22,
             }}
-            contentFit="contain"
-            priority="high"
-            cachePolicy="memory-disk"
+            resizeMode="contain"
           />
         </View>
 
