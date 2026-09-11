@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { tenants, subscriptions, memberships, accounts } from '@/lib/db/schema';
+import { tenants, subscriptions, memberships, accounts, posDevices } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import * as jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'menuin-pos-secret-key-change-in-prod';
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 async function verifyMobileAuth(req: NextRequest) {
   const authHeader = req.headers.get('Authorization');
@@ -17,7 +19,8 @@ async function verifyMobileAuth(req: NextRequest) {
       id: decoded.sub, 
       username: decoded.username,
       tenantId: decoded.tenantId,
-      role: decoded.role
+      role: decoded.role,
+      deviceId: decoded.deviceId || null,
     };
   } catch (error) {
     return null;
@@ -28,6 +31,39 @@ export async function GET(req: NextRequest) {
   try {
     const user = await verifyMobileAuth(req);
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    // Verify Device Status if x-device-id is present OR token has deviceId
+    const headerDeviceId = req.headers.get('x-device-id');
+    const deviceId = (headerDeviceId || user.deviceId)?.trim();
+
+    if (deviceId) {
+      const isDeviceUuid = UUID_REGEX.test(deviceId);
+      const deviceCondition = isDeviceUuid
+        ? eq(posDevices.id, deviceId)
+        : eq(posDevices.deviceIdentifier, deviceId);
+
+      const [device] = await db
+        .select()
+        .from(posDevices)
+        .where(
+          and(
+            deviceCondition,
+            eq(posDevices.tenantId, user.tenantId)
+          )
+        )
+        .limit(1);
+
+      if (!device || device.status !== 'ACTIVE') {
+        return NextResponse.json({
+          success: false,
+          error: 'DEVICE_REVOKED',
+          message: 'Perangkat ini telah dihapus atau dicabut dari outlet oleh Owner di website MENUIN.'
+        }, { status: 403 });
+      }
+
+      // Update last seen
+      await db.update(posDevices).set({ lastSeenAt: new Date() }).where(eq(posDevices.id, device.id));
+    }
 
     // Fetch tenant details
     const [tenant] = await db.select().from(tenants).where(eq(tenants.id, user.tenantId));
