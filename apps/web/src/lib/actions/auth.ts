@@ -141,9 +141,14 @@ export async function signUpAction(formData: FormData) {
 
     // 3. Create the new tenant
     const outletKey = crypto.randomBytes(10).toString('hex'); // 20 characters
+    const baseSlug = restaurantName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+    const randomSuffix = crypto.randomBytes(3).toString('hex');
+    const slug = baseSlug ? `${baseSlug}-${randomSuffix}` : `outlet-${randomSuffix}`;
+
     const [newTenant] = await db.insert(tenants).values({
       name: restaurantName,
       outletKey: outletKey,
+      slug: slug,
       // subscriptionTier is deprecated, subscription will be handled separately
     }).returning();
 

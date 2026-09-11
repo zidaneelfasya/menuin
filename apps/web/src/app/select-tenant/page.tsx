@@ -13,8 +13,8 @@ export default async function SelectTenantPage() {
     <div className="flex min-h-screen w-full flex-col bg-muted/40 items-center justify-center p-4">
       <div className="w-full max-w-3xl space-y-8">
         <div className="text-center space-y-2">
-          <h1 className="text-4xl font-bold tracking-tight">Pilih Restoran</h1>
-          <p className="text-muted-foreground text-lg">Pilih restoran untuk mulai kelola atau buat restoran baru.</p>
+          <h1 className="text-4xl font-bold tracking-tight">Select an Outlet</h1>
+          <p className="text-muted-foreground text-lg">Choose a restaurant to manage or create a new one.</p>
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -33,7 +33,7 @@ export default async function SelectTenantPage() {
                   </CardHeader>
                   <CardContent className="mt-auto pt-4">
                     <p className="text-sm text-muted-foreground flex items-center justify-between">
-                      <span>Buka Restoran</span>
+                      <span>Enter Outlet</span>
                       <span className="opacity-0 group-hover:opacity-100 transition-opacity translate-x-2 group-hover:translate-x-0">&rarr;</span>
                     </p>
                   </CardContent>
@@ -47,8 +47,8 @@ export default async function SelectTenantPage() {
               <div className="rounded-full bg-primary/10 p-4 mb-4 group-hover:bg-primary/20 transition-colors">
                 <Plus className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="font-semibold text-lg">Restoran Baru</h3>
-              <p className="text-sm text-muted-foreground">Tambah cabang atau resto baru</p>
+              <h3 className="font-semibold text-lg">New Restaurant</h3>
+              <p className="text-sm text-muted-foreground">Create a new Outlet</p>
             </Card>
           </Link>
         </div>

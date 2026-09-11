@@ -1,19 +1,51 @@
 import { NextResponse } from 'next/server';
 import { UserService } from '@/lib/services/user.service';
 import { db } from '@/lib/db';
-import { memberships, tenants, accounts } from '@/lib/db/schema';
+import { memberships, tenants, accounts, posDevices, posSessions } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import * as jwt from 'jsonwebtoken';
 
-// Note: In a real app, we should use a proper secret from env
 const JWT_SECRET = process.env.JWT_SECRET || 'menuin-pos-secret-key-change-in-prod';
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function POST(request: Request) {
   try {
-    const { username, pin, tenantId } = await request.json();
+    const { username, pin, tenantId, deviceId } = await request.json();
 
     if (!username || !pin || !tenantId) {
       return NextResponse.json({ error: 'Tenant ID, Username, and PIN are required' }, { status: 400 });
+    }
+
+    // Verify Device Status if deviceId or x-device-id header is provided
+    const headerDeviceId = request.headers.get('x-device-id');
+    const effectiveDeviceId = (deviceId || headerDeviceId)?.trim();
+
+    if (effectiveDeviceId) {
+      const isDeviceUuid = UUID_REGEX.test(effectiveDeviceId);
+      const deviceCondition = isDeviceUuid
+        ? eq(posDevices.id, effectiveDeviceId)
+        : eq(posDevices.deviceIdentifier, effectiveDeviceId);
+
+      const [device] = await db
+        .select()
+        .from(posDevices)
+        .where(
+          and(
+            deviceCondition,
+            eq(posDevices.tenantId, tenantId)
+          )
+        )
+        .limit(1);
+
+      if (!device || device.status !== 'ACTIVE') {
+        return NextResponse.json({
+          error: 'DEVICE_REVOKED',
+          message: 'Perangkat ini telah dihapus atau dicabut dari outlet oleh Owner di website MENUIN.'
+        }, { status: 403 });
+      }
+
+      // Update last seen
+      await db.update(posDevices).set({ lastSeenAt: new Date() }).where(eq(posDevices.id, device.id));
     }
 
     const ipAddress = request.headers.get('x-forwarded-for') || 'unknown';
@@ -66,7 +98,8 @@ export async function POST(request: Request) {
         sub: membershipRecord.member.id, // Token subject is now Membership ID
         username: membershipRecord.account.email.split('@')[0],
         role: membershipRecord.member.role,
-        tenantId: membershipRecord.member.tenantId 
+        tenantId: membershipRecord.member.tenantId,
+        deviceId: effectiveDeviceId || null,
       }, 
       JWT_SECRET, 
       { expiresIn: '7d' }

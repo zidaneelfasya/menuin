@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { MainLayout } from '@/components/layout/main-layout';
 import { PaymentGate } from '@/components/payment-gate';
-import { getCurrentUser } from '@/lib/actions/auth';
+import { getCurrentUser, getAvailableTenants } from '@/lib/actions/auth';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
@@ -38,9 +38,11 @@ async function AuthWrapper({ children }: { children: React.ReactNode }) {
     );
   }
 
+  const availableTenants = await getAvailableTenants();
+  
   // The dashboard structure is accessible even without a subscription,
   // individual features will be locked via requireFeature() guards and error boundaries.
-  return <MainLayout user={user}>{children}</MainLayout>;
+  return <MainLayout user={user} availableTenants={availableTenants}>{children}</MainLayout>;
 }
 
 export default async function DashboardLayout({
