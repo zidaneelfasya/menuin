@@ -1,7 +1,7 @@
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useState, useMemo, useCallback } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Modal, Alert, useWindowDimensions } from 'react-native';
-import { ShoppingCart, X, AlertCircle } from 'lucide-react-native';
+import { ShoppingCart, X, AlertCircle, Plus, Minus } from 'lucide-react-native';
 import { usePosData, Product, ModifierGroup } from '@/hooks/use-pos-data';
 import { useCartStore, CartItemModifier } from '@/store/cart-store';
 import { useRouter } from 'expo-router';
@@ -42,11 +42,22 @@ export default function PosScreen() {
 
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  type ModifierSelection = { id: string; name: string; price: number };
-  const [modifierSelections, setModifierSelections] = useState<Record<string, ModifierSelection[]>>({});
+  // Mapping: groupId -> { [optionId]: quantity }
+  const [modifierSelections, setModifierSelections] = useState<Record<string, Record<string, number>>>({});
   const [searchQuery, setSearchQuery] = useState('');
 
   const cartTotalItems = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+
+  const cartSubtotal = useMemo(() => {
+    return cartItems.reduce((acc, item) => {
+      const itemBasePrice = Number(item.product?.price || 0);
+      const itemModTotal = (item.modifiers || []).reduce(
+        (sum, mod) => sum + (Number(mod.selectedOption?.price) || 0),
+        0
+      );
+      return acc + (itemBasePrice + itemModTotal) * (item.quantity || 1);
+    }, 0);
+  }, [cartItems]);
 
   const formatPrice = useCallback((price: string | number) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Number(price));
@@ -92,6 +103,67 @@ export default function PosScreen() {
     }
   }, [activeShift, addItem, router]);
 
+  // Single choice: instant switch between boxes
+  const handleSingleSelect = useCallback((groupId: string, optionId: string, isRequired: boolean) => {
+    setModifierSelections(prev => {
+      const currentQty = prev[groupId]?.[optionId] || 0;
+      if (currentQty > 0 && !isRequired) {
+        const nextGroup = { ...prev[groupId] };
+        delete nextGroup[optionId];
+        return { ...prev, [groupId]: nextGroup };
+      }
+      return {
+        ...prev,
+        [groupId]: { [optionId]: 1 }
+      };
+    });
+  }, []);
+
+  // Multi choice: click to add / increment (1 -> 2 -> 3)
+  const handleMultiIncrement = useCallback((group: ModifierGroup, optionId: string) => {
+    setModifierSelections(prev => {
+      const groupMap = prev[group.id] || {};
+      const currentTotal = Object.values(groupMap).reduce((sum, q) => sum + q, 0);
+      const currentQty = groupMap[optionId] || 0;
+
+      if (currentTotal >= group.maxSelections) {
+        Alert.alert(
+          'Batas Maksimal',
+          `Maksimal pilihan untuk ${group.name} adalah ${group.maxSelections} opsi.`
+        );
+        return prev;
+      }
+
+      return {
+        ...prev,
+        [group.id]: {
+          ...groupMap,
+          [optionId]: currentQty + 1
+        }
+      };
+    });
+  }, []);
+
+  // Multi choice: decrement quantity or unselect when reaching 0
+  const handleMultiDecrement = useCallback((groupId: string, optionId: string) => {
+    setModifierSelections(prev => {
+      const groupMap = prev[groupId] || {};
+      const currentQty = groupMap[optionId] || 0;
+      if (currentQty <= 1) {
+        const nextGroup = { ...groupMap };
+        delete nextGroup[optionId];
+        return { ...prev, [groupId]: nextGroup };
+      }
+      return {
+        ...prev,
+        [groupId]: {
+          ...groupMap,
+          [optionId]: currentQty - 1
+        }
+      };
+    });
+  }, []);
+
   const handleAddToCartWithModifiers = () => {
     if (!selectedProduct) return;
     
@@ -108,29 +180,43 @@ export default function PosScreen() {
     }
 
     const modifiers: CartItemModifier[] = [];
-    const requiredGroups = posData?.data.modifierGroups.filter(g => selectedProduct.modifierGroupIds?.includes(g.id) && g.isRequired) || [];
+    const requiredGroups = posData?.data.modifierGroups.filter(
+      g => selectedProduct.modifierGroupIds?.includes(g.id) && g.isRequired
+    ) || [];
     
     for (const group of requiredGroups) {
-      const selections = modifierSelections[group.id] || [];
-      if (selections.length === 0) {
+      const optMap = modifierSelections[group.id] || {};
+      const totalQty = Object.values(optMap).reduce((sum, q) => sum + q, 0);
+      if (totalQty === 0) {
         Alert.alert('Perhatian', `Silakan pilih ${group.name} terlebih dahulu.`);
         return;
       }
-      if (selections.length < group.minSelections) {
+      if (totalQty < group.minSelections) {
         Alert.alert('Perhatian', `Pilih minimal ${group.minSelections} opsi untuk ${group.name}.`);
         return;
       }
     }
 
-    for (const [groupId, selections] of Object.entries(modifierSelections)) {
+    for (const [groupId, optMap] of Object.entries(modifierSelections)) {
       const group = posData?.data.modifierGroups.find(g => g.id === groupId);
       if (group) {
-        for (const selection of selections) {
-          modifiers.push({
-            modifierGroupId: groupId,
-            name: group.name,
-            selectedOption: selection
-          });
+        for (const [optId, qty] of Object.entries(optMap)) {
+          if (qty > 0) {
+            const opt = group.options?.find(o => o.id === optId);
+            if (opt) {
+              for (let i = 0; i < qty; i++) {
+                modifiers.push({
+                  modifierGroupId: groupId,
+                  name: group.name,
+                  selectedOption: {
+                    id: opt.id,
+                    name: opt.name,
+                    price: Number(opt.price) || 0
+                  }
+                });
+              }
+            }
+          }
         }
       }
     }
@@ -148,17 +234,25 @@ export default function PosScreen() {
   // Calculate modifier dynamic subtotal
   const modifierAddedTotal = useMemo(() => {
     let sum = 0;
-    for (const selections of Object.values(modifierSelections)) {
-      for (const sel of selections) {
-        sum += sel.price || 0;
+    if (!posData?.data.modifierGroups) return 0;
+    for (const [groupId, optMap] of Object.entries(modifierSelections)) {
+      const group = posData.data.modifierGroups.find(g => g.id === groupId);
+      if (!group) continue;
+      for (const [optId, qty] of Object.entries(optMap)) {
+        if (qty > 0) {
+          const opt = group.options?.find(o => o.id === optId);
+          if (opt) {
+            sum += (Number(opt.price) || 0) * qty;
+          }
+        }
       }
     }
     return sum;
-  }, [modifierSelections]);
+  }, [modifierSelections, posData]);
 
   const currentModalItemTotal = useMemo(() => {
     if (!selectedProduct) return 0;
-    return Number(selectedProduct.price) + modifierAddedTotal;
+    return (Number(selectedProduct.price) || 0) + modifierAddedTotal;
   }, [selectedProduct, modifierAddedTotal]);
 
   if (isShiftLoading || isPosLoading) {
@@ -297,7 +391,7 @@ export default function PosScreen() {
                 </View>
                 <View>
                   <Text className="text-gray-400 text-[10px] uppercase font-bold tracking-wider">Total Pesanan</Text>
-                  <Text className="text-white font-black text-sm">{formatPrice(getCartTotal())}</Text>
+                  <Text className="text-white font-black text-sm">{formatPrice(cartSubtotal)}</Text>
                 </View>
               </View>
               <View className="flex-row items-center bg-white/10 px-3 py-1.5 rounded-xl">
@@ -350,13 +444,19 @@ export default function PosScreen() {
                 const group = posData?.data.modifierGroups.find(g => g.id === groupId);
                 if (!group) return null;
 
+                const groupSelections = modifierSelections[group.id] || {};
+                const totalGroupQty = Object.values(groupSelections).reduce((sum, q) => sum + q, 0);
+                const isSingle = group.maxSelections === 1;
+
                 return (
-                  <View key={group.id} className="mb-5 bg-gray-50/60 p-3.5 rounded-2xl border border-gray-200/80">
-                    <View className="flex-row items-center justify-between mb-2">
+                  <View key={group.id} className="mb-5 bg-gray-50/70 p-3.5 rounded-2xl border border-gray-200/80">
+                    <View className="flex-row items-center justify-between mb-3">
                       <View className="flex-1 mr-2">
                         <Text className="text-sm font-bold text-gray-900">{group.name}</Text>
                         <Text className="text-[11px] text-gray-500 mt-0.5">
-                          {group.maxSelections === 1 ? 'Pilih 1 opsi' : `Pilih hingga ${group.maxSelections} opsi`}
+                          {isSingle
+                            ? 'Pilih 1 opsi'
+                            : `Pilih hingga ${group.maxSelections} opsi (Terpilih: ${totalGroupQty}/${group.maxSelections})`}
                         </Text>
                       </View>
                       {group.isRequired ? (
@@ -366,53 +466,109 @@ export default function PosScreen() {
                       )}
                     </View>
                     
-                    <View className="bg-white rounded-xl border border-gray-200 overflow-hidden divide-y divide-gray-100">
-                      {group.options?.map((opt, i) => {
-                        const isSelected = modifierSelections[group.id]?.some(s => s.id === opt.id) || false;
-                        const isSingle = group.maxSelections === 1;
+                    {/* Kotak-Kotak (Compact Responsive Grid) */}
+                    <View className="flex-row flex-wrap" style={{ gap: 8 }}>
+                      {group.options?.map((opt) => {
+                        const qty = groupSelections[opt.id] || 0;
+                        const isSelected = qty > 0;
 
                         return (
                           <TouchableOpacity
-                            key={i}
+                            key={opt.id}
                             activeOpacity={0.7}
-                            className={`flex-row items-center justify-between py-3 px-3.5 ${isSelected ? 'bg-blue-50/40' : 'bg-white'}`}
                             onPress={() => {
-                              setModifierSelections(prev => {
-                                const currentSelections = prev[group.id] || [];
-                                
-                                if (isSingle) {
-                                  return { ...prev, [group.id]: [opt] };
-                                } else {
-                                  if (isSelected) {
-                                    return { ...prev, [group.id]: currentSelections.filter(s => s.id !== opt.id) };
-                                  } else {
-                                    if (currentSelections.length >= group.maxSelections) {
-                                      return prev;
-                                    }
-                                    return { ...prev, [group.id]: [...currentSelections, opt] };
-                                  }
-                                }
-                              });
+                              if (isSingle) {
+                                handleSingleSelect(group.id, opt.id, group.isRequired);
+                              } else {
+                                handleMultiIncrement(group, opt.id);
+                              }
                             }}
+                            style={{
+                              width: isTablet ? '31.8%' : '48.2%',
+                            }}
+                            className={`min-h-[80px] p-3 rounded-xl border flex-col justify-between ${
+                              isSelected
+                                ? 'bg-blue-50/70 border-blue-600 shadow-2xs'
+                                : 'bg-white border-gray-200 active:bg-gray-50'
+                            }`}
                           >
-                            <Text className={`text-xs ${isSelected ? 'font-bold text-blue-900' : 'font-medium text-gray-800'}`}>
-                              {opt.name}
-                            </Text>
-                            <View className="flex-row items-center">
-                              {opt.price > 0 && (
-                                <Text className="text-gray-500 text-xs font-semibold mr-3">+{formatPrice(opt.price)}</Text>
-                              )}
-                              
+                            {/* Top Row: Option Name & Status Badge */}
+                            <View className="flex-row items-start justify-between">
+                              <Text
+                                className={`text-xs flex-1 mr-1.5 ${
+                                  isSelected ? 'font-bold text-blue-950' : 'font-semibold text-gray-800'
+                                }`}
+                                numberOfLines={2}
+                              >
+                                {opt.name}
+                              </Text>
+
                               {isSingle ? (
-                                <View className={`w-4 h-4 rounded-full border items-center justify-center ${isSelected ? 'border-blue-600 bg-blue-50' : 'border-gray-300'}`}>
-                                  {isSelected && <View className="w-2 h-2 rounded-full bg-blue-600" />}
+                                <View
+                                  className={`w-4 h-4 rounded-full border items-center justify-center mt-0.5 ${
+                                    isSelected ? 'border-blue-600 bg-blue-600' : 'border-gray-300 bg-gray-50'
+                                  }`}
+                                >
+                                  {isSelected && <View className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                </View>
+                              ) : isSelected ? (
+                                <View className="bg-blue-600 px-1.5 py-0.5 rounded-md items-center justify-center">
+                                  <Text className="text-white text-[10px] font-black">{qty}x</Text>
                                 </View>
                               ) : (
-                                <View className={`w-4 h-4 rounded border items-center justify-center ${isSelected ? 'border-blue-600 bg-blue-600' : 'border-gray-300'}`}>
-                                  {isSelected && <Text className="text-white text-[9px] font-bold">✓</Text>}
+                                <View className="w-4 h-4 rounded-md border border-gray-300 bg-gray-50 items-center justify-center mt-0.5">
+                                  <Plus size={10} color="#9ca3af" />
                                 </View>
                               )}
                             </View>
+
+                            {/* Bottom Row: Price or Stepper */}
+                            {isSingle || !isSelected ? (
+                              <View className="mt-2 pt-1.5 border-t border-gray-100 flex-row items-center justify-between">
+                                <Text
+                                  className={`text-[11px] font-bold ${
+                                    isSelected ? 'text-blue-700' : 'text-gray-500'
+                                  }`}
+                                >
+                                  {opt.price > 0 ? `+${formatPrice(opt.price)}` : 'Standar'}
+                                </Text>
+                              </View>
+                            ) : (
+                              /* Multi Choice Active: Stepper with [-] and [+] */
+                              <View className="mt-2 pt-1.5 border-t border-blue-200/80 flex-row items-center justify-between">
+                                <Text className="text-[11px] font-bold text-blue-700">
+                                  {opt.price > 0 ? `+${formatPrice(opt.price * qty)}` : 'Standar'}
+                                </Text>
+                                <View className="flex-row items-center bg-white rounded-lg border border-blue-200 p-0.5">
+                                  <TouchableOpacity
+                                    onPress={(e) => {
+                                      e.stopPropagation();
+                                      handleMultiDecrement(group.id, opt.id);
+                                    }}
+                                    activeOpacity={0.7}
+                                    className="w-5 h-5 rounded items-center justify-center bg-blue-50 active:bg-red-100"
+                                  >
+                                    <Minus size={11} color="#2563eb" />
+                                  </TouchableOpacity>
+                                  <Text className="text-blue-900 font-black text-xs px-1.5">
+                                    {qty}
+                                  </Text>
+                                  <TouchableOpacity
+                                    onPress={(e) => {
+                                      e.stopPropagation();
+                                      handleMultiIncrement(group, opt.id);
+                                    }}
+                                    activeOpacity={0.7}
+                                    disabled={totalGroupQty >= group.maxSelections}
+                                    className={`w-5 h-5 rounded items-center justify-center ${
+                                      totalGroupQty >= group.maxSelections ? 'bg-gray-100 opacity-40' : 'bg-blue-600 active:bg-blue-700'
+                                    }`}
+                                  >
+                                    <Plus size={11} color="#ffffff" />
+                                  </TouchableOpacity>
+                                </View>
+                              </View>
+                            )}
                           </TouchableOpacity>
                         );
                       })}

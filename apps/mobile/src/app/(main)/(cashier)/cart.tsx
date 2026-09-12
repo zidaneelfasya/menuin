@@ -1,5 +1,5 @@
 import { SafeAreaView } from 'react-native-safe-area-context';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -18,13 +18,24 @@ export default function CartScreen() {
 
   const totalItemsCount = items.reduce((acc, item) => acc + item.quantity, 0);
 
+  const cartSubtotal = useMemo(() => {
+    return items.reduce((acc, item) => {
+      const itemBasePrice = Number(item.product?.price || 0);
+      const itemModTotal = (item.modifiers || []).reduce(
+        (sum, mod) => sum + (Number(mod.selectedOption?.price) || 0),
+        0
+      );
+      return acc + (itemBasePrice + itemModTotal) * (item.quantity || 1);
+    }, 0);
+  }, [items]);
+
   const formatPrice = (price: string | number) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Number(price));
   };
 
   const checkoutMutation = useMutation({
     mutationFn: async () => {
-      const total = getCartTotal();
+      const total = cartSubtotal;
       
       const payload = {
         totalAmount: total,
@@ -95,7 +106,7 @@ export default function CartScreen() {
 
     Alert.alert(
       'Konfirmasi Transaksi',
-      `Lanjutkan pembayaran tunai sebesar ${formatPrice(getCartTotal())}?`,
+      `Lanjutkan pembayaran tunai sebesar ${formatPrice(cartSubtotal)}?`,
       [
         { text: 'Batal', style: 'cancel' },
         { 
@@ -196,9 +207,18 @@ export default function CartScreen() {
                     
                     {item.modifiers.length > 0 && (
                       <View className="mt-1 mb-1">
-                        {item.modifiers.map((mod, i) => (
+                        {Object.values(
+                          item.modifiers.reduce<Record<string, { name: string; price: number; count: number }>>((acc, m) => {
+                            const key = `${m.modifierGroupId}-${m.selectedOption.id || m.selectedOption.name}`;
+                            if (!acc[key]) {
+                              acc[key] = { name: m.selectedOption.name, price: Number(m.selectedOption.price) || 0, count: 0 };
+                            }
+                            acc[key].count += 1;
+                            return acc;
+                          }, {})
+                        ).map((m, i) => (
                           <Text key={i} className="text-gray-500 text-xs font-medium">
-                            • {mod.selectedOption.name} {mod.selectedOption.price > 0 ? `(+${formatPrice(mod.selectedOption.price)})` : ''}
+                            • {m.name}{m.count > 1 ? ` (x${m.count})` : ''} {m.price > 0 ? `(+${formatPrice(m.price * m.count)})` : ''}
                           </Text>
                         ))}
                       </View>
@@ -228,12 +248,12 @@ export default function CartScreen() {
       <View className="bg-white p-4 border-t border-gray-200 shadow-sm">
         <View className="flex-row justify-between mb-1.5">
           <Text className="text-gray-500 text-xs font-semibold">Subtotal ({totalItemsCount} item)</Text>
-          <Text className="text-gray-900 font-bold text-xs">{formatPrice(getCartTotal())}</Text>
+          <Text className="text-gray-900 font-bold text-xs">{formatPrice(cartSubtotal)}</Text>
         </View>
         
         <View className="flex-row justify-between mb-3 border-t border-gray-100 pt-2">
           <Text className="text-gray-900 font-black text-sm">Total Pembayaran</Text>
-          <Text className="text-blue-600 font-black text-lg">{formatPrice(getCartTotal())}</Text>
+          <Text className="text-blue-600 font-black text-lg">{formatPrice(cartSubtotal)}</Text>
         </View>
 
         <View className="flex-row items-center justify-center mb-3">

@@ -80,10 +80,13 @@ export const useCartStore = create<CartState>((set, get) => ({
   },
 
   getCartTotal: () => {
-    return get().items.reduce((total, item) => {
-      const productPrice = Number(item.product.price);
-      const modifierPrice = item.modifiers.reduce((sum, mod) => sum + mod.selectedOption.price, 0);
-      return total + ((productPrice + modifierPrice) * item.quantity);
+    return (get().items || []).reduce((total, item) => {
+      const productPrice = Number(item.product?.price || 0);
+      const modifierPrice = (item.modifiers || []).reduce(
+        (sum, mod) => sum + (Number(mod.selectedOption?.price) || 0),
+        0
+      );
+      return total + ((productPrice + modifierPrice) * (item.quantity || 1));
     }, 0);
   }
 }));

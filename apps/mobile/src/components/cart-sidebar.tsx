@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import { Trash2, ShieldCheck, ShoppingBag, Store } from 'lucide-react-native';
@@ -15,13 +15,24 @@ export function CartSidebar() {
 
   const totalItemsCount = items.reduce((acc, item) => acc + item.quantity, 0);
 
+  const cartSubtotal = useMemo(() => {
+    return items.reduce((acc, item) => {
+      const itemBasePrice = Number(item.product?.price || 0);
+      const itemModTotal = (item.modifiers || []).reduce(
+        (sum, mod) => sum + (Number(mod.selectedOption?.price) || 0),
+        0
+      );
+      return acc + (itemBasePrice + itemModTotal) * (item.quantity || 1);
+    }, 0);
+  }, [items]);
+
   const formatPrice = (price: string | number) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Number(price));
   };
 
   const checkoutMutation = useMutation({
     mutationFn: async () => {
-      const total = getCartTotal();
+      const total = cartSubtotal;
       
       const payload = {
         totalAmount: total,
@@ -88,7 +99,7 @@ export function CartSidebar() {
 
     Alert.alert(
       'Konfirmasi',
-      `Lanjutkan pembayaran sebesar ${formatPrice(getCartTotal())}?`,
+      `Lanjutkan pembayaran sebesar ${formatPrice(cartSubtotal)}?`,
       [
         { text: 'Batal', style: 'cancel' },
         { 
@@ -183,9 +194,18 @@ export function CartSidebar() {
                   
                   {item.modifiers.length > 0 && (
                     <View className="mt-1 mb-1">
-                      {item.modifiers.map((mod, i) => (
+                      {Object.values(
+                        item.modifiers.reduce<Record<string, { name: string; price: number; count: number }>>((acc, m) => {
+                          const key = `${m.modifierGroupId}-${m.selectedOption.id || m.selectedOption.name}`;
+                          if (!acc[key]) {
+                            acc[key] = { name: m.selectedOption.name, price: Number(m.selectedOption.price) || 0, count: 0 };
+                          }
+                          acc[key].count += 1;
+                          return acc;
+                        }, {})
+                      ).map((m, i) => (
                         <Text key={i} className="text-gray-500 text-[11px] font-medium leading-tight">
-                          • {mod.selectedOption.name} {mod.selectedOption.price > 0 ? `(+${formatPrice(mod.selectedOption.price)})` : ''}
+                          • {m.name}{m.count > 1 ? ` (x${m.count})` : ''} {m.price > 0 ? `(+${formatPrice(m.price * m.count)})` : ''}
                         </Text>
                       ))}
                     </View>
@@ -214,12 +234,12 @@ export function CartSidebar() {
       <View className="bg-white p-4 border-t border-gray-200">
         <View className="flex-row justify-between mb-1.5">
           <Text className="text-gray-500 text-xs font-semibold">Subtotal</Text>
-          <Text className="text-gray-900 font-bold text-xs">{formatPrice(getCartTotal())}</Text>
+          <Text className="text-gray-900 font-bold text-xs">{formatPrice(cartSubtotal)}</Text>
         </View>
         
         <View className="flex-row justify-between mb-3 border-t border-gray-100 pt-2">
           <Text className="text-gray-900 font-black text-sm">Total Bayar</Text>
-          <Text className="text-blue-600 font-black text-base">{formatPrice(getCartTotal())}</Text>
+          <Text className="text-blue-600 font-black text-base">{formatPrice(cartSubtotal)}</Text>
         </View>
 
         <View className="flex-row items-center justify-center mb-3">
