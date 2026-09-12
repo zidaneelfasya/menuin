@@ -94,7 +94,7 @@ export async function createOnlineOrder(formData: z.infer<typeof orderSchema>) {
     const discount = Math.max(0, Math.min(data.discount || 0, subTotal));
     const grandTotal = Math.max(0, subTotal - discount);
 
-    let initialStatus = 'PENDING';
+    const initialStatus = 'PENDING';
     
     // Always start online orders as PENDING so they wait in the "Menunggu Pembayaran" queue
     // until the customer pays at the counter or completes Midtrans checkout.

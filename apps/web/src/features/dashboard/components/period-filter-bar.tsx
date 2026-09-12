@@ -41,21 +41,32 @@ export function PeriodFilterBar({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const currentPreset = searchParams.get('preset') || (searchParams.get('from') ? 'custom' : 'last7');
+  const fromParam = searchParams.get('from');
+  const toParam = searchParams.get('to');
   const monthParam = searchParams.get('month') || format(new Date(), 'yyyy-MM');
   const yearParam = searchParams.get('year') || String(new Date().getFullYear());
 
-  // Date range state for custom daily picker
-  const [customRange, setCustomRange] = React.useState<DateRange | undefined>(() => {
-    const fromStr = searchParams.get('from');
-    const toStr = searchParams.get('to');
-    if (fromStr && toStr) {
-      return { from: new Date(fromStr), to: new Date(toStr) };
+  const todayDateStr = format(new Date(), 'yyyy-MM-dd');
+  const isSelectedToday = fromParam === todayDateStr && toParam === todayDateStr;
+  const hasCustomDate = Boolean(fromParam && toParam) && !isSelectedToday;
+
+  // Sync customRange with searchParams
+  const customRange = React.useMemo<DateRange | undefined>(() => {
+    if (fromParam && toParam) {
+      return { from: new Date(fromParam), to: new Date(toParam) };
     }
     return undefined;
-  });
+  }, [fromParam, toParam]);
 
+  const [tempRange, setTempRange] = React.useState<DateRange | undefined>(customRange);
   const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
+
+  // Keep tempRange synced when opening popover or when customRange updates
+  React.useEffect(() => {
+    if (isCalendarOpen) {
+      setTempRange(customRange || { from: new Date(), to: new Date() });
+    }
+  }, [isCalendarOpen, customRange]);
 
   // Tab change handler
   const handleTabChange = (newTab: string) => {
@@ -66,7 +77,9 @@ export function PeriodFilterBar({
     if (newTab === 'harian') {
       params.delete('month');
       params.delete('year');
-      if (!params.get('preset')) params.set('preset', 'last7');
+      params.delete('preset');
+      params.delete('from');
+      params.delete('to');
     } else if (newTab === 'bulanan') {
       params.delete('preset');
       params.delete('from');
@@ -84,28 +97,39 @@ export function PeriodFilterBar({
     router.push(`${pathname}?${params.toString()}`);
   };
 
-  // Preset click handler for Harian
-  const handlePresetChange = (preset: 'today' | 'yesterday' | 'last7' | 'last30') => {
+  // Custom date apply handler (supports both single day and date ranges)
+  const handleApplyRange = () => {
+    if (!tempRange?.from) return;
+    const toDate = tempRange.to || tempRange.from;
     const params = new URLSearchParams(searchParams.toString());
     params.set('tab', 'harian');
-    params.set('preset', preset);
-    params.delete('from');
-    params.delete('to');
+    params.delete('preset');
+    params.set('from', format(tempRange.from, 'yyyy-MM-dd'));
+    params.set('to', format(toDate, 'yyyy-MM-dd'));
+    setIsCalendarOpen(false);
     router.push(`${pathname}?${params.toString()}`);
   };
 
-  // Custom date selection handler
-  const handleCustomRangeSelect = (range: DateRange | undefined) => {
-    setCustomRange(range);
-    if (range?.from && range?.to) {
-      const params = new URLSearchParams(searchParams.toString());
-      params.set('tab', 'harian');
-      params.set('preset', 'custom');
-      params.set('from', format(range.from, 'yyyy-MM-dd'));
-      params.set('to', format(range.to, 'yyyy-MM-dd'));
-      setIsCalendarOpen(false);
-      router.push(`${pathname}?${params.toString()}`);
-    }
+  // Quick preset: Today inside calendar popover
+  const handleSelectToday = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', 'harian');
+    params.delete('preset');
+    params.delete('from');
+    params.delete('to');
+    setIsCalendarOpen(false);
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
+  // Reset to default (Hari Ini)
+  const handleResetToDefault = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', 'harian');
+    params.delete('preset');
+    params.delete('from');
+    params.delete('to');
+    setIsCalendarOpen(false);
+    router.push(`${pathname}?${params.toString()}`);
   };
 
   // Month navigation handlers
@@ -156,49 +180,67 @@ export function PeriodFilterBar({
     return [curYear, curYear - 1, curYear - 2].map(String);
   }, []);
 
+  // Formatted button label for daily date range trigger (defaults to 'Hari Ini')
+  const dateButtonLabel = React.useMemo(() => {
+    if (fromParam && toParam) {
+      const fromDate = new Date(fromParam);
+      const toDate = new Date(toParam);
+      if (fromParam === toParam) {
+        if (fromParam === todayDateStr) {
+          return 'Hari Ini';
+        }
+        return format(fromDate, 'd MMM yyyy', { locale: localeId });
+      }
+      if (fromDate.getFullYear() === toDate.getFullYear()) {
+        return `${format(fromDate, 'd MMM', { locale: localeId })} — ${format(toDate, 'd MMM yyyy', { locale: localeId })}`;
+      }
+      return `${format(fromDate, 'd MMM yyyy', { locale: localeId })} — ${format(toDate, 'd MMM yyyy', { locale: localeId })}`;
+    }
+    return 'Hari Ini';
+  }, [fromParam, toParam, todayDateStr]);
+
   return (
-    <div className="bg-white border border-gray-200/80 rounded-xl p-4 shadow-sm space-y-4">
-      {/* Exact Supabase Transition Bar: Grip Icon ::: Stats Counter & Period Picker */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+    <div className="bg-white border border-gray-200/80 rounded-xl p-3.5 sm:p-4 shadow-sm">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 lg:gap-4">
         
         {/* Left: Grip Handle & Analytics Meta */}
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
           <div className="flex items-center gap-2 text-gray-400">
-            <GripVertical className="w-4 h-4 text-gray-300" />
-            <span className="text-sm font-bold text-gray-900">
+            <GripVertical className="w-4 h-4 text-gray-300 shrink-0" />
+            <span className="text-sm font-bold text-gray-900 whitespace-nowrap">
               {totalTransactions.toLocaleString('id-ID')} Total Pesanan
             </span>
             <span className="text-gray-300">•</span>
-            <span className="text-xs font-mono font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60">
+            <span className="text-xs font-mono font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60 whitespace-nowrap">
               {successRate} Sukses
             </span>
           </div>
 
-          <div className="hidden sm:flex items-center text-xs text-gray-500 font-medium pl-3 border-l border-gray-200">
-            <span>Periode:</span>
-            <span className="ml-1.5 font-semibold text-gray-800">{periodLabel}</span>
+          <div className="flex items-center text-xs text-gray-500 font-medium pl-3 border-l border-gray-200">
+            <span className="text-gray-400">Periode:</span>
+            <span className="ml-1.5 font-semibold text-gray-800 whitespace-nowrap">{periodLabel}</span>
           </div>
         </div>
 
-        {/* Right: Tabs & Sub-Controls */}
-        <div className="flex flex-wrap items-center gap-3">
+        {/* Right: Tabs & Single Compact Selector Control */}
+        <div className="flex items-center gap-2.5 shrink-0">
           <Tabs value={currentTab} onValueChange={handleTabChange} className="w-auto">
             <TabsList className="bg-gray-100 p-1 border border-gray-200/60 rounded-lg h-9">
               <TabsTrigger 
                 value="harian" 
-                className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm text-xs font-semibold px-3 rounded-md transition-all"
+                className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm text-xs font-semibold px-3 rounded-md transition-all h-7"
               >
                 Harian
               </TabsTrigger>
               <TabsTrigger 
                 value="bulanan" 
-                className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm text-xs font-semibold px-3 rounded-md transition-all"
+                className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm text-xs font-semibold px-3 rounded-md transition-all h-7"
               >
                 Bulanan
               </TabsTrigger>
               <TabsTrigger 
                 value="tahunan" 
-                className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm text-xs font-semibold px-3 rounded-md transition-all"
+                className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm text-xs font-semibold px-3 rounded-md transition-all h-7"
               >
                 Tahunan (Recap)
               </TabsTrigger>
@@ -207,91 +249,83 @@ export function PeriodFilterBar({
 
           {/* Sub-controls based on active tab */}
           <div className="flex items-center gap-2">
-            {/* HARIAN CONTROLS */}
+            {/* HARIAN CONTROLS: Clean Date Range Popover */}
             {currentTab === 'harian' && (
-              <div className="flex flex-wrap items-center gap-1.5">
-                <Button
-                  type="button"
-                  variant={currentPreset === 'today' ? 'default' : 'outline'}
-                  size="sm"
-                  className={cn(
-                    "h-8 text-xs font-medium px-2.5",
-                    currentPreset === 'today' ? "bg-gray-900 text-white hover:bg-gray-800" : "text-gray-600 border-gray-200 hover:bg-gray-50"
-                  )}
-                  onClick={() => handlePresetChange('today')}
-                >
-                  Hari Ini
-                </Button>
-
-                <Button
-                  type="button"
-                  variant={currentPreset === 'yesterday' ? 'default' : 'outline'}
-                  size="sm"
-                  className={cn(
-                    "h-8 text-xs font-medium px-2.5",
-                    currentPreset === 'yesterday' ? "bg-gray-900 text-white hover:bg-gray-800" : "text-gray-600 border-gray-200 hover:bg-gray-50"
-                  )}
-                  onClick={() => handlePresetChange('yesterday')}
-                >
-                  Kemarin
-                </Button>
-
-                <Button
-                  type="button"
-                  variant={currentPreset === 'last7' ? 'default' : 'outline'}
-                  size="sm"
-                  className={cn(
-                    "h-8 text-xs font-medium px-2.5",
-                    currentPreset === 'last7' ? "bg-gray-900 text-white hover:bg-gray-800" : "text-gray-600 border-gray-200 hover:bg-gray-50"
-                  )}
-                  onClick={() => handlePresetChange('last7')}
-                >
-                  7 Hari
-                </Button>
-
-                <Button
-                  type="button"
-                  variant={currentPreset === 'last30' ? 'default' : 'outline'}
-                  size="sm"
-                  className={cn(
-                    "h-8 text-xs font-medium px-2.5",
-                    currentPreset === 'last30' ? "bg-gray-900 text-white hover:bg-gray-800" : "text-gray-600 border-gray-200 hover:bg-gray-50"
-                  )}
-                  onClick={() => handlePresetChange('last30')}
-                >
-                  30 Hari
-                </Button>
-
-                {/* Custom Date Range Popover */}
-                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={currentPreset === 'custom' ? 'default' : 'outline'}
-                      size="sm"
-                      className={cn(
-                        "h-8 text-xs font-medium gap-1.5 px-2.5",
-                        currentPreset === 'custom' ? "bg-gray-900 text-white hover:bg-gray-800" : "text-gray-600 border-gray-200 hover:bg-gray-50"
-                      )}
-                    >
-                      <CalendarIcon className="w-3.5 h-3.5" />
-                      <span>Kustom</span>
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-3" align="end">
-                    <div className="text-xs font-semibold text-gray-700 mb-2">
+              <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "h-9 text-xs font-medium gap-2 px-3 border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors shadow-none rounded-lg",
+                      hasCustomDate && "border-blue-300 bg-blue-50/50 text-blue-700 font-semibold"
+                    )}
+                  >
+                    <CalendarIcon className="w-3.5 h-3.5 text-gray-500" />
+                    <span>{dateButtonLabel}</span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                  <div className="p-3 border-b border-gray-100 flex items-center justify-between">
+                    <div className="text-xs font-semibold text-gray-900">
                       Pilih Rentang Tanggal
                     </div>
+                    {hasCustomDate && (
+                      <button
+                        type="button"
+                        onClick={handleResetToDefault}
+                        className="text-[11px] text-gray-500 hover:text-gray-900 transition-colors underline"
+                      >
+                        Reset
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="p-2">
                     <Calendar
                       mode="range"
-                      defaultMonth={customRange?.from || new Date()}
-                      selected={customRange}
-                      onSelect={handleCustomRangeSelect}
+                      defaultMonth={tempRange?.from || customRange?.from || new Date()}
+                      selected={tempRange}
+                      onSelect={setTempRange}
                       numberOfMonths={1}
                       locale={localeId}
                     />
-                  </PopoverContent>
-                </Popover>
-              </div>
+                  </div>
+
+                  <div className="p-2.5 bg-gray-50/80 border-t border-gray-100 flex items-center justify-between gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 text-xs font-medium text-gray-600 hover:text-gray-900 px-2"
+                      onClick={handleSelectToday}
+                    >
+                      Hari Ini
+                    </Button>
+
+                    <div className="flex items-center gap-1.5">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-xs font-medium px-2.5 border-gray-200"
+                        onClick={() => setIsCalendarOpen(false)}
+                      >
+                        Batal
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="h-8 text-xs font-semibold px-3 bg-gray-900 text-white hover:bg-gray-800"
+                        onClick={handleApplyRange}
+                        disabled={!tempRange?.from}
+                      >
+                        Terapkan
+                      </Button>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
             )}
 
             {/* BULANAN CONTROLS */}
@@ -301,7 +335,7 @@ export function PeriodFilterBar({
                   type="button"
                   variant="outline"
                   size="icon"
-                  className="h-8 w-8 text-gray-600 border-gray-200 hover:bg-gray-50"
+                  className="h-9 w-9 text-gray-600 border-gray-200 hover:bg-gray-50 rounded-lg"
                   onClick={() => handleMonthStep(-1)}
                   title="Bulan Sebelumnya"
                 >
@@ -309,7 +343,7 @@ export function PeriodFilterBar({
                 </Button>
 
                 <Select value={monthParam} onValueChange={handleMonthSelect}>
-                  <SelectTrigger className="h-8 w-[170px] text-xs font-medium border-gray-200">
+                  <SelectTrigger className="h-9 w-[160px] text-xs font-medium border-gray-200 rounded-lg">
                     <SelectValue placeholder="Pilih Bulan" />
                   </SelectTrigger>
                   <SelectContent align="end">
@@ -325,7 +359,7 @@ export function PeriodFilterBar({
                   type="button"
                   variant="outline"
                   size="icon"
-                  className="h-8 w-8 text-gray-600 border-gray-200 hover:bg-gray-50"
+                  className="h-9 w-9 text-gray-600 border-gray-200 hover:bg-gray-50 rounded-lg"
                   onClick={() => handleMonthStep(1)}
                   title="Bulan Berikutnya"
                 >
@@ -338,7 +372,7 @@ export function PeriodFilterBar({
             {currentTab === 'tahunan' && (
               <div className="flex items-center gap-2">
                 <Select value={yearParam} onValueChange={handleYearSelect}>
-                  <SelectTrigger className="h-8 w-[110px] text-xs font-medium border-gray-200">
+                  <SelectTrigger className="h-9 w-[110px] text-xs font-medium border-gray-200 rounded-lg">
                     <SelectValue placeholder="Pilih Tahun" />
                   </SelectTrigger>
                   <SelectContent align="end">

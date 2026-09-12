@@ -41,9 +41,16 @@ export function SalesChartCard({ data, tab, periodLabel }: SalesChartCardProps) 
         );
       }
 
+      let displayTitle = point.label || point.date;
+      if (point.date && point.date.includes(' ') && point.label && point.label.includes(':')) {
+        displayTitle = point.label.includes(',')
+          ? point.label.replace(', ', ', Pukul ')
+          : `Pukul ${point.label}`;
+      }
+
       return (
         <div className="bg-white p-3 rounded-lg shadow-md border border-gray-100 text-xs space-y-1">
-          <p className="font-semibold text-gray-800">{point.label || point.date}</p>
+          <p className="font-semibold text-gray-800">{displayTitle}</p>
           <div className="pt-1 border-t border-gray-100 space-y-0.5">
             <p className="text-blue-600 font-medium">
               Omzet: <span className="font-bold">{formatCurrency(point.omzet)}</span>

@@ -16,6 +16,15 @@ export async function proxy(request: NextRequest) {
     }
   }
 
+  if (
+    subdomain === 'www' ||
+    subdomain === 'app' ||
+    subdomain === 'localhost' ||
+    !subdomain
+  ) {
+    subdomain = null;
+  }
+
   // 1. Extract outletKey if the request is for an outlet route
   const pathname = request.nextUrl.pathname;
   
@@ -31,7 +40,11 @@ export async function proxy(request: NextRequest) {
 
   // 2. Rewrite if it's a subdomain (Storefront)
   let customResponse;
-  const isInternal = pathname.startsWith('/api') || pathname.startsWith('/_next') || pathname.startsWith('/auth');
+  const isInternal =
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/auth') ||
+    Boolean(pathname.match(/\.(svg|png|jpg|jpeg|gif|webp|ico|mp3|css|js|map|txt)$/i));
   const isAlreadyStore = pathname.startsWith('/store');
   
   if (subdomain && !isInternal && !isAlreadyStore) {

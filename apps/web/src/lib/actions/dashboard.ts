@@ -4,7 +4,7 @@ import { db } from '../db';
 import { transactions, transactionItems, products, tenants, memberships, posDevices, shifts, accounts } from '../db/schema';
 import { eq, sql, desc, and, gte, lte } from 'drizzle-orm';
 import { getCurrentUser } from './auth';
-import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval, isAfter, isBefore } from 'date-fns';
+import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval, eachHourOfInterval, differenceInCalendarDays, isAfter, isBefore } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 
 export type OutletOverviewData = {
@@ -125,34 +125,28 @@ export type DashboardResponse = {
   insights: BusinessInsight[];
 };
 
-export async function getOutletDashboardData(
-  outletKey: string,
+export async function getDashboardDataForTenant(
+  tenant: {
+    id: string;
+    name: string;
+    outletKey: string;
+    slug: string | null;
+    storeDescription?: string | null;
+    storefrontEnabled?: boolean | null;
+  },
+  userName: string = 'Owner',
   searchParams: {
     tab?: string;
     preset?: string;
     from?: string;
     to?: string;
-    month?: string; // YYYY-MM
-    year?: string;  // YYYY
+    month?: string;
+    year?: string;
   }
 ): Promise<DashboardResponse> {
   try {
-    const user = await getCurrentUser();
-    if (!user) {
-      return { success: false, error: 'Unauthorized' } as any;
-    }
-
-    // 1. Resolve tenant strictly by outletKey
-    const [tenant] = await db.select()
-      .from(tenants)
-      .where(eq(tenants.outletKey, outletKey))
-      .limit(1);
-
-    if (!tenant) {
-      return { success: false, error: 'Outlet tidak ditemukan' } as any;
-    }
-
     const tenantId = tenant.id;
+    const outletKey = tenant.outletKey;
     const now = new Date();
     const tab = (searchParams.tab === 'bulanan' || searchParams.tab === 'tahunan') ? searchParams.tab : 'harian';
 
@@ -164,28 +158,7 @@ export async function getOutletDashboardData(
     let periodLabel = '';
 
     if (tab === 'harian') {
-      const preset = searchParams.preset || (searchParams.from ? 'custom' : 'last7');
-
-      if (preset === 'today') {
-        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-        prevStartDate = subDays(startDate, 1);
-        prevEndDate = new Date(prevStartDate.getFullYear(), prevStartDate.getMonth(), prevStartDate.getDate(), 23, 59, 59, 999);
-        periodLabel = 'Hari Ini (' + format(startDate, 'd MMM yyyy', { locale: localeId }) + ')';
-      } else if (preset === 'yesterday') {
-        const yesterday = subDays(now, 1);
-        startDate = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 0, 0, 0, 0);
-        endDate = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59, 999);
-        prevStartDate = subDays(startDate, 1);
-        prevEndDate = new Date(prevStartDate.getFullYear(), prevStartDate.getMonth(), prevStartDate.getDate(), 23, 59, 59, 999);
-        periodLabel = 'Kemarin (' + format(startDate, 'd MMM yyyy', { locale: localeId }) + ')';
-      } else if (preset === 'last30') {
-        startDate = subDays(new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0), 29);
-        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-        prevStartDate = subDays(startDate, 30);
-        prevEndDate = new Date(startDate.getTime() - 1);
-        periodLabel = '30 Hari Terakhir (' + format(startDate, 'd MMM', { locale: localeId }) + ' — ' + format(endDate, 'd MMM yyyy', { locale: localeId }) + ')';
-      } else if (preset === 'custom' && searchParams.from && searchParams.to) {
+      if (searchParams.from && searchParams.to) {
         startDate = new Date(searchParams.from);
         startDate.setHours(0, 0, 0, 0);
         endDate = new Date(searchParams.to);
@@ -193,14 +166,44 @@ export async function getOutletDashboardData(
         const dayDiff = Math.max(1, Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
         prevStartDate = subDays(startDate, dayDiff);
         prevEndDate = new Date(startDate.getTime() - 1);
-        periodLabel = format(startDate, 'd MMM yyyy', { locale: localeId }) + ' — ' + format(endDate, 'd MMM yyyy', { locale: localeId });
-      } else {
-        // default 'last7'
+
+        const isSameDay = format(startDate, 'yyyy-MM-dd') === format(endDate, 'yyyy-MM-dd');
+        const isToday = format(startDate, 'yyyy-MM-dd') === format(now, 'yyyy-MM-dd');
+        if (isSameDay) {
+          periodLabel = isToday 
+            ? `Hari Ini (${format(startDate, 'd MMM yyyy', { locale: localeId })})`
+            : format(startDate, 'd MMM yyyy', { locale: localeId });
+        } else if (startDate.getFullYear() === endDate.getFullYear()) {
+          periodLabel = `${format(startDate, 'd MMM', { locale: localeId })} — ${format(endDate, 'd MMM yyyy', { locale: localeId })}`;
+        } else {
+          periodLabel = `${format(startDate, 'd MMM yyyy', { locale: localeId })} — ${format(endDate, 'd MMM yyyy', { locale: localeId })}`;
+        }
+      } else if (searchParams.preset === 'yesterday') {
+        const yesterday = subDays(now, 1);
+        startDate = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 0, 0, 0, 0);
+        endDate = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59, 999);
+        prevStartDate = subDays(startDate, 1);
+        prevEndDate = new Date(prevStartDate.getFullYear(), prevStartDate.getMonth(), prevStartDate.getDate(), 23, 59, 59, 999);
+        periodLabel = `Kemarin (${format(startDate, 'd MMM yyyy', { locale: localeId })})`;
+      } else if (searchParams.preset === 'last30') {
+        startDate = subDays(new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0), 29);
+        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+        prevStartDate = subDays(startDate, 30);
+        prevEndDate = new Date(startDate.getTime() - 1);
+        periodLabel = `${format(startDate, 'd MMM', { locale: localeId })} — ${format(endDate, 'd MMM yyyy', { locale: localeId })}`;
+      } else if (searchParams.preset === 'last7') {
         startDate = subDays(new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0), 6);
         endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
         prevStartDate = subDays(startDate, 7);
         prevEndDate = new Date(startDate.getTime() - 1);
-        periodLabel = '7 Hari Terakhir (' + format(startDate, 'd MMM', { locale: localeId }) + ' — ' + format(endDate, 'd MMM yyyy', { locale: localeId }) + ')';
+        periodLabel = `${format(startDate, 'd MMM', { locale: localeId })} — ${format(endDate, 'd MMM yyyy', { locale: localeId })}`;
+      } else {
+        // DEFAULT: TODAY (Hari Ini)
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+        prevStartDate = subDays(startDate, 1);
+        prevEndDate = new Date(prevStartDate.getFullYear(), prevStartDate.getMonth(), prevStartDate.getDate(), 23, 59, 59, 999);
+        periodLabel = `Hari Ini (${format(startDate, 'd MMM yyyy', { locale: localeId })})`;
       }
     } else if (tab === 'bulanan') {
       const monthStr = searchParams.month || format(now, 'yyyy-MM');
@@ -488,36 +491,105 @@ export async function getOutletDashboardData(
 
       annualBreakdown = recapList;
     } else {
-      // Harian or Bulanan: Daily intervals
-      const dailyData = await db.select({
-        dayDate: sql<string>`to_char(${transactions.createdAt}, 'YYYY-MM-DD')`,
-        omzet: sql<number>`COALESCE(sum(${transactions.grandTotal}), 0)::numeric`,
-        pesanan: sql<number>`count(${transactions.id})::int`,
-      })
-      .from(transactions)
-      .where(dateFilter)
-      .groupBy(sql`to_char(${transactions.createdAt}, 'YYYY-MM-DD')`);
+      // Determine if hourly breakdown is needed (< 7 days in harian tab)
+      const dayCount = differenceInCalendarDays(endDate, startDate) + 1;
+      const isHourly = tab === 'harian' && dayCount < 7;
 
-      const dailyMap = new Map<string, { omzet: number; pesanan: number }>();
-      dailyData.forEach(d => {
-        dailyMap.set(d.dayDate, { omzet: Number(d.omzet), pesanan: d.pesanan });
-      });
+      if (isHourly) {
+        // Query transactions grouped by hour
+        const hourlyData = await db.select({
+          hourKey: sql<string>`to_char(${transactions.createdAt}, 'YYYY-MM-DD HH24')`,
+          omzet: sql<number>`COALESCE(sum(${transactions.grandTotal}), 0)::numeric`,
+          pesanan: sql<number>`count(${transactions.id})::int`,
+        })
+        .from(transactions)
+        .where(dateFilter)
+        .groupBy(sql`to_char(${transactions.createdAt}, 'YYYY-MM-DD HH24')`);
 
-      // Generate all dates in interval
-      const allDays = eachDayOfInterval({ start: startDate, end: endDate });
-      chartData = allDays.map(day => {
-        const key = format(day, 'yyyy-MM-dd');
-        const dInfo = dailyMap.get(key) || { omzet: 0, pesanan: 0 };
-        const dLaba = Math.round(dInfo.omzet * 0.55);
-        const label = tab === 'bulanan' ? format(day, 'd MMM', { locale: localeId }) : format(day, 'EEE, d MMM', { locale: localeId });
-        return {
-          date: key,
-          label,
-          omzet: dInfo.omzet,
-          pesanan: dInfo.pesanan,
-          laba: dLaba,
-        };
-      });
+        const hourlyMap = new Map<string, { omzet: number; pesanan: number }>();
+        hourlyData.forEach(d => {
+          hourlyMap.set(d.hourKey, { omzet: Number(d.omzet), pesanan: d.pesanan });
+        });
+
+        // Determine adaptive hour step based on dayCount to keep points clean and readable
+        let stepHours = 1;
+        if (dayCount === 1) {
+          stepHours = 2; // 12 points for 1 day
+        } else if (dayCount === 2) {
+          stepHours = 4; // 12 points for 2 days
+        } else if (dayCount === 3 || dayCount === 4) {
+          stepHours = 6; // 12 - 16 points
+        } else {
+          stepHours = 8; // 15 - 18 points for 5-6 days
+        }
+
+        const intervalPoints: ChartDataPoint[] = [];
+        const cur = new Date(startDate);
+        while (cur <= endDate) {
+          const blockStart = new Date(cur);
+          let blockOmzet = 0;
+          let blockPesanan = 0;
+
+          for (let h = 0; h < stepHours; h++) {
+            const hDate = new Date(cur.getTime() + h * 3600 * 1000);
+            if (hDate > endDate) break;
+            const hKey = format(hDate, 'yyyy-MM-dd HH');
+            const info = hourlyMap.get(hKey);
+            if (info) {
+              blockOmzet += info.omzet;
+              blockPesanan += info.pesanan;
+            }
+          }
+
+          const blockLaba = Math.round(blockOmzet * 0.55);
+          const label = dayCount === 1 
+            ? format(blockStart, 'HH:00')
+            : format(blockStart, 'd MMM, HH:00', { locale: localeId });
+
+          intervalPoints.push({
+            date: format(blockStart, 'yyyy-MM-dd HH:mm'),
+            label,
+            omzet: blockOmzet,
+            pesanan: blockPesanan,
+            laba: blockLaba,
+          });
+
+          cur.setTime(cur.getTime() + stepHours * 3600 * 1000);
+        }
+
+        chartData = intervalPoints;
+      } else {
+        // Daily intervals (>= 7 days or bulanan tab)
+        const dailyData = await db.select({
+          dayDate: sql<string>`to_char(${transactions.createdAt}, 'YYYY-MM-DD')`,
+          omzet: sql<number>`COALESCE(sum(${transactions.grandTotal}), 0)::numeric`,
+          pesanan: sql<number>`count(${transactions.id})::int`,
+        })
+        .from(transactions)
+        .where(dateFilter)
+        .groupBy(sql`to_char(${transactions.createdAt}, 'YYYY-MM-DD')`);
+
+        const dailyMap = new Map<string, { omzet: number; pesanan: number }>();
+        dailyData.forEach(d => {
+          dailyMap.set(d.dayDate, { omzet: Number(d.omzet), pesanan: d.pesanan });
+        });
+
+        // Generate all dates in interval
+        const allDays = eachDayOfInterval({ start: startDate, end: endDate });
+        chartData = allDays.map(day => {
+          const key = format(day, 'yyyy-MM-dd');
+          const dInfo = dailyMap.get(key) || { omzet: 0, pesanan: 0 };
+          const dLaba = Math.round(dInfo.omzet * 0.55);
+          const label = tab === 'bulanan' ? format(day, 'd MMM', { locale: localeId }) : format(day, 'EEE, d MMM', { locale: localeId });
+          return {
+            date: key,
+            label,
+            omzet: dInfo.omzet,
+            pesanan: dInfo.pesanan,
+            laba: dLaba,
+          };
+        });
+      }
     }
 
     // 6. Top Selling Products with Share %
@@ -718,12 +790,12 @@ export async function getOutletDashboardData(
       outletName: tenant.name,
       outletKey: tenant.outletKey,
       slug: tenant.slug,
-      storeDescription: tenant.storeDescription,
-      storefrontEnabled: tenant.storefrontEnabled,
+      storeDescription: tenant.storeDescription ?? null,
+      storefrontEnabled: Boolean(tenant.storefrontEnabled),
       staffCount: staffCountRes[0]?.count || 1,
       deviceCount: totalDevices,
       totalLifetimeTransactions: lifetimeTxRes[0]?.count || 0,
-      userName: user.name || 'Owner',
+      userName: userName || 'Owner',
       activeAlertCount: criticalAlerts.length,
       criticalAlerts,
     };
@@ -742,6 +814,43 @@ export async function getOutletDashboardData(
       bestMonthName,
       insights,
     };
+  } catch (error: any) {
+    console.error('Error fetching dashboard data for tenant:', error);
+    return {
+      success: false,
+      error: error.message || 'Gagal memuat data dashboard outlet',
+    } as any;
+  }
+}
+
+export async function getOutletDashboardData(
+  outletKey: string,
+  searchParams: {
+    tab?: string;
+    preset?: string;
+    from?: string;
+    to?: string;
+    month?: string; // YYYY-MM
+    year?: string;  // YYYY
+  }
+): Promise<DashboardResponse> {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return { success: false, error: 'Unauthorized' } as any;
+    }
+
+    // 1. Resolve tenant strictly by outletKey
+    const [tenant] = await db.select()
+      .from(tenants)
+      .where(eq(tenants.outletKey, outletKey))
+      .limit(1);
+
+    if (!tenant) {
+      return { success: false, error: 'Outlet tidak ditemukan' } as any;
+    }
+
+    return await getDashboardDataForTenant(tenant, user.name || 'Owner', searchParams);
   } catch (error: any) {
     console.error('Error fetching outlet dashboard data:', error);
     return {
@@ -868,7 +977,7 @@ export async function getSalesChartData(startDate: Date, endDate: Date, groupBy:
       return { success: false, error: 'Unauthorized or no dashboard' };
     }
 
-    let groupBySql = groupBy === 'day' ? sql`to_char(${transactions.createdAt}, 'YYYY-MM-DD')` : (groupBy === 'month' ? sql`to_char(${transactions.createdAt}, 'YYYY-MM')` : sql`to_char(${transactions.createdAt}, 'YYYY')`);
+    const groupBySql = groupBy === 'day' ? sql`to_char(${transactions.createdAt}, 'YYYY-MM-DD')` : (groupBy === 'month' ? sql`to_char(${transactions.createdAt}, 'YYYY-MM')` : sql`to_char(${transactions.createdAt}, 'YYYY')`);
 
     const result = await db.select({
       date: sql<string>`${groupBySql}`,
