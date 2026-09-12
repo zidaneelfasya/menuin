@@ -51,7 +51,7 @@ export function POSPage({
     setMounted(true);
   }, []);
 
-  const handleCheckoutClick = () => {
+  const handleCheckoutClick = React.useCallback(() => {
     if (items.length === 0) {
       toast.error('Keranjang kosong!');
       return;
@@ -62,7 +62,7 @@ export function POSPage({
       return;
     }
     setIsPaymentModalOpen(true);
-  };
+  }, [items.length, currentShift]);
 
   const handleConfirmPayment = async (paymentData: {
     cashReceived: number;
@@ -161,7 +161,7 @@ export function POSPage({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [items]);
+  }, [isPaymentModalOpen, handleCheckoutClick]);
 
   const totalItems = mounted ? items.reduce((sum, item) => sum + item.quantity, 0) : 0;
   const cartTotal = mounted ? getTotal() : 0;
