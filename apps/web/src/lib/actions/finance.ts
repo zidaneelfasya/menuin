@@ -78,7 +78,7 @@ export async function getFinancialReportData(params?: FinancialReportParams) {
       .orderBy(desc(transactions.createdAt));
 
     const trxIds = trxList.map(t => t.id);
-    let itemsMap: Record<string, any[]> = {};
+    const itemsMap: Record<string, any[]> = {};
 
     if (trxIds.length > 0) {
       const allItems = await db
