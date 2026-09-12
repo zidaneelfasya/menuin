@@ -1,7 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-/node_modules
+node_modules
 /.pnp
 .pnp.*
 .yarn/*
@@ -10,6 +10,7 @@
 !.yarn/releases
 !.yarn/versions
 
+# AI Agents
 /.agents
 /.skills
 skills-lock.json
@@ -18,11 +19,26 @@ skills-lock.json
 /coverage
 
 # next.js
-/.next/
-/out/
+.next/
+out/
+build/
+next-env.d.ts
 
-# production
-/build
+# expo & react native
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+.metro-health-check*
+/apps/mobile/ios/
+/apps/mobile/android/
 
 # misc
 .DS_Store
@@ -43,4 +59,3 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
-next-env.d.ts
