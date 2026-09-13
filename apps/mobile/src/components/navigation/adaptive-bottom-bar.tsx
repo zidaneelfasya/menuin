@@ -311,18 +311,6 @@ export function AdaptiveBottomBar({
                 {activeShift ? 'Shift Aktif' : 'Shift Tutup'}
               </Text>
             </View>
-
-            <TouchableOpacity
-              onPress={() => navigateTo('/(main)/(cashier)/pos')}
-              activeOpacity={0.7}
-              style={{ backgroundColor: '#edf5fe', borderColor: '#bfdbfe' }}
-              className="px-3.5 py-1.5 rounded-xl border flex-row items-center active:bg-blue-100"
-            >
-              <Store size={13} color={MENUIN_BLUE} className="mr-1.5" />
-              <Text style={{ color: MENUIN_BLUE }} className="text-xs font-black">
-                Buka POS
-              </Text>
-            </TouchableOpacity>
           </View>
         </View>
       )}

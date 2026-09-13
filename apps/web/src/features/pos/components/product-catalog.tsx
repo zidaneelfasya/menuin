@@ -49,7 +49,7 @@ export function ProductCatalog({
   const [selectedProductForModal, setSelectedProductForModal] = React.useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
 
-  const handleAddToCart = (product: { id: string, name: string, price: string | number }, modifiers: any[] = [], notes: string = '', quantity: number = 1) => {
+  const handleAddToCart = (product: { id: string, name: string, price: string | number, imageUrl?: string | null }, modifiers: any[] = [], notes: string = '', quantity: number = 1) => {
     let extraPrice = 0;
     modifiers.forEach(m => extraPrice += Number(m.price));
     
@@ -58,6 +58,7 @@ export function ProductCatalog({
         productId: product.id, 
         name: product.name, 
         price: Number(product.price) + extraPrice, 
+        imageUrl: product.imageUrl,
         modifiers,
         notes
       });
@@ -71,6 +72,13 @@ export function ProductCatalog({
       if (!a.isFeatured && b.isFeatured) return 1;
       return a.name.localeCompare(b.name);
     });
+  }, [products]);
+
+  // Sync cart images with current product list
+  React.useEffect(() => {
+    if (products && products.length > 0) {
+      useCartStore.getState().syncProductImages(products);
+    }
   }, [products]);
 
   // Reset visible count when filter changes

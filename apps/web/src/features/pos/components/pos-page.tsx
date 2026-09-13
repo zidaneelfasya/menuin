@@ -49,7 +49,10 @@ export function POSPage({
 
   React.useEffect(() => {
     setMounted(true);
-  }, []);
+    if (initialProducts && initialProducts.length > 0) {
+      useCartStore.getState().syncProductImages(initialProducts);
+    }
+  }, [initialProducts]);
 
   const handleCheckoutClick = React.useCallback(() => {
     if (items.length === 0) {

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, ActivityIndicator } from 'react-native';
 import { Redirect } from 'expo-router';
 import { useAuthStore, getEffectiveDeviceId } from '@/store/auth-store';
 import { getApiUrl } from '@/lib/api-client';
+import { LoadingScreen } from '@/components/ui/loading-screen';
 
 export default function Index() {
   const [isHydrated, setIsHydrated] = useState(false);
@@ -66,11 +66,7 @@ export default function Index() {
   }, [deviceToken, deviceId, tenantId]);
 
   if (!isHydrated || isCheckingDevice) {
-    return (
-      <View className="flex-1 items-center justify-center bg-gray-50">
-        <ActivityIndicator size="large" color="#014FFD" />
-      </View>
-    );
+    return <LoadingScreen message="Memverifikasi perangkat..." />;
   }
 
   const currentDeviceToken = useAuthStore.getState().deviceToken;

@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, ActivityIndicator, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, Stack } from 'expo-router';
 import { useAuthStore } from '@/store/auth-store';
 import { useAuthMe } from '@/hooks/use-auth-me';
 import { AlertCircle, LogOut, Smartphone } from 'lucide-react-native';
 import { GlobalIncomingOrderToast } from '@/components/realtime/incoming-order-toast';
+import { LoadingScreen } from '@/components/ui/loading-screen';
 
 export default function MainLayout() {
   const [isHydrated, setIsHydrated] = useState(false);
@@ -24,11 +25,7 @@ export default function MainLayout() {
   }, []);
 
   if (!isHydrated || isAuthMeLoading) {
-    return (
-      <View className="flex-1 items-center justify-center bg-gray-50">
-        <ActivityIndicator size="large" color="#014FFD" />
-      </View>
-    );
+    return <LoadingScreen message="Menyiapkan data kasir..." />;
   }
 
   if (!deviceToken) {
