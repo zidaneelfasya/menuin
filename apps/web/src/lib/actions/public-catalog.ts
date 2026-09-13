@@ -3,6 +3,7 @@
 import { db } from "@/lib/db";
 import { tenants, transactions, transactionItems, products } from "@/lib/db/schema";
 import { eq, inArray, and } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 const orderSchema = z.object({
@@ -312,9 +313,14 @@ export async function verifyOnlinePaymentStatus(orderNumber: string, tenantSlug:
       await db.update(transactions)
         .set({ status: newStatus, paymentStatus: newPaymentStatus })
         .where(eq(transactions.id, order.id));
+
+      if (tenant.outletKey) {
+        revalidatePath(`/outlet/${tenant.outletKey}`, "layout");
+        revalidatePath(`/outlet/${tenant.outletKey}/orders`, "page");
+      }
     }
 
-    return { success: true, paymentStatus: newPaymentStatus };
+    return { success: true, paymentStatus: newPaymentStatus, status: newStatus };
   } catch (error) {
     console.error("Failed to verify payment status:", error);
     return { error: "Gagal memverifikasi status pembayaran" };

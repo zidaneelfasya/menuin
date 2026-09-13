@@ -2,20 +2,30 @@ import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
 export const getApiBaseUrl = () => {
-  // If we have an explicit environment variable set, use it
-  if (process.env.EXPO_PUBLIC_API_URL) {
-    return process.env.EXPO_PUBLIC_API_URL;
+  // If we have an explicit environment variable set and not localhost on physical device
+  const envUrl = process.env.EXPO_PUBLIC_API_URL;
+  if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
+    return envUrl;
   }
 
   // In development with Expo Go, get the local IP address dynamically
   if (__DEV__) {
-    // debuggerHost looks like "192.168.1.100:8081"
-    const debuggerHost = Constants.expoConfig?.hostUri;
+    const hostUri = 
+      Constants.expoConfig?.hostUri || 
+      (Constants as any).manifest2?.extra?.expoClient?.hostUri || 
+      (Constants as any).manifest?.debuggerHost ||
+      Constants.linkingUri;
     
-    if (debuggerHost) {
-      // Extract just the IP part and point to the Next.js port (3000)
-      const ip = debuggerHost.split(':')[0];
-      return `http://${ip}:3000`;
+    if (hostUri) {
+      const match = hostUri.match(/^https?:\/\/([^/:]+)/) || hostUri.match(/^([^/:]+)/);
+      const ip = match ? match[1] : hostUri.split(':')[0];
+      if (ip && ip !== 'localhost' && ip !== '127.0.0.1') {
+        return `http://${ip}:3000`;
+      }
+    }
+
+    if (envUrl) {
+      return envUrl;
     }
 
     // Fallback for Android emulator
@@ -23,12 +33,11 @@ export const getApiBaseUrl = () => {
       return 'http://10.0.2.2:3000';
     }
     
-    // Fallback for iOS simulator
-    return 'http://localhost:3000';
+    // Fallback for local LAN IP
+    return 'http://192.168.1.2:3000';
   }
 
-  // Production fallback (should ideally be set via EXPO_PUBLIC_API_URL)
-  return 'https://menuin.id';
+  return envUrl || 'https://menuin.id';
 };
 
 export const API_BASE_URL = getApiBaseUrl();

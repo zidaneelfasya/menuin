@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import crypto from 'crypto';
 import { db } from '@/lib/db';
 import { transactions, payments, tenants } from '@/lib/db/schema';
@@ -75,6 +76,11 @@ export async function POST(req: Request) {
       await db.update(transactions)
         .set({ status: newStatus, paymentStatus: newPaymentStatus })
         .where(eq(transactions.id, transactionId));
+
+      if (tenant.outletKey) {
+        revalidatePath(`/outlet/${tenant.outletKey}`, "layout");
+        revalidatePath(`/outlet/${tenant.outletKey}/orders`, "page");
+      }
     }
 
     // Log the payment details in the payments table for idempotency and records

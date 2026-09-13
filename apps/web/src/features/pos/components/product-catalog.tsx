@@ -26,6 +26,7 @@ type Product = {
   imageUrl: string | null;
   barcode: string | null;
   isFeatured?: boolean;
+  trackStock?: boolean;
   status: string;
   modifierGroupIds?: string[];
 };
@@ -231,69 +232,74 @@ export function ProductCatalog({
       {/* Product Grid */}
       <div className="flex-1 overflow-y-auto pr-2 pb-24">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          {filteredProducts.slice(0, visibleCount).map(product => (
-            <div 
-              key={product.id} 
-              className={cn(
-                "bg-card border rounded-2xl overflow-hidden hover:shadow-md hover:border-primary/50 transition-all flex flex-col relative",
-                product.stock > 0 ? "cursor-pointer group" : "opacity-50 cursor-not-allowed"
-              )}
-              onClick={() => {
-                if (product.stock > 0) {
-                  if (product.modifierGroupIds && product.modifierGroupIds.length > 0) {
-                    setSelectedProductForModal(product);
-                    setIsModalOpen(true);
-                  } else {
-                    handleAddToCart(product);
+          {filteredProducts.slice(0, visibleCount).map(product => {
+            const isAvailable = product.trackStock === false || product.stock > 0;
+            return (
+              <div 
+                key={product.id} 
+                className={cn(
+                  "bg-card border rounded-2xl overflow-hidden hover:shadow-md hover:border-primary/50 transition-all flex flex-col relative",
+                  isAvailable ? "cursor-pointer group" : "opacity-50 cursor-not-allowed"
+                )}
+                onClick={() => {
+                  if (isAvailable) {
+                    if (product.modifierGroupIds && product.modifierGroupIds.length > 0) {
+                      setSelectedProductForModal(product);
+                      setIsModalOpen(true);
+                    } else {
+                      handleAddToCart(product);
+                    }
                   }
-                }
-              }}
-            >
-              {product.isFeatured && (
-                <div className="absolute top-2 left-2 z-10 bg-amber-500/95 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-md flex items-center gap-1 backdrop-blur-sm">
-                  <Star className="w-3 h-3 fill-current" />
-                  BEST SELLER
-                </div>
-              )}
-              
-              <div className="aspect-[4/3] bg-muted relative overflow-hidden flex items-center justify-center">
-                {product.imageUrl ? (
-                  <>
-                    <img 
-                      src={product.imageUrl} 
-                      alt={product.name} 
-                      loading="lazy"
-                      className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300" 
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                        e.currentTarget.nextElementSibling?.classList.add('flex');
-                      }}
-                    />
-                    <div className="hidden w-full h-full items-center justify-center text-muted-foreground bg-primary/5 text-4xl font-bold text-primary/20">
-                      {product.name.charAt(0)}
-                    </div>
-                  </>
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-primary/5 text-4xl font-bold text-primary/20">
-                    {product.name.charAt(0)}
+                }}
+              >
+                {product.isFeatured && (
+                  <div className="absolute top-2 left-2 z-10 bg-amber-500/95 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-md flex items-center gap-1 backdrop-blur-sm">
+                    <Star className="w-3 h-3 fill-current" />
+                    BEST SELLER
                   </div>
                 )}
-              </div>
-              <div className="p-3 flex flex-col flex-1">
-                <h3 className="font-semibold text-sm line-clamp-2 leading-tight mb-1">{product.name}</h3>
-                <div className="text-xs text-muted-foreground mb-2">Stok: {product.stock}</div>
-                <div className="mt-auto flex items-center justify-between">
-                  <span className="text-primary font-bold text-sm">{formatCurrency(parseFloat(product.price))}</span>
-                  {product.stock > 0 && (
-                    <button className="h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors">
-                      <Plus size={14} />
-                    </button>
+                
+                <div className="aspect-[4/3] bg-muted relative overflow-hidden flex items-center justify-center">
+                  {product.imageUrl ? (
+                    <>
+                      <img 
+                        src={product.imageUrl} 
+                        alt={product.name} 
+                        loading="lazy"
+                        className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300" 
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                          e.currentTarget.nextElementSibling?.classList.add('flex');
+                        }}
+                      />
+                      <div className="hidden w-full h-full items-center justify-center text-muted-foreground bg-primary/5 text-4xl font-bold text-primary/20">
+                        {product.name.charAt(0)}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-primary/5 text-4xl font-bold text-primary/20">
+                      {product.name.charAt(0)}
+                    </div>
                   )}
                 </div>
+                <div className="p-3 flex flex-col flex-1">
+                  <h3 className="font-semibold text-sm line-clamp-2 leading-tight mb-1">{product.name}</h3>
+                  <div className="text-xs text-muted-foreground mb-2">
+                    {product.trackStock === false ? 'Stok: Tanpa Batas' : `Stok: ${product.stock}`}
+                  </div>
+                  <div className="mt-auto flex items-center justify-between">
+                    <span className="text-primary font-bold text-sm">{formatCurrency(parseFloat(product.price))}</span>
+                    {isAvailable && (
+                      <button className="h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors">
+                        <Plus size={14} />
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           {filteredProducts.length === 0 && (
             <div className="col-span-full py-12 text-center text-muted-foreground">
               Tidak ada produk yang ditemukan.

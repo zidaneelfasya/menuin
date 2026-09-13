@@ -41,13 +41,14 @@ export async function getProducts(): Promise<{ success: boolean, data?: ProductD
         price: products.price,
         stock: products.stock,
         minStock: products.minStock,
+        trackStock: products.trackStock,
         categoryName: categories.name,
         categoryId: products.categoryId,
         imageUrl: products.imageUrl,
         barcode: products.barcode,
         isAvailableOnline: products.isAvailableOnline,
         isFeatured: products.isFeatured,
-        status: sql<string>`CASE WHEN ${products.stock} > 0 THEN 'active' ELSE 'inactive' END`,
+        status: sql<string>`CASE WHEN ${products.trackStock} = false THEN 'active' WHEN ${products.stock} > 0 THEN 'active' ELSE 'inactive' END`,
       })
       .from(products)
       .leftJoin(categories, eq(products.categoryId, categories.id))
@@ -85,6 +86,27 @@ export async function toggleProductBestSeller(productId: string, isFeatured: boo
   }
 }
 
+export async function toggleTrackStock(productId: string, trackStock: boolean) {
+  try {
+    const user = await getCurrentUser();
+    if (!user || !user.tenantId) return { success: false, error: 'Unauthorized' };
+
+    await db.update(products)
+      .set({ trackStock, updatedAt: new Date() })
+      .where(and(eq(products.id, productId), eq(products.tenantId, user.tenantId)));
+
+    if (user && typeof user === "object" && "outletKey" in user) { 
+      revalidatePath(`/outlet/${user.outletKey}`, "layout"); 
+      revalidatePath(`/outlet/${user.outletKey}/items`, "page"); 
+      revalidatePath(`/outlet/${user.outletKey}/inventory`, "page"); 
+    }
+    return { success: true };
+  } catch (error) {
+    console.error('Error toggling track stock status:', error);
+    return { success: false, error: 'Gagal mengubah status pelacakan stok' };
+  }
+}
+
 export async function createProduct(formData: z.infer<typeof productSchema>) {
   try {
     const user = await getCurrentUser();
@@ -106,6 +128,7 @@ export async function createProduct(formData: z.infer<typeof productSchema>) {
       costPrice: validatedData.costPrice.toString(),
       stock: validatedData.stock,
       minStock: validatedData.minStock,
+      trackStock: validatedData.trackStock ?? true,
       imageUrl: validatedData.imageUrl,
       barcode: finalBarcode,
     }).returning({ id: products.id });
@@ -145,6 +168,7 @@ export async function updateProduct(id: string, formData: z.infer<typeof product
         costPrice: validatedData.costPrice.toString(),
         stock: validatedData.stock,
         minStock: validatedData.minStock,
+        trackStock: validatedData.trackStock ?? true,
         imageUrl: validatedData.imageUrl,
         barcode: validatedData.barcode,
         updatedAt: new Date(),

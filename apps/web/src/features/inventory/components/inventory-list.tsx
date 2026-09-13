@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { ColumnDef } from '@tanstack/react-table';
-import { MoreHorizontal, Plus, Search, Archive, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
+import { MoreHorizontal, Plus, Search, Archive, ArrowDownCircle, ArrowUpCircle, Boxes } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
 const DataTable = dynamic(
@@ -32,6 +32,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { adjustStock } from '@/lib/actions/inventory';
+import { toggleTrackStock } from '@/lib/actions/products';
 import { toast } from 'sonner';
 
 type Product = {
@@ -41,6 +42,7 @@ type Product = {
   stock: number;
   minStock: number;
   status: string;
+  trackStock?: boolean;
 };
 
 const adjustStockSchema = z.object({
@@ -51,10 +53,15 @@ const adjustStockSchema = z.object({
 });
 
 export function InventoryList({ initialData }: { initialData: Product[] }) {
+  const [inventoryList, setInventoryList] = React.useState<Product[]>(initialData);
   const [isAdjustOpen, setIsAdjustOpen] = React.useState(false);
   const [adjustType, setAdjustType] = React.useState<'IN' | 'OUT'>('IN');
   const [selectedProduct, setSelectedProduct] = React.useState<Product | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    setInventoryList(initialData);
+  }, [initialData]);
 
   const form = useForm<z.infer<typeof adjustStockSchema>>({
     resolver: zodResolver(adjustStockSchema),
@@ -87,6 +94,28 @@ export function InventoryList({ initialData }: { initialData: Product[] }) {
     setIsAdjustOpen(true);
   };
 
+  const handleToggleTrackStock = async (product: Product, currentValue: boolean) => {
+    const newValue = !currentValue;
+    // Optimistic UI update
+    setInventoryList((prev) =>
+      prev.map((p) => (p.id === product.id ? { ...p, trackStock: newValue } : p))
+    );
+
+    const result = await toggleTrackStock(product.id, newValue);
+    if (!result.success) {
+      toast.error(result.error || 'Gagal mengubah status pelacakan stok');
+      setInventoryList((prev) =>
+        prev.map((p) => (p.id === product.id ? { ...p, trackStock: currentValue } : p))
+      );
+    } else {
+      toast.success(
+        newValue
+          ? `Lacak stok aktif untuk ${product.name} (stok akan berkurang saat kasir checkout)`
+          : `Lacak stok dinonaktifkan untuk ${product.name} (stok tanpa batas & tidak berkurang)`
+      );
+    }
+  };
+
   const columns: ColumnDef<Product>[] = [
     {
       accessorKey: 'sku',
@@ -101,26 +130,53 @@ export function InventoryList({ initialData }: { initialData: Product[] }) {
       accessorKey: 'stock',
       header: 'Sisa Stok',
       cell: ({ row }) => {
+        const product = row.original;
+        const isTracked = product.trackStock !== false;
+
+        if (!isTracked) {
+          return (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900/50">
+              Tanpa Batas
+            </span>
+          );
+        }
+
         const stock = parseInt(row.getValue('stock'));
-        const minStock = row.original.minStock;
+        const minStock = product.minStock;
         
         let textColor = 'text-foreground';
         if (stock <= minStock && stock > 0) textColor = 'text-warning font-bold';
         if (stock === 0) textColor = 'text-destructive font-bold';
         
-        return <div className={`text-lg ${textColor}`}>{stock}</div>;
+        return <div className={`text-base font-semibold ${textColor}`}>{stock}</div>;
       },
     },
     {
       accessorKey: 'minStock',
       header: 'Batas Minimum',
+      cell: ({ row }) => {
+        const product = row.original;
+        if (product.trackStock === false) return <span className="text-muted-foreground text-xs">-</span>;
+        return <span>{row.getValue('minStock')}</span>;
+      }
     },
     {
       accessorKey: 'status',
       header: 'Status',
       cell: ({ row }) => {
+        const product = row.original;
+        const isTracked = product.trackStock !== false;
+
+        if (!isTracked) {
+          return (
+            <div className="px-2 py-1 rounded-full text-xs font-semibold w-fit bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900/50">
+              Selalu Ada
+            </div>
+          );
+        }
+
         const stock = parseInt(row.getValue('stock'));
-        const minStock = row.original.minStock;
+        const minStock = product.minStock;
         
         let badgeClass = 'bg-success/10 text-success';
         let text = 'Aman';
@@ -144,6 +200,8 @@ export function InventoryList({ initialData }: { initialData: Product[] }) {
       id: 'actions',
       cell: ({ row }) => {
         const product = row.original;
+        const isTracked = product.trackStock !== false;
+
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -154,6 +212,11 @@ export function InventoryList({ initialData }: { initialData: Product[] }) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Kelola Stok</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => handleToggleTrackStock(product, isTracked)}>
+                <Boxes className="mr-2 h-4 w-4 text-blue-600" />
+                {isTracked ? 'Nonaktifkan Lacak Stok (Tanpa Batas)' : 'Aktifkan Lacak Stok'}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem className="text-success cursor-pointer" onClick={() => handleAdjustClick(product, 'IN')}>
                 <ArrowUpCircle className="mr-2 h-4 w-4" /> Stok Masuk
               </DropdownMenuItem>
@@ -171,12 +234,12 @@ export function InventoryList({ initialData }: { initialData: Product[] }) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Manajemen Stock</h1>
-          <p className="text-sm text-muted-foreground">Pantau sisa stok dan lakukan penyesuaian inventori.</p>
+          <h1 className="text-2xl font-bold tracking-tight">Manajemen Stok</h1>
+          <p className="text-sm text-muted-foreground">Pantau sisa stok, status ketersediaan, dan atur apakah stok berkurang otomatis atau tanpa batas.</p>
         </div>
       </div>
 
-      <DataTable columns={columns} data={initialData} searchKey="name" searchPlaceholder="Cari produk..." />
+      <DataTable columns={columns} data={inventoryList} searchKey="name" searchPlaceholder="Cari produk..." />
 
       <Dialog open={isAdjustOpen} onOpenChange={setIsAdjustOpen}>
         <DialogContent>
@@ -208,3 +271,4 @@ export function InventoryList({ initialData }: { initialData: Product[] }) {
     </div>
   );
 }
+

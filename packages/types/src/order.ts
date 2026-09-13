@@ -3,6 +3,7 @@ export interface OrderItemDto {
   transactionId: string;
   productId?: string;
   quantity: number;
+  price?: string;
   productName: string;
   subtotal: string;
   isCompleted: boolean;
