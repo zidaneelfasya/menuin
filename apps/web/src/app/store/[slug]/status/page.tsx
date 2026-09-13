@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState, useCallback } from "react";
 import { getPublicOrderByNumber } from "@/lib/actions/orders";
+import { verifyOnlinePaymentStatus } from "@/lib/actions/public-catalog";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,8 +41,22 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
     }
 
     try {
+      // Auto-verify with Midtrans if coming back from payment or status code in URL
+      const hasPaymentParams = searchParams.get("transaction_status") || searchParams.get("status_code");
+      if (hasPaymentParams) {
+        await verifyOnlinePaymentStatus(formattedOrderNum, unwrappedParams.slug);
+      }
+
       const data = await getPublicOrderByNumber(formattedOrderNum, unwrappedParams.slug);
       if (data) {
+        // If order is ONLINE & still PENDING, double check Midtrans status
+        if (data.paymentMethod === 'ONLINE' && data.paymentStatus === 'PENDING') {
+          const verifyRes = await verifyOnlinePaymentStatus(formattedOrderNum, unwrappedParams.slug);
+          if (verifyRes.success && verifyRes.paymentStatus === 'PAID') {
+            data.paymentStatus = 'PAID';
+            data.status = verifyRes.status || 'NEW';
+          }
+        }
         setOrder(data);
       } else {
         if (!isSilent) setError("Pesanan tidak ditemukan. Periksa kembali nomor pesanan Anda.");

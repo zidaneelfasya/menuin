@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { ColumnDef } from '@tanstack/react-table';
-import { MoreHorizontal, Printer, Eye, Ban, AlertTriangle, Loader2 } from 'lucide-react';
+import { MoreHorizontal, Printer, Eye, Ban, AlertTriangle, Loader2, ChefHat, ReceiptText } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils/format';
@@ -25,7 +25,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { voidTransaction } from '@/lib/actions/transactions';
+import { voidTransaction, getTransactionDetails } from '@/lib/actions/transactions';
+import { ReceiptPrinter, ReceiptData, TenantReceiptSettings } from '@/features/pos/components/receipt-printer';
 import { toast } from 'sonner';
 
 const DataTable = dynamic(
@@ -71,6 +72,63 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
   const [selectedTxForVoid, setSelectedTxForVoid] = React.useState<Transaction | null>(null);
   const [voidReason, setVoidReason] = React.useState('');
   const [isSubmittingVoid, setIsSubmittingVoid] = React.useState(false);
+  
+  // Printing state
+  const [printData, setPrintData] = React.useState<ReceiptData | null>(null);
+  const [printSettings, setPrintSettings] = React.useState<TenantReceiptSettings | null>(null);
+  const [printMode, setPrintMode] = React.useState<'all' | 'customer' | 'kitchen'>('all');
+  const [loadingPrintId, setLoadingPrintId] = React.useState<string | null>(null);
+
+  const handleReprint = async (transactionId: string, mode: 'all' | 'customer' | 'kitchen') => {
+    setLoadingPrintId(transactionId);
+    const toastId = toast.loading('Menyiapkan struk...');
+    try {
+      const res = await getTransactionDetails(transactionId);
+      if (res.success && res.data) {
+        const { transaction, items, settings } = res.data;
+        const receipt: ReceiptData = {
+          transactionId: transaction.id,
+          date: new Date(transaction.createdAt),
+          cashierName: transaction.cashierName || 'Kasir',
+          subtotal: parseFloat(transaction.totalAmount || '0'),
+          discount: parseFloat(transaction.discount || '0'),
+          promoCode: transaction.promoCode || undefined,
+          tax: parseFloat(transaction.tax || '0'),
+          serviceCharge: parseFloat(transaction.serviceCharge || '0'),
+          totalAmount: parseFloat(transaction.grandTotal || '0'),
+          cashReceived: parseFloat(transaction.grandTotal || '0'),
+          change: 0,
+          paymentMethod: (transaction.paymentMethod || 'TUNAI').toUpperCase(),
+          orderType: transaction.orderType,
+          customerName: transaction.customerName || undefined,
+          tableNumber: transaction.tableNumber || undefined,
+          items: items.map(it => ({
+            name: it.name,
+            quantity: it.quantity,
+            price: it.price,
+            subtotal: it.subtotal,
+            modifiers: Array.isArray(it.modifiers) ? it.modifiers : undefined,
+            notes: it.notes,
+          })),
+        };
+
+        setPrintSettings(settings || null);
+        setPrintData(receipt);
+        setPrintMode(mode);
+        toast.dismiss(toastId);
+
+        setTimeout(() => {
+          window.print();
+        }, 200);
+      } else {
+        toast.error(res.error || 'Gagal mengambil data struk', { id: toastId });
+      }
+    } catch (err) {
+      toast.error('Gagal mencetak struk', { id: toastId });
+    } finally {
+      setLoadingPrintId(null);
+    }
+  };
 
   const handleConfirmVoid = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -227,6 +285,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
       cell: ({ row }) => {
         const trx = row.original;
         const isCanceled = trx.status === 'CANCELLED' || trx.paymentStatus === 'CANCELED';
+        const isLoading = loadingPrintId === trx.id;
 
         return (
           <DropdownMenu>
@@ -236,13 +295,30 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuLabel className="text-xs">Aksi Transaksi</DropdownMenuLabel>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel className="text-xs">Cetak Ulang Struk</DropdownMenuLabel>
               <DropdownMenuItem 
-                onClick={() => window.print()}
-                className="cursor-pointer text-xs"
+                onClick={() => handleReprint(trx.id, 'customer')}
+                disabled={isLoading}
+                className="cursor-pointer text-xs flex items-center gap-2"
               >
-                <Printer className="mr-2 h-3.5 w-3.5" /> Cetak Ulang Struk
+                <ReceiptText className="h-3.5 w-3.5 text-primary" /> Struk Pelanggan
+              </DropdownMenuItem>
+
+              <DropdownMenuItem 
+                onClick={() => handleReprint(trx.id, 'kitchen')}
+                disabled={isLoading}
+                className="cursor-pointer text-xs flex items-center gap-2 text-orange-700 focus:text-orange-700"
+              >
+                <ChefHat className="h-3.5 w-3.5 text-orange-600" /> Tiket Dapur (Slip)
+              </DropdownMenuItem>
+
+              <DropdownMenuItem 
+                onClick={() => handleReprint(trx.id, 'all')}
+                disabled={isLoading}
+                className="cursor-pointer text-xs flex items-center gap-2"
+              >
+                <Printer className="h-3.5 w-3.5" /> Cetak Lengkap (Keduanya)
               </DropdownMenuItem>
 
               {!isCanceled && (
@@ -253,9 +329,9 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                       setSelectedTxForVoid(trx);
                       setVoidReason('');
                     }}
-                    className="cursor-pointer text-xs text-red-600 focus:text-red-600 focus:bg-red-50"
+                    className="cursor-pointer text-xs text-red-600 focus:text-red-600 focus:bg-red-50 flex items-center gap-2"
                   >
-                    <Ban className="mr-2 h-3.5 w-3.5" /> Batalkan / Void Transaksi
+                    <Ban className="h-3.5 w-3.5" /> Batalkan / Void Transaksi
                   </DropdownMenuItem>
                 </>
               )}
@@ -302,30 +378,30 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
               <div className="space-y-4 py-3">
                 <div className="p-3 bg-red-50 border border-red-200 rounded-xl space-y-1.5 text-xs">
                   <div className="flex justify-between">
-                    <span className="text-slate-600">No. Transaksi:</span>
-                    <strong className="text-slate-900 font-mono">{selectedTxForVoid.orderNumber || selectedTxForVoid.id.slice(0, 8)}</strong>
+                    <span className="text-slate-600">ID Transaksi:</span>
+                    <span className="font-mono font-bold">{selectedTxForVoid.id.slice(0, 8)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-600">Total Nominal:</span>
-                    <strong className="text-slate-900 font-mono">{formatCurrency(parseFloat(selectedTxForVoid.grandTotal || '0'))}</strong>
+                    <span className="text-slate-600">No. Order / Meja:</span>
+                    <span className="font-medium">{selectedTxForVoid.orderNumber || '-'} {selectedTxForVoid.tableNumber ? `(Meja ${selectedTxForVoid.tableNumber})` : ''}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-600">Metode Bayar:</span>
-                    <span className="font-semibold uppercase">{selectedTxForVoid.paymentMethod}</span>
+                    <span className="text-slate-600">Nominal Transaksi:</span>
+                    <span className="font-bold text-slate-900">{formatCurrency(parseFloat(selectedTxForVoid.grandTotal))}</span>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="voidReason" className="font-semibold text-xs uppercase tracking-wider text-slate-700">
-                    Alasan Pembatalan Transaksi <span className="text-red-500">*</span>
+                  <Label htmlFor="voidReason" className="text-xs font-semibold uppercase text-slate-700">
+                    Alasan Pembatalan <span className="text-red-500">*</span>
                   </Label>
                   <Textarea
                     id="voidReason"
-                    rows={3}
-                    placeholder="Contoh: Pelanggan membatalkan pesanan sebelum dibuat / Salah input menu kasir"
                     value={voidReason}
                     onChange={(e) => setVoidReason(e.target.value)}
-                    className="bg-slate-50/50 text-xs resize-none"
+                    placeholder="Contoh: Pelanggan salah pesan menu, pembayaran gagal/double, salah input kasir..."
+                    rows={3}
+                    className="text-xs resize-none"
                     required
                   />
                   <p className="text-[11px] text-muted-foreground">
@@ -360,6 +436,9 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* RECEIPT PRINTER FOR REPRINT */}
+      <ReceiptPrinter data={printData} settings={printSettings} printMode={printMode} />
     </div>
   );
 }

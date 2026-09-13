@@ -257,6 +257,7 @@ export const products = pgTable('products', {
   costPrice: decimal('cost_price', { precision: 12, scale: 2 }).notNull(),
   stock: integer('stock').notNull().default(0),
   minStock: integer('min_stock').notNull().default(5),
+  trackStock: boolean('track_stock').default(true).notNull(),
   imageUrl: text('image_url'),
   isAvailableOnline: boolean('is_available_online').default(true).notNull(),
   isFeatured: boolean('is_featured').default(false).notNull(),

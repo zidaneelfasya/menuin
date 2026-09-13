@@ -11,6 +11,7 @@ export interface ProductDto {
   barcode: string | null;
   isAvailableOnline?: boolean;
   isFeatured?: boolean;
+  trackStock?: boolean;
   status: string;
   modifierGroupIds?: string[];
 }
