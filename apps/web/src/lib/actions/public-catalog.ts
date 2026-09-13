@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { tenants, transactions, transactionItems, products } from "@/lib/db/schema";
+import { tenants, transactions, transactionItems, products, stockMovements } from "@/lib/db/schema";
 import { eq, inArray, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -61,16 +61,42 @@ export async function createOnlineOrder(formData: z.infer<typeof orderSchema>) {
     }
     const shiftId = activeShifts[0].id;
 
-    // 2. Validate products and calculate total
+    // 2. Validate products, stock, and calculate total
     const productIds = data.items.map(i => i.id);
     const dbProducts = await db.select().from(products).where(inArray(products.id, productIds));
     
     if (dbProducts.length !== productIds.length) {
-      return { error: "Beberapa produk tidak tersedia" };
+      return { error: "Beberapa produk tidak ditemukan" };
+    }
+
+    // Check stock availability
+    for (const item of data.items) {
+      const dbProduct = dbProducts.find(p => p.id === item.id);
+      if (!dbProduct) continue;
+      
+      if (dbProduct.trackStock !== false) {
+        const availableStock = dbProduct.stock ?? 0;
+        if (availableStock < item.quantity) {
+          return { 
+            error: availableStock <= 0 
+              ? `Maaf, stok untuk "${dbProduct.name}" sudah habis.` 
+              : `Stok untuk "${dbProduct.name}" tidak mencukupi (sisa ${availableStock}).`
+          };
+        }
+      }
     }
 
     let subTotal = 0;
-    const itemsToInsert = [];
+    const itemsToInsert: {
+      tenantId: string;
+      productId: string;
+      quantity: number;
+      price: string;
+      subtotal: string;
+      modifiers: any[];
+      notes: string | null;
+      dbProduct: typeof dbProducts[0];
+    }[] = [];
 
     for (const item of data.items) {
       const dbProduct = dbProducts.find(p => p.id === item.id);
@@ -88,52 +114,107 @@ export async function createOnlineOrder(formData: z.infer<typeof orderSchema>) {
         subtotal: total.toString(),
         modifiers: item.modifiers || [],
         notes: item.notes || null,
+        dbProduct,
       });
     }
 
     // Apply promo discount if any
     const discount = Math.max(0, Math.min(data.discount || 0, subTotal));
-    const grandTotal = Math.max(0, subTotal - discount);
+    const taxableSubtotal = Math.max(0, subTotal - discount);
+
+    // Calculate tax and service charge from tenant settings
+    const taxRate = parseFloat(String(tenant.posTaxRate || '0'));
+    const serviceRate = parseFloat(String(tenant.serviceChargeRate || '0'));
+    const taxAmount = (taxableSubtotal * taxRate) / 100;
+    const serviceChargeAmount = (taxableSubtotal * serviceRate) / 100;
+    const grandTotal = taxableSubtotal + taxAmount + serviceChargeAmount;
 
     const initialStatus = 'PENDING';
-    
-    // Always start online orders as PENDING so they wait in the "Menunggu Pembayaran" queue
-    // until the customer pays at the counter or completes Midtrans checkout.
-    
     const orderNumber = generateOrderNumber();
 
-    // 3. Create Transaction
-    const [newTransaction] = await db.insert(transactions).values({
-      tenantId: tenant.id,
-      cashierMembershipId: null, // Online order has no cashier user ID
-      shiftId: shiftId,
-      totalAmount: subTotal.toString(),
-      discount: discount.toString(),
-      promoCode: data.promoName || null,
-      grandTotal: grandTotal.toString(),
-      paymentMethod: data.paymentMethod,
-      status: initialStatus,
-      source: 'ONLINE',
-      orderType: data.orderType,
-      customerName: data.customerName || null,
-      customerPhone: data.customerPhone || null,
-      tableNumber: data.tableNumber || null,
-      orderNumber,
-    }).returning({ id: transactions.id, publicToken: transactions.publicToken, orderNumber: transactions.orderNumber });
+    // 3. Execute in DB Transaction: Create Transaction, Items, and Deduct Stock
+    const result = await db.transaction(async (tx) => {
+      // 3a. Insert Transaction
+      const [newTransaction] = await tx.insert(transactions).values({
+        tenantId: tenant.id,
+        cashierMembershipId: null,
+        shiftId: shiftId,
+        totalAmount: subTotal.toString(),
+        discount: discount.toString(),
+        tax: taxAmount.toString(),
+        serviceCharge: serviceChargeAmount.toString(),
+        promoCode: data.promoName || null,
+        grandTotal: grandTotal.toString(),
+        paymentMethod: data.paymentMethod,
+        status: initialStatus,
+        source: 'ONLINE',
+        orderType: data.orderType,
+        customerName: data.customerName || null,
+        customerPhone: data.customerPhone || null,
+        tableNumber: data.tableNumber || null,
+        orderNumber,
+      }).returning({ id: transactions.id, publicToken: transactions.publicToken, orderNumber: transactions.orderNumber });
 
-    // 4. Create Transaction Items
-    await db.insert(transactionItems).values(
-      itemsToInsert.map(item => ({
-        transactionId: newTransaction.id,
-        ...item
-      }))
-    );
+      // 3b. Insert Transaction Items
+      await tx.insert(transactionItems).values(
+        itemsToInsert.map(item => ({
+          transactionId: newTransaction.id,
+          tenantId: item.tenantId,
+          productId: item.productId,
+          quantity: item.quantity,
+          price: item.price,
+          subtotal: item.subtotal,
+          modifiers: item.modifiers,
+          notes: item.notes,
+        }))
+      );
+
+      // 3c. Deduct stock and log stock movement for each tracked product
+      for (const item of itemsToInsert) {
+        if (item.dbProduct.trackStock !== false) {
+          const prevStock = item.dbProduct.stock ?? 0;
+          const currStock = Math.max(0, prevStock - item.quantity);
+
+          await tx
+            .update(products)
+            .set({
+              stock: currStock,
+              updatedAt: new Date(),
+            })
+            .where(and(eq(products.id, item.productId), eq(products.tenantId, tenant.id)));
+
+          await tx.insert(stockMovements).values({
+            tenantId: tenant.id,
+            productId: item.productId,
+            type: 'SALE',
+            quantity: item.quantity,
+            previousStock: prevStock,
+            currentStock: currStock,
+            reason: `Pesanan Online ${orderNumber.startsWith('#') ? orderNumber : '#' + orderNumber}`,
+            referenceId: newTransaction.id,
+            actorName: data.customerName || 'Katalog Online',
+          });
+        }
+      }
+
+      return newTransaction;
+    });
+
+    // 4. Revalidate paths so fresh stock is reflected immediately in catalog and outlet dashboard
+    try {
+      revalidatePath(`/store/${data.tenantSlug}`, "layout");
+      revalidatePath(`/store/${data.tenantSlug}`);
+      revalidatePath(`/outlet/${tenant.slug}`, "layout");
+      revalidatePath(`/outlet/${tenant.slug}/inventory`, "page");
+    } catch {
+      // ignore in non-request contexts
+    }
 
     return { 
       success: true, 
-      transactionId: newTransaction.id, 
-      publicToken: newTransaction.publicToken,
-      orderNumber: newTransaction.orderNumber,
+      transactionId: result.id, 
+      publicToken: result.publicToken, 
+      orderNumber: result.orderNumber, 
       snapToken: null 
     };
 

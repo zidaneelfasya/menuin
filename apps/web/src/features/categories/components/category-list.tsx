@@ -37,6 +37,9 @@ import { toast } from 'sonner';
 import { CategoryDto } from '@menuin/types';
 import { categorySchema } from '@menuin/validation';
 
+import { ImportCategoryDialog } from './import-category-dialog';
+import { Download } from 'lucide-react';
+
 export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
   const [isAddOpen, setIsAddOpen] = React.useState(false);
   const [isEditOpen, setIsEditOpen] = React.useState(false);
@@ -162,13 +165,26 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
           <h1 className="text-2xl font-bold tracking-tight">Kategori Produk</h1>
           <p className="text-sm text-muted-foreground">Kelola kategori untuk mengelompokkan produk Anda.</p>
         </div>
-        <Button 
-          onClick={() => { form.reset({ name: '' }); setIsAddOpen(true); }}
-          className="rounded-xl px-4 flex items-center bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Tambah Kategori
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            className="rounded-xl gap-2 shadow-sm"
+            asChild
+          >
+            <a href="/api/export/categories" download>
+              <Download className="w-4 h-4" />
+              Export Excel
+            </a>
+          </Button>
+          <ImportCategoryDialog />
+          <Button 
+            onClick={() => { form.reset({ name: '' }); setIsAddOpen(true); }}
+            className="rounded-xl px-4 flex items-center bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Tambah Kategori
+          </Button>
+        </div>
       </div>
 
       <DataTable columns={columns} data={initialData} searchKey="name" searchPlaceholder="Cari kategori..." />

@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { ColumnDef } from '@tanstack/react-table';
-import { MoreHorizontal, Plus, Pencil, Trash2, Package, Image as ImageIcon, Printer, Star, Boxes } from 'lucide-react';
+import { MoreHorizontal, Plus, Pencil, Trash2, Package, Image as ImageIcon, Star, Boxes, Download } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
 const DataTable = dynamic(
@@ -10,7 +10,6 @@ const DataTable = dynamic(
   { ssr: false, loading: () => <div className="h-64 w-full bg-muted animate-pulse rounded-xl"></div> }
 );
 import { ImportProductDialog } from './import-product-dialog';
-import Barcode from 'react-barcode';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils/format';
 import {
@@ -35,7 +34,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -50,6 +49,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ProductDto } from '@menuin/types';
 import { productSchema } from '@menuin/validation';
 
+import { ImageUpload } from '@/components/ui/image-upload';
+
 type Category = {
   id: string;
   name: string;
@@ -59,10 +60,8 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
   const [isAddOpen, setIsAddOpen] = React.useState(false);
   const [isEditOpen, setIsEditOpen] = React.useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
-  const [isPrintBarcodeOpen, setIsPrintBarcodeOpen] = React.useState(false);
   const [selectedProduct, setSelectedProduct] = React.useState<ProductDto | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
-  const [imageFile, setImageFile] = React.useState<File | null>(null);
   const [productsList, setProductsList] = React.useState<ProductDto[]>(initialData);
 
   React.useEffect(() => {
@@ -109,49 +108,20 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
     }
   };
 
-  const supabase = createClient();
-
   const form = useForm<z.infer<typeof productSchema>>({
     resolver: zodResolver(productSchema),
-    defaultValues: { name: '', sku: '', categoryId: null, price: 0, costPrice: 0, stock: 0, minStock: 5, trackStock: true, imageUrl: '', barcode: '', modifierGroupIds: [] },
+    defaultValues: { name: '', categoryId: null, price: 0, costPrice: 0, stock: 0, minStock: 5, trackStock: true, imageUrl: '', modifierGroupIds: [] },
   });
-
-  const uploadImage = async (file: File) => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
-    
-    const { data, error } = await supabase.storage
-      .from('product_image')
-      .upload(fileName, file);
-
-    if (error) {
-      console.error('Upload error:', error);
-      throw new Error('Gagal mengunggah gambar');
-    }
-
-    const { data: publicUrlData } = supabase.storage
-      .from('product_image')
-      .getPublicUrl(fileName);
-
-    return publicUrlData.publicUrl;
-  };
 
   const onSubmitAdd = async (values: z.infer<typeof productSchema>) => {
     setIsLoading(true);
-    let finalImageUrl = values.imageUrl;
-
     try {
-      if (imageFile) {
-        finalImageUrl = await uploadImage(imageFile);
-      }
-      
-      const result = await createProduct({ ...values, imageUrl: finalImageUrl });
+      const result = await createProduct(values);
       
       if (result.success) {
         toast.success('Item berhasil ditambahkan');
         setIsAddOpen(false);
         form.reset();
-        setImageFile(null);
       } else {
         toast.error(result.error);
       }
@@ -165,19 +135,12 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
   const onSubmitEdit = async (values: z.infer<typeof productSchema>) => {
     if (!selectedProduct) return;
     setIsLoading(true);
-    let finalImageUrl = values.imageUrl;
-
     try {
-      if (imageFile) {
-        finalImageUrl = await uploadImage(imageFile);
-      }
-
-      const result = await updateProduct(selectedProduct.id, { ...values, imageUrl: finalImageUrl });
+      const result = await updateProduct(selectedProduct.id, values);
       
       if (result.success) {
         toast.success('Item berhasil diperbarui');
         setIsEditOpen(false);
-        setImageFile(null);
       } else {
         toast.error(result.error);
       }
@@ -204,17 +167,14 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
 
   const handleEditClick = (product: ProductDto) => {
     setSelectedProduct(product);
-    setImageFile(null);
     form.reset({
       name: product.name,
-      sku: product.sku,
       categoryId: product.categoryId,
       price: parseFloat(product.price),
-      costPrice: parseFloat(product.price), 
+      costPrice: parseFloat(product.costPrice || product.price), 
       stock: product.stock,
       minStock: product.minStock,
       trackStock: product.trackStock !== false,
-      barcode: product.barcode || '',
       imageUrl: product.imageUrl || '',
       modifierGroupIds: product.modifierGroupIds || [],
     });
@@ -224,15 +184,6 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
   const handleDeleteClick = (product: ProductDto) => {
     setSelectedProduct(product);
     setIsDeleteOpen(true);
-  };
-
-  const handlePrintBarcodeClick = (product: ProductDto) => {
-    if (!product.barcode && !product.sku) {
-      toast.error('Item ini tidak memiliki barcode atau SKU');
-      return;
-    }
-    setSelectedProduct(product);
-    setIsPrintBarcodeOpen(true);
   };
 
   const columns: ColumnDef<ProductDto>[] = [
@@ -273,7 +224,6 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
                   </span>
                 )}
               </div>
-              <span className="text-xs text-muted-foreground font-mono">{product.sku}</span>
             </div>
           </div>
         );
@@ -305,11 +255,6 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
           </div>
         );
       }
-    },
-    {
-      accessorKey: 'barcode',
-      header: 'Barcode',
-      cell: ({ row }) => <span className="font-mono text-xs">{row.getValue('barcode') || '-'}</span>
     },
     {
       accessorKey: 'categoryName',
@@ -386,12 +331,6 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
                 <Boxes className="mr-2 h-4 w-4 text-blue-600" />
                 {isTracked ? 'Nonaktifkan Lacak Stok (Tanpa Batas)' : 'Aktifkan Lacak Stok'}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigator.clipboard.writeText(product.barcode || product.sku)}>
-                Copy Barcode
-              </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer" onClick={() => handlePrintBarcodeClick(product)}>
-                <Printer className="mr-2 h-4 w-4" /> Cetak Barcode
-              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-primary cursor-pointer" onClick={() => handleEditClick(product)}>
                 <Pencil className="mr-2 h-4 w-4" /> Edit
@@ -406,72 +345,46 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
     },
   ];
 
-
   const ProductForm = ({ onSubmit }: any) => (
     <form onSubmit={form.handleSubmit(onSubmit)}>
       <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto px-2">
-        <div className="space-y-2">
-          <Label>Gambar Item</Label>
-          <div className="flex items-center gap-4">
-            <div className="h-16 w-16 rounded-md border bg-muted flex items-center justify-center overflow-hidden">
-              {imageFile ? (
-                <img src={URL.createObjectURL(imageFile)} alt="Preview" className="h-full w-full object-cover" />
-              ) : form.watch('imageUrl') ? (
-                <img src={form.watch('imageUrl')!} alt="Current" className="h-full w-full object-cover" />
-              ) : (
-                <ImageIcon className="h-6 w-6 text-muted-foreground" />
-              )}
-            </div>
-            <Input 
-              type="file" 
-              accept="image/*" 
-              onChange={(e) => {
-                if (e.target.files && e.target.files[0]) {
-                  setImageFile(e.target.files[0]);
-                }
-              }} 
-            />
-          </div>
+        <div className="space-y-1">
+          <ImageUpload
+            label="Foto Produk"
+            folder="products"
+            aspectRatio="square"
+            value={form.watch('imageUrl')}
+            onChange={(url) => form.setValue('imageUrl', url, { shouldDirty: true })}
+            onRemove={() => form.setValue('imageUrl', '', { shouldDirty: true })}
+            helperText="Rasio 1:1 persegi direkomendasikan."
+          />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="sku">SKU</Label>
-            <Input id="sku" {...form.register('sku')} placeholder="Misal: PRD-001" />
-            {form.formState.errors.sku && <p className="text-xs text-destructive">{form.formState.errors.sku.message}</p>}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="name">Nama Item</Label>
-            <Input id="name" {...form.register('name')} placeholder="Misal: Kopi Susu" />
-            {form.formState.errors.name && <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>}
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="name">Nama Item</Label>
+          <Input id="name" {...form.register('name')} placeholder="Misal: Kopi Susu Aren" />
+          {form.formState.errors.name && <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>}
         </div>
         
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>Kategori</Label>
-            <Controller
-              control={form.control}
-              name="categoryId"
-              render={({ field }) => (
-                <Select onValueChange={field.onChange} value={field.value || undefined}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Pilih Kategori" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-            {form.formState.errors.categoryId && <p className="text-xs text-destructive">{form.formState.errors.categoryId.message}</p>}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="barcode">Barcode (Opsional)</Label>
-            <Input id="barcode" {...form.register('barcode')} placeholder="Kosongkan u/ Auto-generate" />
-          </div>
+        <div className="space-y-2">
+          <Label>Kategori</Label>
+          <Controller
+            control={form.control}
+            name="categoryId"
+            render={({ field }) => (
+              <Select onValueChange={field.onChange} value={field.value || undefined}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih Kategori" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
+          {form.formState.errors.categoryId && <p className="text-xs text-destructive">{form.formState.errors.categoryId.message}</p>}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -583,14 +496,23 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Data Item</h1>
-          <p className="text-sm text-muted-foreground">Kelola semua item, harga, stok, gambar, dan barcode.</p>
+          <p className="text-sm text-muted-foreground">Kelola semua item, kategori, harga, dan stok.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            className="rounded-xl gap-2 shadow-sm"
+            asChild
+          >
+            <a href="/api/export/products" download>
+              <Download className="w-4 h-4" />
+              Export Excel
+            </a>
+          </Button>
           <ImportProductDialog />
           <Button 
             onClick={() => { 
-              form.reset({ name: '', sku: '', categoryId: null, price: 0, costPrice: 0, stock: 0, minStock: 5, trackStock: true, imageUrl: '', barcode: '', modifierGroupIds: [] }); 
-              setImageFile(null);
+              form.reset({ name: '', categoryId: null, price: 0, costPrice: 0, stock: 0, minStock: 5, trackStock: true, imageUrl: '', modifierGroupIds: [] }); 
               setIsAddOpen(true); 
             }}
             className="rounded-xl px-4 flex items-center bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
@@ -641,71 +563,6 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
             <Button variant="outline" onClick={() => setIsDeleteOpen(false)}>Batal</Button>
             <Button variant="destructive" onClick={onConfirmDelete} disabled={isLoading}>
               {isLoading ? 'Menghapus...' : 'Ya, Hapus'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Barcode Print Dialog */}
-      <Dialog open={isPrintBarcodeOpen} onOpenChange={setIsPrintBarcodeOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Cetak Barcode</DialogTitle>
-            <DialogDescription>
-              Barcode untuk produk <b>{selectedProduct?.name}</b>
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col items-center justify-center py-6 space-y-4 bg-white rounded-lg border" id="barcode-print-area">
-            {selectedProduct && (selectedProduct.barcode || selectedProduct.sku) && (
-              <Barcode 
-                value={selectedProduct.barcode || selectedProduct.sku} 
-                width={2} 
-                height={80} 
-                displayValue={true}
-                background="#ffffff"
-                lineColor="#000000"
-              />
-            )}
-          </div>
-          <DialogFooter className="flex gap-2 sm:justify-end mt-4">
-            <Button type="button" variant="outline" onClick={() => setIsPrintBarcodeOpen(false)}>Tutup</Button>
-            <Button type="button" onClick={() => {
-              const printContent = document.getElementById('barcode-print-area');
-              const windowPrint = window.open('', '', 'width=800,height=600');
-              if (windowPrint && printContent) {
-                windowPrint.document.write(`
-                  <html>
-                    <head>
-                      <title>Print Barcode - ${selectedProduct?.name}</title>
-                      <style>
-                        body {
-                          display: flex;
-                          justify-content: center;
-                          align-items: center;
-                          height: 100vh;
-                          margin: 0;
-                          background: white;
-                        }
-                        @media print {
-                          @page { size: auto; margin: 0mm; }
-                          body { margin: 1cm; }
-                        }
-                      </style>
-                    </head>
-                    <body>
-                      ${printContent.innerHTML}
-                    </body>
-                  </html>
-                `);
-                windowPrint.document.close();
-                windowPrint.focus();
-                setTimeout(() => {
-                  windowPrint.print();
-                  windowPrint.close();
-                }, 250);
-              }
-            }}>
-              <Printer className="mr-2 h-4 w-4" /> Cetak
             </Button>
           </DialogFooter>
         </DialogContent>

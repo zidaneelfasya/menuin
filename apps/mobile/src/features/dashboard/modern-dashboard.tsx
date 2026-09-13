@@ -8,11 +8,13 @@ import {
   Modal,
   Pressable,
   RefreshControl,
+  StyleSheet,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import {
   TrendingUp,
+  TrendingDown,
   ShoppingBag,
   Store,
   Smartphone,
@@ -35,6 +37,8 @@ import {
   Package,
   Cpu,
   X,
+  Layers,
+  ArrowUpRight,
 } from 'lucide-react-native';
 import Svg, { Path, Circle, Line, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { useAuthStore } from '@/store/auth-store';
@@ -51,8 +55,6 @@ export function ModernDashboard() {
   const { width, height } = useWindowDimensions();
   const isLandscape = width > height;
   const isTablet = Math.min(width, height) >= 600;
-  const isPhoneLandscape = !isTablet && isLandscape;
-  const bottomInset = Math.max(insets.bottom, 12) + (isPhoneLandscape ? 60 : 88);
 
   const user = useAuthStore((state) => state.user);
   const { data: shiftData } = useActiveShift();
@@ -69,16 +71,16 @@ export function ModernDashboard() {
 
   // Month & Year state
   const now = new Date();
-  const [selectedMonthIndex, setSelectedMonthIndex] = useState<number>(now.getMonth()); // 0-indexed
+  const [selectedMonthIndex, setSelectedMonthIndex] = useState<number>(now.getMonth());
   const [selectedYear, setSelectedYear] = useState<number>(now.getFullYear());
 
   // Interactive Calendar State inside Date Picker Modal
   const [calYear, setCalYear] = useState<number>(2026);
-  const [calMonth, setCalMonth] = useState<number>(8); // September (0-indexed)
+  const [calMonth, setCalMonth] = useState<number>(8);
   const [tempRangeStart, setTempRangeStart] = useState<string>('2026-09-06');
   const [tempRangeEnd, setTempRangeEnd] = useState<string | null>('2026-09-12');
 
-  // Active Metric for Chart: 'omzet' | 'pesanan' | 'laba'
+  // Active Metric for Chart
   const [activeMetric, setActiveMetric] = useState<MetricKey>('omzet');
 
   // Interactive Touch/Scrub State for Chart
@@ -97,7 +99,6 @@ export function ModernDashboard() {
 
   const shortMonthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
 
-  // Format currency in Rupiah
   const formatRupiah = (num: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -138,7 +139,6 @@ export function ModernDashboard() {
   // Live query from backend database
   const { data: liveData, isRefetching, refetch } = useDashboardData(queryParams);
 
-  // Calculate day difference for selected range
   const rangeDayCount = useMemo(() => {
     if (!customStartDate) return 7;
     const s = new Date(customStartDate);
@@ -185,9 +185,8 @@ export function ModernDashboard() {
     return `Tahun ${selectedYear}`;
   }, [liveData, activePeriod, customStartDate, customEndDate, selectedMonthIndex, selectedYear]);
 
-  // Fallback data if live query hasn't resolved or is offline
+  // Fallback data
   const fallbackHourlyData: ChartDataPoint[] = useMemo(() => {
-    // If range is under 7 days (< 7 days), generate hourly points!
     if (rangeDayCount === 1) {
       return [
         { date: `${customStartDate} 08:00`, label: '08:00', omzet: 350000, pesanan: 5, laba: 210000 },
@@ -200,31 +199,6 @@ export function ModernDashboard() {
         { date: `${customStartDate} 22:00`, label: '22:00', omzet: 300000, pesanan: 5, laba: 180000 },
       ];
     }
-    if (rangeDayCount < 7) {
-      // 2 points per day (e.g. 10:00 & 19:00) so 4/5 days has 8-10 points total
-      const points: ChartDataPoint[] = [];
-      const s = new Date(customStartDate || '2026-09-08');
-      for (let d = 0; d < rangeDayCount; d++) {
-        const curDate = new Date(s.getTime() + d * 86400000);
-        const dayName = `${curDate.getDate()} ${shortMonthNames[curDate.getMonth()]}`;
-        
-        points.push({
-          date: `${curDate.toISOString().split('T')[0]} 10:00`,
-          label: `${dayName}, 10:00`,
-          omzet: Math.round(400000 + ((d * 137) % 300) * 1000),
-          pesanan: Math.round(6 + ((d * 3) % 8)),
-          laba: Math.round(240000 + ((d * 73) % 180) * 1000),
-        });
-        points.push({
-          date: `${curDate.toISOString().split('T')[0]} 19:00`,
-          label: `${dayName}, 19:00`,
-          omzet: Math.round(850000 + ((d * 193) % 450) * 1000),
-          pesanan: Math.round(14 + ((d * 5) % 10)),
-          laba: Math.round(510000 + ((d * 109) % 250) * 1000),
-        });
-      }
-      return points;
-    }
     return [
       { date: '2026-09-06', label: 'Min, 6 Sep', omzet: 4200000, pesanan: 66, laba: 2520000 },
       { date: '2026-09-07', label: 'Sen, 7 Sep', omzet: 3900000, pesanan: 62, laba: 2340000 },
@@ -236,7 +210,6 @@ export function ModernDashboard() {
     ];
   }, [rangeDayCount, customStartDate]);
 
-  // Chart data: prioritized live data or fallback
   const chartPoints: ChartDataPoint[] = useMemo(() => {
     if (liveData?.chartData && liveData.chartData.length > 0) {
       return liveData.chartData;
@@ -244,7 +217,6 @@ export function ModernDashboard() {
     return fallbackHourlyData;
   }, [liveData, fallbackHourlyData]);
 
-  // Active point index
   useEffect(() => {
     if (chartPoints.length > 0) {
       setActivePointIndex(chartPoints.length - 1);
@@ -314,7 +286,7 @@ export function ModernDashboard() {
   // Outlet Overview info
   const outletOverview = useMemo(() => {
     return {
-      outletName: liveData?.outlet?.outletName || user?.tenantName || 'Kedai Kopi Kita - Malang',
+      outletName: liveData?.outlet?.outletName || user?.tenantName || 'Kedai Kopi Kita',
       outletKey: liveData?.outlet?.outletKey || 'kedai-kopi-kita',
       slug: liveData?.outlet?.slug || 'kedai-kopi-kita',
       staffCount: liveData?.outlet?.staffCount || 12,
@@ -355,14 +327,13 @@ export function ModernDashboard() {
     };
   }, [activeShift, liveData, user]);
 
-  // SVG Chart Dimensions strictly bounded by cardInnerWidth
-  const chartHeight = 220;
-  const chartPaddingHorizontal = 24;
-  const chartPaddingTop = 20;
-  const chartPaddingBottom = 36;
+  // SVG Chart Dimensions
+  const chartHeight = 180;
+  const chartPaddingHorizontal = 16;
+  const chartPaddingTop = 16;
+  const chartPaddingBottom = 30;
 
-  // Exact chart width matching inner card width
-  const effectiveChartWidth = Math.max(cardInnerWidth > 0 ? cardInnerWidth : (width > 600 ? 760 : width - 40), 280);
+  const effectiveChartWidth = Math.max(cardInnerWidth > 0 ? cardInnerWidth : width - 64, 260);
 
   const svgPathData = useMemo(() => {
     if (!chartPoints || chartPoints.length === 0) {
@@ -390,7 +361,6 @@ export function ModernDashboard() {
       return { x, y, pt, idx };
     });
 
-    // Generate smooth bezier curve path
     let linePath = `M ${coords[0].x} ${coords[0].y}`;
     for (let i = 0; i < coords.length - 1; i++) {
       const curr = coords[i];
@@ -410,34 +380,31 @@ export function ModernDashboard() {
     return { linePath, areaPath, coords };
   }, [chartPoints, activeMetric, effectiveChartWidth]);
 
-  // Adaptive visible X-axis labels to prevent text overlapping
   const visibleLabelIndices = useMemo(() => {
     const len = chartPoints.length;
-    if (len <= 7) {
+    if (len <= 5) {
       return new Set(chartPoints.map((_, i) => i));
     }
-    const maxLabels = isTablet || isLandscape ? 8 : 5;
+    const maxLabels = isTablet || isLandscape ? 7 : 4;
     const step = Math.ceil((len - 1) / (maxLabels - 1));
     const indices = new Set<number>();
     for (let i = 0; i < len; i += step) {
       indices.add(i);
     }
-    indices.add(len - 1); // Always include the last point
+    indices.add(len - 1);
     return indices;
   }, [chartPoints.length, isTablet, isLandscape]);
 
-  // Calendar Day Generation Logic for Date Picker Modal
+  // Calendar Day Generation Logic
   const calendarDays = useMemo(() => {
     const totalDays = new Date(calYear, calMonth + 1, 0).getDate();
-    const firstDay = new Date(calYear, calMonth, 1).getDay(); // 0 is Sunday
+    const firstDay = new Date(calYear, calMonth, 1).getDay();
     const days: { dayNumber: number | null; dateStr: string | null }[] = [];
 
-    // Prepend empty slots
     for (let i = 0; i < firstDay; i++) {
       days.push({ dayNumber: null, dateStr: null });
     }
 
-    // Add days
     for (let d = 1; d <= totalDays; d++) {
       const mStr = String(calMonth + 1).padStart(2, '0');
       const dStr = String(d).padStart(2, '0');
@@ -450,7 +417,6 @@ export function ModernDashboard() {
     return days;
   }, [calYear, calMonth]);
 
-  // Handle Day Click inside Calendar
   const handleCalendarDayPress = (dateStr: string) => {
     if (!tempRangeStart || (tempRangeStart && tempRangeEnd)) {
       setTempRangeStart(dateStr);
@@ -465,7 +431,6 @@ export function ModernDashboard() {
     }
   };
 
-  // Apply selected date range
   const handleApplyCalendarRange = () => {
     const s = tempRangeStart;
     const e = tempRangeEnd || tempRangeStart;
@@ -476,7 +441,6 @@ export function ModernDashboard() {
     setIsDateModalOpen(false);
   };
 
-  // Open modal and sync temp state
   const handleOpenDateModal = () => {
     setTempRangeStart(customStartDate);
     setTempRangeEnd(customEndDate);
@@ -488,13 +452,19 @@ export function ModernDashboard() {
     setIsDateModalOpen(true);
   };
 
+  // Responsive KPI card width (50% minus gap on phones, 25% on tablets)
+  const kpiCardWidth = isTablet ? (width - 48 - 36) / 4 : isLandscape ? (width - 48 - 12) / 2 : (width - 32 - 10) / 2;
+
+  // Responsive Operational card width (100% on phones, 33% on tablets/landscape)
+  const opCardWidth = isTablet || isLandscape ? (width - 48 - 24) / 3 : '100%';
+
   return (
-    <View className="flex-1 bg-gray-50">
+    <View className="flex-1 bg-slate-50 dark:bg-slate-950">
       <ScrollView
         className="flex-1"
         contentContainerStyle={{
-          paddingTop: Math.max(insets.top, 12) + 8,
-          paddingBottom: bottomInset + 32,
+          paddingTop: 12,
+          paddingBottom: Math.max(insets.bottom, 16) + 72,
           paddingHorizontal: 16,
         }}
         showsVerticalScrollIndicator={false}
@@ -507,201 +477,107 @@ export function ModernDashboard() {
           />
         }
       >
-        <View className="space-y-4 max-w-5xl mx-auto w-full">
+        <View className="space-y-4 max-w-4xl mx-auto w-full">
 
-          {/* 0. TOP QUICK STATS CHIPS */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: 8 }}
-            className="pb-1"
-          >
-            <View className="flex-row items-center bg-white border border-gray-200/80 rounded-lg px-3 py-1.5 shadow-2xs">
-              <Text className="text-xs text-gray-500 mr-1.5">👥</Text>
-              <Text className="text-xs font-semibold text-gray-800">
-                {outletOverview.staffCount} Staf
-              </Text>
-            </View>
-
-            <View className="flex-row items-center bg-white border border-gray-200/80 rounded-lg px-3 py-1.5 shadow-2xs">
-              <Text className="text-xs text-gray-500 mr-1.5">📱</Text>
-              <Text className="text-xs font-semibold text-gray-800">
-                {outletOverview.deviceCount} POS Devices
-              </Text>
-            </View>
-
-            <View className="flex-row items-center bg-white border border-gray-200/80 rounded-lg px-3 py-1.5 shadow-2xs">
-              <Text className="text-xs text-gray-500 mr-1.5">📋</Text>
-              <Text className="text-xs font-semibold text-gray-800">
-                {outletOverview.totalLifetimeTransactions.toLocaleString('id-ID')} Tx Bulan Ini
-              </Text>
-            </View>
-
-            <View className="flex-row items-center bg-blue-50/70 border border-blue-200/60 rounded-lg px-3 py-1.5 shadow-2xs">
-              <Sparkles size={12} color="#2563EB" style={{ marginRight: 4 }} />
-              <Text className="text-xs font-semibold text-blue-700">
-                Cloud Sinkron
-              </Text>
-            </View>
-          </ScrollView>
-
-          {/* 1. HERO OVERVIEW CARD */}
-          <View className="bg-white border border-gray-200/80 rounded-2xl p-5 shadow-sm space-y-4">
-            <View className="flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <View>
-                <Text className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
+          {/* 1. HERO OUTLET HEADER CARD */}
+          <View className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs">
+            <View className="flex-row items-start justify-between gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
+              <View className="flex-1 pr-2">
+                <Text className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight" numberOfLines={1}>
                   {outletOverview.outletName}
                 </Text>
-                <View className="flex-row items-center gap-2 pt-1">
-                  <Text className="text-xs font-mono text-gray-500">
+                <TouchableOpacity
+                  onPress={handleCopyUrl}
+                  activeOpacity={0.7}
+                  className="flex-row items-center gap-1.5 pt-1"
+                >
+                  <Text className="text-xs font-mono text-slate-500 dark:text-slate-400" numberOfLines={1}>
                     {publicUrl}
                   </Text>
-                  <TouchableOpacity
-                    onPress={handleCopyUrl}
-                    className="flex-row items-center bg-gray-50 border border-gray-200 px-2 py-0.5 rounded"
-                  >
-                    {copiedUrl ? (
-                      <>
-                        <Check size={10} color="#059669" style={{ marginRight: 3 }} />
-                        <Text className="text-[10px] font-mono text-emerald-700 font-semibold">Tersalin</Text>
-                      </>
-                    ) : (
-                      <>
-                        <Copy size={10} color="#6B7280" style={{ marginRight: 3 }} />
-                        <Text className="text-[10px] font-mono text-gray-600">Copy</Text>
-                      </>
-                    )}
-                  </TouchableOpacity>
-                </View>
+                  {copiedUrl ? (
+                    <View className="flex-row items-center bg-emerald-50 px-1.5 py-0.5 rounded">
+                      <Check size={10} color="#059669" />
+                      <Text className="text-[10px] text-emerald-700 font-semibold ml-1">Tersalin</Text>
+                    </View>
+                  ) : (
+                    <Copy size={11} color="#64748B" />
+                  )}
+                </TouchableOpacity>
               </View>
 
-              <View className="self-start sm:self-center flex-row items-center bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-full">
+              <View className="flex-row items-center bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-2.5 py-1 rounded-full shrink-0">
                 <View className="w-2 h-2 rounded-full bg-emerald-500 mr-1.5" />
-                <Text className="text-xs font-semibold text-emerald-800">
-                  Healthy / Buka Operasional
+                <Text className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                  Operasional Buka
                 </Text>
               </View>
             </View>
 
-            {/* 6 Status Tiles Grid */}
-            <View className="grid grid-cols-2 gap-3 pt-2">
-              <View className="flex-row items-center p-2.5 bg-gray-50/60 border border-gray-100 rounded-xl">
-                <View className="w-8 h-8 rounded-lg bg-white border border-gray-200 items-center justify-center mr-2.5">
-                  <View className="flex-row flex-wrap w-4 h-4 justify-between content-between">
-                    <View className="w-1 h-1 rounded-full bg-emerald-500" />
-                    <View className="w-1 h-1 rounded-full bg-emerald-500" />
-                    <View className="w-1 h-1 rounded-full bg-emerald-500" />
-                    <View className="w-1 h-1 rounded-full bg-emerald-500" />
-                    <View className="w-1 h-1 rounded-full bg-emerald-500" />
-                    <View className="w-1 h-1 rounded-full bg-emerald-500" />
-                  </View>
+            {/* Quick Status Chips (Flexbox responsive) */}
+            <View className="flex-row flex-wrap justify-between gap-2 pt-3">
+              <View className="flex-row items-center p-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 rounded-xl" style={{ width: (width - 32 - 32 - 8) / 2 }}>
+                <View className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950 items-center justify-center mr-2">
+                  <Smartphone size={13} color="#2563EB" />
                 </View>
                 <View className="flex-1">
-                  <Text className="text-[10px] font-mono text-gray-400 font-semibold uppercase">STATUS</Text>
-                  <Text className="text-xs font-semibold text-gray-900 truncate">Healthy / Aktif</Text>
-                </View>
-              </View>
-
-              <View className="flex-row items-center p-2.5 bg-gray-50/60 border border-gray-100 rounded-xl">
-                <View className="w-8 h-8 rounded-lg bg-white border border-gray-200 items-center justify-center mr-2.5">
-                  <Cpu size={14} color="#4B5563" />
-                </View>
-                <View className="flex-1">
-                  <Text className="text-[10px] font-mono text-gray-400 font-semibold uppercase">SISTEM POS</Text>
-                  <View className="self-start bg-gray-200/80 px-1.5 py-0.5 rounded">
-                    <Text className="text-[9px] font-mono font-bold text-gray-700">ONLINE</Text>
-                  </View>
-                </View>
-              </View>
-
-              <View className="flex-row items-center p-2.5 bg-gray-50/60 border border-gray-100 rounded-xl">
-                <View className="w-8 h-8 rounded-lg bg-white border border-gray-200 items-center justify-center mr-2.5">
-                  <GitBranch size={14} color="#4B5563" />
-                </View>
-                <View className="flex-1">
-                  <Text className="text-[10px] font-mono text-gray-400 font-semibold uppercase">SHIFT KASIR</Text>
-                  <Text className="text-xs font-semibold text-gray-900 truncate">
-                    {operationalPulse.shift.active ? 'Shift Aktif' : 'Belum Buka'}
-                  </Text>
-                </View>
-              </View>
-
-              <View className="flex-row items-center p-2.5 bg-gray-50/60 border border-gray-100 rounded-xl">
-                <View className="w-8 h-8 rounded-lg bg-white border border-gray-200 items-center justify-center mr-2.5">
-                  <Smartphone size={14} color="#4B5563" />
-                </View>
-                <View className="flex-1">
-                  <Text className="text-[10px] font-mono text-gray-400 font-semibold uppercase">PERANGKAT POS</Text>
-                  <Text className="text-xs font-semibold text-gray-900 truncate">
+                  <Text className="text-[9px] font-mono text-slate-400 uppercase font-bold">POS KASIR</Text>
+                  <Text className="text-xs font-semibold text-slate-800 dark:text-slate-200" numberOfLines={1}>
                     {outletOverview.deviceCount} Terhubung
                   </Text>
                 </View>
               </View>
 
-              <View className="flex-row items-center p-2.5 bg-gray-50/60 border border-gray-100 rounded-xl">
-                <View className="w-8 h-8 rounded-lg bg-white border border-gray-200 items-center justify-center mr-2.5">
-                  <Receipt size={14} color="#4B5563" />
+              <View className="flex-row items-center p-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 rounded-xl" style={{ width: (width - 32 - 32 - 8) / 2 }}>
+                <View className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950 items-center justify-center mr-2">
+                  <Clock size={13} color="#059669" />
                 </View>
                 <View className="flex-1">
-                  <Text className="text-[10px] font-mono text-gray-400 font-semibold uppercase">TOTAL TX</Text>
-                  <Text className="text-xs font-semibold text-gray-900 truncate">
-                    {outletOverview.totalLifetimeTransactions.toLocaleString('id-ID')} Selesai
+                  <Text className="text-[9px] font-mono text-slate-400 uppercase font-bold">SHIFT</Text>
+                  <Text className="text-xs font-semibold text-slate-800 dark:text-slate-200" numberOfLines={1}>
+                    {operationalPulse.shift.active ? 'Aktif' : 'Belum Buka'}
                   </Text>
                 </View>
               </View>
 
-              <View className="flex-row items-center p-2.5 bg-gray-50/60 border border-gray-100 rounded-xl">
-                <View className="w-8 h-8 rounded-lg bg-white border border-gray-200 items-center justify-center mr-2.5">
-                  <Package size={14} color="#4B5563" />
+              <View className="flex-row items-center p-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 rounded-xl" style={{ width: (width - 32 - 32 - 8) / 2 }}>
+                <View className="w-7 h-7 rounded-lg bg-purple-50 dark:bg-purple-950 items-center justify-center mr-2">
+                  <Receipt size={13} color="#9333EA" />
                 </View>
                 <View className="flex-1">
-                  <Text className="text-[10px] font-mono text-gray-400 font-semibold uppercase">STATUS STOK</Text>
-                  <Text className={`text-xs font-semibold truncate ${operationalPulse.stock.low > 0 ? 'text-amber-600' : 'text-gray-900'}`}>
-                    {operationalPulse.stock.low > 0 ? `${operationalPulse.stock.low} Menipis` : 'Semua Aman'}
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Supabase Dotted Topology Canvas Strip */}
-            <View
-              className="w-full bg-slate-900/5 border border-gray-200/80 rounded-xl p-3 flex-row items-center justify-between"
-              style={{ minHeight: 60 }}
-            >
-              <View className="flex-row items-center gap-2.5">
-                <View className="w-7 h-7 rounded bg-emerald-600 items-center justify-center shadow-xs">
-                  <Store size={14} color="#FFFFFF" />
-                </View>
-                <View>
-                  <Text className="text-xs font-bold text-gray-900">Primary Outlet Hub</Text>
-                  <Text className="text-[10px] font-mono text-gray-500">
-                    menuin-node • {outletOverview.slug}
+                  <Text className="text-[9px] font-mono text-slate-400 uppercase font-bold">TRANSAKSI</Text>
+                  <Text className="text-xs font-semibold text-slate-800 dark:text-slate-200" numberOfLines={1}>
+                    {metrics.totalPesanan} Pesanan
                   </Text>
                 </View>
               </View>
 
-              <View className="flex-row items-center gap-1.5">
-                <View className="w-2 h-2 rounded-full bg-emerald-500" />
-                <Text className="text-[10px] font-mono text-gray-600 font-medium">
-                  POS 100% • Sync 12ms
-                </Text>
+              <View className="flex-row items-center p-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 rounded-xl" style={{ width: (width - 32 - 32 - 8) / 2 }}>
+                <View className="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-950 items-center justify-center mr-2">
+                  <Package size={13} color="#D97706" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-[9px] font-mono text-slate-400 uppercase font-bold">STOK</Text>
+                  <Text className="text-xs font-semibold text-slate-800 dark:text-slate-200" numberOfLines={1}>
+                    {operationalPulse.stock.low > 0 ? `${operationalPulse.stock.low} Menipis` : 'Aman'}
+                  </Text>
+                </View>
               </View>
             </View>
           </View>
 
-          {/* 2. FILTER BAR & DATE PICKER CONTAINER */}
-          <View className="bg-white border border-gray-200/80 rounded-xl p-3.5 shadow-sm space-y-3">
-            {/* Segmented Period Tabs: Harian | Bulanan | Tahunan (Recap) */}
-            <View className="flex-row bg-gray-100 p-1 rounded-lg border border-gray-200/60">
+          {/* 2. FILTER PERIODE & DATE PICKER */}
+          <View className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3 shadow-xs space-y-3">
+            {/* Segmented Period Tabs */}
+            <View className="flex-row bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
               <TouchableOpacity
                 onPress={() => setActivePeriod('harian')}
-                className={`flex-1 py-1.5 rounded-md items-center justify-center transition-all ${
-                  activePeriod === 'harian' ? 'bg-white shadow-2xs' : ''
+                className={`flex-1 py-1.5 rounded-lg items-center justify-center transition-all ${
+                  activePeriod === 'harian' ? 'bg-white dark:bg-slate-700 shadow-xs' : ''
                 }`}
               >
                 <Text
-                  className={`text-xs font-semibold ${
-                    activePeriod === 'harian' ? 'text-gray-900 font-bold' : 'text-gray-600'
+                  className={`text-xs ${
+                    activePeriod === 'harian' ? 'text-slate-900 dark:text-white font-bold' : 'text-slate-600 dark:text-slate-400 font-medium'
                   }`}
                 >
                   Harian
@@ -710,13 +586,13 @@ export function ModernDashboard() {
 
               <TouchableOpacity
                 onPress={() => setActivePeriod('bulanan')}
-                className={`flex-1 py-1.5 rounded-md items-center justify-center transition-all ${
-                  activePeriod === 'bulanan' ? 'bg-white shadow-2xs' : ''
+                className={`flex-1 py-1.5 rounded-lg items-center justify-center transition-all ${
+                  activePeriod === 'bulanan' ? 'bg-white dark:bg-slate-700 shadow-xs' : ''
                 }`}
               >
                 <Text
-                  className={`text-xs font-semibold ${
-                    activePeriod === 'bulanan' ? 'text-gray-900 font-bold' : 'text-gray-600'
+                  className={`text-xs ${
+                    activePeriod === 'bulanan' ? 'text-slate-900 dark:text-white font-bold' : 'text-slate-600 dark:text-slate-400 font-medium'
                   }`}
                 >
                   Bulanan
@@ -725,240 +601,205 @@ export function ModernDashboard() {
 
               <TouchableOpacity
                 onPress={() => setActivePeriod('tahunan')}
-                className={`flex-1 py-1.5 rounded-md items-center justify-center transition-all ${
-                  activePeriod === 'tahunan' ? 'bg-white shadow-2xs' : ''
+                className={`flex-1 py-1.5 rounded-lg items-center justify-center transition-all ${
+                  activePeriod === 'tahunan' ? 'bg-white dark:bg-slate-700 shadow-xs' : ''
                 }`}
               >
                 <Text
-                  className={`text-xs font-semibold ${
-                    activePeriod === 'tahunan' ? 'text-gray-900 font-bold' : 'text-gray-600'
+                  className={`text-xs ${
+                    activePeriod === 'tahunan' ? 'text-slate-900 dark:text-white font-bold' : 'text-slate-600 dark:text-slate-400 font-medium'
                   }`}
                 >
-                  Tahunan (Recap)
+                  Tahunan
                 </Text>
               </TouchableOpacity>
             </View>
 
-            {/* Filter Sub-Bar: Counter, Sukses Badge, Date Selector Button */}
-            <View className="flex-row items-center justify-between pt-1">
-              <View className="flex-row items-center gap-2">
-                <Text className="text-xs font-bold text-gray-900">
-                  {metrics.totalPesanan} Total Pesanan
-                </Text>
-                <Text className="text-gray-300">•</Text>
-                <View className="bg-emerald-50 border border-emerald-200/60 px-1.5 py-0.5 rounded">
-                  <Text className="text-[10px] font-mono font-semibold text-emerald-700">
-                    100.0% Sukses
-                  </Text>
-                </View>
-              </View>
-
-              {/* Date Trigger Button */}
-              <TouchableOpacity
-                onPress={handleOpenDateModal}
-                activeOpacity={0.7}
-                className="flex-row items-center bg-gray-50 border border-gray-200 px-2.5 py-1.5 rounded-lg shadow-2xs"
-              >
-                <Calendar size={13} color="#4B5563" style={{ marginRight: 4 }} />
-                <Text className="text-xs font-semibold text-gray-800 mr-1">
-                  {dateButtonLabel}
-                </Text>
-                <ChevronDown size={12} color="#6B7280" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Periode Text Display */}
-            <View className="pt-0.5 border-t border-gray-100 flex-row items-center justify-between">
-              <View className="flex-row items-center">
-                <Text className="text-[11px] text-gray-400">Periode: </Text>
-                <Text className="text-[11px] font-semibold text-gray-800">
+            {/* Date Trigger & Period Info */}
+            <View className="flex-row items-center justify-between pt-0.5">
+              <View className="flex-1 pr-2">
+                <Text className="text-[11px] text-slate-400">Rentang Periode:</Text>
+                <Text className="text-xs font-bold text-slate-800 dark:text-slate-200" numberOfLines={1}>
                   {periodLabelText}
                 </Text>
               </View>
-              {rangeDayCount < 7 && activePeriod === 'harian' && (
-                <View className="bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200/60">
-                  <Text className="text-[9px] font-bold text-blue-700 font-mono">
-                    Mode Jam Aktif (&lt; 7 Hari)
-                  </Text>
-                </View>
-              )}
+
+              <TouchableOpacity
+                onPress={handleOpenDateModal}
+                activeOpacity={0.7}
+                className="flex-row items-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-xl shadow-2xs shrink-0"
+              >
+                <Calendar size={12} color="#475569" style={{ marginRight: 4 }} />
+                <Text className="text-xs font-semibold text-slate-800 dark:text-slate-200 mr-1">
+                  {dateButtonLabel}
+                </Text>
+                <ChevronDown size={12} color="#64748B" />
+              </TouchableOpacity>
             </View>
           </View>
 
-          {/* 3. PRIMARY KPI CARDS (DARI KIRI HINGGA KANAN - DALAM CARD & TIDAK MELEBAR KELUAR) */}
-          <View className="w-full">
+          {/* 3. PRIMARY KPI CARDS (2x2 on Mobile, 4x1 on Tablet) */}
+          <View className="flex-row flex-wrap justify-between gap-2.5">
+            {/* Card 1: Omzet */}
             <View
-              className={
-                isTablet || isLandscape
-                  ? "flex-row w-full gap-3"
-                  : "flex-row flex-wrap w-full gap-2.5"
-              }
+              style={{ width: kpiCardWidth }}
+              className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3.5 shadow-xs justify-between"
             >
-              {/* Card 1: PENJUALAN (OMZET) */}
-              <View
-                style={isTablet || isLandscape ? { flex: 1, minWidth: 0 } : { width: '48%', flexGrow: 1 }}
-                className="bg-white border border-gray-200/80 rounded-xl p-4 shadow-sm"
-              >
-                <View className="flex-row items-center justify-between pb-2">
-                  <Text className="text-[11px] font-bold uppercase tracking-wider text-gray-500 truncate">
-                    PENJUALAN (OMZET)
-                  </Text>
-                  <View className="w-7 h-7 rounded-lg bg-blue-50 items-center justify-center">
-                    <DollarSign size={15} color="#2563EB" />
-                  </View>
-                </View>
-                <Text className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight">
-                  {formatRupiah(metrics.totalOmzet)}
+              <View className="flex-row items-center justify-between pb-1.5">
+                <Text className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  OMZET
                 </Text>
-                <View className="flex-row items-center gap-1.5 pt-2">
-                  <View className="flex-row items-center bg-emerald-50 border border-emerald-200/60 px-1.5 py-0.5 rounded">
-                    <TrendingUp size={11} color="#059669" style={{ marginRight: 2 }} />
-                    <Text className="text-[10px] font-bold text-emerald-700">
-                      {metrics.omzetGrowth}
-                    </Text>
-                  </View>
-                  <Text className="text-[10px] text-gray-400 truncate">
-                    {metrics.comparisonText}
-                  </Text>
+                <View className="w-6 h-6 rounded-lg bg-blue-50 dark:bg-blue-950 items-center justify-center">
+                  <DollarSign size={13} color="#2563EB" />
                 </View>
               </View>
+              <Text className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight" numberOfLines={1}>
+                {formatRupiah(metrics.totalOmzet)}
+              </Text>
+              <View className="flex-row items-center gap-1 pt-1.5">
+                <View className="flex-row items-center bg-emerald-50 dark:bg-emerald-950 px-1 py-0.5 rounded">
+                  <TrendingUp size={9} color="#059669" />
+                  <Text className="text-[9px] font-bold text-emerald-700 dark:text-emerald-400 ml-0.5">
+                    {metrics.omzetGrowth}
+                  </Text>
+                </View>
+                <Text className="text-[9px] text-slate-400 truncate flex-1">
+                  {metrics.comparisonText}
+                </Text>
+              </View>
+            </View>
 
-              {/* Card 2: PESANAN SELESAI */}
-              <View
-                style={isTablet || isLandscape ? { flex: 1, minWidth: 0 } : { width: '48%', flexGrow: 1 }}
-                className="bg-white border border-gray-200/80 rounded-xl p-4 shadow-sm"
-              >
-                <View className="flex-row items-center justify-between pb-2">
-                  <Text className="text-[11px] font-bold uppercase tracking-wider text-gray-500 truncate">
-                    PESANAN SELESAI
-                  </Text>
-                  <View className="w-7 h-7 rounded-lg bg-purple-50 items-center justify-center">
-                    <ShoppingBag size={15} color="#9333EA" />
-                  </View>
-                </View>
-                <Text className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight">
-                  {metrics.totalPesanan}
+            {/* Card 2: Pesanan */}
+            <View
+              style={{ width: kpiCardWidth }}
+              className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3.5 shadow-xs justify-between"
+            >
+              <View className="flex-row items-center justify-between pb-1.5">
+                <Text className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  PESANAN
                 </Text>
-                <View className="flex-row items-center gap-1.5 pt-2">
-                  <View className="flex-row items-center bg-emerald-50 border border-emerald-200/60 px-1.5 py-0.5 rounded">
-                    <TrendingUp size={11} color="#059669" style={{ marginRight: 2 }} />
-                    <Text className="text-[10px] font-bold text-emerald-700">
-                      {metrics.pesananGrowth}
-                    </Text>
-                  </View>
-                  <Text className="text-[10px] text-gray-400">pesanan</Text>
+                <View className="w-6 h-6 rounded-lg bg-purple-50 dark:bg-purple-950 items-center justify-center">
+                  <ShoppingBag size={13} color="#9333EA" />
                 </View>
               </View>
+              <Text className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight" numberOfLines={1}>
+                {metrics.totalPesanan}
+              </Text>
+              <View className="flex-row items-center gap-1 pt-1.5">
+                <View className="flex-row items-center bg-emerald-50 dark:bg-emerald-950 px-1 py-0.5 rounded">
+                  <TrendingUp size={9} color="#059669" />
+                  <Text className="text-[9px] font-bold text-emerald-700 dark:text-emerald-400 ml-0.5">
+                    {metrics.pesananGrowth}
+                  </Text>
+                </View>
+                <Text className="text-[9px] text-slate-400">transaksi</Text>
+              </View>
+            </View>
 
-              {/* Card 3: RATA-RATA PESANAN */}
-              <View
-                style={isTablet || isLandscape ? { flex: 1, minWidth: 0 } : { width: '48%', flexGrow: 1 }}
-                className="bg-white border border-gray-200/80 rounded-xl p-4 shadow-sm"
-              >
-                <View className="flex-row items-center justify-between pb-2">
-                  <Text className="text-[11px] font-bold uppercase tracking-wider text-gray-500 truncate">
-                    RATA-RATA PESANAN
-                  </Text>
-                  <View className="w-7 h-7 rounded-lg bg-emerald-50 items-center justify-center">
-                    <Receipt size={15} color="#059669" />
-                  </View>
-                </View>
-                <Text className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight">
-                  {formatRupiah(metrics.averageOrderValue)}
+            {/* Card 3: Rata-Rata Pesanan (AOV) */}
+            <View
+              style={{ width: kpiCardWidth }}
+              className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3.5 shadow-xs justify-between"
+            >
+              <View className="flex-row items-center justify-between pb-1.5">
+                <Text className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  AOV / KERANJANG
                 </Text>
-                <View className="pt-2">
-                  <Text className="text-[10px] text-gray-400 truncate">Nilai per pelanggan</Text>
+                <View className="w-6 h-6 rounded-lg bg-emerald-50 dark:bg-emerald-950 items-center justify-center">
+                  <Receipt size={13} color="#059669" />
                 </View>
               </View>
+              <Text className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight" numberOfLines={1}>
+                {formatRupiah(metrics.averageOrderValue)}
+              </Text>
+              <Text className="text-[9px] text-slate-400 pt-1.5">Rata-rata per pelanggan</Text>
+            </View>
 
-              {/* Card 4: EST. KEUNTUNGAN */}
-              <View
-                style={isTablet || isLandscape ? { flex: 1, minWidth: 0 } : { width: '48%', flexGrow: 1 }}
-                className="bg-white border border-gray-200/80 rounded-xl p-4 shadow-sm"
-              >
-                <View className="flex-row items-center justify-between pb-2">
-                  <Text className="text-[11px] font-bold uppercase tracking-wider text-gray-500 truncate">
-                    EST. KEUNTUNGAN
-                  </Text>
-                  <View className="w-7 h-7 rounded-lg bg-amber-50 items-center justify-center">
-                    <Percent size={15} color="#D97706" />
-                  </View>
-                </View>
-                <Text className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight">
-                  {formatRupiah(metrics.totalLaba)}
+            {/* Card 4: Laba Bersih */}
+            <View
+              style={{ width: kpiCardWidth }}
+              className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3.5 shadow-xs justify-between"
+            >
+              <View className="flex-row items-center justify-between pb-1.5">
+                <Text className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  EST. LABA BERSIH
                 </Text>
-                <View className="pt-2">
-                  <Text className="text-[10px] font-bold text-emerald-700 truncate">
-                    Margin {metrics.labaMargin} <Text className="text-gray-400 font-normal">(HPP 40%)</Text>
-                  </Text>
+                <View className="w-6 h-6 rounded-lg bg-amber-50 dark:bg-amber-950 items-center justify-center">
+                  <Percent size={13} color="#D97706" />
                 </View>
               </View>
+              <Text className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight" numberOfLines={1}>
+                {formatRupiah(metrics.totalLaba)}
+              </Text>
+              <Text className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 pt-1.5">
+                Margin {metrics.labaMargin}
+              </Text>
             </View>
           </View>
 
-          {/* 4. GRAFIK PENJUALAN INTERAKTIF (Berdiam Utuh di Dalam Card, Tidak Tumpah) */}
+          {/* 4. GRAFIK TREN PENJUALAN INTERAKTIF */}
           <View
-            className="bg-white border border-gray-200/80 rounded-xl p-4 shadow-sm space-y-3"
+            className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-xs space-y-3"
             style={{ overflow: 'hidden' }}
           >
-            {/* Header: Judul & Metric Toggle */}
-            <View className="flex-row items-center justify-between">
-              <View>
-                <Text className="text-base font-bold text-gray-900">
-                  Grafik Penjualan
+            {/* Header & Toggle */}
+            <View className="flex-row items-center justify-between gap-2">
+              <View className="flex-1">
+                <Text className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                  Tren Penjualan
                 </Text>
-                <Text className="text-xs text-gray-500">
-                  {periodLabelText} — {activeMetric === 'omzet' ? 'Omzet Penjualan' : activeMetric === 'pesanan' ? 'Total Pesanan' : 'Keuntungan Bersih'}
+                <Text className="text-[11px] text-slate-400" numberOfLines={1}>
+                  {periodLabelText}
                 </Text>
               </View>
 
-              {/* Metric Toggle: [ Omzet | Pesanan | Laba ] */}
-              <View className="flex-row bg-gray-100 p-0.5 rounded-lg border border-gray-200/60">
+              {/* Metric Toggle */}
+              <View className="flex-row bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200/60 dark:border-slate-700">
                 <TouchableOpacity
                   onPress={() => setActiveMetric('omzet')}
-                  className={`px-2.5 py-1 rounded-md transition-all ${activeMetric === 'omzet' ? 'bg-white shadow-2xs' : ''}`}
+                  className={`px-2 py-1 rounded-md ${activeMetric === 'omzet' ? 'bg-white dark:bg-slate-700 shadow-2xs' : ''}`}
                 >
-                  <Text className={`text-xs ${activeMetric === 'omzet' ? 'font-bold text-gray-900' : 'text-gray-600'}`}>
+                  <Text className={`text-[10px] ${activeMetric === 'omzet' ? 'font-bold text-slate-900 dark:text-white' : 'text-slate-500 font-medium'}`}>
                     Omzet
                   </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   onPress={() => setActiveMetric('pesanan')}
-                  className={`px-2.5 py-1 rounded-md transition-all ${activeMetric === 'pesanan' ? 'bg-white shadow-2xs' : ''}`}
+                  className={`px-2 py-1 rounded-md ${activeMetric === 'pesanan' ? 'bg-white dark:bg-slate-700 shadow-2xs' : ''}`}
                 >
-                  <Text className={`text-xs ${activeMetric === 'pesanan' ? 'font-bold text-gray-900' : 'text-gray-600'}`}>
+                  <Text className={`text-[10px] ${activeMetric === 'pesanan' ? 'font-bold text-slate-900 dark:text-white' : 'text-slate-500 font-medium'}`}>
                     Pesanan
                   </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   onPress={() => setActiveMetric('laba')}
-                  className={`px-2.5 py-1 rounded-md transition-all ${activeMetric === 'laba' ? 'bg-white shadow-2xs' : ''}`}
+                  className={`px-2 py-1 rounded-md ${activeMetric === 'laba' ? 'bg-white dark:bg-slate-700 shadow-2xs' : ''}`}
                 >
-                  <Text className={`text-xs ${activeMetric === 'laba' ? 'font-bold text-gray-900' : 'text-gray-600'}`}>
+                  <Text className={`text-[10px] ${activeMetric === 'laba' ? 'font-bold text-slate-900 dark:text-white' : 'text-slate-500 font-medium'}`}>
                     Laba
                   </Text>
                 </TouchableOpacity>
               </View>
             </View>
 
-            {/* Selected Point Info Bar */}
-            <View className="flex-row items-center justify-between bg-gray-50/80 px-3 py-2 rounded-lg border border-gray-100">
-              <Text className="text-xs font-bold text-gray-900">
+            {/* Selected Tooltip info bar */}
+            <View className="flex-row items-center justify-between bg-slate-50 dark:bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-100 dark:border-slate-800">
+              <Text className="text-xs font-bold text-slate-800 dark:text-slate-200">
                 {activePoint?.label || 'Total'}
               </Text>
               <View className="flex-row items-center gap-2">
-                <Text className="text-xs font-bold text-blue-600">
+                <Text className="text-xs font-bold text-blue-600 dark:text-blue-400">
                   {formatRupiah(activePoint?.omzet || 0)}
                 </Text>
-                <Text className="text-xs text-gray-500 font-medium">
-                  {activePoint?.pesanan || 0} pesanan
+                <Text className="text-[11px] text-slate-400">
+                  {activePoint?.pesanan || 0} order
                 </Text>
               </View>
             </View>
 
-            {/* Area & Line Curve Chart Container (Measured with onLayout) */}
+            {/* SVG Chart Area */}
             <View
               onLayout={(e) => {
                 const w = e.nativeEvent.layout.width;
@@ -979,26 +820,23 @@ export function ModernDashboard() {
                   <Defs>
                     <LinearGradient id="blueGradient" x1="0" y1="0" x2="0" y2="1">
                       <Stop offset="0%" stopColor="#2563EB" stopOpacity="0.25" />
-                      <Stop offset="90%" stopColor="#2563EB" stopOpacity="0.0" />
+                      <Stop offset="95%" stopColor="#2563EB" stopOpacity="0.0" />
                     </LinearGradient>
                   </Defs>
 
-                  {/* Shaded Area */}
                   <Path d={svgPathData.areaPath} fill="url(#blueGradient)" />
 
-                  {/* Stroke Curve */}
                   <Path
                     d={svgPathData.linePath}
                     fill="none"
                     stroke="#2563EB"
-                    strokeWidth={3}
+                    strokeWidth={2.5}
                     strokeLinecap="round"
                   />
 
-                  {/* Guideline and Highlighted Selected Dot (Clean like Web) */}
                   {svgPathData.coords.map((item) => {
                     const isSelected = item.idx === activePointIndex;
-                    const showAllDots = chartPoints.length <= 8;
+                    const showAllDots = chartPoints.length <= 7;
 
                     if (!isSelected && !showAllDots) return null;
 
@@ -1012,16 +850,16 @@ export function ModernDashboard() {
                             y2={chartHeight - chartPaddingBottom}
                             stroke="#93C5FD"
                             strokeDasharray="3 3"
-                            strokeWidth={1.5}
+                            strokeWidth={1}
                           />
                         )}
                         <Circle
                           cx={item.x}
                           cy={item.y}
-                          r={isSelected ? 6 : 3.5}
+                          r={isSelected ? 5 : 3}
                           fill={isSelected ? '#2563EB' : '#FFFFFF'}
                           stroke="#2563EB"
-                          strokeWidth={isSelected ? 3 : 2}
+                          strokeWidth={isSelected ? 2.5 : 1.5}
                         />
                       </React.Fragment>
                     );
@@ -1050,14 +888,14 @@ export function ModernDashboard() {
                 ))}
               </View>
 
-              {/* X-Axis Labels (Adaptive: max 6-8 labels, no overlapping) */}
+              {/* X-Axis Labels */}
               <View
                 style={{
                   position: 'absolute',
-                  bottom: 4,
+                  bottom: 2,
                   left: 0,
                   right: 0,
-                  height: 20,
+                  height: 18,
                 }}
               >
                 {svgPathData.coords.map((item) => {
@@ -1068,19 +906,16 @@ export function ModernDashboard() {
                       key={item.idx}
                       style={{
                         position: 'absolute',
-                        left: Math.max(2, Math.min(item.x - 45, effectiveChartWidth - 90)),
-                        width: 90,
+                        left: Math.max(0, Math.min(item.x - 40, effectiveChartWidth - 80)),
+                        width: 80,
                         alignItems: 'center',
                       }}
                     >
-                      <TouchableOpacity
-                        onPress={() => setActivePointIndex(item.idx)}
-                        hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }}
-                      >
+                      <TouchableOpacity onPress={() => setActivePointIndex(item.idx)}>
                         <Text
                           numberOfLines={1}
-                          className={`text-[10px] ${
-                            isSelected ? 'font-bold text-blue-600' : 'text-gray-400 font-medium'
+                          className={`text-[9px] ${
+                            isSelected ? 'font-bold text-blue-600 dark:text-blue-400' : 'text-slate-400 font-medium'
                           }`}
                         >
                           {item.pt.label}
@@ -1091,37 +926,22 @@ export function ModernDashboard() {
                 })}
               </View>
             </View>
-
-            {/* Footer: Tap hint & pagination dots */}
-            <View className="flex-row items-center justify-between pt-2 border-t border-gray-100">
-              <Text className="text-[11px] text-gray-400">
-                Tap titik grafik untuk melihat rincian tanggal
-              </Text>
-              <View className="flex-row items-center gap-1">
-                <View className="w-1.5 h-1.5 rounded-full bg-gray-300" />
-                <View className="w-1.5 h-1.5 rounded-full bg-gray-300" />
-                <View className="w-1.5 h-1.5 rounded-full bg-gray-300" />
-                <View className="w-1.5 h-1.5 rounded-full bg-gray-300" />
-                <View className="w-1.5 h-1.5 rounded-full bg-gray-300" />
-                <View className="w-3.5 h-1.5 rounded-full bg-blue-600" />
-              </View>
-            </View>
           </View>
 
           {/* 5. MENU TERLARIS */}
-          <View className="bg-white border border-gray-200/80 rounded-xl p-4 shadow-sm space-y-3">
+          <View className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-xs space-y-3">
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center gap-2">
-                <View className="p-1.5 bg-amber-50 rounded-lg">
-                  <Utensils size={15} color="#D97706" />
+                <View className="p-1.5 bg-amber-50 dark:bg-amber-950 rounded-lg">
+                  <Utensils size={14} color="#D97706" />
                 </View>
                 <View>
-                  <Text className="text-base font-bold text-gray-900">Menu Terlaris</Text>
-                  <Text className="text-xs text-gray-500">Produk terfavorit periode ini</Text>
+                  <Text className="text-sm font-bold text-slate-900 dark:text-slate-100">Menu Terlaris</Text>
+                  <Text className="text-[11px] text-slate-400">Produk favorit periode ini</Text>
                 </View>
               </View>
-              <View className="bg-amber-50 border border-amber-200/60 px-2 py-0.5 rounded">
-                <Text className="text-[10px] font-semibold text-amber-800">Top 5</Text>
+              <View className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 px-2 py-0.5 rounded-full">
+                <Text className="text-[10px] font-semibold text-amber-800 dark:text-amber-300">Top 5</Text>
               </View>
             </View>
 
@@ -1133,37 +953,33 @@ export function ModernDashboard() {
                     <View className="flex-row items-center justify-between">
                       <View className="flex-row items-center gap-2 flex-1 pr-2">
                         <View
-                          className={`w-5 h-5 rounded-full items-center justify-center ${
-                            isTop1
-                              ? 'bg-amber-100 border border-amber-300'
-                              : idx === 1
-                              ? 'bg-gray-200'
-                              : 'bg-gray-100'
+                          className={`w-4 h-4 rounded-full items-center justify-center ${
+                            isTop1 ? 'bg-amber-100' : 'bg-slate-100 dark:bg-slate-800'
                           }`}
                         >
                           {isTop1 ? (
-                            <Star size={10} color="#B45309" fill="#B45309" />
+                            <Star size={9} color="#B45309" fill="#B45309" />
                           ) : (
-                            <Text className="text-[10px] font-bold text-gray-700">{idx + 1}</Text>
+                            <Text className="text-[9px] font-bold text-slate-600 dark:text-slate-400">{idx + 1}</Text>
                           )}
                         </View>
-                        <Text className="text-xs font-semibold text-gray-900 truncate flex-1">
+                        <Text className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate flex-1">
                           {item.name}
                         </Text>
                       </View>
 
                       <View className="flex-row items-center gap-1.5">
-                        <Text className="text-xs font-bold text-gray-900">
+                        <Text className="text-xs font-bold text-slate-900 dark:text-slate-100">
                           {formatRupiah(item.totalRevenue)}
                         </Text>
-                        <Text className="text-[11px] text-gray-400">
-                          ({item.totalSold} terjual)
+                        <Text className="text-[10px] text-slate-400">
+                          ({item.totalSold}x)
                         </Text>
                       </View>
                     </View>
 
-                    {/* Share Progress Bar */}
-                    <View className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                    {/* Progress Bar */}
+                    <View className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                       <View
                         className={`h-full rounded-full ${isTop1 ? 'bg-amber-500' : 'bg-blue-600'}`}
                         style={{ width: `${Math.max(5, Math.min(100, item.sharePercentage))}%` }}
@@ -1175,36 +991,36 @@ export function ModernDashboard() {
             </View>
           </View>
 
-          {/* 6. RINGKASAN BISNIS */}
-          <View className="bg-white border border-gray-200/80 rounded-xl p-4 shadow-sm space-y-3">
+          {/* 6. RINGKASAN BISNIS & INSIGHTS */}
+          <View className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-xs space-y-3">
             <View className="flex-row items-center gap-2">
-              <View className="p-1.5 bg-blue-50 rounded-lg">
-                <Sparkles size={15} color="#2563EB" />
+              <View className="p-1.5 bg-blue-50 dark:bg-blue-950 rounded-lg">
+                <Sparkles size={14} color="#2563EB" />
               </View>
               <View>
-                <Text className="text-base font-bold text-gray-900">Ringkasan Bisnis</Text>
-                <Text className="text-xs text-gray-500">Wawasan otomatis untuk memahami performa outlet</Text>
+                <Text className="text-sm font-bold text-slate-900 dark:text-slate-100">Ringkasan Bisnis</Text>
+                <Text className="text-[11px] text-slate-400">Wawasan analitik performa toko</Text>
               </View>
             </View>
 
-            <View className="space-y-2.5 pt-1">
+            <View className="space-y-2 pt-1">
               {insights.map((item, idx) => (
                 <View
                   key={item.id || idx}
-                  className="flex-row items-start p-3 rounded-lg border border-gray-100 bg-gray-50/60"
+                  className="flex-row items-start p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/50"
                 >
-                  <View className="p-1 rounded-md bg-white border border-gray-200 mr-2.5 mt-0.5">
+                  <View className="p-1 rounded-md bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-700 mr-2 mt-0.5">
                     {item.type === 'trend' ? (
-                      <TrendingUp size={12} color="#2563EB" />
+                      <TrendingUp size={11} color="#2563EB" />
                     ) : item.type === 'champion' ? (
-                      <Star size={12} color="#D97706" />
+                      <Star size={11} color="#D97706" />
                     ) : item.type === 'basket' ? (
-                      <ShoppingBag size={12} color="#9333EA" />
+                      <ShoppingBag size={11} color="#9333EA" />
                     ) : (
-                      <Calendar size={12} color="#059669" />
+                      <Calendar size={11} color="#059669" />
                     )}
                   </View>
-                  <Text className="text-xs text-gray-700 leading-relaxed flex-1">
+                  <Text className="text-xs text-slate-700 dark:text-slate-300 leading-snug flex-1">
                     {item.text}
                   </Text>
                 </View>
@@ -1212,113 +1028,70 @@ export function ModernDashboard() {
             </View>
           </View>
 
-          {/* 7. PERFORMA OPERASIONAL */}
-          <View className="bg-white border border-gray-200/80 rounded-xl p-4 shadow-sm space-y-3">
+          {/* 7. PERFORMA OPERASIONAL (FLEXBOX RESPONSIVE) */}
+          <View className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-xs space-y-3">
             <View className="flex-row items-center gap-2">
-              <View className="p-1.5 bg-gray-100 rounded-lg">
-                <Activity size={15} color="#374151" />
+              <View className="p-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                <Activity size={14} color="#475569" />
               </View>
               <View>
-                <Text className="text-base font-bold text-gray-900">Performa Operasional</Text>
-                <Text className="text-xs text-gray-500">Kondisi kasir, perangkat POS, dan stok bahan</Text>
+                <Text className="text-sm font-bold text-slate-900 dark:text-slate-100">Performa Operasional</Text>
+                <Text className="text-[11px] text-slate-400">Kasir, perangkat POS, dan ketersediaan stok</Text>
               </View>
             </View>
 
-            <View className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+            <View className="flex-row flex-wrap justify-between gap-2.5 pt-1">
               {/* Shift Kasir */}
-              <View className="p-3 bg-gray-50/70 border border-gray-100 rounded-xl space-y-2">
+              <View style={{ width: opCardWidth }} className="p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 rounded-xl space-y-1">
                 <View className="flex-row items-center justify-between">
-                  <Text className="text-[10px] font-mono uppercase font-bold text-gray-400">SHIFT KASIR</Text>
-                  <Clock size={12} color="#6B7280" />
+                  <Text className="text-[9px] font-mono uppercase font-bold text-slate-400">SHIFT KASIR</Text>
+                  <Clock size={11} color="#64748B" />
                 </View>
-                <View>
-                  <Text className="text-xs font-bold text-gray-900">
-                    {operationalPulse.shift.cashierName}
-                  </Text>
-                  <Text className="text-[11px] text-gray-500">
-                    Buka: {operationalPulse.shift.startedAt}
-                  </Text>
-                  <Text className="text-[11px] text-gray-500">
-                    Modal: {formatRupiah(operationalPulse.shift.startingCash)}
-                  </Text>
-                </View>
+                <Text className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                  {operationalPulse.shift.cashierName}
+                </Text>
+                <Text className="text-[10px] text-slate-500">
+                  Buka: {operationalPulse.shift.startedAt} • Modal: {formatRupiah(operationalPulse.shift.startingCash)}
+                </Text>
               </View>
 
               {/* Perangkat POS */}
-              <View className="p-3 bg-gray-50/70 border border-gray-100 rounded-xl space-y-2">
+              <View style={{ width: opCardWidth }} className="p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 rounded-xl space-y-1">
                 <View className="flex-row items-center justify-between">
-                  <Text className="text-[10px] font-mono uppercase font-bold text-gray-400">PERANGKAT POS</Text>
-                  <Smartphone size={12} color="#6B7280" />
+                  <Text className="text-[9px] font-mono uppercase font-bold text-slate-400">PERANGKAT POS</Text>
+                  <Smartphone size={11} color="#64748B" />
                 </View>
-                <View>
-                  <Text className="text-xs font-bold text-gray-900">
-                    {operationalPulse.devices.active} / {operationalPulse.devices.total} Online
-                  </Text>
-                  <Text className="text-[11px] text-emerald-600">
-                    Semua perangkat tersinkronisasi
-                  </Text>
-                </View>
+                <Text className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                  {operationalPulse.devices.active} / {operationalPulse.devices.total} Online
+                </Text>
+                <Text className="text-[10px] text-emerald-600 dark:text-emerald-400">
+                  Semua perangkat tersinkronisasi
+                </Text>
               </View>
 
               {/* Kesehatan Stok */}
-              <View className="p-3 bg-gray-50/70 border border-gray-100 rounded-xl space-y-2">
+              <View style={{ width: opCardWidth }} className="p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 rounded-xl space-y-1">
                 <View className="flex-row items-center justify-between">
-                  <Text className="text-[10px] font-mono uppercase font-bold text-gray-400">STATUS STOK</Text>
-                  <Package size={12} color="#6B7280" />
+                  <Text className="text-[9px] font-mono uppercase font-bold text-slate-400">STATUS STOK</Text>
+                  <Package size={11} color="#64748B" />
                 </View>
-                <View>
-                  <Text className="text-xs font-bold text-gray-900">
-                    {operationalPulse.stock.total} Produk
+                <Text className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                  {operationalPulse.stock.total} Produk Aktif
+                </Text>
+                <Text className="text-[10px] text-slate-500">
+                  {operationalPulse.stock.safe} aman •{' '}
+                  <Text className={operationalPulse.stock.low > 0 ? 'text-amber-600 font-semibold' : ''}>
+                    {operationalPulse.stock.low} menipis
                   </Text>
-                  <Text className="text-[11px] text-gray-500">
-                    {operationalPulse.stock.safe} aman •{' '}
-                    <Text className={operationalPulse.stock.low > 0 ? 'text-amber-600 font-semibold' : ''}>
-                      {operationalPulse.stock.low} menipis
-                    </Text>
-                  </Text>
-                </View>
+                </Text>
               </View>
-            </View>
-          </View>
-
-          {/* 8. PERLU PERHATIAN */}
-          <View className="bg-white border border-gray-200/80 rounded-xl p-4 shadow-sm space-y-3">
-            <View className="flex-row items-center justify-between">
-              <View className="flex-row items-center gap-2">
-                <View className="p-1.5 bg-amber-50 rounded-lg">
-                  <AlertTriangle size={15} color="#D97706" />
-                </View>
-                <View>
-                  <Text className="text-base font-bold text-gray-900">Perlu Perhatian</Text>
-                  <Text className="text-xs text-gray-500">Peringatan operasional yang butuh tindakan</Text>
-                </View>
-              </View>
-              <View className="bg-amber-100 px-2 py-0.5 rounded-full">
-                <Text className="text-[10px] font-bold text-amber-800">1 Isu</Text>
-              </View>
-            </View>
-
-            <View className="p-3 bg-amber-50/50 border border-amber-200/60 rounded-xl flex-row items-center justify-between">
-              <View className="flex-row items-center gap-2.5 flex-1 pr-2">
-                <Package size={16} color="#D97706" />
-                <View className="flex-1">
-                  <Text className="text-xs font-bold text-gray-900">2 Menu Stok Menipis</Text>
-                  <Text className="text-[11px] text-gray-600">Susu UHT dan Sirup Aren mendekati batas minimum.</Text>
-                </View>
-              </View>
-              <TouchableOpacity
-                onPress={() => router.push('/(main)/(cashier)/pos')}
-                className="bg-white border border-gray-200 px-2.5 py-1 rounded-lg"
-              >
-                <Text className="text-xs font-semibold text-gray-800">Cek</Text>
-              </TouchableOpacity>
             </View>
           </View>
 
         </View>
       </ScrollView>
 
-      {/* REAL INTERACTIVE DATE PICKER MODAL */}
+      {/* DATE PICKER MODAL */}
       <Modal
         visible={isDateModalOpen}
         transparent
@@ -1341,24 +1114,24 @@ export function ModernDashboard() {
             onPress={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <View className="flex-row items-center justify-between pb-3 border-b border-gray-100">
+            <View className="flex-row items-center justify-between pb-3 border-b border-slate-100">
               <View>
-                <Text className="text-base font-bold text-gray-900">
+                <Text className="text-base font-bold text-slate-900">
                   Pilih Rentang Tanggal
                 </Text>
-                <Text className="text-xs text-gray-500">
-                  Tap tanggal untuk memilih rentang hari atau tanggal tunggal
+                <Text className="text-xs text-slate-500">
+                  Pilih tanggal untuk melihat laporan performa
                 </Text>
               </View>
               <TouchableOpacity
                 onPress={() => setIsDateModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-gray-100 items-center justify-center"
+                className="w-8 h-8 rounded-full bg-slate-100 items-center justify-center"
               >
-                <X size={16} color="#6B7280" />
+                <X size={16} color="#64748B" />
               </TouchableOpacity>
             </View>
 
-            {/* Quick Presets Pills */}
+            {/* Quick Presets */}
             <View className="pt-3 pb-2">
               <View className="flex-row flex-wrap gap-2">
                 <TouchableOpacity
@@ -1372,11 +1145,11 @@ export function ModernDashboard() {
                   className={`px-3 py-1.5 rounded-lg border ${
                     tempRangeStart === '2026-09-12' && tempRangeEnd === '2026-09-12'
                       ? 'bg-blue-50 border-blue-500'
-                      : 'bg-gray-50 border-gray-200'
+                      : 'bg-slate-50 border-slate-200'
                   }`}
                 >
-                  <Text className={`text-xs font-semibold ${tempRangeStart === '2026-09-12' && tempRangeEnd === '2026-09-12' ? 'text-blue-700' : 'text-gray-700'}`}>
-                    Hari Ini (1 Hari • Jam)
+                  <Text className={`text-xs font-semibold ${tempRangeStart === '2026-09-12' && tempRangeEnd === '2026-09-12' ? 'text-blue-700' : 'text-slate-700'}`}>
+                    Hari Ini
                   </Text>
                 </TouchableOpacity>
 
@@ -1391,10 +1164,10 @@ export function ModernDashboard() {
                   className={`px-3 py-1.5 rounded-lg border ${
                     tempRangeStart === '2026-09-11' && tempRangeEnd === '2026-09-11'
                       ? 'bg-blue-50 border-blue-500'
-                      : 'bg-gray-50 border-gray-200'
+                      : 'bg-slate-50 border-slate-200'
                   }`}
                 >
-                  <Text className={`text-xs font-semibold ${tempRangeStart === '2026-09-11' && tempRangeEnd === '2026-09-11' ? 'text-blue-700' : 'text-gray-700'}`}>
+                  <Text className={`text-xs font-semibold ${tempRangeStart === '2026-09-11' && tempRangeEnd === '2026-09-11' ? 'text-blue-700' : 'text-slate-700'}`}>
                     Kemarin
                   </Text>
                 </TouchableOpacity>
@@ -1409,10 +1182,10 @@ export function ModernDashboard() {
                   className={`px-3 py-1.5 rounded-lg border ${
                     tempRangeStart === '2026-09-06' && tempRangeEnd === '2026-09-12'
                       ? 'bg-blue-50 border-blue-500'
-                      : 'bg-gray-50 border-gray-200'
+                      : 'bg-slate-50 border-slate-200'
                   }`}
                 >
-                  <Text className={`text-xs font-semibold ${tempRangeStart === '2026-09-06' && tempRangeEnd === '2026-09-12' ? 'text-blue-700' : 'text-gray-700'}`}>
+                  <Text className={`text-xs font-semibold ${tempRangeStart === '2026-09-06' && tempRangeEnd === '2026-09-12' ? 'text-blue-700' : 'text-slate-700'}`}>
                     7 Hari Terakhir
                   </Text>
                 </TouchableOpacity>
@@ -1427,19 +1200,18 @@ export function ModernDashboard() {
                   className={`px-3 py-1.5 rounded-lg border ${
                     tempRangeStart === '2026-08-14' && tempRangeEnd === '2026-09-12'
                       ? 'bg-blue-50 border-blue-500'
-                      : 'bg-gray-50 border-gray-200'
+                      : 'bg-slate-50 border-slate-200'
                   }`}
                 >
-                  <Text className={`text-xs font-semibold ${tempRangeStart === '2026-08-14' && tempRangeEnd === '2026-09-12' ? 'text-blue-700' : 'text-gray-700'}`}>
+                  <Text className={`text-xs font-semibold ${tempRangeStart === '2026-08-14' && tempRangeEnd === '2026-09-12' ? 'text-blue-700' : 'text-slate-700'}`}>
                     30 Hari Terakhir
                   </Text>
                 </TouchableOpacity>
               </View>
             </View>
 
-            {/* REAL INTERACTIVE CALENDAR VIEW */}
+            {/* Calendar Controls */}
             <View className="py-2">
-              {/* Calendar Month & Year Stepper */}
               <View className="flex-row items-center justify-between pb-3">
                 <TouchableOpacity
                   onPress={() => {
@@ -1450,12 +1222,12 @@ export function ModernDashboard() {
                       setCalMonth((m) => m - 1);
                     }
                   }}
-                  className="w-8 h-8 rounded-lg bg-gray-100 items-center justify-center"
+                  className="w-8 h-8 rounded-lg bg-slate-100 items-center justify-center"
                 >
-                  <ChevronLeft size={16} color="#374151" />
+                  <ChevronLeft size={16} color="#334155" />
                 </TouchableOpacity>
 
-                <Text className="text-sm font-bold text-gray-900">
+                <Text className="text-sm font-bold text-slate-900">
                   {monthNames[calMonth]} {calYear}
                 </Text>
 
@@ -1468,33 +1240,33 @@ export function ModernDashboard() {
                       setCalMonth((m) => m + 1);
                     }
                   }}
-                  className="w-8 h-8 rounded-lg bg-gray-100 items-center justify-center"
+                  className="w-8 h-8 rounded-lg bg-slate-100 items-center justify-center"
                 >
-                  <ChevronRight size={16} color="#374151" />
+                  <ChevronRight size={16} color="#334155" />
                 </TouchableOpacity>
               </View>
 
-              {/* Day of Week Headers */}
-              <View className="flex-row justify-between pb-2 border-b border-gray-100">
+              {/* Day Headers */}
+              <View className="flex-row justify-between pb-2 border-b border-slate-100">
                 {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map((d, i) => (
                   <Text
                     key={i}
                     style={{ width: '14.28%', textAlign: 'center' }}
-                    className="text-[11px] font-bold text-gray-400"
+                    className="text-[11px] font-bold text-slate-400"
                   >
                     {d}
                   </Text>
                 ))}
               </View>
 
-              {/* Day Cells Grid */}
+              {/* Day Cells */}
               <View className="flex-row flex-wrap pt-1">
                 {calendarDays.map((item, idx) => {
                   if (!item.dayNumber || !item.dateStr) {
                     return (
                       <View
                         key={`empty-${idx}`}
-                        style={{ width: '14.28%', height: 38 }}
+                        style={{ width: '14.28%', height: 36 }}
                       />
                     );
                   }
@@ -1515,18 +1287,18 @@ export function ModernDashboard() {
                       onPress={() => handleCalendarDayPress(item.dateStr!)}
                       style={{
                         width: '14.28%',
-                        height: 38,
+                        height: 36,
                         alignItems: 'center',
                         justifyContent: 'center',
                         backgroundColor: isInRange ? '#EFF6FF' : 'transparent',
-                        borderTopLeftRadius: isStart ? 19 : 0,
-                        borderBottomLeftRadius: isStart ? 19 : 0,
-                        borderTopRightRadius: isEnd ? 19 : 0,
-                        borderBottomRightRadius: isEnd ? 19 : 0,
+                        borderTopLeftRadius: isStart ? 18 : 0,
+                        borderBottomLeftRadius: isStart ? 18 : 0,
+                        borderTopRightRadius: isEnd ? 18 : 0,
+                        borderBottomRightRadius: isEnd ? 18 : 0,
                       }}
                     >
                       <View
-                        className={`w-8 h-8 rounded-full items-center justify-center ${
+                        className={`w-7 h-7 rounded-full items-center justify-center ${
                           isSelectedEndpoint ? 'bg-blue-600 shadow-xs' : ''
                         }`}
                       >
@@ -1536,7 +1308,7 @@ export function ModernDashboard() {
                               ? 'font-bold text-white'
                               : isInRange
                               ? 'font-semibold text-blue-700'
-                              : 'text-gray-800'
+                              : 'text-slate-800'
                           }`}
                         >
                           {item.dayNumber}
@@ -1548,38 +1320,20 @@ export function ModernDashboard() {
               </View>
             </View>
 
-            {/* Selection Summary & Hourly Mode Notice */}
-            <View className="py-2.5 px-3 bg-gray-50 border border-gray-100 rounded-xl my-2">
-              <View className="flex-row items-center justify-between">
-                <Text className="text-[11px] font-semibold text-gray-700">
-                  {tempRangeStart && tempRangeEnd && tempRangeStart !== tempRangeEnd
-                    ? `Terpilih: ${tempRangeStart} s/d ${tempRangeEnd}`
-                    : `Terpilih: ${tempRangeStart || 'Hari Ini'}`}
-                </Text>
-                {tempRangeStart && (
-                  <Text className="text-[10px] font-bold text-blue-700 bg-blue-100/80 px-2 py-0.5 rounded">
-                    {tempRangeStart === (tempRangeEnd || tempRangeStart)
-                      ? 'Mode Jam Aktif (24 Jam)'
-                      : 'Rentang Terpilih'}
-                  </Text>
-                )}
-              </View>
-            </View>
-
             {/* Action Buttons */}
-            <View className="flex-row items-center gap-2.5 pt-2 border-t border-gray-100">
+            <View className="flex-row items-center gap-2.5 pt-3 border-t border-slate-100">
               <TouchableOpacity
                 onPress={() => setIsDateModalOpen(false)}
-                className="flex-1 py-2.5 rounded-xl border border-gray-200 items-center"
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 items-center"
               >
-                <Text className="text-xs font-semibold text-gray-700">Batal</Text>
+                <Text className="text-xs font-semibold text-slate-700">Batal</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={handleApplyCalendarRange}
-                className="flex-1 py-2.5 rounded-xl bg-gray-900 items-center shadow-xs"
+                className="flex-1 py-2.5 rounded-xl bg-slate-900 items-center shadow-xs"
               >
-                <Text className="text-xs font-semibold text-white">Terapkan Tanggal</Text>
+                <Text className="text-xs font-semibold text-white">Terapkan</Text>
               </TouchableOpacity>
             </View>
           </Pressable>

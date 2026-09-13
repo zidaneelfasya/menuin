@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const productSchema = z.object({
   name: z.string().min(1, 'Nama produk wajib diisi'),
-  sku: z.string().min(1, 'SKU wajib diisi'),
+  sku: z.string().optional().nullable(),
   categoryId: z.string().uuid('Kategori tidak valid').nullable(),
   price: z.coerce.number().min(0, 'Harga tidak boleh negatif'),
   costPrice: z.coerce.number().min(0, 'Harga modal tidak boleh negatif'),
@@ -13,4 +13,3 @@ export const productSchema = z.object({
   trackStock: z.boolean().default(true).optional(),
   modifierGroupIds: z.array(z.string()).optional(),
 });
-

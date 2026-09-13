@@ -29,6 +29,8 @@ type Product = {
   name: string;
   price: string | number;
   imageUrl?: string | null;
+  stock?: number | null;
+  trackStock?: boolean | null;
   modifierGroupIds?: string[]; // Groups attached to this product
 };
 
@@ -173,11 +175,27 @@ export function CustomizationModal({ isOpen, onClose, product, allModifierGroups
           </div>
           
           <div className="flex items-center justify-between border-t pt-4">
-            <span className="font-semibold">Jumlah</span>
-            <div className="flex items-center space-x-4">
-              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setQuantity(Math.max(1, quantity - 1))}>-</Button>
-              <span>{quantity}</span>
-              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setQuantity(quantity + 1)}>+</Button>
+            <div>
+              <span className="font-semibold block">Jumlah</span>
+              {product.trackStock !== false && typeof product.stock === 'number' && (
+                <span className="text-xs text-muted-foreground">Tersedia: {product.stock}</span>
+              )}
+            </div>
+            <div className="flex items-center space-x-3">
+              <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg" onClick={() => setQuantity(Math.max(1, quantity - 1))}>-</Button>
+              <span className="w-6 text-center font-semibold">{quantity}</span>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="h-8 w-8 rounded-lg" 
+                onClick={() => {
+                  if (product.trackStock !== false && typeof product.stock === 'number' && quantity >= product.stock) {
+                    return;
+                  }
+                  setQuantity(quantity + 1);
+                }}
+                disabled={product.trackStock !== false && typeof product.stock === 'number' && quantity >= product.stock}
+              >+</Button>
             </div>
           </div>
         </div>

@@ -1,21 +1,21 @@
 'use client';
 
 import * as React from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger, 
-  DialogDescription, 
-  DialogFooter 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogDescription,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Upload, FileSpreadsheet, Loader2, Download } from 'lucide-react';
-import { importProducts } from '@/lib/actions/import';
+import { importCategories } from '@/lib/actions/import';
 import { toast } from 'sonner';
 
-export function ImportProductDialog() {
+export function ImportCategoryDialog() {
   const [open, setOpen] = React.useState(false);
   const [isPending, startTransition] = React.useTransition();
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
@@ -48,10 +48,10 @@ export function ImportProductDialog() {
     formData.append('file', selectedFile);
 
     startTransition(async () => {
-      const res = await importProducts(formData);
+      const res = await importCategories(formData);
       if (res.success) {
-        setSuccessMsg(res.message || 'Berhasil mengimpor produk');
-        toast.success(res.message || 'Berhasil mengimpor produk');
+        setSuccessMsg(res.message || 'Berhasil mengimpor kategori');
+        toast.success(res.message || 'Berhasil mengimpor kategori');
         setTimeout(() => {
           setOpen(false);
           setSelectedFile(null);
@@ -59,20 +59,23 @@ export function ImportProductDialog() {
         }, 1500);
       } else {
         setErrorMsg(res.error || 'Terjadi kesalahan saat mengimpor');
-        toast.error(res.error || 'Gagal mengimpor produk');
+        toast.error(res.error || 'Gagal mengimpor kategori');
       }
     });
   };
 
   return (
-    <Dialog open={open} onOpenChange={(val) => {
-      setOpen(val);
-      if (!val) {
-        setSelectedFile(null);
-        setErrorMsg(null);
-        setSuccessMsg(null);
-      }
-    }}>
+    <Dialog
+      open={open}
+      onOpenChange={(val) => {
+        setOpen(val);
+        if (!val) {
+          setSelectedFile(null);
+          setErrorMsg(null);
+          setSuccessMsg(null);
+        }
+      }}
+    >
       <DialogTrigger asChild>
         <Button variant="outline" className="gap-2 rounded-xl">
           <Upload className="w-4 h-4" />
@@ -81,9 +84,9 @@ export function ImportProductDialog() {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
-          <DialogTitle>Import Menu Item dari Excel</DialogTitle>
+          <DialogTitle>Import Kategori dari Excel</DialogTitle>
           <DialogDescription>
-            Unggah file Excel (.xlsx) untuk menambahkan atau memperbarui data menu item secara massal.
+            Unggah file Excel (.xlsx) untuk menambahkan atau memperbarui kategori secara massal.
           </DialogDescription>
         </DialogHeader>
 
@@ -91,8 +94,8 @@ export function ImportProductDialog() {
           {/* Download Template Banner */}
           <div className="flex items-center justify-between p-3 rounded-lg bg-muted/60 border border-border">
             <div className="text-xs text-muted-foreground">
-              <span className="font-semibold text-foreground block">Gunakan Template Standar</span>
-              Otomatis mengisi format kolom yang tepat untuk migrasi cepat.
+              <span className="font-semibold text-foreground block">Belum punya formatnya?</span>
+              Gunakan template resmi untuk kemudahan migrasi.
             </div>
             <Button
               type="button"
@@ -101,46 +104,49 @@ export function ImportProductDialog() {
               asChild
               className="gap-1.5 text-xs font-medium shrink-0 ml-2"
             >
-              <a href="/api/templates/products" download>
+              <a href="/api/templates/categories" download>
                 <Download className="w-3.5 h-3.5" />
                 Unduh Template
               </a>
             </Button>
           </div>
 
-          <div 
+          <div
             className={`border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer transition-colors ${
-              selectedFile ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50 hover:bg-card'
+              selectedFile
+                ? 'border-primary bg-primary/5'
+                : 'border-border hover:border-primary/50 hover:bg-card'
             }`}
             onClick={() => fileInputRef.current?.click()}
           >
-            <input 
-              type="file" 
-              className="hidden" 
-              accept=".xlsx, .xls, .csv" 
+            <input
+              type="file"
+              className="hidden"
+              accept=".xlsx, .xls, .csv"
               ref={fileInputRef}
               onChange={handleFileChange}
             />
             {selectedFile ? (
               <>
                 <FileSpreadsheet className="w-8 h-8 text-primary mb-2" />
-                <span className="text-sm font-medium text-foreground text-center max-w-[280px] truncate">{selectedFile.name}</span>
-                <span className="text-xs text-muted-foreground mt-1">{(selectedFile.size / 1024).toFixed(1)} KB</span>
+                <span className="text-sm font-medium text-foreground text-center max-w-[280px] truncate">
+                  {selectedFile.name}
+                </span>
+                <span className="text-xs text-muted-foreground mt-1">
+                  {(selectedFile.size / 1024).toFixed(1)} KB
+                </span>
               </>
             ) : (
               <>
                 <Upload className="w-8 h-8 text-muted-foreground mb-2" />
-                <span className="text-sm font-medium text-foreground">Pilih atau drag & drop file Excel</span>
-                <span className="text-xs text-muted-foreground mt-1">Mendukung format .xlsx (.csv)</span>
+                <span className="text-sm font-medium text-foreground">
+                  Pilih atau drag & drop file Excel
+                </span>
+                <span className="text-xs text-muted-foreground mt-1">
+                  Mendukung format .xlsx (.csv)
+                </span>
               </>
             )}
-          </div>
-
-          <div className="text-[11px] text-muted-foreground bg-muted/40 p-2.5 rounded-lg border border-border/50 space-y-1">
-            <div className="font-medium text-foreground">💡 Catatan Cerdas:</div>
-            <div>• Kategori baru akan otomatis dibuat jika belum terdaftar.</div>
-            <div>• Baris dengan nama item yang sudah ada akan otomatis memperbarui data item tersebut.</div>
-            <div>• Kolom Harga Modal, Stok, dan Lacak Stok bersifat opsional.</div>
           </div>
 
           {errorMsg && (
@@ -157,10 +163,17 @@ export function ImportProductDialog() {
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
+          <Button
+            variant="outline"
+            onClick={() => setOpen(false)}
+            disabled={isPending}
+          >
             Batal
           </Button>
-          <Button onClick={handleImport} disabled={!selectedFile || isPending}>
+          <Button
+            onClick={handleImport}
+            disabled={!selectedFile || isPending}
+          >
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isPending ? 'Mengimpor...' : 'Mulai Import'}
           </Button>

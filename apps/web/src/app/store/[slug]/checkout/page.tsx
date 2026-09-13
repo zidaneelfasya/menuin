@@ -32,6 +32,9 @@ export default async function CheckoutPage({
     tableNumberRequired: tenant.tableNumberRequired,
     midtransEnvironment: tenant.midtransEnvironment,
     midtransClientKey: tenant.midtransClientKey,
+    posTaxRate: tenant.posTaxRate,
+    taxName: tenant.taxName,
+    serviceChargeRate: tenant.serviceChargeRate,
   };
 
   return (

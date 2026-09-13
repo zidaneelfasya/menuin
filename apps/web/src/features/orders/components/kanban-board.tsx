@@ -141,14 +141,17 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
             }
           } else if (payload.eventType === "UPDATE") {
             const updatedTx = payload.new as any;
+            const isTargetStatus = ["PENDING", "NEW", "PROCESSING", "READY"].includes(updatedTx.status);
+
             setOrders(prev => {
               const exists = prev.find(o => o.id === updatedTx.id);
-              if (!exists && ["PENDING", "NEW", "PROCESSING", "READY"].includes(updatedTx.status)) {
-                router.refresh();
+              if (!exists && isTargetStatus) {
+                // Not in current list but active: trigger refresh asynchronously
+                setTimeout(() => router.refresh(), 0);
                 return prev;
               }
               
-              if (exists && !["PENDING", "NEW", "PROCESSING", "READY"].includes(updatedTx.status)) {
+              if (exists && !isTargetStatus) {
                 return prev.filter(o => o.id !== updatedTx.id);
               }
 

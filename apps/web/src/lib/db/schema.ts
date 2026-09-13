@@ -251,7 +251,7 @@ export const products = pgTable('products', {
   tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
   categoryId: uuid('category_id'), // Need FK
   name: text('name').notNull(),
-  sku: text('sku').notNull(),
+  sku: text('sku'),
   barcode: text('barcode'),
   price: decimal('price', { precision: 12, scale: 2 }).notNull(),
   costPrice: decimal('cost_price', { precision: 12, scale: 2 }).notNull(),
@@ -266,8 +266,6 @@ export const products = pgTable('products', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => {
   return {
-    tenantSkuUnique: unique('products_tenant_sku_unique').on(table.tenantId, table.sku),
-    tenantBarcodeUnique: unique('products_tenant_barcode_unique').on(table.tenantId, table.barcode),
     tenantIdUnique: unique('products_tenant_id_unique').on(table.tenantId, table.id),
     categoryFk: foreignKey({
       columns: [table.tenantId, table.categoryId],
@@ -318,6 +316,27 @@ export const cashMovements = pgTable('cash_movements', {
       columns: [table.tenantId, table.shiftId],
       foreignColumns: [shifts.tenantId, shifts.id]
     })
+  };
+});
+
+export const stockMovements = pgTable('stock_movements', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
+  productId: uuid('product_id').references(() => products.id, { onDelete: 'cascade' }).notNull(),
+  type: text('type').notNull(), // 'IN' (Masuk), 'OUT' (Keluar), 'SALE' (Penjualan), 'ADJUSTMENT' (Koreksi)
+  quantity: integer('quantity').notNull(),
+  previousStock: integer('previous_stock').notNull().default(0),
+  currentStock: integer('current_stock').notNull().default(0),
+  reason: text('reason'),
+  referenceId: text('reference_id'),
+  actorName: text('actor_name'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => {
+  return {
+    tenantProductFk: foreignKey({
+      columns: [table.tenantId, table.productId],
+      foreignColumns: [products.tenantId, products.id]
+    }),
   };
 });
 

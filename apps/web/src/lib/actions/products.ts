@@ -9,21 +9,6 @@ import { getCurrentUser } from './auth';
 import { AuditService } from '@/lib/services/audit.service';
 
 import { productSchema } from '@menuin/validation';
-
-// Helper untuk generate 13 digit barcode EAN-13 style dummy
-function generateBarcode() {
-  const prefix = '899'; // Indonesia GS1 prefix
-  const randomPart = Math.floor(100000000 + Math.random() * 900000000).toString(); // 9 digits
-  const code = prefix + randomPart;
-  // Calculate checksum
-  let sum = 0;
-  for (let i = 0; i < 12; i++) {
-    sum += parseInt(code[i]) * (i % 2 === 0 ? 1 : 3);
-  }
-  const checkDigit = (10 - (sum % 10)) % 10;
-  return code + checkDigit.toString();
-}
-
 import { ProductDto } from '@menuin/types';
 
 export async function getProducts(): Promise<{ success: boolean, data?: ProductDto[], error?: string }> {
@@ -114,15 +99,9 @@ export async function createProduct(formData: z.infer<typeof productSchema>) {
 
     const validatedData = productSchema.parse(formData);
     
-    // Auto-generate barcode if empty
-    const finalBarcode = validatedData.barcode && validatedData.barcode.trim() !== '' 
-      ? validatedData.barcode 
-      : generateBarcode();
-    
     const insertedProduct = await db.insert(products).values({
       tenantId: user.tenantId,
       name: validatedData.name,
-      sku: validatedData.sku,
       categoryId: validatedData.categoryId,
       price: validatedData.price.toString(),
       costPrice: validatedData.costPrice.toString(),
@@ -130,7 +109,6 @@ export async function createProduct(formData: z.infer<typeof productSchema>) {
       minStock: validatedData.minStock,
       trackStock: validatedData.trackStock ?? true,
       imageUrl: validatedData.imageUrl,
-      barcode: finalBarcode,
     }).returning({ id: products.id });
     
     const newProductId = insertedProduct[0].id;
@@ -148,7 +126,7 @@ export async function createProduct(formData: z.infer<typeof productSchema>) {
     return { success: true };
   } catch (error) {
     console.error('Error creating product:', error);
-    return { success: false, error: 'Gagal membuat produk. Pastikan SKU unik.' };
+    return { success: false, error: 'Gagal membuat produk.' };
   }
 }
 
@@ -162,7 +140,6 @@ export async function updateProduct(id: string, formData: z.infer<typeof product
     await db.update(products)
       .set({
         name: validatedData.name,
-        sku: validatedData.sku,
         categoryId: validatedData.categoryId,
         price: validatedData.price.toString(),
         costPrice: validatedData.costPrice.toString(),
@@ -170,7 +147,6 @@ export async function updateProduct(id: string, formData: z.infer<typeof product
         minStock: validatedData.minStock,
         trackStock: validatedData.trackStock ?? true,
         imageUrl: validatedData.imageUrl,
-        barcode: validatedData.barcode,
         updatedAt: new Date(),
       })
       .where(and(eq(products.id, id), eq(products.tenantId, user.tenantId)));

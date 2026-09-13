@@ -32,6 +32,8 @@ export default async function StorePage({
       imageUrl: products.imageUrl,
       isFeatured: products.isFeatured,
       categoryId: products.categoryId,
+      stock: products.stock,
+      trackStock: products.trackStock,
     })
     .from(products)
     .where(and(

@@ -30,6 +30,7 @@ import {
   QrCode
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { ImageUpload } from '@/components/ui/image-upload';
 import { 
   updateTaxAndFeeSettings, 
   updatePlatformFeeSettings, 
@@ -743,22 +744,17 @@ export function SettingsClient({
                             </CardDescription>
                           </CardHeader>
                           <CardContent className="space-y-5">
-                            {/* LOGO URL */}
+                            {/* LOGO UPLOAD */}
                             <div className="space-y-2">
-                              <Label htmlFor="receiptLogoUrl" className="font-semibold text-xs uppercase tracking-wider text-slate-700">
-                                URL / Link Gambar Logo Struk
-                              </Label>
-                              <Input
-                                id="receiptLogoUrl"
-                                type="url"
+                              <ImageUpload
+                                label="Logo Struk Kasir"
+                                folder="receipts"
+                                aspectRatio="square"
                                 value={receiptLogoUrl}
-                                onChange={(e) => setReceiptLogoUrl(e.target.value)}
-                                placeholder="https://example.com/logo.png"
-                                className="bg-slate-50/50 text-sm h-10"
+                                onChange={(url) => setReceiptLogoUrl(url)}
+                                onRemove={() => setReceiptLogoUrl('')}
+                                helperText="Upload gambar logo struk khusus. Jika dikosongkan, akan otomatis menggunakan logo utama toko."
                               />
-                              <p className="text-xs text-muted-foreground">
-                                Masukkan link langsung gambar logo. Kosongkan jika ingin menggunakan logo utama toko.
-                              </p>
                             </div>
 
                             {/* HEADER */}

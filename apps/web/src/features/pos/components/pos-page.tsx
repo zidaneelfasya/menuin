@@ -21,9 +21,9 @@ import { StartShiftModal } from './start-shift-modal';
 
 type Category = { id: string; name: string; };
 type Product = {
-  id: string; sku: string; name: string; price: string; stock: number;
+  id: string; sku?: string | null; name: string; price: string; stock: number;
   categoryName: string | null; categoryId: string | null; status: string;
-  imageUrl: string | null; barcode: string | null;
+  imageUrl: string | null; barcode?: string | null;
 };
 
 export function POSPage({ 
@@ -175,7 +175,14 @@ export function POSPage({
   }, [items, isPaymentModalOpen, isSuccessModalOpen]);
 
   const totalItems = mounted ? items.reduce((sum, item) => sum + item.quantity, 0) : 0;
-  const cartTotal = mounted ? getTotal() : 0;
+  const subtotal = mounted ? items.reduce((sum, item) => sum + item.price * item.quantity, 0) : 0;
+  const taxRate = parseFloat(String(posSettings?.posTaxRate || '0'));
+  const serviceRate = parseFloat(String(posSettings?.serviceChargeRate || '0'));
+  const discountAmount = useCartStore.getState().discount || 0;
+  const afterDiscount = Math.max(0, subtotal - discountAmount);
+  const taxAmount = (afterDiscount * taxRate) / 100;
+  const serviceChargeAmount = (afterDiscount * serviceRate) / 100;
+  const cartTotal = mounted ? afterDiscount + taxAmount + serviceChargeAmount : 0;
 
   return (
     <>
@@ -186,7 +193,7 @@ export function POSPage({
 
         <div className="hidden lg:block w-[300px] xl:w-[350px] 2xl:w-[400px] h-full flex-shrink-0 ml-4 lg:ml-6 relative">
         <div className="h-full pb-[140px]">
-          <ShoppingCart />
+          <ShoppingCart posSettings={posSettings} />
         </div>
         <div className="absolute bottom-0 left-0 right-0 bg-background border-t p-4 pt-4 z-10">
           <div className="flex justify-between text-lg font-bold mb-4">
@@ -224,7 +231,7 @@ export function POSPage({
           <DrawerContent className="h-[85vh] p-0 flex flex-col">
             <DrawerTitle className="sr-only">Keranjang Belanja</DrawerTitle>
             <div className="flex-1 overflow-hidden">
-              <ShoppingCart />
+              <ShoppingCart posSettings={posSettings} />
             </div>
             <div className="p-4 border-t bg-background mt-auto">
               <button 

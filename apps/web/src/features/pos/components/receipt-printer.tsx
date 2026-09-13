@@ -88,7 +88,7 @@ export const ReceiptPrinter = React.forwardRef<HTMLDivElement, ReceiptPrinterPro
     const itemsSubtotal = data.subtotal || data.items.reduce((acc, item) => acc + item.subtotal, 0);
 
     const showCustomerReceipt = printMode === 'all' || printMode === 'customer';
-    const showKitchenTicket = (printMode === 'all' && (settings?.kitchenPrintEnabled ?? false)) || printMode === 'kitchen';
+    const showKitchenTicket = printMode === 'all' || printMode === 'kitchen';
 
     const logoUrl = settings?.receiptLogoUrl || settings?.storeLogoUrl;
     const showLogo = settings?.receiptShowLogo !== false && !!logoUrl;
@@ -337,10 +337,10 @@ export const ReceiptPrinter = React.forwardRef<HTMLDivElement, ReceiptPrinterPro
           )}
 
           {/* ================= CUT SEPARATOR ================= */}
-          {showCustomerReceipt && showKitchenTicket && (settings?.kitchenAutoCut !== false) && (
+          {showCustomerReceipt && showKitchenTicket && (
             <div className="receipt-cut-line">
               - - - - - - - - - - - - - - - - - -<br />
-              Gunting Di Sini (Dapur)<br />
+              ✂ Gunting Di Sini (Dapur)<br />
               - - - - - - - - - - - - - - - - - -
             </div>
           )}

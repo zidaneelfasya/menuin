@@ -5,30 +5,31 @@ import { Trash2, Plus, Minus, CreditCard, ShieldCheck } from 'lucide-react';
 import { useCartStore } from '../stores/use-cart-store';
 import { formatCurrency } from '@/lib/utils/format';
 
-export function ShoppingCart() {
+interface ShoppingCartProps {
+  posSettings?: {
+    posTaxRate?: string | number;
+    taxName?: string;
+    serviceChargeRate?: string | number;
+  } | null;
+}
+
+export function ShoppingCart({ posSettings }: ShoppingCartProps = {}) {
   const [mounted, setMounted] = React.useState(false);
-  const { items, removeItem, updateQuantity, clearCart, getSubtotal, getTaxAmount, getTotal, discount } = useCartStore();
+  const { items, removeItem, updateQuantity, clearCart, getSubtotal, discount } = useCartStore();
 
   React.useEffect(() => {
     setMounted(true);
   }, []);
 
-  if (!mounted) {
-    return (
-      <div className="flex flex-col h-full bg-card border rounded-2xl shadow-sm p-4 animate-pulse">
-        <div className="h-8 bg-muted rounded w-1/3 mb-4"></div>
-        <div className="flex-1 space-y-4">
-          <div className="h-16 bg-muted rounded w-full"></div>
-          <div className="h-16 bg-muted rounded w-full"></div>
-        </div>
-        <div className="h-40 bg-muted rounded w-full mt-4"></div>
-      </div>
-    );
-  }
-
   const subtotal = getSubtotal();
-  const tax = getTaxAmount();
-  const total = getTotal();
+  const taxRate = parseFloat(String(posSettings?.posTaxRate || '0'));
+  const serviceRate = parseFloat(String(posSettings?.serviceChargeRate || '0'));
+  const taxName = posSettings?.taxName || 'Pajak (PB1)';
+
+  const afterDiscount = Math.max(0, subtotal - discount);
+  const taxAmount = (afterDiscount * taxRate) / 100;
+  const serviceChargeAmount = (afterDiscount * serviceRate) / 100;
+  const total = afterDiscount + taxAmount + serviceChargeAmount;
 
   return (
     <div className="flex flex-col h-full bg-card border rounded-2xl shadow-sm">
@@ -110,25 +111,37 @@ export function ShoppingCart() {
       </div>
 
       {/* Summary */}
-      <div className="p-4 border-t bg-muted/10 space-y-3">
+      <div className="p-4 border-t bg-muted/10 space-y-2.5">
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">Subtotal</span>
           <span className="font-medium">{formatCurrency(subtotal)}</span>
         </div>
         {discount > 0 && (
-          <div className="flex justify-between text-sm text-destructive">
-            <span>Diskon</span>
+          <div className="flex justify-between text-sm text-destructive font-medium">
+            <span>Potongan / Diskon</span>
             <span>-{formatCurrency(discount)}</span>
           </div>
         )}
-        <div className="pt-3 border-t flex justify-between items-center">
-          <span className="font-bold text-lg">Total</span>
-          <span className="font-bold text-2xl text-primary">{formatCurrency(total)}</span>
+        {taxRate > 0 && (
+          <div className="flex justify-between text-sm text-muted-foreground">
+            <span>{taxName} ({taxRate}%)</span>
+            <span>+{formatCurrency(taxAmount)}</span>
+          </div>
+        )}
+        {serviceRate > 0 && (
+          <div className="flex justify-between text-sm text-muted-foreground">
+            <span>Biaya Layanan ({serviceRate}%)</span>
+            <span>+{formatCurrency(serviceChargeAmount)}</span>
+          </div>
+        )}
+        <div className="pt-2.5 border-t flex justify-between items-center">
+          <span className="font-bold text-base">Total</span>
+          <span className="font-bold text-xl text-primary">{formatCurrency(total)}</span>
         </div>
 
-        <div className="flex justify-center items-center mt-3 text-xs text-success bg-success/10 py-1.5 rounded-lg">
+        <div className="flex justify-center items-center mt-2 text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 py-1.5 rounded-lg font-medium">
           <ShieldCheck size={14} className="mr-1.5" />
-          Semua transaksi aman
+          Transaksi aman & tersinkronisasi
         </div>
       </div>
     </div>

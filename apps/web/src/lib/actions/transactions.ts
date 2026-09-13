@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from '@/lib/db';
-import { transactions, transactionItems, products, shifts, tenants, memberships } from '@/lib/db/schema';
+import { transactions, transactionItems, products, shifts, tenants, memberships, stockMovements } from '@/lib/db/schema';
 import { eq, desc, sql, and } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from './auth';
@@ -102,20 +102,37 @@ export async function createTransaction(payload: CheckoutPayload) {
           notes: item.notes || null,
         });
 
-        // Deduct stock only if product has trackStock enabled (true)
-        await tx
-          .update(products)
-          .set({
-            stock: sql`GREATEST(0, ${products.stock} - ${item.quantity})`,
-            updatedAt: new Date(),
-          })
-          .where(
-            and(
-              eq(products.id, item.productId),
-              eq(products.tenantId, tenantId),
-              eq(products.trackStock, true)
-            )
-          );
+        // Deduct stock and record stock movement only if product has trackStock enabled (true)
+        const [prod] = await tx
+          .select({ id: products.id, stock: products.stock, trackStock: products.trackStock })
+          .from(products)
+          .where(and(eq(products.id, item.productId), eq(products.tenantId, tenantId)))
+          .limit(1);
+
+        if (prod && prod.trackStock !== false) {
+          const prevStock = prod.stock ?? 0;
+          const currStock = Math.max(0, prevStock - item.quantity);
+
+          await tx
+            .update(products)
+            .set({
+              stock: currStock,
+              updatedAt: new Date(),
+            })
+            .where(and(eq(products.id, item.productId), eq(products.tenantId, tenantId)));
+
+          await tx.insert(stockMovements).values({
+            tenantId,
+            productId: item.productId,
+            type: 'SALE',
+            quantity: item.quantity,
+            previousStock: prevStock,
+            currentStock: currStock,
+            reason: `Penjualan Kasir ${orderNumber ? (orderNumber.startsWith('#') ? orderNumber : '#' + orderNumber) : '#' + newTx.id.slice(0, 8)}`,
+            referenceId: newTx.id,
+            actorName: user.name || 'Kasir',
+          });
+        }
       }
       
       return newTx.id;

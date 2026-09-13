@@ -17,14 +17,14 @@ type Category = {
 
 type Product = {
   id: string;
-  sku: string;
+  sku?: string | null;
   name: string;
   price: string;
   stock: number;
   categoryName: string | null;
   categoryId: string | null;
   imageUrl: string | null;
-  barcode: string | null;
+  barcode?: string | null;
   isFeatured?: boolean;
   trackStock?: boolean;
   status: string;
@@ -170,7 +170,7 @@ export function ProductCatalog({
 
     const matchesSearch = 
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      p.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.sku && p.sku.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (p.barcode && p.barcode.includes(searchQuery));
     return matchesCategory && matchesSearch;
   });

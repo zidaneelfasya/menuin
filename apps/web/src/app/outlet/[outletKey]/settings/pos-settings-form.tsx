@@ -130,10 +130,10 @@ export function PosSettingsForm({ initialData }: { initialData: any }) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Receipt className="h-5 w-5 text-primary" />
-            Pajak & Biaya Layanan Kasir
+            Pajak & Biaya Layanan
           </CardTitle>
           <CardDescription>
-            Konfigurasi tarif pajak dan biaya layanan untuk transaksi yang dilakukan via sistem Kasir (POS).
+            Konfigurasi tarif pajak dan biaya layanan untuk transaksi sistem Kasir (POS) serta Katalog Online.
           </CardDescription>
         </CardHeader>
         <CardContent>

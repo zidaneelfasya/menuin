@@ -31,6 +31,9 @@ type CheckoutClientProps = {
     tableNumberRequired: boolean;
     midtransEnvironment: string | null;
     midtransClientKey: string | null;
+    posTaxRate?: string | number | null;
+    taxName?: string | null;
+    serviceChargeRate?: string | number | null;
   };
 };
 
@@ -107,7 +110,14 @@ export function CheckoutClient({ tenantSlug, settings }: CheckoutClientProps) {
     return Math.min(disc, subTotal);
   })();
 
-  const grandTotal = Math.max(0, subTotal - promoDiscount);
+  const taxRate = parseFloat(String(settings.posTaxRate || '0'));
+  const serviceRate = parseFloat(String(settings.serviceChargeRate || '0'));
+  const taxName = settings.taxName || 'Pajak (PB1)';
+
+  const taxableSubtotal = Math.max(0, subTotal - promoDiscount);
+  const taxAmount = (taxableSubtotal * taxRate) / 100;
+  const serviceChargeAmount = (taxableSubtotal * serviceRate) / 100;
+  const grandTotal = taxableSubtotal + taxAmount + serviceChargeAmount;
 
   if (!mounted) return null;
 
@@ -176,6 +186,9 @@ export function CheckoutClient({ tenantSlug, settings }: CheckoutClientProps) {
         tableNumber: formData.tableNumber || undefined,
         customerName: formData.customerName,
         customerPhone: formData.customerPhone,
+        promoName: appliedPromo?.name,
+        promoId: appliedPromo?.id,
+        discount: promoDiscount,
         items: items.map(i => ({ 
           id: i.productId, 
           quantity: i.quantity,
@@ -344,20 +357,34 @@ export function CheckoutClient({ tenantSlug, settings }: CheckoutClientProps) {
         )}
 
         {/* Pricing Breakdown */}
-        <div className="border-t pt-4 space-y-2 text-sm">
+        <div className="border-t pt-4 space-y-2.5 text-sm">
           <div className="flex justify-between text-gray-600">
             <span>Subtotal Menu</span>
             <span className="font-semibold text-gray-800">{formatCurrency(subTotal)}</span>
           </div>
 
           {promoDiscount > 0 && (
-            <div className="flex justify-between text-green-600 font-medium">
-              <span>Diskon Promo ({appliedPromo?.name})</span>
+            <div className="flex justify-between text-emerald-600 font-medium">
+              <span>Potongan Promo ({appliedPromo?.name})</span>
               <span>-{formatCurrency(promoDiscount)}</span>
             </div>
           )}
 
-          <div className="border-t pt-2 flex justify-between font-bold text-lg text-gray-800">
+          {taxRate > 0 && (
+            <div className="flex justify-between text-gray-600">
+              <span>{taxName} ({taxRate}%)</span>
+              <span className="font-medium text-gray-800">+{formatCurrency(taxAmount)}</span>
+            </div>
+          )}
+
+          {serviceRate > 0 && (
+            <div className="flex justify-between text-gray-600">
+              <span>Biaya Layanan ({serviceRate}%)</span>
+              <span className="font-medium text-gray-800">+{formatCurrency(serviceChargeAmount)}</span>
+            </div>
+          )}
+
+          <div className="border-t pt-2.5 flex justify-between font-bold text-lg text-gray-800">
             <span>Total Pembayaran</span>
             <span className="text-catalog-primary">{formatCurrency(grandTotal)}</span>
           </div>

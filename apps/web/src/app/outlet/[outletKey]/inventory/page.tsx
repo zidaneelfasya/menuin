@@ -2,13 +2,14 @@ import { InventoryList } from '@/features/inventory/components/inventory-list';
 import { Metadata } from 'next';
 import { Suspense } from 'react';
 import { getProducts } from '@/lib/actions/products';
+import { getStockMovements, getStockDistributionSummary } from '@/lib/actions/inventory';
 import { TableSkeleton } from '@/components/ui/table-skeleton';
 import { getCurrentUser } from '@/lib/actions/auth';
 import { Card, CardContent } from '@/components/ui/card';
 import { ShieldAlert } from 'lucide-react';
 import { requireFeature } from '@/lib/actions/auth-context';
 
-export const metadata: Metadata = { title: 'Stok Bahan - Menuin' };
+export const metadata: Metadata = { title: 'Manajemen Stok & Distribusi - Menuin' };
 
 async function InventoryDataWrapper() {
   await requireFeature('INVENTORY');
@@ -20,16 +21,34 @@ async function InventoryDataWrapper() {
           <CardContent className="pt-6 flex flex-col items-center">
             <ShieldAlert className="h-12 w-12 text-destructive mb-4" />
             <h2 className="text-xl font-bold mb-2">Akses Ditolak</h2>
-            <p className="text-muted-foreground text-sm">Halaman ini tidak bisa dibuka oleh peran Anda. Silakan hubungi admin jika Anda membutuhkan akses.</p>
+            <p className="text-muted-foreground text-sm">
+              Halaman ini tidak bisa dibuka oleh peran Anda. Silakan hubungi admin jika Anda membutuhkan akses.
+            </p>
           </CardContent>
         </Card>
       </div>
     );
   }
 
-  const result = await getProducts();
-  const products = result.success && result.data ? result.data : [];
-  return <InventoryList initialData={products} />;
+  const [productsResult, movementsResult, summaryResult] = await Promise.all([
+    getProducts(),
+    getStockMovements({ limit: 200 }),
+    getStockDistributionSummary(),
+  ]);
+
+  const products = productsResult.success && productsResult.data ? productsResult.data : [];
+  const movements = movementsResult.success && movementsResult.data ? movementsResult.data : [];
+  const summary = summaryResult.success && summaryResult.data ? summaryResult.data : undefined;
+
+  return (
+    <div className="p-6">
+      <InventoryList
+        initialData={products}
+        initialMovements={movements}
+        summary={summary}
+      />
+    </div>
+  );
 }
 
 export default function Page() {
