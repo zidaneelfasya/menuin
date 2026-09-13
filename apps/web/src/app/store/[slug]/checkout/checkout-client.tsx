@@ -223,12 +223,8 @@ export function CheckoutClient({ tenantSlug, settings }: CheckoutClientProps) {
         <div className="space-y-4">
           {items.map((item) => (
             <div key={item.cartItemId} className="flex gap-4">
-              <div className="h-20 w-20 bg-gray-100 rounded-xl flex-shrink-0 border overflow-hidden">
-                {item.imageUrl ? (
-                  <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-[10px] text-gray-400 w-full h-full flex items-center justify-center">No Image</span>
-                )}
+              <div className="h-20 w-20 bg-gray-100 dark:bg-slate-800 rounded-xl flex-shrink-0 border overflow-hidden relative flex items-center justify-center">
+                <CheckoutItemThumbnail src={item.imageUrl} alt={item.name} fallbackName={item.name} />
               </div>
               
               <div className="flex-1 flex flex-col justify-between py-1">
@@ -465,3 +461,29 @@ export function CheckoutClient({ tenantSlug, settings }: CheckoutClientProps) {
     </>
   );
 }
+
+function CheckoutItemThumbnail({ src, alt, fallbackName }: { src?: string | null; alt: string; fallbackName: string }) {
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    setError(false);
+  }, [src]);
+
+  if (src && !error) {
+    return (
+      <img
+        src={src}
+        alt={alt}
+        className="w-full h-full object-cover"
+        onError={() => setError(true)}
+      />
+    );
+  }
+
+  return (
+    <div className="w-full h-full flex items-center justify-center font-bold text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-slate-800 text-xl uppercase select-none">
+      {fallbackName.charAt(0)}
+    </div>
+  );
+}
+

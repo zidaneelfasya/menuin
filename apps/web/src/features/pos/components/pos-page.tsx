@@ -52,9 +52,12 @@ export function POSPage({
 
   React.useEffect(() => {
     setMounted(true);
-  }, []);
+    if (initialProducts && initialProducts.length > 0) {
+      useCartStore.getState().syncProductImages(initialProducts);
+    }
+  }, [initialProducts]);
 
-  const handleCheckoutClick = () => {
+  const handleCheckoutClick = React.useCallback(() => {
     if (items.length === 0) {
       toast.error('Keranjang kosong!');
       return;
@@ -65,7 +68,7 @@ export function POSPage({
       return;
     }
     setIsPaymentModalOpen(true);
-  };
+  }, [items.length, currentShift]);
 
   const handleConfirmPayment = async (paymentData: {
     cashReceived: number;

@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useState, useCallback } from "react";
 import { getPublicOrderByNumber } from "@/lib/actions/orders";
 import { verifyOnlinePaymentStatus } from "@/lib/actions/public-catalog";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -31,7 +31,7 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
   const [isPolling, setIsPolling] = useState(false);
   const [error, setError] = useState("");
 
-  const fetchOrder = async (orderNum: string, isSilent = false) => {
+  const fetchOrder = useCallback(async (orderNum: string, isSilent = false) => {
     if (!isSilent) setIsLoading(true);
     setError("");
     
@@ -67,24 +67,27 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [unwrappedParams.slug]);
 
   useEffect(() => {
     if (initialOrderNumber) {
       fetchOrder(initialOrderNumber);
     }
-  }, [initialOrderNumber, unwrappedParams.slug]);
+  }, [initialOrderNumber, fetchOrder]);
+
+  const orderStatus = order?.status;
+  const currentOrderNumber = order?.orderNumber;
 
   // Polling every 10 seconds if we have an active order
   useEffect(() => {
-    if (!order || ['COMPLETED', 'CANCELLED'].includes(order.status)) return;
+    if (!orderStatus || !currentOrderNumber || ['COMPLETED', 'CANCELLED'].includes(orderStatus)) return;
     
     const interval = setInterval(() => {
-      fetchOrder(order.orderNumber, true);
+      fetchOrder(currentOrderNumber, true);
     }, 10000);
     
     return () => clearInterval(interval);
-  }, [order?.status, order?.orderNumber, unwrappedParams.slug]);
+  }, [orderStatus, currentOrderNumber, fetchOrder]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
