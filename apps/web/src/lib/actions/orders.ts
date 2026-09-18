@@ -172,6 +172,52 @@ export async function updateOrderStatus(transactionId: string, newStatus: string
   }
 }
 
+export async function bulkUpdateOrderStatus(orderIds: string[], newStatus: string) {
+  const user = await getCurrentUser();
+  if (!user || !user.tenantId) throw new Error("Unauthorized");
+  if (!orderIds || orderIds.length === 0) return { success: true, count: 0 };
+
+  try {
+    const updates: any = { status: newStatus };
+
+    // If confirming PENDING orders to NEW, mark paymentStatus as PAID
+    if (newStatus === 'NEW') {
+      await db.update(transactions)
+        .set({ status: newStatus, paymentStatus: 'PAID' })
+        .where(
+          and(
+            inArray(transactions.id, orderIds),
+            eq(transactions.tenantId, user.tenantId),
+            eq(transactions.status, 'PENDING')
+          )
+        );
+    }
+
+    // Update all matching transactions
+    await db.update(transactions)
+      .set(updates)
+      .where(
+        and(
+          inArray(transactions.id, orderIds),
+          eq(transactions.tenantId, user.tenantId)
+        )
+      );
+
+    // Auto-complete all items if orders are marked ready or completed
+    if (newStatus === 'READY' || newStatus === 'COMPLETED') {
+      await db.update(transactionItems)
+        .set({ isCompleted: true })
+        .where(inArray(transactionItems.transactionId, orderIds));
+    }
+
+    if (user?.outletKey) revalidatePath(`/outlet/${user.outletKey}`, "layout");
+    return { success: true, count: orderIds.length };
+  } catch (error: any) {
+    console.error("Failed to bulk update order status:", error);
+    return { error: error.message || "Gagal memperbarui status seluruh pesanan." };
+  }
+}
+
 export async function updateOrderItemStatus(itemId: string, isCompleted: boolean) {
   const user = await getCurrentUser();
   if (!user || !user.tenantId) throw new Error("Unauthorized");

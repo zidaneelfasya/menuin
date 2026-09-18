@@ -7,7 +7,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Search, ArrowLeft, CheckCircle2, Clock, Utensils, ChefHat } from "lucide-react";
+import { Loader2, Search, ArrowLeft, CheckCircle2, Clock, Utensils, ChefHat, CreditCard } from "lucide-react";
 import Link from "next/link";
 import { formatCurrency } from "@/lib/utils/format";
 import { toast } from "sonner";
@@ -113,25 +113,8 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
   };
 
   const handlePayNow = () => {
-    if (order?.snapToken && window.snap) {
-      window.snap.pay(order.snapToken, {
-        onSuccess: function () {
-          toast.success("Pembayaran berhasil!");
-          fetchOrder(order.orderNumber, true);
-        },
-        onPending: function () {
-          toast.info("Menunggu pembayaran Anda");
-          fetchOrder(order.orderNumber, true);
-        },
-        onError: function () {
-          toast.error("Pembayaran gagal atau dibatalkan");
-        },
-        onClose: function () {
-          toast.error("Anda menutup jendela pembayaran");
-        }
-      });
-    } else {
-      toast.error("Sistem pembayaran belum siap atau pesanan tidak valid.");
+    if (order?.orderNumber) {
+      window.location.href = `/store/${unwrappedParams.slug}/payment?order=${encodeURIComponent(order.orderNumber)}`;
     }
   };
 
@@ -316,7 +299,7 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
                       Silakan menuju kasir untuk melakukan pembayaran sebesar{" "}
                       <strong className="font-extrabold text-gray-900">{formatCurrency(Number(order.grandTotal))}</strong> secara Tunai.
                     </div>
-                  ) : order.paymentMethod === 'ONLINE' && order.snapToken ? (
+                  ) : order.paymentMethod === 'ONLINE' ? (
                     <div className="space-y-2.5">
                       <div className="bg-blue-50/70 border border-blue-200/70 text-blue-950 p-3.5 rounded-xl text-center text-xs sm:text-sm font-medium leading-relaxed">
                         Silakan lanjutkan pembayaran online sebesar{" "}
@@ -324,10 +307,11 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
                       </div>
                       <Button 
                         onClick={handlePayNow}
-                        className="w-full h-11 rounded-xl text-sm font-bold text-white shadow-xs transition-opacity hover:opacity-95"
+                        className="w-full h-11 rounded-xl text-sm font-bold text-white shadow-xs transition-opacity hover:opacity-95 flex items-center justify-center gap-2 cursor-pointer"
                         style={{ backgroundColor: "var(--outlet-primary, #2563eb)" }}
                       >
-                        Lanjutkan Pembayaran Online
+                        <CreditCard className="w-4 h-4" />
+                        <span>Lanjutkan Pembayaran Online</span>
                       </Button>
                     </div>
                   ) : null}
