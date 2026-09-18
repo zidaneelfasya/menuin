@@ -15,6 +15,7 @@ import {
   DrawerTitle
 } from '@/components/ui/drawer';
 import { PaymentModal } from './payment-modal';
+import { PaymentSuccessModal } from './payment-success-modal';
 import { ReceiptPrinter, ReceiptData } from './receipt-printer';
 import { StartShiftModal } from './start-shift-modal';
 
@@ -41,17 +42,22 @@ export function POSPage({
   const [mounted, setMounted] = React.useState(false);
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = React.useState(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = React.useState(false);
   const [isStartShiftModalOpen, setIsStartShiftModalOpen] = React.useState(false);
   const [receiptData, setReceiptData] = React.useState<ReceiptData | null>(null);
+  const [printMode, setPrintMode] = React.useState<'all' | 'customer' | 'kitchen'>('all');
   const [currentShift, setCurrentShift] = React.useState(activeShift);
   
   const { items, clearCart, getTotal } = useCartStore();
 
   React.useEffect(() => {
     setMounted(true);
-  }, []);
+    if (initialProducts && initialProducts.length > 0) {
+      useCartStore.getState().syncProductImages(initialProducts);
+    }
+  }, [initialProducts]);
 
-  const handleCheckoutClick = () => {
+  const handleCheckoutClick = React.useCallback(() => {
     if (items.length === 0) {
       toast.error('Keranjang kosong!');
       return;
@@ -62,7 +68,7 @@ export function POSPage({
       return;
     }
     setIsPaymentModalOpen(true);
-  };
+  }, [items.length, currentShift]);
 
   const handleConfirmPayment = async (paymentData: {
     cashReceived: number;
@@ -110,11 +116,12 @@ export function POSPage({
     if (result.success && result.transactionId) {
       toast.success('Transaksi berhasil!', { id: toastId });
       
+      const cashier = currentShift?.cashierName || 'Kasir';
       // Prepare receipt data
       const newReceipt: ReceiptData = {
         transactionId: result.transactionId || 'TRX-UNKNOWN',
         date: new Date(),
-        cashierName: 'Kasir',
+        cashierName: cashier,
         subtotal: getTotal(),
         discount: paymentData.discount,
         promoCode: paymentData.promoCode,
@@ -132,26 +139,32 @@ export function POSPage({
           quantity: item.quantity,
           price: item.price,
           subtotal: item.price * item.quantity,
+          notes: item.notes,
+          modifiers: item.modifiers,
         }))
       };
       
+      const initialMode = (posSettings?.kitchenPrintEnabled ?? false) ? 'all' : 'customer';
+      setPrintMode(initialMode);
       setReceiptData(newReceipt);
       setIsPaymentModalOpen(false);
+      setIsSuccessModalOpen(true);
       clearCart();
-      
-      // Delay printing to allow React to render the receipt DOM
-      setTimeout(() => {
-        window.print();
-      }, 300);
-      
     } else {
       toast.error(result.error || 'Terjadi kesalahan.', { id: toastId });
     }
   };
 
+  const handlePrint = (mode: 'all' | 'customer' | 'kitchen') => {
+    setPrintMode(mode);
+    setTimeout(() => {
+      window.print();
+    }, 150);
+  };
+
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'F4' && !isPaymentModalOpen) {
+      if (e.key === 'F4' && !isPaymentModalOpen && !isSuccessModalOpen) {
         e.preventDefault();
         handleCheckoutClick();
       }
@@ -159,7 +172,7 @@ export function POSPage({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [items]);
+  }, [items, isPaymentModalOpen, isSuccessModalOpen]);
 
   const totalItems = mounted ? items.reduce((sum, item) => sum + item.quantity, 0) : 0;
   const cartTotal = mounted ? getTotal() : 0;
@@ -234,6 +247,14 @@ export function POSPage({
         onConfirm={handleConfirmPayment}
         posSettings={posSettings}
       />
+
+      <PaymentSuccessModal
+        isOpen={isSuccessModalOpen}
+        onClose={() => setIsSuccessModalOpen(false)}
+        receiptData={receiptData}
+        posSettings={posSettings}
+        onPrint={handlePrint}
+      />
       
       <StartShiftModal
         isOpen={isStartShiftModalOpen}
@@ -244,7 +265,7 @@ export function POSPage({
         }}
       />
       
-      <ReceiptPrinter data={receiptData} />
+      <ReceiptPrinter data={receiptData} settings={posSettings} printMode={printMode} />
     </>
   );
 }

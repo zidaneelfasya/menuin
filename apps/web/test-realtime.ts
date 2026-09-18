@@ -14,7 +14,7 @@ async function run() {
   supabase
     .channel('test-channel')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, (payload) => {
-      console.log('REALTIME EVENT RECEIVED:', payload.eventType, payload.new?.status);
+      console.log('REALTIME EVENT RECEIVED:', payload.eventType, (payload.new as any)?.status);
     })
     .subscribe(async (status) => {
       console.log('Subscription status:', status);

@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { ShieldCheck, Zap, Heart } from "lucide-react";
 
 export default function FooterSuperfluidStyle() {
   const [email, setEmail] = useState("");
@@ -123,41 +122,10 @@ export default function FooterSuperfluidStyle() {
           />
         </div>
 
-        {/* Bottom Bar: Trust Badges (Left) & Copyright + Payments (Right) */}
-        <div className="pt-8 border-t border-white/20 flex flex-col md:flex-row items-center justify-between gap-6 text-[11px] font-bold text-white/85">
-          
-          {/* Left: Value / Trust Badges with minimal icons */}
-          <div className="flex items-center gap-6 uppercase tracking-wider">
-            <div className="flex items-center gap-1.5">
-              <Zap className="w-3.5 h-3.5" />
-              <span>LIGHTNING FAST POS</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>256-BIT SSL</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Heart className="w-3.5 h-3.5" />
-              <span>CRAFTED IN INDONESIA</span>
-            </div>
-          </div>
-
-          {/* Right: Copyright & Supported Gateways */}
-          <div className="flex flex-wrap items-center justify-center md:justify-end gap-5">
-            <span>&copy; 2026 MENUIN Indonesia. All Rights Reserved.</span>
-            <div className="flex items-center gap-2 opacity-90 text-[10px] uppercase tracking-wider font-extrabold bg-white/10 px-3 py-1 rounded-md">
-              <span>QRIS</span>
-              <span>•</span>
-              <span>BCA</span>
-              <span>•</span>
-              <span>MANDIRI</span>
-              <span>•</span>
-              <span>MIDTRANS</span>
-            </div>
-          </div>
-
+        {/* Bottom Bar: Copyright Only */}
+        <div className="pt-8 border-t border-white/20 flex items-center justify-center text-center text-xs font-medium text-white/80 tracking-wide">
+          <p>&copy; 2026 Menuin. All rights reserved.</p>
         </div>
-
       </div>
     </footer>
   );

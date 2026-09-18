@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useCartStore } from "@/lib/store/cart";
-import { Search, ShoppingBag, Plus, Minus, Star, ArrowRight } from "lucide-react";
+import { Search, ShoppingBag, Plus, Minus, Star, ArrowRight, Info } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { formatCurrency } from "@/lib/utils/format";
 import { CustomizationModal } from '@/components/shared/customization-modal';
+import { ProductDetailModal } from '@/components/shared/product-detail-modal';
 import { toast } from 'sonner';
 
 type Product = {
@@ -15,6 +16,7 @@ type Product = {
   name: string;
   price: string;
   imageUrl: string | null;
+  description?: string | null;
   isFeatured: boolean | null;
   categoryId: string | null;
   modifierGroupIds?: string[];
@@ -37,6 +39,15 @@ export function CatalogProductList({ productsByCategory, categories, featuredPro
   
   const [selectedProductForModal, setSelectedProductForModal] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const [selectedProductForDetail, setSelectedProductForDetail] = useState<Product | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+
+  const handleOpenDetail = (e: React.MouseEvent, product: Product) => {
+    e.stopPropagation();
+    setSelectedProductForDetail(product);
+    setIsDetailModalOpen(true);
+  };
 
   // Initialize cart for this tenant
   useEffect(() => {
@@ -67,17 +78,49 @@ export function CatalogProductList({ productsByCategory, categories, featuredPro
     // If it has modifiers, we just show "Tambah". If it doesn't, we can show Plus/Minus for the single cart item.
     const cartItemWithoutModifiers = !hasModifiers ? cartItemsForProduct[0] : null;
 
+    const handleProductClick = () => {
+      if (hasModifiers) {
+        setSelectedProductForModal(product);
+        setIsModalOpen(true);
+      } else {
+        if (!cartItemWithoutModifiers) {
+          addItem({
+            productId: product.id,
+            name: product.name,
+            price: Number(product.price),
+            imageUrl: product.imageUrl
+          });
+          toast.success(`${product.name} ditambahkan`);
+        } else {
+          updateQuantity(cartItemWithoutModifiers.cartItemId, cartItemWithoutModifiers.quantity + 1);
+          toast.success(`${product.name} ditambah`);
+        }
+      }
+    };
+
     if (isBestSellerVariant) {
       return (
         <div 
           key={product.id} 
-          className="group relative bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col justify-between"
+          onClick={handleProductClick}
+          className="group relative bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col justify-between cursor-pointer"
         >
           {/* Top Badge */}
           <div className="absolute top-2.5 left-2.5 z-10 bg-slate-900/90 dark:bg-white/90 text-white dark:text-slate-900 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1 backdrop-blur-sm tracking-wider uppercase">
             <Star className="w-3 h-3 fill-current text-amber-400" />
             <span>Best Seller</span>
           </div>
+
+          {/* Subtle Round Detail Button */}
+          <button
+            type="button"
+            onClick={(e) => handleOpenDetail(e, product)}
+            className="absolute top-2.5 right-2.5 z-10 w-7 h-7 rounded-full bg-black/35 hover:bg-black/55 text-white/95 backdrop-blur-md flex items-center justify-center shadow-xs transition-all active:scale-90 border border-white/20 cursor-pointer"
+            title={`Lihat detail ${product.name}`}
+            aria-label={`Lihat detail ${product.name}`}
+          >
+            <Info className="w-3.5 h-3.5 stroke-[2.5]" />
+          </button>
 
           <div className="relative bg-slate-100 dark:bg-slate-800 w-full aspect-[4/3] overflow-hidden">
             {product.imageUrl ? (
@@ -105,7 +148,10 @@ export function CatalogProductList({ productsByCategory, categories, featuredPro
             
             <div className="pt-1">
               {!hasModifiers && cartItemWithoutModifiers ? (
-                <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800 rounded-xl p-1 border">
+                <div 
+                  className="flex items-center justify-between bg-slate-50 dark:bg-slate-800 rounded-xl p-1 border"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <button 
                     onClick={() => updateQuantity(cartItemWithoutModifiers.cartItemId, cartItemWithoutModifiers.quantity - 1)}
                     className="h-8 w-8 flex items-center justify-center rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 shadow-sm hover:bg-slate-100 transition-colors"
@@ -123,19 +169,9 @@ export function CatalogProductList({ productsByCategory, categories, featuredPro
               ) : (
                 <button 
                   className="w-full text-xs h-9 font-semibold rounded-xl bg-catalog-primary text-white shadow-sm hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-1"
-                  onClick={() => {
-                    if (hasModifiers) {
-                      setSelectedProductForModal(product);
-                      setIsModalOpen(true);
-                    } else {
-                      addItem({
-                        productId: product.id,
-                        name: product.name,
-                        price: Number(product.price),
-                        imageUrl: product.imageUrl
-                      });
-                      toast.success(`${product.name} ditambahkan`);
-                    }
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleProductClick();
                   }}
                 >
                   <Plus className="w-3.5 h-3.5" /> Tambah
@@ -149,8 +185,9 @@ export function CatalogProductList({ productsByCategory, categories, featuredPro
 
     return (
       <div 
-        key={product.id} 
-        className={`bg-white dark:bg-slate-900 rounded-2xl border shadow-sm hover:shadow-md transition-all overflow-hidden flex ${horizontal ? 'flex-row' : 'flex-col'}`}
+        key={product.id}
+        onClick={handleProductClick}
+        className={`bg-white dark:bg-slate-900 rounded-2xl border shadow-sm hover:shadow-md transition-all overflow-hidden flex cursor-pointer ${horizontal ? 'flex-row' : 'flex-col'}`}
       >
         <div className={`relative bg-slate-100 dark:bg-slate-800 ${horizontal ? 'w-1/3 aspect-square' : 'w-full aspect-[4/3]'}`}>
           {product.imageUrl ? (
@@ -165,6 +202,17 @@ export function CatalogProductList({ productsByCategory, categories, featuredPro
               <Star className="w-3 h-3 fill-current text-amber-400" /> Best Seller
             </div>
           )}
+
+          {/* Subtle Round Detail Button */}
+          <button
+            type="button"
+            onClick={(e) => handleOpenDetail(e, product)}
+            className="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-black/35 hover:bg-black/55 text-white/95 backdrop-blur-md flex items-center justify-center shadow-xs transition-all active:scale-90 border border-white/20 cursor-pointer"
+            title={`Lihat detail ${product.name}`}
+            aria-label={`Lihat detail ${product.name}`}
+          >
+            <Info className="w-3.5 h-3.5 stroke-[2.5]" />
+          </button>
         </div>
         <div className={`flex flex-col justify-between p-3.5 ${horizontal ? 'w-2/3' : 'w-full'}`}>
           <div>
@@ -176,7 +224,10 @@ export function CatalogProductList({ productsByCategory, categories, featuredPro
           
           <div className="mt-auto">
             {!hasModifiers && cartItemWithoutModifiers ? (
-              <div className="flex items-center justify-between bg-gray-50 rounded-lg p-1 border">
+              <div 
+                className="flex items-center justify-between bg-gray-50 rounded-lg p-1 border"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <button 
                   onClick={() => updateQuantity(cartItemWithoutModifiers.cartItemId, cartItemWithoutModifiers.quantity - 1)}
                   className="h-8 w-8 flex items-center justify-center rounded-md bg-white text-catalog-primary shadow-sm hover:bg-gray-100"
@@ -194,19 +245,9 @@ export function CatalogProductList({ productsByCategory, categories, featuredPro
             ) : (
               <button 
                 className="w-full text-xs h-9 font-medium rounded-lg bg-white border-2 border-catalog-primary text-catalog-primary hover:bg-catalog-primary hover:text-white transition-colors flex items-center justify-center gap-1"
-                onClick={() => {
-                  if (hasModifiers) {
-                    setSelectedProductForModal(product);
-                    setIsModalOpen(true);
-                  } else {
-                    addItem({
-                      productId: product.id,
-                      name: product.name,
-                      price: Number(product.price),
-                      imageUrl: product.imageUrl
-                    });
-                    toast.success(`${product.name} ditambahkan`);
-                  }
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleProductClick();
                 }}
               >
                 {qty > 0 && hasModifiers ? `Tambah Lagi (${qty})` : 'Tambah'}
@@ -364,6 +405,31 @@ export function CatalogProductList({ productsByCategory, categories, featuredPro
             notes
           }, qty);
           toast.success(`${product.name} ditambahkan`);
+        }}
+      />
+
+      <ProductDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+        product={selectedProductForDetail ? {
+          ...selectedProductForDetail,
+          categoryName: categories.find(c => c.id === selectedProductForDetail.categoryId)?.name || null
+        } : null}
+        onAddToCart={(product) => {
+          addItem({
+            productId: product.id,
+            name: product.name,
+            price: Number(product.price),
+            imageUrl: product.imageUrl,
+          });
+          toast.success(`${product.name} ditambahkan`);
+        }}
+        onCustomize={(product) => {
+          const originalProduct = selectedProductForDetail;
+          if (originalProduct) {
+            setSelectedProductForModal(originalProduct);
+            setIsModalOpen(true);
+          }
         }}
       />
     </div>

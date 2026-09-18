@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { UserProfile } from '@/lib/actions/auth';
 import { RealtimeOrderProvider } from '../providers/realtime-order-provider';
 
-export function MainLayout({ children, user }: { children: React.ReactNode, user: UserProfile }) {
+export function MainLayout({ children, user, availableTenants }: { children: React.ReactNode, user: UserProfile, availableTenants: any[] }) {
   const [collapsed, setCollapsed] = React.useState(false);
   const [mobileOpen, setMobileOpen] = React.useState(false);
 
@@ -25,6 +25,7 @@ export function MainLayout({ children, user }: { children: React.ReactNode, user
           collapsed={collapsed} 
           setMobileOpen={setMobileOpen} 
           user={user}
+          availableTenants={availableTenants}
         />
         <main 
           className={cn(

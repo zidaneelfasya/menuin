@@ -2,15 +2,21 @@ import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   try {
-    const { plan, email, businessName } = await ioJson(request);
+    const { plan, email, businessName, tenantId } = await ioJson(request);
+
+    if (!tenantId) {
+      return NextResponse.json({ error: "Tenant ID is required" }, { status: 400 });
+    }
 
     // Determine price
     let amount = 99000; // default Starter
     let planName = "Starter Plan";
+    let planEnum = "BASIC";
 
     if (plan === "business") {
       amount = 199000;
       planName = "Business Plan";
+      planEnum = "PRO";
     }
 
     const orderId = `MENUIN-SUB-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -45,6 +51,8 @@ export async function POST(request: Request) {
       credit_card: {
         secure: true,
       },
+      custom_field1: tenantId,
+      custom_field2: planEnum,
     };
 
     const response = await fetch(midtransUrl, {

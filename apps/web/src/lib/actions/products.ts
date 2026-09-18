@@ -6,6 +6,7 @@ import { eq, and, sql, desc } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { getCurrentUser } from './auth';
+import { AuditService } from '@/lib/services/audit.service';
 
 import { productSchema } from '@menuin/validation';
 
@@ -40,13 +41,15 @@ export async function getProducts(): Promise<{ success: boolean, data?: ProductD
         price: products.price,
         stock: products.stock,
         minStock: products.minStock,
+        trackStock: products.trackStock,
         categoryName: categories.name,
         categoryId: products.categoryId,
         imageUrl: products.imageUrl,
+        description: products.description,
         barcode: products.barcode,
         isAvailableOnline: products.isAvailableOnline,
         isFeatured: products.isFeatured,
-        status: sql<string>`CASE WHEN ${products.stock} > 0 THEN 'active' ELSE 'inactive' END`,
+        status: sql<string>`CASE WHEN ${products.trackStock} = false THEN 'active' WHEN ${products.stock} > 0 THEN 'active' ELSE 'inactive' END`,
       })
       .from(products)
       .leftJoin(categories, eq(products.categoryId, categories.id))
@@ -76,13 +79,32 @@ export async function toggleProductBestSeller(productId: string, isFeatured: boo
       .set({ isFeatured, updatedAt: new Date() })
       .where(and(eq(products.id, productId), eq(products.tenantId, user.tenantId)));
 
-    revalidatePath('/tenants/items');
-    revalidatePath('/tenants/pos');
-    revalidatePath('/tenants/katalog/visibility');
+    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
     return { success: true };
   } catch (error) {
     console.error('Error toggling best seller status:', error);
     return { success: false, error: 'Gagal mengubah status Best Seller' };
+  }
+}
+
+export async function toggleTrackStock(productId: string, trackStock: boolean) {
+  try {
+    const user = await getCurrentUser();
+    if (!user || !user.tenantId) return { success: false, error: 'Unauthorized' };
+
+    await db.update(products)
+      .set({ trackStock, updatedAt: new Date() })
+      .where(and(eq(products.id, productId), eq(products.tenantId, user.tenantId)));
+
+    if (user && typeof user === "object" && "outletKey" in user) { 
+      revalidatePath(`/outlet/${user.outletKey}`, "layout"); 
+      revalidatePath(`/outlet/${user.outletKey}/items`, "page"); 
+      revalidatePath(`/outlet/${user.outletKey}/inventory`, "page"); 
+    }
+    return { success: true };
+  } catch (error) {
+    console.error('Error toggling track stock status:', error);
+    return { success: false, error: 'Gagal mengubah status pelacakan stok' };
   }
 }
 
@@ -107,7 +129,9 @@ export async function createProduct(formData: z.infer<typeof productSchema>) {
       costPrice: validatedData.costPrice.toString(),
       stock: validatedData.stock,
       minStock: validatedData.minStock,
+      trackStock: validatedData.trackStock ?? true,
       imageUrl: validatedData.imageUrl,
+      description: validatedData.description || null,
       barcode: finalBarcode,
     }).returning({ id: products.id });
     
@@ -122,9 +146,7 @@ export async function createProduct(formData: z.infer<typeof productSchema>) {
       );
     }
     
-    revalidatePath('/tenants/items');
-    revalidatePath('/tenants/pos');
-    revalidatePath('/tenants/inventory');
+    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
     return { success: true };
   } catch (error) {
     console.error('Error creating product:', error);
@@ -148,7 +170,9 @@ export async function updateProduct(id: string, formData: z.infer<typeof product
         costPrice: validatedData.costPrice.toString(),
         stock: validatedData.stock,
         minStock: validatedData.minStock,
+        trackStock: validatedData.trackStock ?? true,
         imageUrl: validatedData.imageUrl,
+        description: validatedData.description || null,
         barcode: validatedData.barcode,
         updatedAt: new Date(),
       })
@@ -166,9 +190,7 @@ export async function updateProduct(id: string, formData: z.infer<typeof product
       );
     }
     
-    revalidatePath('/tenants/items');
-    revalidatePath('/tenants/pos');
-    revalidatePath('/tenants/inventory');
+    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
     return { success: true };
   } catch (error) {
     console.error('Error updating product:', error);
@@ -184,9 +206,10 @@ export async function deleteProduct(id: string) {
     await db.delete(productModifierGroups).where(eq(productModifierGroups.productId, id));
     await db.delete(products).where(and(eq(products.id, id), eq(products.tenantId, user.tenantId)));
     
-    revalidatePath('/tenants/items');
-    revalidatePath('/tenants/pos');
-    revalidatePath('/tenants/inventory');
+    // Non-blocking audit log
+    AuditService.log('DELETE', 'products', id).catch(console.error);
+    
+    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
     return { success: true };
   } catch (error) {
     console.error('Error deleting product:', error);

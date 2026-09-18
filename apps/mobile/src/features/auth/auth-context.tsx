@@ -65,10 +65,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (!token && !inAuthGroup) {
       // Redirect to login
-      router.replace('/(auth)/login');
+      router.replace('/(auth)/pin');
     } else if (token && inAuthGroup) {
       // Redirect to tabs
-      router.replace('/(tabs)');
+      router.replace('/(main)/(cashier)/pos');
     }
   }, [token, isLoading, segments]);
 

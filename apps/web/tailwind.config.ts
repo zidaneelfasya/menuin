@@ -59,8 +59,8 @@ export default {
       },
       fontFamily: {
         sans: ["var(--font-poppins)", "sans-serif"],
-        heading: ["var(--font-montserrat)", "sans-serif"],
-        rounded: ["'Gotham Rounded Bold'", "var(--font-quicksand)", "sans-serif"],
+        heading: ["var(--font-poppins)", "sans-serif"],
+        rounded: ["var(--font-poppins)", "sans-serif"],
       },
       keyframes: {
         marquee: {

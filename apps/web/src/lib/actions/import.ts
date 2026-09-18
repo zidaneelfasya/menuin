@@ -146,10 +146,7 @@ export async function importProducts(formData: FormData) {
       await db.insert(products).values(batch).onConflictDoNothing(); // prevent crashing on duplicate SKU/barcode if any clash
     }
 
-    revalidatePath('/tenants/items');
-    revalidatePath('/tenants/inventory');
-    revalidatePath('/tenants/pos');
-    
+    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
     return { 
       success: true, 
       message: `Berhasil mengimpor ${productsToInsert.length} produk.` 

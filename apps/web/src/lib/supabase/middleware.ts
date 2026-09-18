@@ -2,8 +2,8 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { hasEnvVars } from "../utils";
 
-export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
+export async function updateSession(request: NextRequest, customResponse?: NextResponse) {
+  let supabaseResponse = customResponse || NextResponse.next({
     request,
   });
 
@@ -26,9 +26,12 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
 
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    supabaseUrl,
+    supabaseKey,
     {
       cookies: {
         getAll() {
@@ -54,7 +57,7 @@ export async function updateSession(request: NextRequest) {
   // 2. Protected routes that require authentication
   const isProtectedRoute =
     pathname.startsWith('/system-admin') ||
-    pathname.startsWith('/tenants') ||
+    pathname.startsWith('/outlet') ||
     pathname.startsWith('/pos');
 
   if (isProtectedRoute && !user) {

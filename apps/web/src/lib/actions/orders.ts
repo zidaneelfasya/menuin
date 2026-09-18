@@ -33,9 +33,13 @@ export async function getActiveOrders(): Promise<OrderDto[]> {
     .select({
       id: transactionItems.id,
       transactionId: transactionItems.transactionId,
+      productId: transactionItems.productId,
       quantity: transactionItems.quantity,
+      price: transactionItems.price,
       productName: products.name,
       subtotal: transactionItems.subtotal,
+      modifiers: transactionItems.modifiers,
+      notes: transactionItems.notes,
       isCompleted: transactionItems.isCompleted
     })
     .from(transactionItems)
@@ -53,6 +57,85 @@ export async function getActiveOrders(): Promise<OrderDto[]> {
     ...tx,
     items: itemsByTx[tx.id] || []
   }));
+}
+
+export async function syncOrderPaymentStatus(orderId: string) {
+  const user = await getCurrentUser();
+  if (!user || !user.tenantId) throw new Error("Unauthorized");
+
+  try {
+    const [order] = await db.select().from(transactions).where(and(eq(transactions.id, orderId), eq(transactions.tenantId, user.tenantId))).limit(1);
+    if (!order) return { error: "Pesanan tidak ditemukan." };
+
+    if (order.paymentStatus === 'PAID') {
+      return { success: true, paymentStatus: 'PAID', status: order.status };
+    }
+
+    const [tenant] = await db.select().from(tenants).where(eq(tenants.id, user.tenantId)).limit(1);
+    if (!tenant || !tenant.midtransServerKey) {
+      return { error: "Midtrans Server Key belum dikonfigurasi pada Pengaturan Toko." };
+    }
+
+    const authString = Buffer.from(`${tenant.midtransServerKey}:`).toString('base64');
+    const apiUrl = tenant.midtransEnvironment === 'production' 
+      ? `https://api.midtrans.com/v2/${order.id}/status`
+      : `https://api.sandbox.midtrans.com/v2/${order.id}/status`;
+
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${authString}`
+      },
+      cache: 'no-store'
+    });
+
+    if (!response.ok) {
+      return { error: "Pembayaran belum tercatat di Midtrans / belum dibayar oleh pelanggan." };
+    }
+
+    const midtransData = await response.json();
+    const transactionStatus = midtransData.transaction_status;
+    const fraudStatus = midtransData.fraud_status;
+
+    let newStatus = order.status;
+    let newPaymentStatus = order.paymentStatus || 'PENDING';
+
+    if (transactionStatus === 'capture') {
+      if (fraudStatus === 'accept') {
+        newPaymentStatus = 'PAID';
+        if (order.status === 'PENDING') newStatus = 'NEW';
+      }
+    } else if (transactionStatus === 'settlement') {
+      newPaymentStatus = 'PAID';
+      if (order.status === 'PENDING') newStatus = 'NEW';
+    } else if (transactionStatus === 'cancel' || transactionStatus === 'deny' || transactionStatus === 'expire') {
+      newPaymentStatus = 'CANCELED';
+      newStatus = 'FAILED';
+    }
+
+    if (newStatus !== order.status || newPaymentStatus !== order.paymentStatus) {
+      await db.update(transactions)
+        .set({ status: newStatus, paymentStatus: newPaymentStatus })
+        .where(eq(transactions.id, order.id));
+    }
+
+    if (user?.outletKey) {
+      revalidatePath(`/outlet/${user.outletKey}/orders`, "page");
+      revalidatePath(`/outlet/${user.outletKey}`, "layout");
+    }
+
+    return { 
+      success: true, 
+      paymentStatus: newPaymentStatus, 
+      status: newStatus,
+      isPaid: newPaymentStatus === 'PAID'
+    };
+  } catch (error: any) {
+    console.error("Failed to sync Midtrans payment status:", error);
+    return { error: error.message || "Gagal sinkronisasi status pembayaran." };
+  }
 }
 
 export async function updateOrderStatus(transactionId: string, newStatus: string) {
@@ -81,11 +164,57 @@ export async function updateOrderStatus(transactionId: string, newStatus: string
         .where(eq(transactionItems.transactionId, transactionId));
     }
 
-    revalidatePath("/tenants/orders");
+    if (user?.outletKey) revalidatePath(`/outlet/${user.outletKey}`, "layout");
     return { success: true };
   } catch (error) {
     console.error("Failed to update order status:", error);
     return { error: "Gagal memperbarui status pesanan." };
+  }
+}
+
+export async function bulkUpdateOrderStatus(orderIds: string[], newStatus: string) {
+  const user = await getCurrentUser();
+  if (!user || !user.tenantId) throw new Error("Unauthorized");
+  if (!orderIds || orderIds.length === 0) return { success: true, count: 0 };
+
+  try {
+    const updates: any = { status: newStatus };
+
+    // If confirming PENDING orders to NEW, mark paymentStatus as PAID
+    if (newStatus === 'NEW') {
+      await db.update(transactions)
+        .set({ status: newStatus, paymentStatus: 'PAID' })
+        .where(
+          and(
+            inArray(transactions.id, orderIds),
+            eq(transactions.tenantId, user.tenantId),
+            eq(transactions.status, 'PENDING')
+          )
+        );
+    }
+
+    // Update all matching transactions
+    await db.update(transactions)
+      .set(updates)
+      .where(
+        and(
+          inArray(transactions.id, orderIds),
+          eq(transactions.tenantId, user.tenantId)
+        )
+      );
+
+    // Auto-complete all items if orders are marked ready or completed
+    if (newStatus === 'READY' || newStatus === 'COMPLETED') {
+      await db.update(transactionItems)
+        .set({ isCompleted: true })
+        .where(inArray(transactionItems.transactionId, orderIds));
+    }
+
+    if (user?.outletKey) revalidatePath(`/outlet/${user.outletKey}`, "layout");
+    return { success: true, count: orderIds.length };
+  } catch (error: any) {
+    console.error("Failed to bulk update order status:", error);
+    return { error: error.message || "Gagal memperbarui status seluruh pesanan." };
   }
 }
 
@@ -98,7 +227,7 @@ export async function updateOrderItemStatus(itemId: string, isCompleted: boolean
       .set({ isCompleted })
       .where(eq(transactionItems.id, itemId));
     
-    revalidatePath("/tenants/orders");
+    if (user?.outletKey) revalidatePath(`/outlet/${user.outletKey}`, "layout");
     return { success: true };
   } catch (error) {
     console.error("Failed to update order item status:", error);
@@ -159,6 +288,7 @@ export async function getPublicOrderByNumber(orderNumber: string, tenantSlug: st
       midtransClientKey: tenant.midtransClientKey,
       midtransEnvironment: tenant.midtransEnvironment,
       onlinePaymentEnabled: tenant.onlinePaymentEnabled,
+      primaryColor: tenant.primaryColor,
     }
   };
 }

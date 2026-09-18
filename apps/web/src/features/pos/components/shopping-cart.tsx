@@ -62,8 +62,8 @@ export function ShoppingCart() {
         ) : (
           items.map(item => (
             <div key={item.id} className="flex gap-3 bg-muted/30 p-2.5 rounded-xl border border-border/50">
-              <div className="h-12 w-12 rounded-lg bg-muted flex-shrink-0 overflow-hidden">
-                {item.imageUrl && <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" />}
+              <div className="h-12 w-12 rounded-lg bg-muted/60 flex-shrink-0 overflow-hidden border border-border/40 relative flex items-center justify-center">
+                <CartItemThumbnail src={item.imageUrl} alt={item.name} fallbackName={item.name} />
               </div>
               <div className="flex-1 min-w-0">
                 <h4 className="font-medium text-sm truncate">{item.name}</h4>
@@ -137,4 +137,29 @@ export function ShoppingCart() {
 
 function ShoppingCartIcon(props: React.ComponentProps<typeof CreditCard>) {
   return <CreditCard {...props} />;
+}
+
+function CartItemThumbnail({ src, alt, fallbackName }: { src?: string | null; alt: string; fallbackName: string }) {
+  const [error, setError] = React.useState(false);
+
+  React.useEffect(() => {
+    setError(false);
+  }, [src]);
+
+  if (src && !error) {
+    return (
+      <img
+        src={src}
+        alt={alt}
+        className="h-full w-full object-cover"
+        onError={() => setError(true)}
+      />
+    );
+  }
+
+  return (
+    <div className="w-full h-full flex items-center justify-center font-bold text-primary/50 bg-primary/5 text-sm uppercase select-none">
+      {fallbackName.charAt(0)}
+    </div>
+  );
 }

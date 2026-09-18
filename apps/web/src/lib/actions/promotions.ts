@@ -119,8 +119,7 @@ export async function createPromotion(formData: z.infer<typeof promotionSchema>)
       endDate: validatedData.endDate ? new Date(validatedData.endDate) : null,
     });
 
-    revalidatePath('/tenants/promotions');
-    revalidatePath('/tenants/pos');
+    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
     return { success: true };
   } catch (error: any) {
     console.error('Error creating promotion:', error);
@@ -150,8 +149,7 @@ export async function updatePromotion(id: string, formData: z.infer<typeof promo
       })
       .where(and(eq(promotions.id, id), eq(promotions.tenantId, user.tenantId)));
 
-    revalidatePath('/tenants/promotions');
-    revalidatePath('/tenants/pos');
+    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
     return { success: true };
   } catch (error: any) {
     console.error('Error updating promotion:', error);
@@ -169,8 +167,7 @@ export async function togglePromotionStatus(id: string, isActive: boolean) {
       .set({ isActive, updatedAt: new Date() })
       .where(and(eq(promotions.id, id), eq(promotions.tenantId, user.tenantId)));
 
-    revalidatePath('/tenants/promotions');
-    revalidatePath('/tenants/pos');
+    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
     return { success: true };
   } catch (error) {
     console.error('Error toggling promotion status:', error);
@@ -185,8 +182,7 @@ export async function deletePromotion(id: string) {
 
     await db.delete(promotions).where(and(eq(promotions.id, id), eq(promotions.tenantId, user.tenantId)));
 
-    revalidatePath('/tenants/promotions');
-    revalidatePath('/tenants/pos');
+    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
     return { success: true };
   } catch (error) {
     console.error('Error deleting promotion:', error);

@@ -3,6 +3,7 @@
 import { db } from "@/lib/db";
 import { tenants, transactions, transactionItems, products } from "@/lib/db/schema";
 import { eq, inArray, and } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 const orderSchema = z.object({
@@ -75,15 +76,22 @@ export async function createOnlineOrder(formData: z.infer<typeof orderSchema>) {
       const dbProduct = dbProducts.find(p => p.id === item.id);
       if (!dbProduct) continue;
       
-      const price = Number(dbProduct.price);
-      const total = price * item.quantity;
+      let modifierExtraPrice = 0;
+      if (item.modifiers && Array.isArray(item.modifiers)) {
+        item.modifiers.forEach((m: any) => {
+          modifierExtraPrice += Number(m.price || 0) * (Number(m.quantity) || 1);
+        });
+      }
+
+      const unitPrice = Number(dbProduct.price) + modifierExtraPrice;
+      const total = unitPrice * item.quantity;
       subTotal += total;
 
       itemsToInsert.push({
         tenantId: tenant.id,
         productId: dbProduct.id,
         quantity: item.quantity,
-        price: price.toString(),
+        price: unitPrice.toString(),
         subtotal: total.toString(),
         modifiers: item.modifiers || [],
         notes: item.notes || null,
@@ -92,9 +100,17 @@ export async function createOnlineOrder(formData: z.infer<typeof orderSchema>) {
 
     // Apply promo discount if any
     const discount = Math.max(0, Math.min(data.discount || 0, subTotal));
-    const grandTotal = Math.max(0, subTotal - discount);
+    const taxableSubtotal = Math.max(0, subTotal - discount);
 
-    let initialStatus = 'PENDING';
+    // Calculate tax & service charge from tenant settings
+    const taxRate = parseFloat(tenant.posTaxRate || '0');
+    const serviceRate = parseFloat(tenant.serviceChargeRate || '0');
+    const taxAmount = (taxableSubtotal * taxRate) / 100;
+    const serviceChargeAmount = (taxableSubtotal * serviceRate) / 100;
+
+    const grandTotal = Math.max(0, taxableSubtotal + taxAmount + serviceChargeAmount);
+
+    const initialStatus = 'PENDING';
     
     // Always start online orders as PENDING so they wait in the "Menunggu Pembayaran" queue
     // until the customer pays at the counter or completes Midtrans checkout.
@@ -109,6 +125,8 @@ export async function createOnlineOrder(formData: z.infer<typeof orderSchema>) {
       totalAmount: subTotal.toString(),
       discount: discount.toString(),
       promoCode: data.promoName || null,
+      tax: taxAmount.toString(),
+      serviceCharge: serviceChargeAmount.toString(),
       grandTotal: grandTotal.toString(),
       paymentMethod: data.paymentMethod,
       status: initialStatus,
@@ -312,9 +330,14 @@ export async function verifyOnlinePaymentStatus(orderNumber: string, tenantSlug:
       await db.update(transactions)
         .set({ status: newStatus, paymentStatus: newPaymentStatus })
         .where(eq(transactions.id, order.id));
+
+      if (tenant.outletKey) {
+        revalidatePath(`/outlet/${tenant.outletKey}`, "layout");
+        revalidatePath(`/outlet/${tenant.outletKey}/orders`, "page");
+      }
     }
 
-    return { success: true, paymentStatus: newPaymentStatus };
+    return { success: true, paymentStatus: newPaymentStatus, status: newStatus };
   } catch (error) {
     console.error("Failed to verify payment status:", error);
     return { error: "Gagal memverifikasi status pembayaran" };

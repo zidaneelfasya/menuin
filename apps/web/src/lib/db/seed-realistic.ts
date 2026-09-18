@@ -78,6 +78,7 @@ async function runSeed() {
     } else {
       const [newDashboard] = await db.insert(schema.tenants).values({
         name: 'Warung Bu Ning (Realistic)',
+        outletKey: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 9),
         subscriptionTier: 'PRO',
         slug: 'wbn-realistic',
       }).returning();

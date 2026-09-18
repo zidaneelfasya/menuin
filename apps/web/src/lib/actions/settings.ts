@@ -48,9 +48,7 @@ export async function updateTaxAndFeeSettings(formData: FormData) {
       })
       .where(eq(tenants.id, user.tenantId));
 
-    revalidatePath('/tenants/settings');
-    revalidatePath('/tenants/settings');
-    revalidatePath('/tenants/pos');
+    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
     return { success: true };
   } catch (error) {
     console.error('Error updating tax and fee settings:', error);
@@ -76,9 +74,7 @@ export async function updatePlatformFeeSettings(formData: FormData) {
       })
       .where(eq(tenants.id, user.tenantId));
 
-    revalidatePath('/tenants/settings');
-    revalidatePath('/tenants/settings');
-    revalidatePath('/tenants/pos');
+    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
     return { success: true };
   } catch (error) {
     console.error('Error updating platform fees:', error);
@@ -100,9 +96,7 @@ export async function updateDisplaySettings(formData: FormData) {
       })
       .where(eq(tenants.id, user.tenantId));
 
-    revalidatePath('/tenants/settings');
-    revalidatePath('/tenants/pos');
-    revalidatePath('/tenants/items');
+    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
     return { success: true };
   } catch (error) {
     console.error('Error updating display settings:', error);
@@ -132,8 +126,7 @@ export async function updateStoreGeneralSettings(formData: FormData) {
       })
       .where(eq(tenants.id, user.tenantId));
 
-    revalidatePath('/tenants/settings');
-    revalidatePath('/tenants/dashboard');
+    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
     return { success: true };
   } catch (error) {
     console.error('Error updating store settings:', error);
@@ -145,6 +138,10 @@ export async function updatePaymentIntegration(formData: FormData) {
   try {
     const user = await getCurrentUser();
     if (!user || !user.tenantId) return { success: false, error: 'Unauthorized' };
+
+    if (user.role !== 'OWNER' && (user.role as string) !== 'SYSTEM_ADMIN') {
+      return { success: false, error: 'Hanya OWNER yang memiliki izin untuk mengubah kredensial pembayaran Midtrans.' };
+    }
 
     const midtransEnvironment = formData.get('midtransEnvironment') as string;
     const midtransServerKey = formData.get('midtransServerKey') as string;
@@ -159,7 +156,7 @@ export async function updatePaymentIntegration(formData: FormData) {
       })
       .where(eq(tenants.id, user.tenantId));
 
-    revalidatePath('/tenants/settings');
+    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
     revalidatePath('/store/[slug]', 'layout');
     return { success: true };
   } catch (error) {
@@ -167,3 +164,87 @@ export async function updatePaymentIntegration(formData: FormData) {
     return { success: false, error: 'Gagal menyimpan integrasi pembayaran' };
   }
 }
+
+export async function updateReceiptSettings(formData: FormData) {
+  try {
+    const user = await getCurrentUser();
+    if (!user || !user.tenantId) return { success: false, error: 'Unauthorized' };
+
+    if (user.role !== 'OWNER' && user.role !== 'MANAGER' && (user.role as string) !== 'SYSTEM_ADMIN') {
+      return { success: false, error: 'Hanya OWNER atau MANAGER yang dapat mengubah pengaturan struk.' };
+    }
+
+    const receiptHeader = (formData.get('receiptHeader') as string) || '';
+    const receiptFooter = (formData.get('receiptFooter') as string) || '';
+    const receiptLogoUrl = (formData.get('receiptLogoUrl') as string) || '';
+    const receiptShowLogo = formData.get('receiptShowLogo') === 'true';
+    const receiptShowCustomer = formData.get('receiptShowCustomer') === 'true';
+    const receiptShowCashier = formData.get('receiptShowCashier') === 'true';
+    const receiptShowTable = formData.get('receiptShowTable') === 'true';
+    const receiptShowNotes = formData.get('receiptShowNotes') === 'true';
+    const receiptCustomNote = (formData.get('receiptCustomNote') as string) || '';
+
+    await db.update(tenants)
+      .set({
+        receiptHeader: receiptHeader.trim() || null,
+        receiptFooter: receiptFooter.trim() || null,
+        receiptLogoUrl: receiptLogoUrl.trim() || null,
+        receiptShowLogo,
+        receiptShowCustomer,
+        receiptShowCashier,
+        receiptShowTable,
+        receiptShowNotes,
+        receiptCustomNote: receiptCustomNote.trim() || null,
+        updatedAt: new Date(),
+      })
+      .where(eq(tenants.id, user.tenantId));
+
+    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating receipt settings:', error);
+    return { success: false, error: 'Gagal menyimpan pengaturan kustomisasi struk' };
+  }
+}
+
+export async function updateKitchenTicketSettings(formData: FormData) {
+  try {
+    const user = await getCurrentUser();
+    if (!user || !user.tenantId) return { success: false, error: 'Unauthorized' };
+
+    if (user.role !== 'OWNER' && user.role !== 'MANAGER' && (user.role as string) !== 'SYSTEM_ADMIN') {
+      return { success: false, error: 'Hanya OWNER atau MANAGER yang dapat mengubah pengaturan tiket dapur.' };
+    }
+
+    const kitchenPrintEnabled = formData.get('kitchenPrintEnabled') === 'true';
+    const kitchenTicketTitle = (formData.get('kitchenTicketTitle') as string) || 'TIKET DAPUR';
+    const kitchenTicketNotes = (formData.get('kitchenTicketNotes') as string) || '';
+    const kitchenShowCustomer = formData.get('kitchenShowCustomer') === 'true';
+    const kitchenShowCashier = formData.get('kitchenShowCashier') === 'true';
+    const kitchenShowTable = formData.get('kitchenShowTable') === 'true';
+    const kitchenShowNotes = formData.get('kitchenShowNotes') === 'true';
+    const kitchenAutoCut = formData.get('kitchenAutoCut') === 'true';
+
+    await db.update(tenants)
+      .set({
+        kitchenPrintEnabled,
+        kitchenTicketTitle: kitchenTicketTitle.trim() || 'TIKET DAPUR',
+        kitchenTicketNotes: kitchenTicketNotes.trim() || null,
+        kitchenShowCustomer,
+        kitchenShowCashier,
+        kitchenShowTable,
+        kitchenShowNotes,
+        kitchenAutoCut,
+        updatedAt: new Date(),
+      })
+      .where(eq(tenants.id, user.tenantId));
+
+    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating kitchen ticket settings:', error);
+    return { success: false, error: 'Gagal menyimpan pengaturan tiket dapur' };
+  }
+}
+
+

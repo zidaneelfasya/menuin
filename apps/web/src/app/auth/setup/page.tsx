@@ -1,16 +1,18 @@
 import { db } from '@/lib/db';
-import { invitations } from '@/lib/db/schema';
+import { invitations, accounts } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { SetupClient } from './setup-client';
 import { redirect } from 'next/navigation';
+import { createClient } from '@/lib/supabase/server';
 import crypto from 'crypto';
 
 interface SetupPageProps {
-  searchParams: { token?: string };
+  searchParams: Promise<{ token?: string }>;
 }
 
 export default async function SetupPage({ searchParams }: SetupPageProps) {
-  const token = searchParams.token;
+  const params = await searchParams;
+  const token = params.token;
   
   if (!token) {
     // If no token, fallback to old behavior: go to login
@@ -46,6 +48,29 @@ export default async function SetupPage({ searchParams }: SetupPageProps) {
 
   const invite = pendingInvites[0];
 
+  // Check if the user already has a Menuin account
+  const existingAccounts = await db
+    .select()
+    .from(accounts)
+    .where(eq(accounts.email, invite.email))
+    .limit(1);
+
+  const accountExists = existingAccounts.length > 0;
+
+  // Check Auth state
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  let isLoggedInAndMatched = false;
+  
+  if (user && user.email === invite.email) {
+    isLoggedInAndMatched = true;
+  }
+
+  // If they are logged in but with a different email, we should ideally ask them to logout, 
+  // but for simplicity, we'll just treat them as not logged in to this specific invitation email
+  // (SetupClient will ask for password to re-authenticate the correct email).
+  
   return (
     <div className="flex h-screen w-full items-center justify-center bg-muted/50 p-4">
       <div className="w-full max-w-md rounded-lg border bg-card p-8 shadow-sm">
@@ -55,7 +80,13 @@ export default async function SetupPage({ searchParams }: SetupPageProps) {
             You have been invited as {invite.role}. Please set up your credentials.
           </p>
         </div>
-        <SetupClient email={invite.email} role={invite.role} inviteId={invite.id} />
+        <SetupClient 
+          email={invite.email} 
+          role={invite.role} 
+          inviteId={invite.id} 
+          accountExists={accountExists} 
+          isLoggedIn={isLoggedInAndMatched} 
+        />
       </div>
     </div>
   );

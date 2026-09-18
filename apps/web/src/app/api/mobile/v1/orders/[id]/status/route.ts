@@ -27,14 +27,14 @@ async function verifyMobileAuth(req: NextRequest) {
   }
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id: transactionId } = await params;
     const user = await verifyMobileAuth(req);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const transactionId = params.id;
     const body = await req.json();
     const { status } = body;
 

@@ -32,7 +32,7 @@ export default function LoginPage() {
       if (error) throw error;
       
       if (session?.user) {
-        router.push("/tenants/dashboard");
+        router.push("/select-tenant");
       }
     } catch (error: any) {
       let errorMessage = error?.message || error?.error_description || "Terjadi kesalahan saat masuk";

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import {
   Check,
   ChevronDown,
@@ -169,7 +170,7 @@ function HeroImageStack() {
         let style: React.CSSProperties = {
           transitionTimingFunction: "cubic-bezier(0.2, 0.8, 0.2, 1)",
         };
-        let className = "absolute top-0 left-0 w-full h-full rounded-2xl md:rounded-3xl shadow-2xl transition-all duration-[1200ms] border border-[#E5E5E5] bg-white overflow-hidden";
+        const className = "absolute top-0 left-0 w-full h-full rounded-2xl md:rounded-3xl shadow-2xl transition-all duration-[1200ms] border border-[#E5E5E5] bg-white overflow-hidden";
 
         if (i === indexes.front) {
           style = { ...style, transform: "translate3d(0, 0, 0) scale(1)", opacity: 1, zIndex: 30 };
@@ -1058,9 +1059,9 @@ export default function LandingPage({
       {/* NAVBAR */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200/80">
         <div className="mx-auto max-w-[1200px] h-[72px] flex items-center justify-between px-6">
-          <a href="/" className="flex items-center">
+          <Link href="/" className="flex items-center">
             <Image src="/menuin.png" alt="MENUIN - Smart POS System" width={110} height={32} style={{ width: "auto" }} priority />
-          </a>
+          </Link>
 
           <nav className="hidden md:flex items-center gap-8 text-[14px] font-medium text-slate-600">
             <a href="#" className="text-slate-900 font-semibold">Home</a>
@@ -1073,10 +1074,10 @@ export default function LandingPage({
           <div className="hidden md:flex items-center gap-4">
             {isLoggedIn ? (
               <a
-                href="/tenants/dashboard"
+                href="/select-tenant"
                 onClick={(e) => {
                   e.preventDefault();
-                  navigateWithTransition('/tenants/dashboard');
+                  navigateWithTransition('/select-tenant');
                 }}
                 className="h-10 pl-2 pr-4 flex items-center rounded-full bg-slate-900 text-white text-[13px] font-semibold hover:bg-slate-800 transition-all gap-2.5 shadow-sm group"
               >
@@ -1124,11 +1125,11 @@ export default function LandingPage({
             <div className="flex flex-col gap-3">
               {isLoggedIn ? (
                 <a 
-                  href="/tenants/dashboard" 
+                  href="/select-tenant" 
                   onClick={(e) => {
                     e.preventDefault();
                     setMobileOpen(false);
-                    navigateWithTransition('/tenants/dashboard');
+                    navigateWithTransition('/select-tenant');
                   }}
                   className="flex items-center justify-center gap-2.5 h-11 rounded-full bg-slate-900 text-white text-[14px] font-semibold"
                 >
@@ -1187,11 +1188,11 @@ export default function LandingPage({
           <FadeIn delay={0.3}>
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
               <a
-                href={isLoggedIn ? "/tenants/dashboard" : "/auth/signup"}
+                href={isLoggedIn ? "/select-tenant" : "/auth/signup"}
                 onClick={(e) => {
                   if (isLoggedIn) {
                     e.preventDefault();
-                    navigateWithTransition('/tenants/dashboard');
+                    navigateWithTransition('/select-tenant');
                   }
                 }}
                 className="h-12 px-7 flex items-center justify-center rounded-full bg-[#0E59F9] text-white text-[15px] font-semibold hover:bg-[#0C4CD6] transition-all shadow-md shadow-blue-500/20 hover:shadow-lg w-full sm:w-auto gap-2"

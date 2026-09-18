@@ -6,11 +6,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { completeSetupAction } from '@/lib/actions/setup';
 import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
-export function SetupClient({ email, role, inviteId }: { email: string, role: string, inviteId: string }) {
+export function SetupClient({ email, role, inviteId, accountExists = false, isLoggedIn = false }: { email: string, role: string, inviteId: string, accountExists?: boolean, isLoggedIn?: boolean }) {
+  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const requirePassword = role === 'OWNER' || role === 'MANAGER';
+  
+  // If account doesn't exist, they MUST provide a password to create their account.
+  // If account exists but user is not logged in, they MUST provide a password to authenticate.
+  const requirePassword = (!accountExists) || (accountExists && !isLoggedIn);
+  
   const requirePin = role === 'STAFF' || role === 'CASHIER' || role === 'MANAGER';
+  const requireName = !accountExists;
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -30,8 +37,8 @@ export function SetupClient({ email, role, inviteId }: { email: string, role: st
       return;
     }
 
-    if (requirePin && pin.length !== 8) {
-      toast.error('PIN must be exactly 8 digits');
+    if (requirePin && pin.length !== 6) {
+      toast.error('PIN must be exactly 6 digits');
       setIsSubmitting(false);
       return;
     }
@@ -43,7 +50,7 @@ export function SetupClient({ email, role, inviteId }: { email: string, role: st
       setIsSubmitting(false);
     } else {
       toast.success('Setup completed successfully');
-      // The action should redirect
+      router.push('/tenants');
     }
   }
 
@@ -54,14 +61,18 @@ export function SetupClient({ email, role, inviteId }: { email: string, role: st
         <Input disabled value={email} />
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="name">Full Name</Label>
-        <Input id="name" name="name" required placeholder="John Doe" />
-      </div>
+      {requireName && (
+        <div className="space-y-2">
+          <Label htmlFor="name">Full Name</Label>
+          <Input id="name" name="name" required placeholder="John Doe" />
+        </div>
+      )}
 
       {requirePassword && (
         <div className="space-y-2">
-          <Label htmlFor="password">Password (For Web Dashboard Login)</Label>
+          <Label htmlFor="password">
+            {accountExists ? "Password (Please login to confirm identity)" : "Password (For Web Dashboard Login)"}
+          </Label>
           <Input id="password" name="password" type="password" required minLength={8} />
         </div>
       )}
@@ -69,12 +80,12 @@ export function SetupClient({ email, role, inviteId }: { email: string, role: st
       {requirePin && (
         <>
           <div className="space-y-2">
-            <Label htmlFor="pin">8-Digit PIN (For POS App Login)</Label>
-            <Input id="pin" name="pin" type="password" required inputMode="numeric" pattern="[0-9]*" maxLength={8} />
+            <Label htmlFor="pin">6-Digit PIN (For POS App Login)</Label>
+            <Input id="pin" name="pin" type="password" required inputMode="numeric" pattern="\d{6}" maxLength={6} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="confirmPin">Confirm 8-Digit PIN</Label>
-            <Input id="confirmPin" name="confirmPin" type="password" required inputMode="numeric" pattern="[0-9]*" maxLength={8} />
+            <Label htmlFor="confirmPin">Confirm 6-Digit PIN</Label>
+            <Input id="confirmPin" name="confirmPin" type="password" required inputMode="numeric" pattern="\d{6}" maxLength={6} />
           </div>
         </>
       )}
