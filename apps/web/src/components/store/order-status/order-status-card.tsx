@@ -22,7 +22,7 @@ const BASE_ORDER_STATUS_CONFIGS: Record<string, OrderStatusConfig> = {
     badge: "Menunggu Konfirmasi",
     badgeStyle: "bg-blue-50/90 text-blue-600 border-blue-100",
     title: "Menunggu Konfirmasi",
-    description: "Pesanan kamu sedang menunggu konfirmasi atau penyelesaian pembayaran.",
+    description: "Pesanan kamu sedang menunggu konfirmasi lakukan pembayaran di kasir jika belum melakukan pembayaran.",
     step: 1,
   },
   WAITING_PAYMENT: {

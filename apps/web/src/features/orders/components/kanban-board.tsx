@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useState, useEffect, useMemo } from "react";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
-import { updateOrderStatus, updateOrderItemStatus, syncOrderPaymentStatus } from "@/lib/actions/orders";
+import { updateOrderStatus, updateOrderItemStatus, syncOrderPaymentStatus, bulkUpdateOrderStatus, getActiveOrders } from "@/lib/actions/orders";
 import { toast } from "sonner";
 import { 
   Clock, 
@@ -11,6 +11,7 @@ import {
   CheckCircle2, 
   ChevronRight, 
   Check, 
+  CheckCheck,
   CreditCard, 
   Search, 
   XCircle, 
@@ -111,6 +112,25 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
   const [printData, setPrintData] = useState<ReceiptData | null>(null);
   const [printMode, setPrintMode] = useState<'all' | 'customer' | 'kitchen'>('customer');
   const [isPrinting, setIsPrinting] = useState(false);
+
+  // Refresh & Bulk Advance States
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [bulkModalState, setBulkModalState] = useState<{
+    isOpen: boolean;
+    currentStatus: string;
+    nextStatus: string;
+    currentStatusTitle: string;
+    nextStatusTitle: string;
+    orders: Order[];
+  }>({
+    isOpen: false,
+    currentStatus: "",
+    nextStatus: "",
+    currentStatusTitle: "",
+    nextStatusTitle: "",
+    orders: [],
+  });
+  const [isBulkUpdating, setIsBulkUpdating] = useState(false);
 
   const router = useRouter();
 
@@ -236,6 +256,103 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
     setIsPrepareModalOpen(true);
   };
 
+  const getNextStatusTitle = (nextStatus: string): string => {
+    switch (nextStatus) {
+      case "NEW":
+        return "Pesanan Baru";
+      case "PROCESSING":
+        return "Sedang Disiapkan";
+      case "READY":
+        return "Siap Disajikan";
+      case "COMPLETED":
+        return "Pesanan Selesai";
+      default:
+        return nextStatus;
+    }
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      const fresh = await getActiveOrders();
+      setOrders(fresh as any);
+      toast.success("Antrean pesanan berhasil diperbarui");
+    } catch (err) {
+      router.refresh();
+      toast.info("Memperbarui antrean pesanan...");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleBulkAdvanceClick = (
+    status: string,
+    nextStatus: string,
+    title: string,
+    columnOrders: Order[]
+  ) => {
+    if (columnOrders.length === 0) {
+      toast.info(`Tidak ada pesanan pada status ${title}`);
+      return;
+    }
+
+    setBulkModalState({
+      isOpen: true,
+      currentStatus: status,
+      nextStatus: nextStatus,
+      currentStatusTitle: title,
+      nextStatusTitle: getNextStatusTitle(nextStatus),
+      orders: columnOrders,
+    });
+  };
+
+  const handleConfirmBulkAdvance = async () => {
+    const { currentStatus, nextStatus, currentStatusTitle, nextStatusTitle, orders: targetOrders } = bulkModalState;
+    const orderIds = targetOrders.map(o => o.id);
+    if (orderIds.length === 0) {
+      setBulkModalState(prev => ({ ...prev, isOpen: false }));
+      return;
+    }
+
+    setIsBulkUpdating(true);
+
+    // Optimistic UI update
+    setOrders(prev => {
+      if (!["PENDING", "NEW", "PROCESSING", "READY"].includes(nextStatus)) {
+        return prev.filter(o => !orderIds.includes(o.id));
+      }
+      return prev.map(o => {
+        if (orderIds.includes(o.id)) {
+          const isConfirming = o.status === "PENDING" && nextStatus === "NEW";
+          const allItemsCompleted = ["READY", "COMPLETED"].includes(nextStatus);
+          return {
+            ...o,
+            status: nextStatus,
+            paymentStatus: isConfirming ? "PAID" : o.paymentStatus,
+            items: allItemsCompleted ? o.items.map(it => ({ ...it, isCompleted: true })) : o.items
+          };
+        }
+        return o;
+      });
+    });
+
+    try {
+      const res = await bulkUpdateOrderStatus(orderIds, nextStatus);
+      if (res.error) {
+        toast.error(res.error);
+        router.refresh();
+      } else {
+        toast.success(`${orderIds.length} pesanan berhasil dipindahkan ke "${nextStatusTitle}"`);
+      }
+    } catch (err) {
+      toast.error("Gagal memproses perubahan status pesanan");
+      router.refresh();
+    } finally {
+      setIsBulkUpdating(false);
+      setBulkModalState(prev => ({ ...prev, isOpen: false }));
+    }
+  };
+
   const handleCheckMidtransPayment = async (order: Order) => {
     setSyncingOrderId(order.id);
     const toastId = toast.loading("Memeriksa status pembayaran di Midtrans...");
@@ -327,9 +444,24 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
               {title}
             </h3>
           </div>
-          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 tabular-nums">
-            {columnOrders.length}
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 tabular-nums">
+              {columnOrders.length}
+            </span>
+            <button
+              type="button"
+              onClick={() => handleBulkAdvanceClick(status, nextStatus, title, columnOrders)}
+              disabled={columnOrders.length === 0}
+              className={`h-6 w-6 rounded-md flex items-center justify-center transition-all ${
+                columnOrders.length === 0
+                  ? "opacity-25 cursor-not-allowed text-slate-400"
+                  : "text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xs active:scale-90 hover:border-emerald-300 cursor-pointer"
+              }`}
+              title={`Selesaikan/Lanjutkan semua pesanan pada status "${title}" ke "${getNextStatusTitle(nextStatus)}"`}
+            >
+              <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+            </button>
+          </div>
         </div>
 
         {/* Order Cards List */}
@@ -565,6 +697,20 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
             }`}
           >
             Online
+          </button>
+
+          <div className="h-4 w-px bg-slate-200 dark:bg-slate-800 mx-0.5 shrink-0" />
+
+          {/* Tombol Refresh di samping kanan pilihan filter online */}
+          <button
+            type="button"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-foreground transition-all shadow-xs shrink-0 active:scale-95 disabled:opacity-50 cursor-pointer"
+            title="Refresh antrean pesanan"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isRefreshing ? "animate-spin text-blue-600" : ""}`} />
+            <span>Refresh</span>
           </button>
         </div>
       </div>
@@ -894,6 +1040,108 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Konfirmasi Selesaikan Semua Pesanan */}
+      <Dialog 
+        open={bulkModalState.isOpen} 
+        onOpenChange={(open) => {
+          if (!isBulkUpdating) {
+            setBulkModalState(prev => ({ ...prev, isOpen: open }));
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
+          <DialogHeader className="border-b pb-3 border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                <CheckCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-base font-bold text-slate-900 dark:text-slate-100">
+                  Lanjutkan Semua Pesanan?
+                </DialogTitle>
+                <DialogDescription className="text-xs text-slate-500">
+                  Status: {bulkModalState.currentStatusTitle} → {bulkModalState.nextStatusTitle}
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="py-3 space-y-3">
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              Apakah Anda yakin untuk menyelesaikan semua pesanan pada status{" "}
+              <strong className="text-slate-900 dark:text-slate-100 font-bold">
+                "{bulkModalState.currentStatusTitle}"
+              </strong>{" "}
+              sebanyak{" "}
+              <strong className="text-emerald-600 font-bold">
+                {bulkModalState.orders.length} pesanan
+              </strong>{" "}
+              dan lanjut ke status tahap selanjutnya (
+              <strong className="text-blue-600 font-bold">
+                "{bulkModalState.nextStatusTitle}"
+              </strong>)?
+            </p>
+
+            {/* List of Affected Orders */}
+            <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl p-3 space-y-2">
+              <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                Daftar Pesanan ({bulkModalState.orders.length})
+              </div>
+              <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1 text-xs">
+                {bulkModalState.orders.map((o) => (
+                  <div
+                    key={o.id}
+                    className="flex items-center justify-between p-1.5 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-[11px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
+                        {o.orderNumber || "#-"}
+                      </span>
+                      <span className="text-slate-700 dark:text-slate-300 font-medium truncate max-w-[160px]">
+                        {o.customerName || (o.tableNumber ? `Meja ${o.tableNumber}` : "Pesanan")}
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-semibold text-slate-500">
+                      {formatCurrency(Number(o.grandTotal))}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0 border-t pt-3 border-slate-100 dark:border-slate-800">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setBulkModalState(prev => ({ ...prev, isOpen: false }))}
+              disabled={isBulkUpdating}
+              className="border-slate-200 dark:border-slate-800 text-xs font-semibold cursor-pointer"
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              onClick={handleConfirmBulkAdvance}
+              disabled={isBulkUpdating}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+            >
+              {isBulkUpdating ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Memproses...</span>
+                </>
+              ) : (
+                <>
+                  <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                  <span>Ya, Lanjutkan Semua ({bulkModalState.orders.length})</span>
+                </>
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
