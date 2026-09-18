@@ -45,6 +45,7 @@ export async function getProducts(): Promise<{ success: boolean, data?: ProductD
         categoryName: categories.name,
         categoryId: products.categoryId,
         imageUrl: products.imageUrl,
+        description: products.description,
         barcode: products.barcode,
         isAvailableOnline: products.isAvailableOnline,
         isFeatured: products.isFeatured,
@@ -130,6 +131,7 @@ export async function createProduct(formData: z.infer<typeof productSchema>) {
       minStock: validatedData.minStock,
       trackStock: validatedData.trackStock ?? true,
       imageUrl: validatedData.imageUrl,
+      description: validatedData.description || null,
       barcode: finalBarcode,
     }).returning({ id: products.id });
     
@@ -170,6 +172,7 @@ export async function updateProduct(id: string, formData: z.infer<typeof product
         minStock: validatedData.minStock,
         trackStock: validatedData.trackStock ?? true,
         imageUrl: validatedData.imageUrl,
+        description: validatedData.description || null,
         barcode: validatedData.barcode,
         updatedAt: new Date(),
       })

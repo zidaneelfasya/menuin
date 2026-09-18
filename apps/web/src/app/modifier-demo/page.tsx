@@ -8,6 +8,7 @@ import {
   type ModifierGroup,
   type Modifier,
 } from "@/components/shared/customization-modal";
+import { ProductDetailModal } from "@/components/shared/product-detail-modal";
 import { formatCurrency } from "@/lib/utils/format";
 import {
   Smartphone,
@@ -89,6 +90,7 @@ const DEMO_MODIFIER_GROUPS: ModifierGroup[] = [
 
 export default function ModifierDemoPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [themeColor, setThemeColor] = useState("#0E59F9");
   const [lastAddedResult, setLastAddedResult] = useState<{
     product: Product;
@@ -335,6 +337,20 @@ export default function ModifierDemoPage() {
                     >
                       Best Seller
                     </span>
+
+                    {/* Subtle Round Info Button */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsDetailOpen(true);
+                      }}
+                      className="absolute top-3 right-3 z-10 w-7 h-7 rounded-full bg-black/35 hover:bg-black/55 text-white/95 backdrop-blur-md flex items-center justify-center shadow-xs transition-all active:scale-90 border border-white/20 cursor-pointer"
+                      title="Lihat detail item"
+                      aria-label="Lihat detail item"
+                    >
+                      <Info className="w-3.5 h-3.5 stroke-[2.5]" />
+                    </button>
                   </div>
 
                   <div className="p-4 space-y-2">
@@ -401,6 +417,26 @@ export default function ModifierDemoPage() {
         allModifierGroups={DEMO_MODIFIER_GROUPS}
         primaryColor={themeColor}
         onAddToCart={handleAddToCart}
+      />
+
+      {/* Item Detail Modal */}
+      <ProductDetailModal
+        isOpen={isDetailOpen}
+        onClose={() => setIsDetailOpen(false)}
+        product={{
+          ...DEMO_PRODUCT,
+          categoryName: "Signature Coffee",
+          description: "Espresso house blend premium yang dipadukan dengan susu segar creamy dan sirup gula aren organik pilihan asli Jawa Barat. Memberikan harmoni rasa manis gurih yang lembut dan aroma kopi yang mendalam.",
+        }}
+        primaryColor={themeColor}
+        onCustomize={() => {
+          setIsDetailOpen(false);
+          setIsModalOpen(true);
+        }}
+        onAddToCart={() => {
+          setIsDetailOpen(false);
+          toast.success(`${DEMO_PRODUCT.name} ditambahkan`);
+        }}
       />
     </div>
   );
