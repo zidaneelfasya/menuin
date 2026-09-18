@@ -242,6 +242,7 @@ export async function getPublicOrderByNumber(orderNumber: string, tenantSlug: st
       midtransClientKey: tenant.midtransClientKey,
       midtransEnvironment: tenant.midtransEnvironment,
       onlinePaymentEnabled: tenant.onlinePaymentEnabled,
+      primaryColor: tenant.primaryColor,
     }
   };
 }

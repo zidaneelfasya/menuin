@@ -44,7 +44,8 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith('/api') ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/auth') ||
-    Boolean(pathname.match(/\.(svg|png|jpg|jpeg|gif|webp|ico|mp3|css|js|map|txt)$/i));
+    pathname.startsWith('/animation') ||
+    Boolean(pathname.match(/\.(svg|png|jpg|jpeg|gif|webp|ico|mp3|css|js|map|txt|riv|wasm)$/i));
   const isAlreadyStore = pathname.startsWith('/store');
   
   if (subdomain && !isInternal && !isAlreadyStore) {
@@ -72,7 +73,8 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * - animation (animation public assets)
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|animation|.*\\.(?:svg|png|jpg|jpeg|gif|webp|riv|wasm)$).*)',
   ],
 };
