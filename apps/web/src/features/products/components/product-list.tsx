@@ -37,6 +37,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useForm, Controller } from 'react-hook-form';
@@ -113,7 +114,7 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
 
   const form = useForm<z.infer<typeof productSchema>>({
     resolver: zodResolver(productSchema),
-    defaultValues: { name: '', sku: '', categoryId: null, price: 0, costPrice: 0, stock: 0, minStock: 5, trackStock: true, imageUrl: '', barcode: '', modifierGroupIds: [] },
+    defaultValues: { name: '', sku: '', categoryId: null, price: 0, costPrice: 0, stock: 0, minStock: 5, trackStock: true, imageUrl: '', description: '', barcode: '', modifierGroupIds: [] },
   });
 
   const uploadImage = async (file: File) => {
@@ -216,6 +217,7 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
       trackStock: product.trackStock !== false,
       barcode: product.barcode || '',
       imageUrl: product.imageUrl || '',
+      description: product.description || '',
       modifierGroupIds: product.modifierGroupIds || [],
     });
     setIsEditOpen(true);
@@ -446,6 +448,16 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
             {form.formState.errors.name && <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>}
           </div>
         </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="description">Deskripsi Item (Opsional)</Label>
+          <Textarea 
+            id="description" 
+            {...form.register('description')} 
+            placeholder="Misal: Perpaduan espresso arabika dengan susu segar dan sirup gula aren pilihan..." 
+            className="min-h-[72px] resize-none"
+          />
+        </div>
         
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
@@ -589,7 +601,7 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
           <ImportProductDialog />
           <Button 
             onClick={() => { 
-              form.reset({ name: '', sku: '', categoryId: null, price: 0, costPrice: 0, stock: 0, minStock: 5, trackStock: true, imageUrl: '', barcode: '', modifierGroupIds: [] }); 
+              form.reset({ name: '', sku: '', categoryId: null, price: 0, costPrice: 0, stock: 0, minStock: 5, trackStock: true, imageUrl: '', description: '', barcode: '', modifierGroupIds: [] }); 
               setImageFile(null);
               setIsAddOpen(true); 
             }}

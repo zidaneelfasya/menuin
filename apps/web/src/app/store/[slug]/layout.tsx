@@ -53,11 +53,15 @@ export default async function StoreLayout({
       <style dangerouslySetInnerHTML={{__html: `
         :root {
           --catalog-primary: ${primaryColor};
+          --outlet-primary: ${primaryColor};
         }
         .bg-catalog-primary { background-color: var(--catalog-primary); }
         .text-catalog-primary { color: var(--catalog-primary); }
         .border-catalog-primary { border-color: var(--catalog-primary); }
         .hover\\:bg-catalog-primary\\/90:hover { background-color: color-mix(in srgb, var(--catalog-primary) 90%, transparent); }
+        .bg-outlet-primary { background-color: var(--outlet-primary); }
+        .text-outlet-primary { color: var(--outlet-primary); }
+        .border-outlet-primary { border-color: var(--outlet-primary); }
       `}} />
       <div className="min-h-screen bg-[#f8fafc] pb-24 font-sans text-gray-800">
         
