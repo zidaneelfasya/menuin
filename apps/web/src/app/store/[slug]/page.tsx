@@ -30,6 +30,7 @@ export default async function StorePage({
       name: products.name,
       price: products.price,
       imageUrl: products.imageUrl,
+      description: products.description,
       isFeatured: products.isFeatured,
       categoryId: products.categoryId,
     })

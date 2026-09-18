@@ -88,7 +88,7 @@ export const ReceiptPrinter = React.forwardRef<HTMLDivElement, ReceiptPrinterPro
     const itemsSubtotal = data.subtotal || data.items.reduce((acc, item) => acc + item.subtotal, 0);
 
     const showCustomerReceipt = printMode === 'all' || printMode === 'customer';
-    const showKitchenTicket = (printMode === 'all' && settings?.kitchenPrintEnabled) || printMode === 'kitchen';
+    const showKitchenTicket = (printMode === 'all' && (settings?.kitchenPrintEnabled ?? false)) || printMode === 'kitchen';
 
     const logoUrl = settings?.receiptLogoUrl || settings?.storeLogoUrl;
     const showLogo = settings?.receiptShowLogo !== false && !!logoUrl;
@@ -104,11 +104,12 @@ export const ReceiptPrinter = React.forwardRef<HTMLDivElement, ReceiptPrinterPro
       >
         <style>{`
           #receipt-portal-container {
-            position: absolute;
+            position: fixed;
             top: -9999px;
             left: -9999px;
             visibility: hidden;
             width: 58mm;
+            max-width: 58mm;
             background: white;
             color: #000;
           }
@@ -116,19 +117,25 @@ export const ReceiptPrinter = React.forwardRef<HTMLDivElement, ReceiptPrinterPro
           @media print {
             @page {
               margin: 0;
-              size: 58mm ${pageHeight};
+              size: auto;
             }
-            body {
-              margin: 0;
-              padding: 0;
+            html, body {
+              margin: 0 !important;
+              padding: 0 !important;
               background-color: #fff !important;
+              width: 100% !important;
             }
             body > *:not(#receipt-portal-container) {
               display: none !important;
             }
             #receipt-portal-container {
-              position: static;
-              visibility: visible;
+              position: static !important;
+              visibility: visible !important;
+              display: block !important;
+              width: 58mm !important;
+              max-width: 58mm !important;
+              margin: 0 !important;
+              padding: 0 !important;
             }
           }
           
@@ -244,6 +251,11 @@ export const ReceiptPrinter = React.forwardRef<HTMLDivElement, ReceiptPrinterPro
                       <span>{item.quantity} x {formatCurrency(item.price).replace('Rp','').trim()}</span>
                       <span>{formatCurrency(item.subtotal).replace('Rp','').trim()}</span>
                     </div>
+                    {item.modifiers && item.modifiers.length > 0 && (
+                      <div style={{ fontSize: '9.5px', paddingLeft: '8px', color: '#444' }}>
+                        {item.modifiers.map((m: any) => `+ ${m.name || m}`).join(', ')}
+                      </div>
+                    )}
                     {showItemNotes && item.notes && (
                       <div style={{ fontSize: '9.5px', paddingLeft: '8px', color: '#222' }}>
                         - {item.notes}
@@ -307,7 +319,7 @@ export const ReceiptPrinter = React.forwardRef<HTMLDivElement, ReceiptPrinterPro
               </div>
 
               {/* Custom Note (e.g. WiFi) */}
-              {settings?.receiptCustomNote && (
+              {showItemNotes && settings?.receiptCustomNote && (
                 <div style={{ margin: '8px 0', padding: '4px', border: '1px solid #000', fontSize: '9.5px', textAlign: 'center' }}>
                   {settings.receiptCustomNote}
                 </div>
@@ -325,10 +337,10 @@ export const ReceiptPrinter = React.forwardRef<HTMLDivElement, ReceiptPrinterPro
           )}
 
           {/* ================= CUT SEPARATOR ================= */}
-          {showCustomerReceipt && showKitchenTicket && (
+          {showCustomerReceipt && showKitchenTicket && (settings?.kitchenAutoCut !== false) && (
             <div className="receipt-cut-line">
               - - - - - - - - - - - - - - - - - -<br />
-              Gunting Di Sini<br />
+              Gunting Di Sini (Dapur)<br />
               - - - - - - - - - - - - - - - - - -
             </div>
           )}
@@ -390,6 +402,11 @@ export const ReceiptPrinter = React.forwardRef<HTMLDivElement, ReceiptPrinterPro
                       <span>{item.name}</span>
                       <span style={{ fontSize: '13px' }}>x{item.quantity}</span>
                     </div>
+                    {item.modifiers && item.modifiers.length > 0 && (
+                      <div style={{ fontSize: '10px', color: '#333', paddingLeft: '6px', fontStyle: 'italic' }}>
+                        + {item.modifiers.map((m: any) => m.name || m).join(', ')}
+                      </div>
+                    )}
                     {settings?.kitchenShowNotes !== false && item.notes && (
                       <div style={{ fontSize: '10px', fontWeight: '500', color: '#111', marginTop: '2px', paddingLeft: '6px' }}>
                         * Catatan: {item.notes}

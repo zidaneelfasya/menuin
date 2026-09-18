@@ -4,6 +4,9 @@ import { KanbanBoard } from "@/features/orders/components/kanban-board";
 import { redirect } from "next/navigation";
 import { requireFeature } from "@/lib/actions/auth-context";
 import { Metadata } from "next";
+import { db } from "@/lib/db";
+import { tenants } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 
 export const metadata: Metadata = {
   title: 'Pesanan Masuk - Menuin',
@@ -16,7 +19,12 @@ export default async function OrdersPage() {
     redirect("/auth/login");
   }
 
-  const initialOrders = await getActiveOrders();
+  const [initialOrders, tenantRows] = await Promise.all([
+    getActiveOrders(),
+    db.select().from(tenants).where(eq(tenants.id, user.tenantId)).limit(1)
+  ]);
+
+  const tenant = tenantRows[0] || {};
 
   return (
     <div className="h-[calc(100vh-80px)] p-4 md:p-6 overflow-hidden flex flex-col space-y-4">
@@ -34,6 +42,8 @@ export default async function OrdersPage() {
         <KanbanBoard 
           initialOrders={JSON.parse(JSON.stringify(initialOrders))} 
           tenantId={user.tenantId} 
+          cashierName={user.name || "Kasir"}
+          receiptSettings={JSON.parse(JSON.stringify(tenant))}
         />
       </div>
     </div>

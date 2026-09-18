@@ -1,11 +1,10 @@
 'use server';
 
 import { db } from '@/lib/db';
-import { transactions, transactionItems, products } from '@/lib/db/schema';
+import { transactions, transactionItems, products, shifts, tenants, memberships } from '@/lib/db/schema';
 import { eq, desc, sql, and } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from './auth';
-import { shifts } from '@/lib/db/schema';
 
 // We'll trust the checkout payload from the client to have this structure
 type CheckoutPayload = {
@@ -90,7 +89,7 @@ export async function createTransaction(payload: CheckoutPayload) {
         orderNumber,
       }).returning({ id: transactions.id });
       
-      // 2. Insert Items and Update Stock
+      // 2. Insert Items and Update Stock (only if trackStock is enabled)
       for (const item of payload.items) {
         await tx.insert(transactionItems).values({
           tenantId, // use narrowed tenantId
@@ -102,6 +101,21 @@ export async function createTransaction(payload: CheckoutPayload) {
           modifiers: item.modifiers || [],
           notes: item.notes || null,
         });
+
+        // Deduct stock only if product has trackStock enabled (true)
+        await tx
+          .update(products)
+          .set({
+            stock: sql`GREATEST(0, ${products.stock} - ${item.quantity})`,
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(products.id, item.productId),
+              eq(products.tenantId, tenantId),
+              eq(products.trackStock, true)
+            )
+          );
       }
       
       return newTx.id;
@@ -133,6 +147,95 @@ export async function getTransactions() {
   } catch (error) {
     console.error('Error fetching transactions:', error);
     return { success: false, error: 'Gagal mengambil data transaksi.' };
+  }
+}
+
+export async function getTransactionDetails(transactionId: string) {
+  try {
+    const user = await getCurrentUser();
+    if (!user || !user.tenantId) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    const [trx] = await db
+      .select({
+        id: transactions.id,
+        totalAmount: transactions.totalAmount,
+        discount: transactions.discount,
+        tax: transactions.tax,
+        serviceCharge: transactions.serviceCharge,
+        platformFee: transactions.platformFee,
+        grandTotal: transactions.grandTotal,
+        promoCode: transactions.promoCode,
+        paymentMethod: transactions.paymentMethod,
+        paymentStatus: transactions.paymentStatus,
+        status: transactions.status,
+        orderType: transactions.orderType,
+        customerName: transactions.customerName,
+        customerPhone: transactions.customerPhone,
+        tableNumber: transactions.tableNumber,
+        orderNumber: transactions.orderNumber,
+        createdAt: transactions.createdAt,
+        cashierName: memberships.displayName,
+      })
+      .from(transactions)
+      .leftJoin(memberships, eq(transactions.cashierMembershipId, memberships.id))
+      .where(
+        and(
+          eq(transactions.id, transactionId),
+          eq(transactions.tenantId, user.tenantId)
+        )
+      )
+      .limit(1);
+
+    if (!trx) {
+      return { success: false, error: 'Transaksi tidak ditemukan.' };
+    }
+
+    const items = await db
+      .select({
+        id: transactionItems.id,
+        productId: transactionItems.productId,
+        productName: products.name,
+        quantity: transactionItems.quantity,
+        price: transactionItems.price,
+        subtotal: transactionItems.subtotal,
+        modifiers: transactionItems.modifiers,
+        notes: transactionItems.notes,
+      })
+      .from(transactionItems)
+      .leftJoin(products, eq(transactionItems.productId, products.id))
+      .where(
+        and(
+          eq(transactionItems.transactionId, trx.id),
+          eq(transactionItems.tenantId, user.tenantId)
+        )
+      );
+
+    const [tenant] = await db
+      .select()
+      .from(tenants)
+      .where(eq(tenants.id, user.tenantId))
+      .limit(1);
+
+    return {
+      success: true,
+      data: {
+        transaction: trx,
+        items: items.map(it => ({
+          name: it.productName || 'Item Menu',
+          quantity: it.quantity,
+          price: parseFloat(it.price || '0'),
+          subtotal: parseFloat(it.subtotal || '0'),
+          modifiers: it.modifiers,
+          notes: it.notes,
+        })),
+        settings: tenant,
+      },
+    };
+  } catch (error) {
+    console.error('Error fetching transaction details:', error);
+    return { success: false, error: 'Gagal mengambil detail transaksi.' };
   }
 }
 
@@ -202,7 +305,8 @@ export async function voidTransaction(payload: { transactionId: string; reason: 
             .where(
               and(
                 eq(products.id, item.productId),
-                eq(products.tenantId, tenantId)
+                eq(products.tenantId, tenantId),
+                eq(products.trackStock, true)
               )
             );
         }

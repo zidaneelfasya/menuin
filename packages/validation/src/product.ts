@@ -9,6 +9,9 @@ export const productSchema = z.object({
   stock: z.coerce.number().min(0, 'Stok awal tidak boleh negatif'),
   minStock: z.coerce.number().min(0, 'Batas minimum stok tidak boleh negatif'),
   imageUrl: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
   barcode: z.string().optional().nullable(),
+  trackStock: z.boolean().default(true).optional(),
   modifierGroupIds: z.array(z.string()).optional(),
 });
+

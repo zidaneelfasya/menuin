@@ -1,6 +1,6 @@
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useState, useMemo, useCallback } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Modal, Alert, useWindowDimensions } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Modal, Alert, useWindowDimensions, Pressable, StyleSheet } from 'react-native';
 import { ShoppingCart, X, AlertCircle, Plus, Minus } from 'lucide-react-native';
 import { usePosData, Product, ModifierGroup } from '@/hooks/use-pos-data';
 import { useCartStore, CartItemModifier } from '@/store/cart-store';
@@ -415,9 +415,16 @@ export default function PosScreen() {
         visible={!!selectedProduct}
         transparent
         animationType="slide"
+        onRequestClose={() => setSelectedProduct(null)}
         supportedOrientations={['portrait', 'portrait-upside-down', 'landscape', 'landscape-left', 'landscape-right']}
       >
         <View className="flex-1 justify-end bg-black/40">
+          {/* Backdrop Tap to Dismiss (Outside Click) */}
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={() => setSelectedProduct(null)}
+          />
+
           <View className={`bg-white rounded-t-3xl ${isPhoneLandscape ? 'max-h-[95%]' : 'max-h-[85%]'}`}>
             {/* Sheet Handle */}
             <View className="items-center pt-3 pb-1">
@@ -486,7 +493,7 @@ export default function PosScreen() {
                             style={{
                               width: isTablet ? '31.8%' : '48.2%',
                             }}
-                            className={`min-h-[80px] p-3 rounded-xl border flex-col justify-between ${
+                            className={`min-h-[86px] p-3 rounded-xl border flex-col justify-between ${
                               isSelected
                                 ? 'bg-blue-50/70 border-blue-600 shadow-2xs'
                                 : 'bg-white border-gray-200 active:bg-gray-50'
@@ -512,17 +519,17 @@ export default function PosScreen() {
                                   {isSelected && <View className="w-1.5 h-1.5 rounded-full bg-white" />}
                                 </View>
                               ) : isSelected ? (
-                                <View className="bg-blue-600 px-1.5 py-0.5 rounded-md items-center justify-center">
-                                  <Text className="text-white text-[10px] font-black">{qty}x</Text>
+                                <View className="bg-blue-600 px-2 py-0.5 rounded-md items-center justify-center shadow-2xs">
+                                  <Text className="text-white text-[11px] font-black leading-tight">{qty}x</Text>
                                 </View>
                               ) : (
-                                <View className="w-4 h-4 rounded-md border border-gray-300 bg-gray-50 items-center justify-center mt-0.5">
-                                  <Plus size={10} color="#9ca3af" />
+                                <View className="w-5 h-5 rounded-md border border-gray-300 bg-gray-50 items-center justify-center mt-0.5">
+                                  <Plus size={11} color="#9ca3af" />
                                 </View>
                               )}
                             </View>
 
-                            {/* Bottom Row: Price or Stepper */}
+                            {/* Bottom Row: Price or Large Isolated Minus Button */}
                             {isSingle || !isSelected ? (
                               <View className="mt-2 pt-1.5 border-t border-gray-100 flex-row items-center justify-between">
                                 <Text
@@ -534,39 +541,22 @@ export default function PosScreen() {
                                 </Text>
                               </View>
                             ) : (
-                              /* Multi Choice Active: Stepper with [-] and [+] */
+                              /* Multi Choice Active: Price on Left, Large Dedicated Minus Button on Right */
                               <View className="mt-2 pt-1.5 border-t border-blue-200/80 flex-row items-center justify-between">
                                 <Text className="text-[11px] font-bold text-blue-700">
                                   {opt.price > 0 ? `+${formatPrice(opt.price * qty)}` : 'Standar'}
                                 </Text>
-                                <View className="flex-row items-center bg-white rounded-lg border border-blue-200 p-0.5">
-                                  <TouchableOpacity
-                                    onPress={(e) => {
-                                      e.stopPropagation();
-                                      handleMultiDecrement(group.id, opt.id);
-                                    }}
-                                    activeOpacity={0.7}
-                                    className="w-5 h-5 rounded items-center justify-center bg-blue-50 active:bg-red-100"
-                                  >
-                                    <Minus size={11} color="#2563eb" />
-                                  </TouchableOpacity>
-                                  <Text className="text-blue-900 font-black text-xs px-1.5">
-                                    {qty}
-                                  </Text>
-                                  <TouchableOpacity
-                                    onPress={(e) => {
-                                      e.stopPropagation();
-                                      handleMultiIncrement(group, opt.id);
-                                    }}
-                                    activeOpacity={0.7}
-                                    disabled={totalGroupQty >= group.maxSelections}
-                                    className={`w-5 h-5 rounded items-center justify-center ${
-                                      totalGroupQty >= group.maxSelections ? 'bg-gray-100 opacity-40' : 'bg-blue-600 active:bg-blue-700'
-                                    }`}
-                                  >
-                                    <Plus size={11} color="#ffffff" />
-                                  </TouchableOpacity>
-                                </View>
+                                <TouchableOpacity
+                                  onPress={(e) => {
+                                    e.stopPropagation();
+                                    handleMultiDecrement(group.id, opt.id);
+                                  }}
+                                  activeOpacity={0.65}
+                                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                  className="w-8 h-8 rounded-lg bg-white border border-rose-200 items-center justify-center active:bg-rose-50 shadow-2xs"
+                                >
+                                  <Minus size={15} color="#e11d48" strokeWidth={2.6} />
+                                </TouchableOpacity>
                               </View>
                             )}
                           </TouchableOpacity>

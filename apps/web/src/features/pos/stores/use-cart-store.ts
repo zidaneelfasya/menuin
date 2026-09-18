@@ -24,6 +24,7 @@ interface CartStore {
   getSubtotal: () => number;
   getTaxAmount: () => number;
   getTotal: () => number;
+  syncProductImages: (products: { id: string; imageUrl?: string | null }[]) => void;
 }
 
 export const useCartStore = create<CartStore>()(
@@ -32,6 +33,21 @@ export const useCartStore = create<CartStore>()(
         items: [],
         discount: 0,
         taxRate: 0, // No tax for POS
+
+        syncProductImages: (products) => {
+          set((state) => {
+            let hasChanges = false;
+            const updatedItems = state.items.map((item) => {
+              const matched = products.find((p) => p.id === item.productId);
+              if (matched && matched.imageUrl && item.imageUrl !== matched.imageUrl) {
+                hasChanges = true;
+                return { ...item, imageUrl: matched.imageUrl };
+              }
+              return item;
+            });
+            return hasChanges ? { items: updatedItems } : state;
+          });
+        },
 
         addItem: (newItem) => {
         set((state) => {
@@ -44,7 +60,7 @@ export const useCartStore = create<CartStore>()(
             return {
               items: state.items.map((i) =>
                 i.id === uniqueId
-                  ? { ...i, quantity: i.quantity + 1 }
+                  ? { ...i, quantity: i.quantity + 1, imageUrl: newItem.imageUrl || i.imageUrl }
                   : i
               ),
             };

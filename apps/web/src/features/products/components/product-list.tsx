@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { ColumnDef } from '@tanstack/react-table';
-import { MoreHorizontal, Plus, Pencil, Trash2, Package, Image as ImageIcon, Printer, Star } from 'lucide-react';
+import { MoreHorizontal, Plus, Pencil, Trash2, Package, Image as ImageIcon, Printer, Star, Boxes } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
 const DataTable = dynamic(
@@ -37,11 +37,13 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { createProduct, updateProduct, deleteProduct, toggleProductBestSeller } from '@/lib/actions/products';
+import { createProduct, updateProduct, deleteProduct, toggleProductBestSeller, toggleTrackStock } from '@/lib/actions/products';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -86,11 +88,33 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
     }
   };
 
+  const handleToggleTrackStock = async (product: ProductDto, currentValue: boolean) => {
+    const newValue = !currentValue;
+    // Optimistic UI update
+    setProductsList((prev) =>
+      prev.map((p) => (p.id === product.id ? { ...p, trackStock: newValue } : p))
+    );
+
+    const result = await toggleTrackStock(product.id, newValue);
+    if (!result.success) {
+      toast.error(result.error || 'Gagal mengubah status pelacakan stok');
+      setProductsList((prev) =>
+        prev.map((p) => (p.id === product.id ? { ...p, trackStock: currentValue } : p))
+      );
+    } else {
+      toast.success(
+        newValue 
+          ? `Lacak stok aktif untuk ${product.name} (stok akan berkurang saat kasir checkout)` 
+          : `Lacak stok dinonaktifkan untuk ${product.name} (stok tanpa batas & tidak berkurang)`
+      );
+    }
+  };
+
   const supabase = createClient();
 
   const form = useForm<z.infer<typeof productSchema>>({
     resolver: zodResolver(productSchema),
-    defaultValues: { name: '', sku: '', categoryId: null, price: 0, costPrice: 0, stock: 0, minStock: 5, imageUrl: '', barcode: '', modifierGroupIds: [] },
+    defaultValues: { name: '', sku: '', categoryId: null, price: 0, costPrice: 0, stock: 0, minStock: 5, trackStock: true, imageUrl: '', description: '', barcode: '', modifierGroupIds: [] },
   });
 
   const uploadImage = async (file: File) => {
@@ -190,8 +214,10 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
       costPrice: parseFloat(product.price), 
       stock: product.stock,
       minStock: product.minStock,
+      trackStock: product.trackStock !== false,
       barcode: product.barcode || '',
       imageUrl: product.imageUrl || '',
+      description: product.description || '',
       modifierGroupIds: product.modifierGroupIds || [],
     });
     setIsEditOpen(true);
@@ -264,7 +290,10 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
         return (
           <div className="flex items-center gap-1.5">
             <button
-              onClick={() => handleToggleBestSeller(product, isFeatured)}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleToggleBestSeller(product, isFeatured);
+              }}
               className={`p-1.5 rounded-lg transition-colors flex items-center gap-1 text-xs font-semibold ${
                 isFeatured 
                   ? 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-950/60 dark:text-amber-300' 
@@ -301,10 +330,21 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
       accessorKey: 'stock',
       header: 'Stok',
       cell: ({ row }) => {
+        const product = row.original;
+        const isTracked = product.trackStock !== false;
+        
+        if (!isTracked) {
+          return (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900/50">
+              Tanpa Batas
+            </span>
+          );
+        }
+
         const stock = parseInt(row.getValue('stock'));
-        const minStock = row.original.minStock;
+        const minStock = product.minStock;
         return (
-          <div className={stock <= minStock ? 'text-destructive font-semibold' : ''}>
+          <div className={stock <= minStock ? 'text-destructive font-semibold' : 'font-medium'}>
             {stock}
           </div>
         );
@@ -328,6 +368,7 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
       id: 'actions',
       cell: ({ row }) => {
         const product = row.original;
+        const isTracked = product.trackStock !== false;
 
         return (
           <DropdownMenu>
@@ -342,6 +383,10 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
               <DropdownMenuItem onClick={() => handleToggleBestSeller(product, !!product.isFeatured)}>
                 <Star className="mr-2 h-4 w-4 text-amber-500" />
                 {product.isFeatured ? 'Hapus dari Best Seller' : 'Jadikan Best Seller (Unggulan)'}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleToggleTrackStock(product, isTracked)}>
+                <Boxes className="mr-2 h-4 w-4 text-blue-600" />
+                {isTracked ? 'Nonaktifkan Lacak Stok (Tanpa Batas)' : 'Aktifkan Lacak Stok'}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigator.clipboard.writeText(product.barcode || product.sku)}>
                 Copy Barcode
@@ -403,6 +448,16 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
             {form.formState.errors.name && <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>}
           </div>
         </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="description">Deskripsi Item (Opsional)</Label>
+          <Textarea 
+            id="description" 
+            {...form.register('description')} 
+            placeholder="Misal: Perpaduan espresso arabika dengan susu segar dan sirup gula aren pilihan..." 
+            className="min-h-[72px] resize-none"
+          />
+        </div>
         
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
@@ -444,14 +499,50 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
           </div>
         </div>
 
+        {/* Opsi Lacak Stok */}
+        <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+          <div className="space-y-0.5">
+            <Label htmlFor="trackStockSwitch" className="text-sm font-semibold cursor-pointer">Lacak Stok Otomatis</Label>
+            <p className="text-xs text-muted-foreground">
+              {form.watch('trackStock') !== false 
+                ? 'Aktif: Stok akan berkurang saat kasir melakukan transaksi.' 
+                : 'Nonaktif: Stok tanpa batas (tidak akan pernah berkurang).'}
+            </p>
+          </div>
+          <Controller
+            control={form.control}
+            name="trackStock"
+            render={({ field }) => (
+              <Switch
+                id="trackStockSwitch"
+                checked={field.value !== false}
+                onCheckedChange={field.onChange}
+              />
+            )}
+          />
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="stock">Stok Awal</Label>
-            <Input id="stock" type="number" {...form.register('stock')} />
+            <Input 
+              id="stock" 
+              type="number" 
+              {...form.register('stock')} 
+              disabled={form.watch('trackStock') === false}
+            />
+            {form.watch('trackStock') === false && (
+              <p className="text-[11px] text-muted-foreground">Stok tidak dibatasi karena lacak stok dinonaktifkan.</p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="minStock">Batas Stok Minimum</Label>
-            <Input id="minStock" type="number" {...form.register('minStock')} />
+            <Input 
+              id="minStock" 
+              type="number" 
+              {...form.register('minStock')} 
+              disabled={form.watch('trackStock') === false}
+            />
           </div>
         </div>
 
@@ -510,7 +601,7 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
           <ImportProductDialog />
           <Button 
             onClick={() => { 
-              form.reset({ name: '', sku: '', categoryId: null, price: 0, costPrice: 0, stock: 0, minStock: 5, imageUrl: '', barcode: '', modifierGroupIds: [] }); 
+              form.reset({ name: '', sku: '', categoryId: null, price: 0, costPrice: 0, stock: 0, minStock: 5, trackStock: true, imageUrl: '', description: '', barcode: '', modifierGroupIds: [] }); 
               setImageFile(null);
               setIsAddOpen(true); 
             }}
@@ -527,7 +618,6 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
         data={productsList} 
         searchKey="name" 
         searchPlaceholder="Cari nama item..." 
-        onRowClick={(row) => handleEditClick(row as ProductDto)}
       />
 
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
@@ -550,25 +640,27 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
         </DialogContent>
       </Dialog>
 
+      {/* Delete Dialog */}
       <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Hapus Item</DialogTitle>
             <DialogDescription>
-              Apakah Anda yakin ingin menghapus item <b>{selectedProduct?.name}</b>? Tindakan ini tidak dapat dibatalkan.
+              Apakah Anda yakin ingin menghapus <b>{selectedProduct?.name}</b>? Tindakan ini tidak dapat dibatalkan.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setIsDeleteOpen(false)}>Batal</Button>
-            <Button type="button" variant="destructive" onClick={onConfirmDelete} disabled={isLoading}>
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setIsDeleteOpen(false)}>Batal</Button>
+            <Button variant="destructive" onClick={onConfirmDelete} disabled={isLoading}>
               {isLoading ? 'Menghapus...' : 'Ya, Hapus'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
+      {/* Barcode Print Dialog */}
       <Dialog open={isPrintBarcodeOpen} onOpenChange={setIsPrintBarcodeOpen}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Cetak Barcode</DialogTitle>
             <DialogDescription>
@@ -587,7 +679,7 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
               />
             )}
           </div>
-          <DialogFooter className="flex gap-2 sm:justify-end">
+          <DialogFooter className="flex gap-2 sm:justify-end mt-4">
             <Button type="button" variant="outline" onClick={() => setIsPrintBarcodeOpen(false)}>Tutup</Button>
             <Button type="button" onClick={() => {
               const printContent = document.getElementById('barcode-print-area');

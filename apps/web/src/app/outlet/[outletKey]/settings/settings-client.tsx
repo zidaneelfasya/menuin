@@ -84,18 +84,18 @@ export function SettingsClient({
   // Receipt form states
   const [receiptLogoUrl, setReceiptLogoUrl] = React.useState(tenant?.receiptLogoUrl || '');
   const [receiptHeader, setReceiptHeader] = React.useState(tenant?.receiptHeader || '');
-  const [receiptFooter, setReceiptFooter] = React.useState(tenant?.receiptFooter || 'Terima kasih atas kunjungan Anda!\nFollow IG kami @menuin.app');
+  const [receiptFooter, setReceiptFooter] = React.useState(tenant?.receiptFooter || '');
   const [receiptShowLogo, setReceiptShowLogo] = React.useState(tenant?.receiptShowLogo ?? true);
   const [receiptShowCustomer, setReceiptShowCustomer] = React.useState(tenant?.receiptShowCustomer ?? true);
   const [receiptShowCashier, setReceiptShowCashier] = React.useState(tenant?.receiptShowCashier ?? true);
   const [receiptShowTable, setReceiptShowTable] = React.useState(tenant?.receiptShowTable ?? true);
   const [receiptShowNotes, setReceiptShowNotes] = React.useState(tenant?.receiptShowNotes ?? true);
-  const [receiptCustomNote, setReceiptCustomNote] = React.useState(tenant?.receiptCustomNote || 'WiFi: TamuResto / Pass: selamatmakan');
+  const [receiptCustomNote, setReceiptCustomNote] = React.useState(tenant?.receiptCustomNote || '');
 
   // Kitchen Ticket form states
   const [kitchenPrintEnabled, setKitchenPrintEnabled] = React.useState(tenant?.kitchenPrintEnabled ?? false);
   const [kitchenTicketTitle, setKitchenTicketTitle] = React.useState(tenant?.kitchenTicketTitle || 'TIKET DAPUR');
-  const [kitchenTicketNotes, setKitchenTicketNotes] = React.useState(tenant?.kitchenTicketNotes || 'Harap segera disajikan panas');
+  const [kitchenTicketNotes, setKitchenTicketNotes] = React.useState(tenant?.kitchenTicketNotes || '');
   const [kitchenShowCustomer, setKitchenShowCustomer] = React.useState(tenant?.kitchenShowCustomer ?? true);
   const [kitchenShowCashier, setKitchenShowCashier] = React.useState(tenant?.kitchenShowCashier ?? true);
   const [kitchenShowTable, setKitchenShowTable] = React.useState(tenant?.kitchenShowTable ?? true);
@@ -131,18 +131,18 @@ export function SettingsClient({
   const hasReceiptChanges = 
     receiptLogoUrl !== (tenant?.receiptLogoUrl || '') ||
     receiptHeader !== (tenant?.receiptHeader || '') ||
-    receiptFooter !== (tenant?.receiptFooter || 'Terima kasih atas kunjungan Anda!\nFollow IG kami @menuin.app') ||
+    receiptFooter !== (tenant?.receiptFooter || '') ||
     receiptShowLogo !== (tenant?.receiptShowLogo ?? true) ||
     receiptShowCustomer !== (tenant?.receiptShowCustomer ?? true) ||
     receiptShowCashier !== (tenant?.receiptShowCashier ?? true) ||
     receiptShowTable !== (tenant?.receiptShowTable ?? true) ||
     receiptShowNotes !== (tenant?.receiptShowNotes ?? true) ||
-    receiptCustomNote !== (tenant?.receiptCustomNote || 'WiFi: TamuResto / Pass: selamatmakan');
+    receiptCustomNote !== (tenant?.receiptCustomNote || '');
 
   const hasKitchenChanges =
     kitchenPrintEnabled !== (tenant?.kitchenPrintEnabled ?? false) ||
     kitchenTicketTitle !== (tenant?.kitchenTicketTitle || 'TIKET DAPUR') ||
-    kitchenTicketNotes !== (tenant?.kitchenTicketNotes || 'Harap segera disajikan panas') ||
+    kitchenTicketNotes !== (tenant?.kitchenTicketNotes || '') ||
     kitchenShowCustomer !== (tenant?.kitchenShowCustomer ?? true) ||
     kitchenShowCashier !== (tenant?.kitchenShowCashier ?? true) ||
     kitchenShowTable !== (tenant?.kitchenShowTable ?? true) ||
