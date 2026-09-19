@@ -274,6 +274,7 @@ export default function CashierDrawerLayout() {
   const { width } = useWindowDimensions();
   const pathname = usePathname();
   const isCartScreen = pathname.includes('/cart');
+  const isOrdersScreen = pathname.includes('/orders');
 
   // Responsive drawer width: 75% on mobile, capped at 340 on tablet/landscape
   const drawerWidth = Math.min(Math.max(width * 0.75, 260), 340);
@@ -324,8 +325,8 @@ export default function CashierDrawerLayout() {
         />
       )}
 
-      {/* Realtime Incoming Order Toast */}
-      <GlobalIncomingOrderToast />
+      {/* Realtime Incoming Order Toast (hidden on orders screen since user already sees live kanban) */}
+      {!isOrdersScreen && <GlobalIncomingOrderToast key="global-incoming-toast" />}
     </View>
   );
 }

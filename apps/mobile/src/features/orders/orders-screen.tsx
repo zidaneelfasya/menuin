@@ -566,7 +566,7 @@ export function OrdersScreen() {
             </View>
           </View>
 
-          {/* Selesai Semua (Centang) Button */}
+          {/* Tombol Selesai Semua (Icon Centang Saja) */}
           <TouchableOpacity
             onPress={() => {
               if (stageOrders.length > 0) {
@@ -574,20 +574,14 @@ export function OrdersScreen() {
               }
             }}
             disabled={stageOrders.length === 0 || bulkUpdateMutation.isPending}
-            className={`flex-row items-center gap-1.5 px-2.5 py-1.2 rounded-lg border ${
+            accessibilityLabel={`Selesaikan semua pesanan ${config.title}`}
+            className={`w-7 h-7 rounded-lg border items-center justify-center transition-all ${
               stageOrders.length === 0
                 ? 'opacity-30 bg-slate-100 border-slate-200'
-                : 'bg-emerald-50 border-emerald-300 active:scale-95 shadow-2xs'
+                : 'bg-emerald-50 border-emerald-300 active:scale-90'
             }`}
           >
-            <CheckCheck size={13} color={stageOrders.length === 0 ? '#94a3b8' : '#059669'} />
-            <Text
-              className={`text-[11px] font-bold ${
-                stageOrders.length === 0 ? 'text-slate-400' : 'text-emerald-700'
-              }`}
-            >
-              Selesai Semua
-            </Text>
+            <Check size={15} strokeWidth={2.5} color={stageOrders.length === 0 ? '#94a3b8' : '#059669'} />
           </TouchableOpacity>
         </View>
 
@@ -650,7 +644,7 @@ export function OrdersScreen() {
   return (
     <View className="flex-1 bg-slate-100/70">
       {/* 1. TOP CONTROL BAR: SEARCH & TYPE FILTERS & REFRESH */}
-      <View className="bg-white border-b border-slate-200 px-3.5 pt-3 pb-2.5 space-y-2.5">
+      <View className="bg-white border-b border-slate-200 px-3.5 pt-3 pb-3">
         {/* Search Input Box */}
         <View className="flex-row items-center bg-slate-100 rounded-xl px-3 py-1.5 border border-slate-200">
           <Search size={15} color="#64748b" />
@@ -669,7 +663,7 @@ export function OrdersScreen() {
         </View>
 
         {/* Filter Pills & Manual Refresh Button */}
-        <View className="flex-row items-center justify-between">
+        <View className="flex-row items-center justify-between mt-2.5">
           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-1 mr-2">
             <View className="flex-row items-center gap-1.5">
               <TouchableOpacity
