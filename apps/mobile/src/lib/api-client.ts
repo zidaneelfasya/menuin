@@ -44,7 +44,10 @@ export const API_BASE_URL = getApiBaseUrl();
 
 // Helper to construct full API URLs
 export const getApiUrl = (path: string) => {
-  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  let normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  if (normalizedPath.startsWith('/mobile/')) {
+    normalizedPath = `/api${normalizedPath}`;
+  }
   return `${API_BASE_URL}${normalizedPath}`;
 };
 
@@ -72,10 +75,23 @@ export const fetchWithAuth = async (path: string, options: RequestInit = {}) => 
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
+
+    // Auto logout on 401 Unauthorized (Expired / Invalid Session)
+    if (response.status === 401) {
+      console.warn('[fetchWithAuth] Session expired (401). Logging out user...');
+      useAuthStore.getState().logoutUser();
+    }
+
+    // Auto unpair on 403 Device Revoked
     if (response.status === 403 && (errorData.error === 'DEVICE_REVOKED' || errorData.code === 'DEVICE_REVOKED')) {
+      console.warn('[fetchWithAuth] Device revoked (403). Unpairing device...');
       useAuthStore.getState().unpairDevice();
     }
-    throw new Error(errorData.error || `Request failed with status ${response.status}`);
+
+    const err = new Error(errorData.error || errorData.message || `Request failed with status ${response.status}`);
+    (err as any).status = response.status;
+    (err as any).code = errorData.error || errorData.code;
+    throw err;
   }
 
   return response.json();

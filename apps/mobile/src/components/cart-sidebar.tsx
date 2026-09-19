@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, Alert, ActivityIndicator } fr
 import { Image as ExpoImage } from 'expo-image';
 import { Trash2, ShieldCheck, ShoppingBag, Store } from 'lucide-react-native';
 import { useCartStore } from '@/store/cart-store';
-import { getApiUrl } from '@/lib/api-client';
+import { fetchWithAuth } from '@/lib/api-client';
 import { useAuthStore } from '@/store/auth-store';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { QuantityStepper, Button, EmptyState } from '@/components/ui';
@@ -11,7 +11,6 @@ import { QuantityStepper, Button, EmptyState } from '@/components/ui';
 export function CartSidebar() {
   const queryClient = useQueryClient();
   const { items, removeItem, updateQuantity, clearCart, getCartTotal } = useCartStore();
-  const sessionToken = useAuthStore(state => state.sessionToken);
 
   const totalItemsCount = items.reduce((acc, item) => acc + item.quantity, 0);
 
@@ -63,22 +62,10 @@ export function CartSidebar() {
         }),
       };
 
-      const response = await fetch(getApiUrl('/api/mobile/v1/pos'), {
+      return fetchWithAuth('/api/mobile/v1/pos', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionToken}`,
-        },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Gagal membuat pesanan');
-      }
-
-      return data;
     },
     onSuccess: () => {
       clearCart();

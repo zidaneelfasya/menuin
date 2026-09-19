@@ -12,7 +12,7 @@ import {
   Easing,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter, usePathname, useNavigation } from 'expo-router';
+import { useRouter, usePathname } from 'expo-router';
 import { AdaptiveBottomBar } from './adaptive-bottom-bar';
 
 export const MENUIN_BLUE = '#014FFD';
@@ -66,7 +66,6 @@ export function CircularMenuModal({ isOpen, onClose, anchorY }: CircularMenuModa
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const navigation = useNavigation<any>();
   const pathname = usePathname();
 
   // Responsive device & orientation classification
@@ -194,14 +193,7 @@ export function CircularMenuModal({ isOpen, onClose, anchorY }: CircularMenuModa
     try {
       router.navigate(path as any);
     } catch {
-      try {
-        router.push(path as any);
-      } catch {
-        const routeName = path.split('/').pop();
-        if (routeName) {
-          navigation?.navigate?.(routeName);
-        }
-      }
+      router.push(path as any);
     }
   };
 

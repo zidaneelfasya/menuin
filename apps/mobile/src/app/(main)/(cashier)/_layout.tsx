@@ -21,6 +21,7 @@ import { usePathname, useRouter } from 'expo-router';
 import { AdaptiveBottomBar } from '@/components/navigation/adaptive-bottom-bar';
 import { CircularMenuModal } from '@/components/navigation/circular-menu-modal';
 import { AppTopHeader } from '@/components/navigation/app-top-header';
+import { GlobalIncomingOrderToast } from '@/components/realtime/incoming-order-toast';
 
 interface NavItemProps {
   icon: React.ReactNode;
@@ -322,6 +323,9 @@ export default function CashierDrawerLayout() {
           onToggleMenu={() => setIsMenuOpen((prev) => !prev)}
         />
       )}
+
+      {/* Realtime Incoming Order Toast */}
+      <GlobalIncomingOrderToast />
     </View>
   );
 }

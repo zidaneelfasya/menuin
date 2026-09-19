@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getApiUrl } from '@/lib/api-client';
+import { fetchWithAuth } from '@/lib/api-client';
 import { useAuthStore } from '@/store/auth-store';
 
 export interface ShiftMetrics {
@@ -38,76 +38,46 @@ export const useActiveShift = () => {
   return useQuery({
     queryKey: ['active-shift'],
     queryFn: async (): Promise<ShiftResponse> => {
-      const response = await fetch(getApiUrl('/api/mobile/v1/shifts'), {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionToken}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch active shift');
-      }
-
-      return response.json();
+      const data = await fetchWithAuth('/api/mobile/v1/shifts');
+      return data as ShiftResponse;
     },
     enabled: !!sessionToken,
-    refetchInterval: 10000, // Refetch every 10 seconds to update metrics
+    refetchInterval: (query) => {
+      const errStatus = (query.state.error as any)?.status;
+      if (errStatus === 401 || errStatus === 403) return false;
+      return 10000; // Refetch every 10 seconds to update metrics
+    },
   });
 };
 
 export const useStartShift = () => {
-  const sessionToken = useAuthStore((state) => state.sessionToken);
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (startingCash: number) => {
-      const response = await fetch(getApiUrl('/api/mobile/v1/shifts'), {
+      return fetchWithAuth('/api/mobile/v1/shifts', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionToken}`,
-        },
-        body: JSON.stringify({ startingCash })
+        body: JSON.stringify({ startingCash }),
       });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to start shift');
-      }
-
-      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['active-shift'] });
-    }
+    },
   });
 };
 
 export const useEndShift = () => {
-  const sessionToken = useAuthStore((state) => state.sessionToken);
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ shiftId, actualCash }: { shiftId: string, actualCash: number }) => {
-      const response = await fetch(getApiUrl('/api/mobile/v1/shifts'), {
+    mutationFn: async ({ shiftId, actualCash }: { shiftId: string; actualCash: number }) => {
+      return fetchWithAuth('/api/mobile/v1/shifts', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionToken}`,
-        },
-        body: JSON.stringify({ shiftId, actualCash })
+        body: JSON.stringify({ shiftId, actualCash }),
       });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to end shift');
-      }
-
-      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['active-shift'] });
-    }
+    },
   });
 };

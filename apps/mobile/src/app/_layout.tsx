@@ -2,8 +2,9 @@ import '../global.css';
 import { DarkTheme, DefaultTheme, ThemeProvider, Slot } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useColorScheme, LogBox, Image } from 'react-native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from '@tanstack/react-query';
 import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
+import { useAuthStore } from '@/store/auth-store';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 
@@ -28,7 +29,45 @@ LogBox.ignoreLogs([
   '[Reanimated] Writing to `value` during component render.',
 ]);
 
-const queryClient = new QueryClient();
+const handleGlobalAuthError = (error: any) => {
+  const status = error?.status || (error as any)?.response?.status;
+  const is401 =
+    status === 401 ||
+    error?.message?.includes('401') ||
+    error?.message?.toLowerCase().includes('unauthorized');
+
+  if (is401) {
+    console.warn('[QueryClient] Global 401 detected. Auto logging out user...');
+    useAuthStore.getState().logoutUser();
+  }
+};
+
+const queryClient = new QueryClient({
+  queryCache: new QueryCache({
+    onError: handleGlobalAuthError,
+  }),
+  mutationCache: new MutationCache({
+    onError: handleGlobalAuthError,
+  }),
+  defaultOptions: {
+    queries: {
+      retry: (failureCount, error: any) => {
+        const status = error?.status;
+        const isAuthError =
+          status === 401 ||
+          status === 403 ||
+          error?.message?.includes('401') ||
+          error?.message?.includes('403') ||
+          error?.message?.toLowerCase().includes('unauthorized');
+
+        if (isAuthError) {
+          return false;
+        }
+        return failureCount < 2;
+      },
+    },
+  },
+});
 
 SplashScreen.preventAutoHideAsync();
 

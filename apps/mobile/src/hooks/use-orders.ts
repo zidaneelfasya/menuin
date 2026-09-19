@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getApiUrl } from '@/lib/api-client';
+import { fetchWithAuth } from '@/lib/api-client';
 import { useAuthStore } from '@/store/auth-store';
 import { useEffect, useRef } from 'react';
 import { Alert } from 'react-native';
@@ -11,6 +11,8 @@ export interface OrderItem {
   productName: string;
   subtotal: string;
   isCompleted: boolean;
+  modifiers?: any;
+  notes?: string | null;
 }
 
 export interface Order {
@@ -19,6 +21,7 @@ export interface Order {
   orderNumber: string;
   status: 'PENDING' | 'NEW' | 'PROCESSING' | 'READY' | 'COMPLETED' | 'CANCELLED';
   paymentStatus: 'UNPAID' | 'PAID' | 'REFUNDED';
+  paymentMethod?: string | null;
   orderType: string;
   customerName: string | null;
   tableNumber: string | null;
@@ -41,59 +44,39 @@ export const useOrders = () => {
   const query = useQuery({
     queryKey: ['orders'],
     queryFn: async (): Promise<OrdersResponse> => {
-      const response = await fetch(getApiUrl('/api/mobile/v1/orders'), {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionToken}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch orders data');
-      }
-
-      return response.json();
+      const data = await fetchWithAuth('/api/mobile/v1/orders');
+      return data as OrdersResponse;
     },
     enabled: !!sessionToken,
-    refetchInterval: 5000, 
+    refetchInterval: (query) => {
+      const errStatus = (query.state.error as any)?.status;
+      if (errStatus === 401 || errStatus === 403) return false;
+      return 5000;
+    },
   });
 
-
-
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ orderId, status }: { orderId: string, status: string }) => {
-      const response = await fetch(getApiUrl(`/api/mobile/v1/orders/${orderId}/status`), {
+    mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
+      return fetchWithAuth(`/api/mobile/v1/orders/${orderId}/status`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionToken}`,
-        },
-        body: JSON.stringify({ status })
+        body: JSON.stringify({ status }),
       });
-      if (!response.ok) throw new Error('Failed to update status');
-      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
-    }
+    },
   });
 
   const updateItemStatusMutation = useMutation({
-    mutationFn: async ({ itemId, isCompleted }: { itemId: string, isCompleted: boolean }) => {
-      const response = await fetch(getApiUrl(`/api/mobile/v1/orders/items/${itemId}/status`), {
+    mutationFn: async ({ itemId, isCompleted }: { itemId: string; isCompleted: boolean }) => {
+      return fetchWithAuth(`/api/mobile/v1/orders/items/${itemId}/status`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionToken}`,
-        },
-        body: JSON.stringify({ isCompleted })
+        body: JSON.stringify({ isCompleted }),
       });
-      if (!response.ok) throw new Error('Failed to update item status');
-      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
-    }
+    },
   });
 
   return {
