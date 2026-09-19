@@ -60,6 +60,8 @@ export async function GET(req: NextRequest) {
         quantity: transactionItems.quantity,
         productName: products.name,
         subtotal: transactionItems.subtotal,
+        modifiers: transactionItems.modifiers,
+        notes: transactionItems.notes,
         isCompleted: transactionItems.isCompleted
       })
       .from(transactionItems)

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getApiUrl } from '@/lib/api-client';
+import { fetchWithAuth } from '@/lib/api-client';
 import { useAuthStore } from '@/store/auth-store';
 
 export type DashboardPeriod = 'harian' | 'bulanan' | 'tahunan';
@@ -149,23 +149,15 @@ export const useDashboardData = (params: DashboardParams) => {
   return useQuery<DashboardResponse>({
     queryKey: ['mobile-dashboard', params],
     queryFn: async () => {
-      const url = getApiUrl(`/api/mobile/v1/dashboard?${queryString}`);
-      const res = await fetch(url, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionToken}`,
-        },
-      });
-
-      if (!res.ok) {
-        const errJson = await res.json().catch(() => ({}));
-        throw new Error(errJson.error || `HTTP error ${res.status}`);
-      }
-
-      return res.json();
+      const data = await fetchWithAuth(`/api/mobile/v1/dashboard?${queryString}`);
+      return data as DashboardResponse;
     },
     enabled: !!sessionToken,
     staleTime: 30000, // 30 seconds fresh
-    refetchInterval: 60000, // Background refresh every 1 minute
+    refetchInterval: (query) => {
+      const errStatus = (query.state.error as any)?.status;
+      if (errStatus === 401 || errStatus === 403) return false;
+      return 60000; // Background refresh every 1 minute
+    },
   });
 };

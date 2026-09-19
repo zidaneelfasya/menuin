@@ -10,9 +10,10 @@ import {
   Modal,
   Animated,
   Easing,
+  ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter, usePathname, useNavigation } from 'expo-router';
+import { useRouter, usePathname } from 'expo-router';
 import { AdaptiveBottomBar } from './adaptive-bottom-bar';
 
 export const MENUIN_BLUE = '#014FFD';
@@ -66,14 +67,12 @@ export function CircularMenuModal({ isOpen, onClose, anchorY }: CircularMenuModa
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const navigation = useNavigation<any>();
   const pathname = usePathname();
 
-  // Responsive device & orientation classification
+  // Responsive device & orientation classification (identically matching AppTopHeader)
   const isLandscape = width > height;
-  const isTablet = Math.min(width, height) >= 600;
+  const isTablet = width >= 768;
   const isPhoneLandscape = !isTablet && isLandscape;
-  const isPhonePortrait = !isTablet && !isLandscape;
   const isTabletLandscape = isTablet && isLandscape;
   const isTabletPortrait = isTablet && !isLandscape;
 
@@ -81,7 +80,21 @@ export function CircularMenuModal({ isOpen, onClose, anchorY }: CircularMenuModa
   const animProgress = useRef(new Animated.Value(0)).current;
   const isClosingRef = useRef(false);
 
-  // Calculate coordinates of the center button anchor
+  // Exact coordinates matching AppTopHeader blue logo
+  const topPadding = Math.max(insets.top, Platform.OS === 'ios' ? 12 : 8);
+  const headerHeight = topPadding + 46;
+  const logoWidth = isTablet ? 110 : 88;
+  const logoHeight = isTablet ? 26 : 22;
+
+  // Bottom bar layout dimensions
+  const bottomBarPaddingBottom =
+    Platform.OS === 'ios'
+      ? Math.max(insets.bottom, isPhoneLandscape ? 4 : 6)
+      : isPhoneLandscape ? 4 : 6;
+  const bottomBarHeight =
+    (isPhoneLandscape ? 46 : isTablet ? 58 : 54) + bottomBarPaddingBottom + 6;
+
+  // Center button anchor for circular reveal animation
   const buttonCenterY =
     anchorY ||
     height - (Platform.OS === 'ios' ? insets.bottom + (isPhoneLandscape ? 20 : 26) : (isPhoneLandscape ? 22 : 30));
@@ -91,32 +104,19 @@ export function CircularMenuModal({ isOpen, onClose, anchorY }: CircularMenuModa
   const maxRadius = Math.ceil(Math.hypot(width, height)) + 140;
   const circleDiameter = maxRadius * 2;
 
-  // Responsive dimensions for the rotated vertical "menuin." logo (aspect ratio: 1921 / 631 ≈ 3.04)
-  const logoVisualHeight = isPhoneLandscape
-    ? Math.min(height * 0.46, 165)
-    : isTabletLandscape
-    ? Math.min(height * 0.58, 420)
-    : isTabletPortrait
-    ? Math.min(height * 0.44, 340)
-    : width < 380
-    ? Math.min(height * 0.36, 210)
-    : Math.min(height * 0.42, 250);
-
-  const logoVisualWidth = Math.round(logoVisualHeight / 3.04);
-
-  // Responsive font sizes & gaps for the 6 menu items
+  // Responsive font sizes & gaps for the centered menu items
   const menuItemFontSize = isPhoneLandscape
-    ? 15
+    ? 16
     : isTabletLandscape
-    ? 28
+    ? 30
     : isTabletPortrait
-    ? 24
+    ? 26
     : width < 380
-    ? 17
-    : 20;
+    ? 18
+    : 22;
 
   const menuItemGap = isPhoneLandscape
-    ? 6
+    ? 8
     : isTabletLandscape
     ? 26
     : isTabletPortrait
@@ -125,32 +125,8 @@ export function CircularMenuModal({ isOpen, onClose, anchorY }: CircularMenuModa
     ? 12
     : 16;
 
-  const menuItemPaddingY = isPhoneLandscape ? 2 : isTablet ? 6 : 4;
-  const letterSpacing = isPhoneLandscape ? 1 : isTablet ? 2 : 1.4;
-
-  const contentPaddingTop = isPhoneLandscape
-    ? Math.max(insets.top, 8) + 4
-    : isTablet
-    ? Math.max(insets.top, 32) + 20
-    : Math.max(insets.top, 20) + 14;
-
-  const contentPaddingBottom = isPhoneLandscape
-    ? insets.bottom + 48
-    : isTablet
-    ? insets.bottom + 80
-    : insets.bottom + 70;
-
-  const contentPaddingLeft = isPhoneLandscape
-    ? Math.max(insets.left, 24) + 40
-    : isTablet
-    ? Math.max(insets.left, 40) + 48
-    : Math.max(insets.left, 16) + 24;
-
-  const contentPaddingRight = isPhoneLandscape
-    ? Math.max(insets.right, 24) + 16
-    : isTablet
-    ? Math.max(insets.right, 40) + 24
-    : Math.max(insets.right, 16) + 12;
+  const menuItemPaddingY = isPhoneLandscape ? 4 : isTablet ? 8 : 6;
+  const letterSpacing = isPhoneLandscape ? 1 : isTablet ? 2 : 1.5;
 
   useEffect(() => {
     if (isOpen) {
@@ -194,14 +170,7 @@ export function CircularMenuModal({ isOpen, onClose, anchorY }: CircularMenuModa
     try {
       router.navigate(path as any);
     } catch {
-      try {
-        router.push(path as any);
-      } catch {
-        const routeName = path.split('/').pop();
-        if (routeName) {
-          navigation?.navigate?.(routeName);
-        }
-      }
+      router.push(path as any);
     }
   };
 
@@ -249,37 +218,50 @@ export function CircularMenuModal({ isOpen, onClose, anchorY }: CircularMenuModa
           ]}
         />
 
-        {/* Menu Layout: Left list of features, Right vertical white logo */}
+        {/* 1. TOP LOGO: EXACT SAME PIXEL POSITION AS APPTOPHEADER BLUE LOGO */}
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.topLogoContainer,
+            {
+              height: headerHeight,
+              paddingTop: topPadding,
+              paddingBottom: 8,
+              opacity: contentOpacity,
+            },
+          ]}
+        >
+          <Image
+            source={require('@/assets/images/menuin-putih.png')}
+            style={{
+              width: logoWidth,
+              height: logoHeight,
+            }}
+            resizeMode="contain"
+          />
+        </Animated.View>
+
+        {/* 2. CENTER CONTENT: SCROLLABLE VERTICALLY & HORIZONTALLY CENTERED MENU ITEMS */}
         <Animated.View
           style={[
             StyleSheet.absoluteFill,
             {
-              paddingTop: contentPaddingTop,
-              paddingBottom: contentPaddingBottom,
-              paddingLeft: contentPaddingLeft,
-              paddingRight: contentPaddingRight,
+              top: headerHeight,
+              bottom: bottomBarHeight + (isPhoneLandscape ? 8 : 16),
               opacity: contentOpacity,
             },
           ]}
-          className="flex-row items-center justify-between"
         >
-          {/* ============================================================ */}
-          {/* SISI KIRI: DAFTAR MENU (TULISAN HURUF BESAR PUTIH TEBAL)    */}
-          {/* ============================================================ */}
-          <View
-            pointerEvents="box-none"
-            style={{
-              flex: isPhonePortrait ? 1.3 : 1,
-              justifyContent: 'center',
-              zIndex: 30,
-              elevation: 30,
-            }}
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContentContainer}
           >
-            <View pointerEvents="box-none" style={{ gap: menuItemGap }}>
+            <View style={{ gap: menuItemGap, alignItems: 'center', width: '100%' }}>
               {MENU_ITEMS.map((item) => {
                 const isActive =
                   item.id === 'pos'
-                    ? pathname.includes('/pos') && !pathname.includes('/history')
+                    ? (pathname.includes('/pos') || pathname.includes('/orders') || pathname.includes('/custom')) &&
+                      !pathname.includes('/history')
                     : pathname.includes(item.id);
 
                 return (
@@ -287,14 +269,13 @@ export function CircularMenuModal({ isOpen, onClose, anchorY }: CircularMenuModa
                     key={item.id}
                     activeOpacity={0.65}
                     onPress={() => handleNavigate(item.path)}
-                    hitSlop={{ left: 24, right: 36 }}
+                    hitSlop={{ top: 8, bottom: 8, left: 32, right: 32 }}
                     style={{
-                      paddingVertical: isPhoneLandscape ? 6 : isTablet ? 12 : 9,
-                      width: '100%',
+                      paddingVertical: menuItemPaddingY,
+                      paddingHorizontal: 20,
                       flexDirection: 'row',
                       alignItems: 'center',
-                      zIndex: 35,
-                      elevation: 35,
+                      justifyContent: 'center',
                     }}
                   >
                     <Text
@@ -305,12 +286,12 @@ export function CircularMenuModal({ isOpen, onClose, anchorY }: CircularMenuModa
                         fontWeight: '900',
                         color: '#ffffff',
                         includeFontPadding: false,
-                        textAlignVertical: 'center',
+                        textAlign: 'center',
                       }}
                       className={
                         isActive
                           ? 'opacity-100 font-black'
-                          : 'opacity-85 font-black active:opacity-100'
+                          : 'opacity-80 font-black active:opacity-100'
                       }
                     >
                       {item.label}
@@ -332,44 +313,10 @@ export function CircularMenuModal({ isOpen, onClose, anchorY }: CircularMenuModa
                 );
               })}
             </View>
-          </View>
-
-          {/* ============================================================ */}
-          {/* SISI KANAN: LOGO MENUIN PUTIH VERTIKAL (ROTATED 90 DERAJAT)  */}
-          {/* ============================================================ */}
-          <View
-            pointerEvents="none"
-            style={{
-              flex: isPhonePortrait ? 0.7 : 1,
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 1,
-              elevation: 1,
-            }}
-          >
-            <View
-              pointerEvents="none"
-              style={{
-                width: logoVisualWidth,
-                height: logoVisualHeight,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Image
-                source={require('@/assets/images/menuin-putih.png')}
-                style={{
-                  width: logoVisualHeight,
-                  height: logoVisualWidth,
-                  transform: [{ rotate: '90deg' }],
-                }}
-                resizeMode="contain"
-              />
-            </View>
-          </View>
+          </ScrollView>
         </Animated.View>
 
-        {/* Persistent Bottom Bar at the bottom of the modal */}
+        {/* 3. Persistent Bottom Bar at the bottom of the modal */}
         <View style={styles.bottomBarWrapper}>
           <AdaptiveBottomBar
             isMenuOpen={true}
@@ -385,6 +332,22 @@ const styles = StyleSheet.create({
   circleContainer: {
     position: 'absolute',
     backgroundColor: MENUIN_BLUE,
+  },
+  topLogoContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 50,
+  },
+  scrollContentContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
   },
   bottomBarWrapper: {
     position: 'absolute',

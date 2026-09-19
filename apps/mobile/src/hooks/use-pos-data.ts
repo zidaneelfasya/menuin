@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getApiUrl } from '@/lib/api-client';
+import { fetchWithAuth } from '@/lib/api-client';
 import { useAuthStore } from '@/store/auth-store';
 
 export interface Category {
@@ -57,18 +57,8 @@ export const usePosData = () => {
   return useQuery({
     queryKey: ['posData'],
     queryFn: async (): Promise<PosDataResponse> => {
-      const response = await fetch(getApiUrl('/api/mobile/v1/pos'), {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionToken}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch POS data');
-      }
-
-      return response.json();
+      const data = await fetchWithAuth('/api/mobile/v1/pos');
+      return data as PosDataResponse;
     },
     enabled: !!sessionToken,
     staleTime: 1000 * 60 * 5, // 5 minutes

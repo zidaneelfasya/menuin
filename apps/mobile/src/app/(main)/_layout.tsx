@@ -5,7 +5,6 @@ import { Redirect, Stack } from 'expo-router';
 import { useAuthStore } from '@/store/auth-store';
 import { useAuthMe } from '@/hooks/use-auth-me';
 import { AlertCircle, LogOut, Smartphone } from 'lucide-react-native';
-import { GlobalIncomingOrderToast } from '@/components/realtime/incoming-order-toast';
 import { LoadingScreen } from '@/components/ui/loading-screen';
 
 export default function MainLayout() {
@@ -24,7 +23,15 @@ export default function MainLayout() {
     setIsHydrated(true);
   }, []);
 
-  if (!isHydrated || isAuthMeLoading) {
+  // Proactively handle 401 Unauthorized (Expired Session)
+  useEffect(() => {
+    if ((authMeError as any)?.status === 401) {
+      console.warn('[MainLayout] Session expired (401). Auto logging out to PIN screen...');
+      logoutUser();
+    }
+  }, [authMeError, logoutUser]);
+
+  if (!isHydrated) {
     return <LoadingScreen message="Menyiapkan data kasir..." />;
   }
 
@@ -32,8 +39,12 @@ export default function MainLayout() {
     return <Redirect href="/(auth)/pairing" />;
   }
 
-  if (!user) {
+  if (!user || (authMeError as any)?.status === 401) {
     return <Redirect href="/(auth)/pin" />;
+  }
+
+  if (isAuthMeLoading && !authMeError) {
+    return <LoadingScreen message="Menyiapkan data kasir..." />;
   }
 
   // 1. Check if Device has been Revoked / Deleted from Website
@@ -117,12 +128,9 @@ export default function MainLayout() {
   // 3. Role-based Redirection
   if (user.role === 'CASHIER' || user.role === 'STAFF') {
     return (
-      <View style={{ flex: 1 }}>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(cashier)" />
-        </Stack>
-        <GlobalIncomingOrderToast />
-      </View>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(cashier)" />
+      </Stack>
     );
   } else if (user.role === 'OWNER' || user.role === 'MANAGER') {
     return (
