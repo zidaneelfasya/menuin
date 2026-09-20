@@ -17,7 +17,10 @@ import {
   Tv,
 } from "lucide-react";
 import EcosystemGallery from "@/components/landing/ecosystem-gallery";
-import { HeroIntro, ScrollReveal } from "@/components/landing/scroll-reveal";
+import KeyFacts from "@/components/landing/key-facts";
+import ComparisonSwitch from "@/components/landing/comparison-switch";
+import SpecBento from "@/components/landing/spec-bento";
+import { HeroIntro } from "@/components/landing/scroll-reveal";
 import FaqEditorial from "@/components/ui/faq-editorial";
 import FooterReadyToBegin from "@/components/ui/footer-ready-to-begin";
 import FooterSuperfluidStyle from "@/components/ui/footer-superfluid-style";
@@ -73,42 +76,6 @@ function FadeIn({
 // TODO(sales): ganti dengan nomor WhatsApp tim yang sebenarnya sebelum rilis.
 const CONTACT_WHATSAPP =
   "https://wa.me/628123456789?text=Halo%20Menuin%2C%20saya%20ingin%20berdiskusi%20soal%20paket%20Enterprise";
-
-// Setiap angka di sini harus bisa dijelaskan asalnya (lihat catatan kaki).
-const keyNumbers = [
-  { value: "< 200", unit: "ms", label: "Pesanan meja sampai ke layar dapur", note: 1 },
-  { value: "Rp 0", unit: "", label: "Target selisih kas saat tutup shift", note: 2 },
-  { value: "58/80", unit: "mm", label: "Printer termal Bluetooth & LAN", note: null },
-  { value: "0", unit: "", label: "Aplikasi yang perlu diunduh tamu", note: null },
-];
-
-const keyNumberNotes = [
-  "Waktu tempuh event Supabase Realtime dari kasir ke layar dapur pada jaringan stabil. Bukan jaminan SLA.",
-  "Target operasional: sistem mencocokkan hitungan uang fisik dengan catatan kasir. Selisih tetap mungkin terjadi dan akan tercatat rinci.",
-];
-
-const comparisonRows = [
-  {
-    old: "Tamu melambaikan tangan menunggu pelayan datang membawa buku menu.",
-    now: "Tamu scan QR di meja, membuka menu, dan memesan saat itu juga.",
-  },
-  {
-    old: "Antrean pembayaran menumpuk saat jam makan siang.",
-    now: "Pesanan dan pembayaran terbagi otomatis. Kasir fokus pada takeaway.",
-  },
-  {
-    old: 'Pesanan salah masak karena catatan tangan "sambal dipisah" terlewat.',
-    now: "Catatan kustom tamu tampil persis di layar dapur dan struk.",
-  },
-  {
-    old: "Uang laci tekor saat pergantian shift, sumbernya tidak ketahuan.",
-    now: "Modal awal, kas keluar, dan hitungan fisik direkonsiliasi sistem.",
-  },
-  {
-    old: "Owner tidak berani meninggalkan outlet saat jam ramai.",
-    now: "Omzet tiap cabang bisa dipantau dari ponsel secara langsung.",
-  },
-];
 
 const pillars = [
   {
@@ -175,37 +142,6 @@ const pillars = [
     ],
     icon: Building2,
     visual: { kind: "image", src: "/img/landing/dashboard-macbook.webp", alt: "Kasir Menuin berjalan di browser laptop", w: 1800, h: 1145, narrow: false },
-  },
-];
-
-const specs = [
-  {
-    value: "Realtime",
-    title: "Sinkronisasi tanpa refresh",
-    body: "Perubahan status pesanan dikirim lewat Supabase Realtime di atas PostgreSQL. Layar dapur, kasir, dan ponsel tamu melihat status yang sama tanpa perlu memuat ulang halaman.",
-    icon: RefreshCw,
-    wide: true,
-  },
-  {
-    value: "Tanpa hardware khusus",
-    title: "Jalan di perangkat yang sudah Anda punya",
-    body: "iPad, tablet Android, laptop, atau ponsel kasir. Cukup browser modern.",
-    icon: Laptop,
-    wide: false,
-  },
-  {
-    value: "PCI-DSS via Midtrans",
-    title: "Kredensial pembayaran tidak disimpan di sistem kami",
-    body: "Transaksi diproses Midtrans sebagai penyelenggara berizin, token diisolasi per tenant.",
-    icon: CreditCard,
-    wide: false,
-  },
-  {
-    value: "Isolasi per tenant",
-    title: "Data tiap outlet terpisah di level basis data",
-    body: "Setiap cabang punya tenant ID sendiri, dipakai di seluruh query dan kebijakan akses.",
-    icon: Layers,
-    wide: true,
   },
 ];
 
@@ -893,45 +829,7 @@ export default function LandingPage({
       </section>
 
       {/* ANGKA KUNCI */}
-      <section className="px-6 py-16 md:py-20" aria-label="Angka kunci">
-        <div className="mx-auto max-w-[1280px]">
-          {/* Garis pemisah tipis menahan angka-angka ini supaya tidak
-              mengambang di tengah ruang putih. */}
-          <ScrollReveal className="grid grid-cols-2 border-t border-black/[0.08] md:grid-cols-4" stagger={0.1}>
-            {keyNumbers.map((n, i) => (
-              <FadeIn
-                key={n.label}
-                delay={i * 0.05}
-                className={`border-b border-black/[0.08] px-0 py-7 md:border-b-0 md:py-8 ${
-                  i > 0 ? "md:border-l md:border-black/[0.08] md:pl-7" : ""
-                } ${i % 2 === 1 ? "border-l border-black/[0.08] pl-6 md:pl-7" : ""}`}
-              >
-                <div className="font-display text-[clamp(32px,4vw,46px)] font-semibold leading-none tracking-[-0.04em] tabular-nums text-[#0a0a0a]">
-                  {n.value}
-                  {n.unit && (
-                    <span className="ml-1 text-[0.45em] font-medium tracking-normal text-[#71717a]">
-                      {n.unit}
-                    </span>
-                  )}
-                </div>
-                <p className="mt-3 max-w-[20ch] text-[13.5px] leading-snug text-[#52525b]">
-                  {n.label}
-                  {n.note && <sup className="ml-0.5 text-[#a1a1aa]">{n.note}</sup>}
-                </p>
-              </FadeIn>
-            ))}
-          </ScrollReveal>
-
-          <ol className="mt-8 space-y-1.5 border-t border-black/[0.08] pt-5 text-[12px] leading-relaxed text-[#71717a]">
-            {keyNumberNotes.map((note, i) => (
-              <li key={i}>
-                <sup className="mr-1">{i + 1}</sup>
-                {note}
-              </li>
-            ))}
-          </ol>
-        </div>
-      </section>
+      <KeyFacts />
 
       {/* MITRA PEMBAYARAN */}
       <section className="border-y border-black/[0.06] bg-[#fafafa] px-6 py-8" aria-label="Mitra pembayaran">
@@ -957,37 +855,7 @@ export default function LandingPage({
       {/* EKOSISTEM — galeri horizontal ber-pin (GSAP) */}
       <EcosystemGallery />
 
-      {/* CARA LAMA vs MENUIN */}
-      <section className="border-t border-black/[0.06] bg-[#fafafa] px-6 py-24 md:py-32">
-        <div className="mx-auto max-w-[1280px]">
-          <FadeIn>
-            <h2 className="max-w-[20ch] font-display text-[clamp(28px,3.8vw,44px)] font-semibold leading-[1.1] tracking-[-0.035em] text-[#0a0a0a] text-balance">
-              Lima hal yang berubah sejak hari pertama.
-            </h2>
-          </FadeIn>
-
-          <ScrollReveal className="mt-12 border-t border-black/[0.08]" stagger={0.06} y={18}>
-            {comparisonRows.map((row, i) => (
-              <div
-                key={i}
-                className="grid grid-cols-1 gap-2 border-b border-black/[0.08] py-6 md:grid-cols-12 md:gap-8"
-              >
-                <div className="md:col-span-1">
-                  <span className="font-display text-[13px] tabular-nums text-[#a1a1aa]">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                </div>
-                <p className="text-[15px] leading-relaxed text-[#a1a1aa] line-through decoration-[#d4d4d8] md:col-span-5">
-                  {row.old}
-                </p>
-                <p className="text-[15px] leading-relaxed text-[#0a0a0a] md:col-span-6">
-                  {row.now}
-                </p>
-              </div>
-            ))}
-          </ScrollReveal>
-        </div>
-      </section>
+      <ComparisonSwitch />
 
       {/* PILAR PRODUK */}
       <section className="px-6 py-24 md:py-32" id="pilar">
@@ -1053,39 +921,7 @@ export default function LandingPage({
         </div>
       </section>
 
-      {/* SPESIFIKASI TEKNIS */}
-      <section className="border-t border-black/[0.06] bg-[#fafafa] px-6 py-24 md:py-32">
-        <div className="mx-auto max-w-[1280px]">
-          <FadeIn>
-            <h2 className="max-w-[20ch] font-display text-[clamp(28px,3.8vw,44px)] font-semibold leading-[1.1] tracking-[-0.035em] text-[#0a0a0a] text-balance">
-              Di balik layarnya.
-            </h2>
-          </FadeIn>
-
-          <ScrollReveal className="mt-12 grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-black/[0.08] bg-black/[0.08] md:grid-cols-6" stagger={0.09} y={18}>
-            {specs.map((spec, i) => {
-              const Icon = spec.icon;
-              return (
-                <div
-                  key={spec.title}
-                  className={`bg-white p-7 md:p-9 ${spec.wide ? "md:col-span-4" : "md:col-span-2"}`}
-                >
-                  <Icon className="h-5 w-5 text-[#0E59F9]" strokeWidth={1.5} />
-                  <p className="mt-6 font-display text-[clamp(20px,2.2vw,26px)] font-semibold leading-tight tracking-[-0.03em] text-[#0a0a0a]">
-                    {spec.value}
-                  </p>
-                  <h3 className="mt-2 text-[14px] font-medium text-[#0a0a0a]">{spec.title}</h3>
-                  <p className="mt-2 max-w-[46ch] text-[13.5px] leading-relaxed text-[#71717a]">
-                    {spec.body}
-                  </p>
-                  <span className="sr-only">{i + 1}</span>
-                </div>
-              );
-            })}
-          </ScrollReveal>
-        </div>
-      </section>
-
+      <SpecBento />
 
       {/* WRAPPER FOR TESTIMONIAL & PRICING */}
       <div className="relative overflow-hidden bg-[#FAFAFA]">

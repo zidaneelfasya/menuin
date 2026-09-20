@@ -17,10 +17,10 @@ import { CreditCard, Printer } from "lucide-react";
  */
 
 const panels = [
-  { id: "meja", index: "01", label: "Ponsel tamu", caption: "Tamu memesan dan membayar dari mejanya." },
-  { id: "kasir", index: "02", label: "Layar kasir", caption: "Tiket meja masuk ke antrean kasir." },
-  { id: "dapur", index: "03", label: "Layar dapur", caption: "Barista melihat pesanan yang sama." },
-  { id: "owner", index: "04", label: "Dashboard pemilik", caption: "Transaksi langsung masuk ke omzet." },
+  { id: "meja", index: "01", label: "Ponsel tamu", at: "12.04.00", caption: "Tamu memesan dan membayar dari mejanya." },
+  { id: "kasir", index: "02", label: "Layar kasir", at: "12.04.00", caption: "Tiket meja masuk ke antrean kasir pada detik yang sama." },
+  { id: "dapur", index: "03", label: "Layar dapur", at: "12.04.01", caption: "Barista membaca pesanan berikut catatannya." },
+  { id: "owner", index: "04", label: "Dashboard pemilik", at: "12.06.15", caption: "Transaksi selesai dan masuk ke omzet hari ini." },
 ];
 
 function ScreenFrame({
@@ -304,20 +304,33 @@ export default function EcosystemGallery() {
           {panels.map((p) => (
             <article
               key={p.id}
-              className="w-[80vw] max-w-[340px] shrink-0 snap-start md:w-[420px] md:max-w-none lg:w-[480px]"
+              data-panel
+              className="w-[82vw] max-w-[360px] shrink-0 snap-start transition-opacity duration-300 md:w-[460px] md:max-w-none lg:w-[520px]"
             >
-              <div className="flex items-baseline gap-3">
-                <span className="font-display text-[13px] tabular-nums text-[#a1a1aa]">
-                  {p.index}
+              <div className="flex items-baseline justify-between gap-3">
+                <div className="flex items-baseline gap-3">
+                  <span className="font-display text-[13px] tabular-nums text-[#a1a1aa]">
+                    {p.index}
+                  </span>
+                  <h3 className="text-[16px] font-semibold tracking-[-0.01em] text-[#0a0a0a]">
+                    {p.label}
+                  </h3>
+                </div>
+                {/* Cap waktu membuat keempat panel terbaca sebagai satu alur
+                    pesanan, bukan empat kartu fitur yang berdiri sendiri. */}
+                <span className="font-display text-[12.5px] tabular-nums text-[#a1a1aa]">
+                  {p.at}
                 </span>
-                <h3 className="text-[16px] font-semibold tracking-[-0.01em] text-[#0a0a0a]">
-                  {p.label}
-                </h3>
               </div>
-              <p className="mt-1.5 min-h-[40px] max-w-[36ch] text-[13.5px] leading-snug text-[#52525b]">
+
+              <div className="mt-3 h-px w-full bg-black/[0.08]">
+                <div className="h-px w-10 bg-[#0E59F9]" />
+              </div>
+
+              <p className="mt-3 min-h-[40px] max-w-[36ch] text-[13.5px] leading-snug text-[#52525b]">
                 {p.caption}
               </p>
-              <div className="mt-4 h-[380px]">{panelBody[p.id]}</div>
+              <div className="mt-5 h-[420px]">{panelBody[p.id]}</div>
             </article>
           ))}
         </div>
