@@ -75,6 +75,47 @@
   }
 }
 
+/* ---------------------------------------------------------------
+   Landing page tokens.
+   Namespace terpisah dari token produk supaya perubahan di sini
+   tidak pernah merembet ke dashboard / kasir.
+   --------------------------------------------------------------- */
+@layer base {
+  :root {
+    --landing-ink: #0a0a0a;
+    --landing-ink-soft: #52525b;
+    --landing-ink-muted: #71717a;
+    --landing-surface: #ffffff;
+    --landing-surface-alt: #fafafa;
+    --landing-hairline: rgba(0, 0, 0, 0.08);
+    --landing-accent: #0e59f9;
+    --landing-accent-ink: #0c4cd6;
+    /* Dua level shadow. Tidak ada level ketiga. */
+    --landing-lift: 0 1px 2px rgba(15, 23, 42, 0.04);
+    --landing-lift-lg: 0 18px 40px -24px rgba(15, 23, 42, 0.28);
+  }
+}
+
+.landing-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 700ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.landing-reveal[data-visible="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
 @keyframes laserScan {
   0% {
     top: 5%;

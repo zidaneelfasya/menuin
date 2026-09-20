@@ -4,38 +4,22 @@ import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
-  Check,
-  ChevronDown,
   ArrowRight,
-  PlayCircle,
   QrCode,
   CreditCard,
   Monitor,
-  TrendingUp,
   Printer,
-  ScanBarcode,
   Clock,
   Store,
-  Receipt,
   ShieldCheck,
-  Sparkles,
   RefreshCw,
   Layers,
-  DollarSign,
-  CheckCircle2,
   Building2,
-  ShoppingBag,
   Smartphone,
   Laptop,
   Tv,
-  BadgeCheck,
-  AlertCircle,
-  Volume2,
-  BarChart3,
-  Users,
-  Search
+  Search,
 } from "lucide-react";
-import PricingTableDark from "@/components/ui/pricing-table-dark";
 import FaqEditorial from "@/components/ui/faq-editorial";
 import FooterReadyToBegin from "@/components/ui/footer-ready-to-begin";
 import FooterSuperfluidStyle from "@/components/ui/footer-superfluid-style";
@@ -88,116 +72,314 @@ function FadeIn({
   );
 }
 
-const faqs = [
-  { q: "What is MENUIN?", a: "MENUIN is an all-in-one cloud SaaS platform for F&B businesses — managing digital table ordering, QR payments, POS cashier registers, shift reconciliation, and business analytics in a unified system." },
-  { q: "Do customers need to download an app?", a: "No. Guests simply scan the QR code at their table using their phone camera to browse the menu and order directly via their mobile browser." },
-  { q: "Does MENUIN include a POS Cashier Register?", a: "Yes. It comes with a full-featured POS register to manage dine-in, take-away, and online orders with real-time receipt printing and reporting." },
-  { q: "Is it suitable for small businesses and multi-outlets?", a: "Yes. MENUIN scales effortlessly from single specialty cafes and bakeries to multi-branch restaurant chains." },
-  { q: "Can multiple team members and cashiers use it?", a: "Yes. You can invite multiple users with granular role-based permissions (Cashier, Store Manager, Superadmin)." },
+// TODO(sales): ganti dengan nomor WhatsApp tim yang sebenarnya sebelum rilis.
+const CONTACT_WHATSAPP =
+  "https://wa.me/628123456789?text=Halo%20Menuin%2C%20saya%20ingin%20berdiskusi%20soal%20paket%20Enterprise";
+
+// Peta isi halaman — mengikuti pola "Get the highlights" Apple.
+const highlights = [
+  { label: "QR Meja", href: "#ekosistem" },
+  { label: "Kasir POS", href: "#ekosistem" },
+  { label: "Layar Dapur", href: "#pilar" },
+  { label: "Audit Kas", href: "#pilar" },
+  { label: "Multi-Outlet", href: "#pilar" },
 ];
 
-const features = [
+// Setiap angka di sini harus bisa dijelaskan asalnya (lihat catatan kaki).
+const keyNumbers = [
+  { value: "< 200", unit: "ms", label: "Pesanan meja sampai ke layar dapur", note: 1 },
+  { value: "Rp 0", unit: "", label: "Target selisih kas saat tutup shift", note: 2 },
+  { value: "58/80", unit: "mm", label: "Printer termal Bluetooth & LAN", note: null },
+  { value: "0", unit: "", label: "Aplikasi yang perlu diunduh tamu", note: null },
+];
+
+const keyNumberNotes = [
+  "Waktu tempuh event Supabase Realtime dari kasir ke layar dapur pada jaringan stabil. Bukan jaminan SLA.",
+  "Target operasional: sistem mencocokkan hitungan uang fisik dengan catatan kasir. Selisih tetap mungkin terjadi dan akan tercatat rinci.",
+];
+
+const comparisonRows = [
   {
-    title: "Elegant Digital QR Menu",
-    desc: "Every table has a dedicated QR code. Guests browse your interactive menu from their seats without app installation.",
+    old: "Tamu melambaikan tangan menunggu pelayan datang membawa buku menu.",
+    now: "Tamu scan QR di meja, membuka menu, dan memesan saat itu juga.",
+  },
+  {
+    old: "Antrean pembayaran menumpuk saat jam makan siang.",
+    now: "Pesanan dan pembayaran terbagi otomatis. Kasir fokus pada takeaway.",
+  },
+  {
+    old: 'Pesanan salah masak karena catatan tangan "sambal dipisah" terlewat.',
+    now: "Catatan kustom tamu tampil persis di layar dapur dan struk.",
+  },
+  {
+    old: "Uang laci tekor saat pergantian shift, sumbernya tidak ketahuan.",
+    now: "Modal awal, kas keluar, dan hitungan fisik direkonsiliasi sistem.",
+  },
+  {
+    old: "Owner tidak berani meninggalkan outlet saat jam ramai.",
+    now: "Omzet tiap cabang bisa dipantau dari ponsel secara langsung.",
+  },
+];
+
+const pillars = [
+  {
+    index: "01",
+    eyebrow: "QR Self-Order",
+    title: "Scan. Pilih rasa. Bayar dari meja.",
+    body: "Tamu membuka katalog di browser bawaan ponsel — tanpa unduh aplikasi, tanpa daftar akun. Pilih varian susu, tingkat gula, catatan khusus, lalu bayar lewat QRIS dinamis yang terverifikasi otomatis.",
+    specs: [
+      { k: "Tanpa instalasi", v: "Terbuka di Safari & Chrome mobile" },
+      { k: "Modifier", v: "Varian, topping, catatan per item" },
+      { k: "Pembayaran", v: "QRIS dinamis via Midtrans, atau bayar di kasir" },
+    ],
     icon: QrCode,
   },
   {
-    title: "Self-Checkout & Instant Payments",
-    desc: "Customers select items, customize notes, and pay instantly via QRIS or integrated payment gateways.",
-    icon: CreditCard,
-  },
-  {
-    title: "High-Speed POS Cashier",
-    desc: "Manage direct counter and take-away orders with fast receipt printing and instant kitchen sync.",
+    index: "02",
+    eyebrow: "Kasir Cloud POS",
+    title: "Cepat di kasir. Tenang di pembukuan.",
+    body: "Dirancang untuk antrean jam sibuk: cari produk, pilih, selesai. PB1, service charge, dan potongan komisi aplikasi online food dihitung otomatis supaya laba bersih tidak meleset.",
+    specs: [
+      { k: "Printer", v: "Bluetooth & LAN, kertas 58 mm dan 80 mm" },
+      { k: "Perhitungan", v: "PB1 10%, service charge, komisi ojol" },
+      { k: "Pembayaran", v: "Tunai, debit, kartu, QRIS, transfer" },
+    ],
     icon: Monitor,
   },
   {
-    title: "In-Depth Analytics & Shift Audit",
-    desc: "Track live revenue, top-selling items, cash drawer reconciliation, and team performance across all branches.",
-    icon: TrendingUp,
+    index: "03",
+    eyebrow: "Kitchen Display",
+    title: "Dapur lebih cepat. Tiket tanpa kertas.",
+    body: "Tiket dari meja dan dari kasir muncul di layar dapur seketika, dengan penanda lama tunggu dan status yang bergerak dari Diterima sampai Selesai. Tidak ada lagi nota basah atau pesanan terlewat.",
+    specs: [
+      { k: "Prioritas", v: "Kode warna otomatis berdasarkan lama tunggu" },
+      { k: "Stasiun", v: "Filter terpisah untuk bar dan dapur utama" },
+      { k: "Notifikasi", v: "Peringatan audio saat tiket baru masuk" },
+    ],
+    icon: Tv,
+  },
+  {
+    index: "04",
+    eyebrow: "Audit Kas Shift",
+    title: "Tutup shift jam berapa pun, kas tetap terlacak.",
+    body: "Kasir wajib mencatat modal awal sebelum register bisa dipakai, setiap kas keluar tercatat, dan saat tutup shift uang fisik dihitung dulu sebelum sistem menampilkan totalnya.",
+    specs: [
+      { k: "Starting float", v: "Wajib diisi sebelum transaksi pertama" },
+      { k: "Blind cash count", v: "Kasir menghitung tanpa melihat total sistem" },
+      { k: "Void", v: "Pembatalan struk butuh PIN manajer" },
+    ],
+    icon: ShieldCheck,
+  },
+  {
+    index: "05",
+    eyebrow: "Multi-Outlet",
+    title: "Satu cabang atau dua puluh, satu tempat kendali.",
+    body: "Laporan penjualan terkonsolidasi, menu terpusat, dan hak akses yang dipisah per peran. Data tiap cabang terisolasi lewat tenant ID sendiri di PostgreSQL.",
+    specs: [
+      { k: "Laporan", v: "Laba kotor, HPP/COGS, menu terlaris" },
+      { k: "Akses", v: "Superadmin, manajer outlet, kasir" },
+      { k: "Ekspor", v: "Excel dan PDF, sekali klik" },
+    ],
+    icon: Building2,
   },
 ];
 
-const logos = [
-  { name: "Midtrans", src: "/img/brand_logo/midtrans.svg" },
-  { name: "QRIS", src: "https://upload.wikimedia.org/wikipedia/commons/e/e1/QRIS_logo.svg" },
-  { name: "BCA", src: "https://upload.wikimedia.org/wikipedia/commons/5/5c/Bank_Central_Asia.svg" },
-  { name: "Mandiri", src: "/img/brand_logo/mandiri.svg" },
-  { name: "BNI", src: "/img/brand_logo/bni.svg" },
-  { name: "Komdigi", src: "/img/brand_logo/komdigi.svg" },
-  { name: "Kemenparekraf", src: "/img/brand_logo/kemenparkraf.svg" },
-  { name: "Pesona Indonesia", src: "/img/brand_logo/pesona_indo.svg" }
+const specs = [
+  {
+    value: "Realtime",
+    title: "Sinkronisasi tanpa refresh",
+    body: "Perubahan status pesanan dikirim lewat Supabase Realtime di atas PostgreSQL. Layar dapur, kasir, dan ponsel tamu melihat status yang sama tanpa perlu memuat ulang halaman.",
+    icon: RefreshCw,
+    wide: true,
+  },
+  {
+    value: "Tanpa hardware khusus",
+    title: "Jalan di perangkat yang sudah Anda punya",
+    body: "iPad, tablet Android, laptop, atau ponsel kasir. Cukup browser modern.",
+    icon: Laptop,
+    wide: false,
+  },
+  {
+    value: "PCI-DSS via Midtrans",
+    title: "Kredensial pembayaran tidak disimpan di sistem kami",
+    body: "Transaksi diproses Midtrans sebagai penyelenggara berizin, token diisolasi per tenant.",
+    icon: CreditCard,
+    wide: false,
+  },
+  {
+    value: "Isolasi per tenant",
+    title: "Data tiap outlet terpisah di level basis data",
+    body: "Setiap cabang punya tenant ID sendiri, dipakai di seluruh query dan kebijakan akses.",
+    icon: Layers,
+    wide: true,
+  },
 ];
 
-function HeroImageStack() {
-  const images = ["/img/hero/img1.png", "/img/hero/img2.png", "/img/hero/img3.png"];
+// Hanya mitra pembayaran & teknologi yang benar-benar terintegrasi.
+// Logo lembaga pemerintah sengaja tidak ditampilkan di sini — lihat
+// docs/landing-revamp/IMPLEMENTATION-PLAN.md §8 R1.
+const logos = [
+  { name: "Midtrans" },
+  { name: "QRIS" },
+  { name: "BCA · Mandiri · BRI · BNI" },
+  { name: "GoPay · OVO · DANA · ShopeePay" },
+];
 
-  const [indexes, setIndexes] = useState({
-    front: 0,
-    middle: 1,
-    back: 2,
-    collapsing: -1,
-  });
-
-  useEffect(() => {
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
-    const timer = setInterval(() => {
-      setIndexes(prev => ({
-        ...prev,
-        collapsing: prev.front,
-      }));
-
-      timeoutId = setTimeout(() => {
-        setIndexes(prev => ({
-          front: prev.middle,
-          middle: prev.back,
-          back: prev.collapsing,
-          collapsing: -1,
-        }));
-      }, 1200);
-    }, 5000);
-
-    return () => {
-      clearInterval(timer);
-      if (timeoutId) clearTimeout(timeoutId);
-    };
-  }, []);
+/**
+ * Thumbnail produk tanpa foto stok.
+ * Kasir sungguhan sering belum punya foto untuk semua menu, dan memasang foto
+ * Unsplash di landing page membuat produk terlihat bukan milik sendiri.
+ */
+function ProductThumb({ name, className = "" }: { name: string; className?: string }) {
+  const initials = name
+    .split(" ")
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
 
   return (
-    <div className="relative w-full max-w-[1000px] mx-auto aspect-[16/10] md:aspect-[16/9] mt-20 perspective-[1200px]">
-      {images.map((src, i) => {
-        let style: React.CSSProperties = {
-          transitionTimingFunction: "cubic-bezier(0.2, 0.8, 0.2, 1)",
-        };
-        const className = "absolute top-0 left-0 w-full h-full rounded-2xl md:rounded-3xl shadow-2xl transition-all duration-[1200ms] border border-[#E5E5E5] bg-white overflow-hidden";
+    <div
+      aria-hidden="true"
+      className={`flex items-center justify-center bg-slate-100 text-slate-500 font-semibold tracking-tight ${className}`}
+    >
+      {initials}
+    </div>
+  );
+}
 
-        if (i === indexes.front) {
-          style = { ...style, transform: "translate3d(0, 0, 0) scale(1)", opacity: 1, zIndex: 30 };
-        } else if (i === indexes.middle) {
-          style = { ...style, transform: "translate3d(0, -6%, -50px) scale(0.94)", opacity: 0.6, zIndex: 20 };
-        } else if (i === indexes.back) {
-          style = { ...style, transform: "translate3d(0, -12%, -100px) scale(0.88)", opacity: 0.3, zIndex: 10 };
-        } else if (i === indexes.collapsing) {
-          style = { ...style, transform: "translate3d(0, 20%, 150px) scale(1.02) rotateX(-8deg)", opacity: 0, zIndex: 40 };
-        } else {
-          style = { ...style, transform: "translate3d(0, -15%, -150px) scale(0.85)", opacity: 0, zIndex: 0 };
-        }
+/**
+ * Visual hero dibangun dari markup, bukan screenshot.
+ * Screenshot produk yang ada (public/img/hero/*.png) masih memperlihatkan
+ * tenant kosong ("Tidak ada data" / "Rp 0"), jadi tidak dipakai di sini.
+ */
+function HeroPreview() {
+  const tickets = [
+    {
+      table: "Meja 12",
+      status: "Disiapkan",
+      wait: "02:14",
+      tone: "accent",
+      items: [
+        { qty: 2, name: "Es Kopi Gula Aren", note: "Less ice, less sugar" },
+        { qty: 1, name: "Signature Mocca Cake", note: "Potong 8" },
+        { qty: 1, name: "Butter Croissant", note: "" },
+      ],
+    },
+    {
+      table: "Meja 04",
+      status: "Diterima",
+      wait: "00:38",
+      tone: "neutral",
+      items: [
+        { qty: 1, name: "Kopi Susu Panas", note: "Tanpa gula" },
+        { qty: 2, name: "Kastengel Keju", note: "" },
+      ],
+    },
+    {
+      table: "Takeaway 118",
+      status: "Siap",
+      wait: "05:02",
+      tone: "done",
+      items: [
+        { qty: 1, name: "Chiffon Pandan", note: "Kotak terpisah" },
+        { qty: 1, name: "Es Teh Susu Segar", note: "" },
+        { qty: 3, name: "Butter Croissant", note: "" },
+      ],
+    },
+  ];
 
-        return (
-          <div key={i} className={className} style={style}>
-            <Image
-              src={src}
-              alt={`Dashboard preview ${i + 1}`}
-              fill
-              sizes="(max-width: 768px) 100vw, 1000px"
-              className="object-cover object-top"
-              priority={i === indexes.front || i === indexes.collapsing}
-              unoptimized={true}
-            />
+  return (
+    <div className="relative mx-auto w-full max-w-[1000px]">
+      {/* Layar dapur / KDS */}
+      <div className="rounded-[26px] border border-black/[0.08] bg-white shadow-[var(--landing-lift-lg)] overflow-hidden">
+        <div className="flex items-center justify-between border-b border-black/[0.06] px-5 py-3">
+          <div className="flex items-center gap-2.5">
+            <span className="text-[13px] font-semibold text-[#0a0a0a]">Layar Dapur</span>
+            <span className="text-[12px] text-[#71717a]">Kopi Ruang Teduh · Stasiun Utama</span>
           </div>
-        );
-      })}
+          <div className="flex items-center gap-2 text-[12px] text-[#71717a] font-display tabular-nums">
+            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            <span>3 tiket aktif</span>
+            <span className="hidden sm:inline">· 12.15</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-black/[0.06]">
+          {tickets.map((t) => (
+            <div key={t.table} className="bg-white p-4 min-h-[190px] flex flex-col">
+              <div className="flex items-baseline justify-between">
+                <span className="text-[13px] font-semibold text-[#0a0a0a]">{t.table}</span>
+                <span className="font-display text-[12px] tabular-nums text-[#71717a]">{t.wait}</span>
+              </div>
+
+              <span
+                className={`mt-2 inline-flex w-fit items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                  t.tone === "accent"
+                    ? "bg-[#0E59F9]/8 text-[#0E59F9]"
+                    : t.tone === "done"
+                      ? "bg-emerald-50 text-emerald-700"
+                      : "bg-slate-100 text-slate-600"
+                }`}
+              >
+                {t.status}
+              </span>
+
+              <ul className="mt-3 space-y-2 text-[12px] leading-snug">
+                {t.items.map((item) => (
+                  <li key={item.name} className="flex gap-2">
+                    <span className="font-display tabular-nums text-[#0a0a0a]">{item.qty}×</span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-[#0a0a0a]">{item.name}</span>
+                      {item.note && (
+                        <span className="block text-[11px] text-[#71717a]">{item.note}</span>
+                      )}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Ponsel tamu — status pesanan yang sama, dari sisi meja */}
+      <div className="absolute -bottom-10 right-2 hidden w-[186px] rounded-[26px] border border-black/[0.08] bg-white p-2 shadow-[var(--landing-lift-lg)] sm:block md:-right-6 md:w-[212px]">
+        <div className="rounded-[18px] border border-black/[0.06] overflow-hidden">
+          <div className="border-b border-black/[0.06] px-3 py-2">
+            <span className="block font-mono text-[10px] text-[#71717a]">menuin.id/meja/12</span>
+          </div>
+          <div className="px-3 py-3">
+            <span className="text-[11px] text-[#71717a]">Pesanan #MN-8921</span>
+            <p className="mt-0.5 text-[13px] font-semibold leading-snug text-[#0a0a0a]">
+              Sedang disiapkan barista
+            </p>
+
+            <ol className="mt-3 space-y-2">
+              {[
+                { s: "Diterima", done: true },
+                { s: "Disiapkan", done: true },
+                { s: "Siap diantar", done: false },
+                { s: "Selesai", done: false },
+              ].map((step) => (
+                <li key={step.s} className="flex items-center gap-2 text-[11px]">
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${step.done ? "bg-[#0E59F9]" : "bg-slate-300"}`}
+                  />
+                  <span className={step.done ? "text-[#0a0a0a]" : "text-[#a1a1aa]"}>{step.s}</span>
+                </li>
+              ))}
+            </ol>
+
+            <div className="mt-3 flex items-baseline justify-between border-t border-black/[0.06] pt-2">
+              <span className="text-[10px] text-[#71717a]">Total</span>
+              <span className="font-display text-[12px] font-semibold tabular-nums text-[#0a0a0a]">
+                Rp 80.190
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -338,7 +520,7 @@ type ShowcaseTab = 'qr-order' | 'pos' | 'shift' | 'outlets';
 
 function InteractivePOSShowcase() {
   const [activeTab, setActiveTab] = useState<ShowcaseTab>('qr-order');
-  const [activeCategory, setActiveCategory] = useState('All Items');
+  const [activeCategory, setActiveCategory] = useState('Semua item');
   const [activeOutletIdx, setActiveOutletIdx] = useState(0);
 
   const sampleProducts = [
@@ -346,60 +528,54 @@ function InteractivePOSShowcase() {
       name: 'Signature Mocca Cake',
       sku: 'BLP-001',
       price: 'Rp 45.000',
-      category: 'Bakery & Cakes',
-      stock: 24,
-      image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=400&q=80'
+      category: 'Bakery & Kue',
+      stock: 24
     },
     {
-      name: 'Baked Cheese Cake',
+      name: 'Cheese Cake Panggang',
       sku: 'BLP-002',
       price: 'Rp 50.000',
-      category: 'Bakery & Cakes',
-      stock: 18,
-      image: 'https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&w=400&q=80'
+      category: 'Bakery & Kue',
+      stock: 18
     },
     {
-      name: 'Pandan Chiffon Cake',
+      name: 'Chiffon Pandan',
       sku: 'BLK-001',
       price: 'Rp 35.000',
-      category: 'Bakery & Cakes',
-      stock: 30,
-      image: 'https://images.unsplash.com/photo-1588195538326-c5b1e9f80a1b?auto=format&fit=crop&w=400&q=80'
+      category: 'Bakery & Kue',
+      stock: 30
     },
     {
-      name: 'Cheese Pastry Cookies',
+      name: 'Kastengel Keju',
       sku: 'KKR-002',
       price: 'Rp 90.000',
-      category: 'Pastries',
-      stock: 15,
-      image: 'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?auto=format&fit=crop&w=400&q=80'
+      category: 'Pastry',
+      stock: 15
     },
     {
-      name: 'Iced Palm Sugar Latte',
+      name: 'Es Kopi Gula Aren',
       sku: 'MNM-001',
       price: 'Rp 18.000',
-      category: 'Beverages',
-      stock: 85,
-      image: 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=400&q=80'
+      category: 'Minuman',
+      stock: 85
     },
     {
-      name: 'Iced Fresh Milk Tea',
+      name: 'Es Teh Susu Segar',
       sku: 'MNM-002',
       price: 'Rp 15.000',
-      category: 'Beverages',
-      stock: 60,
-      image: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=400&q=80'
+      category: 'Minuman',
+      stock: 60
     },
   ];
 
-  const filteredProducts = activeCategory === 'All Items'
+  const filteredProducts = activeCategory === 'Semua item'
     ? sampleProducts
     : sampleProducts.filter(p => p.category === activeCategory);
 
   const outlets = [
-    { name: 'Central Outlet (HQ)', address: 'Sudirman Ave No. 42', role: 'SUPERADMIN', revenue: 'Rp 14.850.000', cashier: '4 Active Registers', orders: 124, status: 'Open' },
-    { name: 'Mall Gandaria Branch', address: 'Gandaria City UG-12', role: 'SUPERADMIN', revenue: 'Rp 8.420.000', cashier: '2 Active Registers', orders: 68, status: 'Open' },
-    { name: 'Food Truck Festival', address: 'GBK Stadium Gate 5', role: 'CASHIER', revenue: 'Rp 3.190.000', cashier: '1 Active Register', orders: 32, status: 'Open' },
+    { name: 'Outlet Pusat (HQ)', address: 'Jl. Sudirman No. 42', role: 'SUPERADMIN', revenue: 'Rp 14.850.000', cashier: '4 kasir aktif', orders: 124, status: 'Buka' },
+    { name: 'Cabang Mall Gandaria', address: 'Gandaria City UG-12', role: 'SUPERADMIN', revenue: 'Rp 8.420.000', cashier: '2 kasir aktif', orders: 68, status: 'Buka' },
+    { name: 'Food Truck Festival', address: 'GBK Gate 5', role: 'CASHIER', revenue: 'Rp 3.190.000', cashier: '1 kasir aktif', orders: 32, status: 'Buka' },
   ];
 
   return (
@@ -416,10 +592,10 @@ function InteractivePOSShowcase() {
         {/* Center: Modern Segmented Switcher */}
         <div className="flex items-center bg-slate-200/70 p-1 rounded-xl gap-1 max-w-full overflow-x-auto scrollbar-none">
           {[
-            { id: 'qr-order', label: 'Table QR Ordering', icon: QrCode },
-            { id: 'pos', label: 'POS Register', icon: Monitor },
-            { id: 'shift', label: 'Shift Audit', icon: Clock },
-            { id: 'outlets', label: 'Multi-Branch', icon: Store },
+            { id: 'qr-order', label: 'QR Meja', icon: QrCode },
+            { id: 'pos', label: 'Kasir POS', icon: Monitor },
+            { id: 'shift', label: 'Audit Shift', icon: Clock },
+            { id: 'outlets', label: 'Multi-Outlet', icon: Store },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -455,50 +631,42 @@ function InteractivePOSShowcase() {
                 <div className="bg-slate-50 border-b border-slate-200 px-3.5 py-2.5 flex items-center justify-between">
                   <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[10px] font-mono text-slate-600 w-full justify-between">
                     <span className="truncate">menuin.id/table/08</span>
-                    <span className="text-emerald-600 text-[9px] font-bold">QRIS Active</span>
+                    <span className="text-emerald-600 text-[9px] font-bold">QRIS aktif</span>
                   </div>
                 </div>
 
                 {/* Table Header inside Customer Phone */}
                 <div className="bg-white border-b border-slate-100 px-4 py-3 flex items-center justify-between">
                   <div>
-                    <h4 className="text-xs font-bold text-slate-900">Bolu Anisa Cafe</h4>
-                    <span className="text-[10px] text-slate-500 font-medium">Table 08 • Dine-In</span>
+                    <h4 className="text-xs font-bold text-slate-900">Kopi Ruang Teduh</h4>
+                    <span className="text-[10px] text-slate-500 font-medium">Meja 08 · Dine-in</span>
                   </div>
                   <span className="px-2 py-0.5 rounded-full bg-blue-50 text-[#0E59F9] text-[9px] font-bold border border-blue-100">
-                    Self-Order
+                    Pesan mandiri
                   </span>
                 </div>
 
                 {/* Cart Content in Customer Phone */}
                 <div className="p-3.5 flex-1 overflow-y-auto space-y-2.5 text-xs bg-slate-50/50">
                   <div className="p-2.5 rounded-xl bg-white border border-slate-200/80 flex items-start gap-2.5 shadow-2xs">
-                    <img
-                      src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=120&q=80"
-                      alt="Signature Mocca Cake"
-                      className="w-10 h-10 rounded-lg object-cover border border-slate-100 shrink-0"
-                    />
+                    <ProductThumb name="Signature Mocca Cake" className="w-10 h-10 rounded-lg border border-slate-100 shrink-0 text-[10px]" />
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between font-bold">
                         <span className="truncate">1x Signature Mocca Cake</span>
                         <span className="shrink-0 ml-1 font-extrabold text-[#0E59F9]">Rp 45.000</span>
                       </div>
-                      <p className="text-[10px] text-slate-500 mt-0.5">Notes: Cut into 8 slices</p>
+                      <p className="text-[10px] text-slate-500 mt-0.5">Catatan: potong 8</p>
                     </div>
                   </div>
 
                   <div className="p-2.5 rounded-xl bg-white border border-slate-200/80 flex items-start gap-2.5 shadow-2xs">
-                    <img
-                      src="https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=120&q=80"
-                      alt="Iced Palm Sugar Latte"
-                      className="w-10 h-10 rounded-lg object-cover border border-slate-100 shrink-0"
-                    />
+                    <ProductThumb name="Es Kopi Gula Aren" className="w-10 h-10 rounded-lg border border-slate-100 shrink-0 text-[10px]" />
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between font-bold">
-                        <span className="truncate">2x Iced Palm Sugar Latte</span>
+                        <span className="truncate">2x Es Kopi Gula Aren</span>
                         <span className="shrink-0 ml-1 font-extrabold text-[#0E59F9]">Rp 36.000</span>
                       </div>
-                      <p className="text-[10px] text-slate-500 mt-0.5">Notes: Less ice, less sugar</p>
+                      <p className="text-[10px] text-slate-500 mt-0.5">Catatan: less ice, less sugar</p>
                     </div>
                   </div>
 
@@ -508,11 +676,11 @@ function InteractivePOSShowcase() {
                       <span>Rp 81.000</span>
                     </div>
                     <div className="flex justify-between text-rose-600 font-medium">
-                      <span>Table Promo Discount (10%)</span>
+                      <span>Diskon promo meja (10%)</span>
                       <span>-Rp 8.100</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Service Tax (10%)</span>
+                      <span>Pajak layanan (10%)</span>
                       <span>+Rp 7.290</span>
                     </div>
                   </div>
@@ -521,7 +689,7 @@ function InteractivePOSShowcase() {
                 {/* Phone Bottom Sticky Checkout */}
                 <div className="p-3 bg-white border-t border-slate-200">
                   <div className="flex justify-between items-baseline mb-2">
-                    <span className="text-[10px] text-slate-500 font-semibold">Total Due (Table 08)</span>
+                    <span className="text-[10px] text-slate-500 font-semibold">Total tagihan (Meja 08)</span>
                     <span className="text-sm font-extrabold text-slate-900">Rp 80.190</span>
                   </div>
                   <button
@@ -529,10 +697,10 @@ function InteractivePOSShowcase() {
                     className="w-full h-9 rounded-xl bg-[#0E59F9] text-white text-[11px] font-bold flex items-center justify-center gap-1.5 shadow-sm hover:bg-[#0B48CC] transition-colors"
                   >
                     <CreditCard className="w-3.5 h-3.5" />
-                    <span>Pay with QRIS Instantly</span>
+                    <span>Bayar dengan QRIS</span>
                   </button>
                   <span className="text-[9px] text-center text-slate-400 block mt-1">
-                    Directly sent to Kitchen & POS Register
+                    Langsung diteruskan ke dapur dan kasir
                   </span>
                 </div>
               </div>
@@ -542,13 +710,13 @@ function InteractivePOSShowcase() {
             <div className="lg:col-span-7 space-y-5">
               <div>
                 <span className="text-xs font-bold uppercase tracking-wider text-[#0E59F9] mb-1.5 block">
-                  Table Self-Service Ordering
+                  Pesan mandiri dari meja
                 </span>
                 <h3 className="text-xl md:text-2xl font-extrabold text-slate-900 leading-tight">
-                  Guests Order & Pay Directly From Their Tables
+                  Tamu memesan dan membayar dari mejanya sendiri
                 </h3>
                 <p className="text-xs md:text-sm text-slate-600 mt-2 leading-relaxed">
-                  Eliminate cashier lines and streamline your staff workflow. Guests scan their table QR code using native phone cameras, customize items, and pay instantly without downloading any app.
+                  Antrean di kasir berkurang dan pelayan tidak perlu bolak-balik. Tamu memindai QR di meja dengan kamera bawaan ponsel, memilih varian, lalu membayar tanpa mengunduh aplikasi apa pun.
                 </p>
               </div>
 
@@ -558,9 +726,9 @@ function InteractivePOSShowcase() {
                     1
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-slate-900">Scan Table QR Code</h4>
+                    <h4 className="text-xs font-bold text-slate-900">Pindai QR di meja</h4>
                     <p className="text-[11px] text-slate-600 mt-0.5">
-                      No app download required. Standard smartphone cameras immediately open the responsive digital web catalog.
+                      Tanpa unduh aplikasi. Kamera ponsel biasa langsung membuka katalog digital di browser.
                     </p>
                   </div>
                 </div>
@@ -570,9 +738,9 @@ function InteractivePOSShowcase() {
                     2
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-slate-900">Customize Items & Pay Instantly</h4>
+                    <h4 className="text-xs font-bold text-slate-900">Pilih varian, lalu bayar</h4>
                     <p className="text-[11px] text-slate-600 mt-0.5">
-                      Guests select flavors, add preparation notes, and checkout via QRIS or Pay at Cashier.
+                      Tamu memilih rasa, menambahkan catatan penyajian, lalu membayar via QRIS atau di kasir.
                     </p>
                   </div>
                 </div>
@@ -582,9 +750,9 @@ function InteractivePOSShowcase() {
                     3
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-slate-900">Instant Dispatch to Kitchen & Register</h4>
+                    <h4 className="text-xs font-bold text-slate-900">Diteruskan ke dapur dan kasir</h4>
                     <p className="text-[11px] text-slate-600 mt-0.5">
-                      Kitchen display systems and cashier registers receive exact table tickets in real time, cutting order errors to zero.
+                      Layar dapur dan kasir menerima tiket berisi nomor meja dan catatan persis seperti yang dipilih tamu.
                     </p>
                   </div>
                 </div>
@@ -605,17 +773,17 @@ function InteractivePOSShowcase() {
                   type="text"
                   readOnly
                   value="Signature Mocca Cake"
-                  placeholder="Search products..."
+                  placeholder="Cari produk..."
                   className="w-full h-11 pl-10 pr-4 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700 outline-none select-none"
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-medium border border-slate-200 hidden sm:inline">
-                  Quick Filter
+                  Filter cepat
                 </span>
               </div>
 
               {/* Categories */}
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-                {['All Items', 'Bakery & Cakes', 'Pastries', 'Beverages'].map((cat) => (
+                {['Semua item', 'Bakery & Kue', 'Pastry', 'Minuman'].map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setActiveCategory(cat)}
@@ -638,16 +806,12 @@ function InteractivePOSShowcase() {
                   >
                     {/* Aspect 4/3 Product Image like Admin POS */}
                     <div className="aspect-[4/3] bg-slate-100 relative overflow-hidden flex items-center justify-center">
-                      <img
-                        src={p.image}
-                        alt={p.name}
-                        className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
-                      />
+                      <ProductThumb name={p.name} className="w-full h-full text-base" />
                       <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md bg-white/90 backdrop-blur-xs text-slate-700 text-[9px] font-mono font-bold shadow-xs">
                         {p.sku}
                       </span>
                       <span className="absolute top-2 right-2 px-1.5 py-0.5 rounded-md bg-black/60 backdrop-blur-xs text-white text-[9px] font-medium">
-                        Stock: {p.stock}
+                        Stok: {p.stock}
                       </span>
                     </div>
 
@@ -673,24 +837,20 @@ function InteractivePOSShowcase() {
               <div>
                 <div className="flex items-center justify-between pb-3 border-b border-slate-200">
                   <div>
-                    <h3 className="text-sm font-bold text-slate-900">Active Order #MN-8921</h3>
-                    <p className="text-[11px] text-slate-500">Table 04 • Dine-In Register</p>
+                    <h3 className="text-sm font-bold text-slate-900">Pesanan aktif #MN-8921</h3>
+                    <p className="text-[11px] text-slate-500">Meja 04 · Kasir dine-in</p>
                   </div>
                   <span className="px-2.5 py-1 rounded-full bg-blue-50 text-[#0E59F9] text-[11px] font-bold border border-blue-100">
-                    2 Items
+                    2 item
                   </span>
                 </div>
 
                 <div className="py-3 space-y-2.5 border-b border-slate-200 text-xs">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <img
-                        src="https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&w=120&q=80"
-                        alt="Baked Cheese Cake"
-                        className="w-9 h-9 rounded-lg object-cover border border-slate-200 shrink-0"
-                      />
+                      <ProductThumb name="Cheese Cake Panggang" className="w-9 h-9 rounded-lg border border-slate-200 shrink-0 text-[10px]" />
                       <div className="truncate">
-                        <p className="font-semibold text-slate-800 truncate">1x Baked Cheese Cake</p>
+                        <p className="font-semibold text-slate-800 truncate">1x Cheese Cake Panggang</p>
                         <p className="text-[10px] text-slate-400 font-mono">BLP-002</p>
                       </div>
                     </div>
@@ -699,13 +859,9 @@ function InteractivePOSShowcase() {
 
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <img
-                        src="https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=120&q=80"
-                        alt="Iced Palm Sugar Latte"
-                        className="w-9 h-9 rounded-lg object-cover border border-slate-200 shrink-0"
-                      />
+                      <ProductThumb name="Es Kopi Gula Aren" className="w-9 h-9 rounded-lg border border-slate-200 shrink-0 text-[10px]" />
                       <div className="truncate">
-                        <p className="font-semibold text-slate-800 truncate">2x Iced Palm Sugar Latte</p>
+                        <p className="font-semibold text-slate-800 truncate">2x Es Kopi Gula Aren</p>
                         <p className="text-[10px] text-slate-400 font-mono">MNM-001</p>
                       </div>
                     </div>
@@ -719,11 +875,11 @@ function InteractivePOSShowcase() {
                     <span>Rp 86.000</span>
                   </div>
                   <div className="flex justify-between text-rose-600 font-medium">
-                    <span>Promo Discount (10%)</span>
+                    <span>Diskon promo (10%)</span>
                     <span>-Rp 8.600</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Restaurant Tax (PB1 10%)</span>
+                    <span>Pajak restoran (PB1 10%)</span>
                     <span>+Rp 7.740</span>
                   </div>
                 </div>
@@ -731,7 +887,7 @@ function InteractivePOSShowcase() {
 
               <div className="mt-4 pt-2">
                 <div className="flex justify-between items-baseline mb-3">
-                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Total Due</span>
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Total tagihan</span>
                   <span className="text-lg font-black text-slate-900">Rp 85.140</span>
                 </div>
 
@@ -740,10 +896,10 @@ function InteractivePOSShowcase() {
                     QRIS
                   </div>
                   <div className="py-1.5 text-center text-xs font-medium rounded-lg bg-white border border-slate-200 text-slate-600">
-                    Cash
+                    Tunai
                   </div>
                   <div className="py-1.5 text-center text-xs font-medium rounded-lg bg-white border border-slate-200 text-slate-600">
-                    Debit / Card
+                    Debit / Kartu
                   </div>
                 </div>
 
@@ -752,7 +908,7 @@ function InteractivePOSShowcase() {
                   className="w-full h-10 rounded-xl bg-[#0E59F9] text-white text-xs font-bold hover:bg-[#0C4CD6] transition-colors flex items-center justify-center gap-2 shadow-sm"
                 >
                   <Printer className="w-3.5 h-3.5" />
-                  <span>Process Order & Print Receipt (58/80mm)</span>
+                  <span>Proses & cetak struk (58/80 mm)</span>
                 </button>
               </div>
             </div>
@@ -769,57 +925,57 @@ function InteractivePOSShowcase() {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-bold text-slate-900">Morning Shift 1 — Cashier: Sarah Rahma</h3>
+                    <h3 className="text-sm font-bold text-slate-900">Shift Pagi 1 — Kasir: Sarah Rahma</h3>
                     <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200">
-                      ACTIVE SHIFT
+                      SHIFT AKTIF
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500 mt-0.5">Shift Schedule: 07:00 - 15:00 • Register Terminal 01</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Jadwal 07.00–15.00 · Terminal kasir 01</p>
                 </div>
               </div>
               <div className="text-right">
-                <span className="text-[11px] text-slate-500 block">Total Shift Orders</span>
-                <span className="text-sm font-bold text-slate-900">72 Completed Orders</span>
+                <span className="text-[11px] text-slate-500 block">Pesanan selama shift</span>
+                <span className="text-sm font-bold text-slate-900">72 pesanan selesai</span>
               </div>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="p-4 rounded-xl bg-white border border-slate-200">
-                <span className="text-xs text-slate-500 font-medium block">Starting Float (Cash In)</span>
+                <span className="text-xs text-slate-500 font-medium block">Modal awal laci</span>
                 <span className="text-base font-extrabold text-slate-900 mt-1 block">Rp 200.000</span>
-                <span className="text-[10px] text-slate-400 mt-0.5 block">Initial drawer count</span>
+                <span className="text-[10px] text-slate-400 mt-0.5 block">Dihitung saat buka shift</span>
               </div>
               <div className="p-4 rounded-xl bg-white border border-slate-200">
-                <span className="text-xs text-slate-500 font-medium block">Cash Sales</span>
+                <span className="text-xs text-slate-500 font-medium block">Penjualan tunai</span>
                 <span className="text-base font-extrabold text-emerald-600 mt-1 block">+Rp 1.425.000</span>
-                <span className="text-[10px] text-slate-400 mt-0.5 block">24 Cash Transactions</span>
+                <span className="text-[10px] text-slate-400 mt-0.5 block">24 transaksi tunai</span>
               </div>
               <div className="p-4 rounded-xl bg-white border border-slate-200">
-                <span className="text-xs text-slate-500 font-medium block">Non-Cash & QRIS</span>
+                <span className="text-xs text-slate-500 font-medium block">Non-tunai & QRIS</span>
                 <span className="text-base font-extrabold text-[#0E59F9] mt-1 block">Rp 2.890.000</span>
-                <span className="text-[10px] text-slate-400 mt-0.5 block">48 Digital Transactions</span>
+                <span className="text-[10px] text-slate-400 mt-0.5 block">48 transaksi digital</span>
               </div>
               <div className="p-4 rounded-xl bg-white border border-slate-200">
-                <span className="text-xs text-slate-500 font-medium block">Petty Cash Expense</span>
+                <span className="text-xs text-slate-500 font-medium block">Kas keluar (petty cash)</span>
                 <span className="text-base font-extrabold text-rose-600 mt-1 block">-Rp 25.000</span>
-                <span className="text-[10px] text-slate-400 mt-0.5 block">Operational Cash Out</span>
+                <span className="text-[10px] text-slate-400 mt-0.5 block">Pengeluaran operasional</span>
               </div>
             </div>
 
-            <div className="p-5 rounded-2xl bg-gradient-to-r from-emerald-50/80 to-teal-50/80 border border-emerald-200 flex flex-wrap items-center justify-between gap-4">
+            <div className="p-5 rounded-2xl bg-emerald-50 border border-emerald-200 flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
                   <ShieldCheck className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-emerald-950">Automated Cash Drawer Reconciliation</h4>
+                  <h4 className="text-sm font-bold text-emerald-950">Rekonsiliasi laci kas otomatis</h4>
                   <p className="text-xs text-emerald-800">
-                    Expected Drawer Cash: <strong className="text-emerald-950">Rp 1.600.000</strong> • Physical Cash Counted: <strong className="text-emerald-950">Rp 1.600.000</strong>
+                    Kas seharusnya: <strong className="text-emerald-950">Rp 1.600.000</strong> • Uang fisik dihitung: <strong className="text-emerald-950">Rp 1.600.000</strong>
                   </p>
                 </div>
               </div>
               <div className="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-extrabold shadow-sm">
-                Variance: Rp 0 (100% Balanced)
+                Selisih: Rp 0
               </div>
             </div>
           </div>
@@ -849,7 +1005,7 @@ function InteractivePOSShowcase() {
 
                   <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
                     <div>
-                      <span className="text-[10px] text-slate-400 block">Real-time Revenue</span>
+                      <span className="text-[10px] text-slate-400 block">Omzet berjalan</span>
                       <span className="text-xs font-bold text-slate-900">{outlet.revenue}</span>
                     </div>
                     <span className="text-[11px] text-slate-500">{outlet.cashier}</span>
@@ -861,8 +1017,8 @@ function InteractivePOSShowcase() {
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs text-slate-600">
               <div className="flex items-center gap-2">
                 <Building2 className="w-4 h-4 text-[#0E59F9]" />
-                <span className="font-semibold text-slate-900">Multi-Tenant PostgreSQL Architecture:</span>
-                <span>Each branch data is cryptographically isolated via independent tenant IDs.</span>
+                <span className="font-semibold text-slate-900">Arsitektur multi-tenant PostgreSQL:</span>
+                <span>Data tiap cabang terisolasi lewat tenant ID masing-masing.</span>
               </div>
               <span className="font-mono text-slate-400 hidden lg:inline">UUID: d9f2e8-4a1b</span>
             </div>
@@ -1057,18 +1213,17 @@ export default function LandingPage({
   return (
     <div className="min-h-screen bg-white text-[#111] font-sans antialiased selection:bg-[#0E59F9] selection:text-white overflow-x-hidden">
       {/* NAVBAR */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200/80">
-        <div className="mx-auto max-w-[1200px] h-[72px] flex items-center justify-between px-6">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-black/[0.06]">
+        <div className="mx-auto max-w-[1100px] h-[64px] flex items-center justify-between px-6">
           <Link href="/" className="flex items-center">
-            <Image src="/menuin.png" alt="MENUIN - Smart POS System" width={110} height={32} style={{ width: "auto" }} priority />
+            <Image src="/menuin.svg" alt="Menuin" width={104} height={28} className="h-6 w-auto md:h-7" priority />
           </Link>
 
           <nav className="hidden md:flex items-center gap-8 text-[14px] font-medium text-slate-600">
-            <a href="#" className="text-slate-900 font-semibold">Home</a>
-            <a href="#features" className="hover:text-slate-900 transition-colors">Features</a>
-            <a href="#pricing" className="hover:text-slate-900 transition-colors">Pricing</a>
-            <a href="#testimonials" className="hover:text-slate-900 transition-colors">Testimonials</a>
-            <a href="#faq" className="hover:text-slate-900 transition-colors">FAQ</a>
+            <a href="#ekosistem" className="hover:text-[#0a0a0a] transition-colors">Produk</a>
+            <a href="#pilar" className="hover:text-[#0a0a0a] transition-colors">Fitur</a>
+            <a href="#pricing" className="hover:text-[#0a0a0a] transition-colors">Harga</a>
+            <a href="#faq" className="hover:text-[#0a0a0a] transition-colors">Tanya jawab</a>
           </nav>
 
           <div className="hidden md:flex items-center gap-4">
@@ -1081,17 +1236,17 @@ export default function LandingPage({
                 }}
                 className="h-10 pl-2 pr-4 flex items-center rounded-full bg-slate-900 text-white text-[13px] font-semibold hover:bg-slate-800 transition-all gap-2.5 shadow-sm group"
               >
-                <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-[#0E59F9] to-[#3B82F6] text-white flex items-center justify-center font-bold text-[12px] shadow-sm">
+                <div className="w-7 h-7 rounded-full bg-[#0E59F9] text-white flex items-center justify-center font-bold text-[12px] shadow-sm">
                   {userInitial}
                 </div>
-                <span>Open Dashboard</span>
+                <span>Buka dashboard</span>
                 <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
               </a>
             ) : (
               <>
-                <a href="/auth/login" className="text-[14px] font-semibold text-slate-700 hover:text-[#0E59F9] transition-colors mr-2">Sign In</a>
+                <a href="/auth/login" className="text-[14px] font-semibold text-slate-700 hover:text-[#0E59F9] transition-colors mr-2">Masuk</a>
                 <a href="/auth/signup" className="h-10 px-5 flex items-center rounded-full bg-[#0E59F9] text-white text-[14px] font-semibold hover:bg-[#0C4CD6] transition-all shadow-sm hover:shadow-md">
-                  Start Free Trial
+                  Coba gratis
                 </a>
               </>
             )}
@@ -1113,13 +1268,12 @@ export default function LandingPage({
 
         {/* Mobile Menu */}
         {mobileOpen && (
-          <div className="md:hidden absolute top-[72px] left-0 w-full bg-white border-b border-slate-200 px-6 py-6 space-y-5 shadow-xl">
+          <div className="md:hidden absolute top-[72px] left-0 w-full bg-white border-b border-black/[0.06] px-6 py-6 space-y-5">
             <nav className="flex flex-col gap-4 text-[15px] font-medium text-slate-700">
-              <a href="#" onClick={() => setMobileOpen(false)} className="text-slate-900 font-semibold">Home</a>
-              <a href="#features" onClick={() => setMobileOpen(false)}>Features</a>
-              <a href="#pricing" onClick={() => setMobileOpen(false)}>Pricing</a>
-              <a href="#testimonials" onClick={() => setMobileOpen(false)}>Testimonials</a>
-              <a href="#faq" onClick={() => setMobileOpen(false)}>FAQ</a>
+              <a href="#ekosistem" onClick={() => setMobileOpen(false)}>Produk</a>
+              <a href="#pilar" onClick={() => setMobileOpen(false)}>Fitur</a>
+              <a href="#pricing" onClick={() => setMobileOpen(false)}>Harga</a>
+              <a href="#faq" onClick={() => setMobileOpen(false)}>Tanya jawab</a>
             </nav>
             <div className="h-px bg-slate-100" />
             <div className="flex flex-col gap-3">
@@ -1136,12 +1290,12 @@ export default function LandingPage({
                   <div className="w-6 h-6 rounded-full bg-[#0E59F9] text-white flex items-center justify-center font-bold text-[11px]">
                     {userInitial}
                   </div>
-                  <span>Open Dashboard</span>
+                  <span>Buka dashboard</span>
                 </a>
               ) : (
                 <>
-                  <a href="/auth/login" className="flex items-center justify-center h-11 rounded-full border border-slate-200 text-[14px] font-semibold text-slate-800">Sign In</a>
-                  <a href="/auth/signup" className="flex items-center justify-center h-11 rounded-full bg-[#0E59F9] text-white text-[14px] font-semibold">Start Free Trial</a>
+                  <a href="/auth/login" className="flex items-center justify-center h-11 rounded-full border border-slate-200 text-[14px] font-semibold text-slate-800">Masuk</a>
+                  <a href="/auth/signup" className="flex items-center justify-center h-11 rounded-full bg-[#0E59F9] text-white text-[14px] font-semibold">Coba gratis</a>
                 </>
               )}
             </div>
@@ -1150,216 +1304,285 @@ export default function LandingPage({
       </header>
 
       {/* HERO */}
-      <section className="relative pt-32 md:pt-44 px-6 overflow-hidden z-0">
-        {/* Soft Background Gradient */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white via-[#E0EDFF]/80 to-[#B8D0FC] -z-10" />
-
-        {/* Abstract intense blue glow behind the dashboard */}
-        <div className="absolute bottom-[-10%] left-1/2 -translate-x-1/2 w-full max-w-[1200px] h-[400px] md:h-[600px] -z-10 pointer-events-none">
-          {/* Blob 1 (Main thick core) */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] md:w-[80%] h-[120%] bg-[#0E59F9]/40 blur-[90px] md:blur-[140px] rounded-[100%] rotate-6" />
-          {/* Blob 2 (Left side organic shape) */}
-          <div className="absolute top-[30%] left-[-20%] md:left-[5%] w-[100%] md:w-[55%] h-[100%] bg-[#4989F8]/50 blur-[90px] md:blur-[130px] rounded-[40%_60%_70%_30%] -rotate-12" />
-          {/* Blob 3 (Right side organic shape) */}
-          <div className="absolute top-[40%] right-[-20%] md:right-[5%] w-[110%] md:w-[65%] h-[110%] bg-[#0C4CD6]/40 blur-[100px] md:blur-[150px] rounded-[60%_40%_30%_70%] rotate-45" />
-        </div>
-
-        <div className="mx-auto max-w-[1200px] text-center">
+      <section className="relative px-6 pt-32 md:pt-40">
+        <div className="mx-auto max-w-[1100px]">
           <FadeIn>
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-slate-200 shadow-sm mb-8">
-              <span className="flex h-5 items-center px-2 rounded-full bg-[#0E59F9] text-white text-[10px] font-bold uppercase tracking-wider">Next-Gen POS</span>
-              <span className="text-[12px] font-medium text-slate-600 pr-1">Smart Table QR & POS Cashier System</span>
-            </div>
-          </FadeIn>
-
-          <FadeIn delay={0.1}>
-            <h1 className="text-[clamp(36px,5.2vw,64px)] font-extrabold leading-[1.1] tracking-[-0.03em] text-slate-900 max-w-[900px] mx-auto">
-              Smart Cloud POS with <br className="hidden sm:inline" />
-              <span className="text-[#0E59F9]">Integrated Table QR & Cashier</span>
-            </h1>
-          </FadeIn>
-
-          <FadeIn delay={0.2}>
-            <p className="mt-6 text-[16px] md:text-[18px] text-slate-600 leading-relaxed max-w-[680px] mx-auto">
-              Guests scan table QR codes to order and pay instantly via QRIS. Orders flow directly to the kitchen and cashier register in real-time, eliminating lines completely.
+            <p className="text-center text-[12px] font-semibold uppercase tracking-[0.18em] text-[#71717a]">
+              Ekosistem operasional F&amp;B
             </p>
           </FadeIn>
 
-          <FadeIn delay={0.3}>
-            <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+          <FadeIn delay={0.05}>
+            <h1 className="mx-auto mt-6 max-w-[20ch] text-center font-display text-[clamp(34px,6.2vw,76px)] font-semibold leading-[1.03] tracking-[-0.04em] text-[#0a0a0a] text-balance">
+              Satu sentuhan di meja.
+              <span className="block text-[#71717a]">Kasir bergerak kilat.</span>
+              <span className="block text-[#71717a]">Dapur tepat waktu.</span>
+            </h1>
+          </FadeIn>
+
+          <FadeIn delay={0.1}>
+            <p className="mx-auto mt-7 max-w-[62ch] text-center text-[16px] leading-relaxed text-[#52525b] md:text-[17px]">
+              Menuin menyatukan pemesanan mandiri lewat QR di meja, kasir cloud untuk jam sibuk, dan
+              layar dapur tanpa kertas — dalam satu sistem yang sama.
+            </p>
+          </FadeIn>
+
+          <FadeIn delay={0.15}>
+            <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <a
                 href={isLoggedIn ? "/select-tenant" : "/auth/signup"}
                 onClick={(e) => {
                   if (isLoggedIn) {
                     e.preventDefault();
-                    navigateWithTransition('/select-tenant');
+                    navigateWithTransition("/select-tenant");
                   }
                 }}
-                className="h-12 px-7 flex items-center justify-center rounded-full bg-[#0E59F9] text-white text-[15px] font-semibold hover:bg-[#0C4CD6] transition-all shadow-md shadow-blue-500/20 hover:shadow-lg w-full sm:w-auto gap-2"
+                className="inline-flex h-11 w-full items-center justify-center rounded-full bg-[#0E59F9] px-6 text-[15px] font-medium text-white transition-colors hover:bg-[#0C4CD6] sm:w-auto"
               >
-                <span>{isLoggedIn ? "Open Dashboard" : "Get Started Free"}</span>
-                <ArrowRight className="w-4 h-4" />
+                {isLoggedIn ? "Buka dashboard" : "Mulai uji coba 14 hari"}
               </a>
               <a
-                href="#features"
-                className="h-12 px-7 flex items-center justify-center rounded-full bg-white border border-slate-200 text-[15px] font-semibold text-slate-800 hover:bg-slate-50 transition-all shadow-sm w-full sm:w-auto gap-2"
+                href="#ekosistem"
+                className="inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-full border border-black/[0.08] px-6 text-[15px] font-medium text-[#0a0a0a] transition-colors hover:bg-[#fafafa] sm:w-auto"
               >
-                <PlayCircle className="w-4 h-4 text-slate-600" />
-                Explore Features
+                Lihat cara kerjanya
+                <ArrowRight className="h-4 w-4 text-[#71717a]" />
               </a>
             </div>
           </FadeIn>
 
-          <FadeIn delay={0.4}>
-            {/* Negative margin bottom pulls the section's bottom edge up, effectively clipping the image via overflow-hidden */}
-            <div className="mt-16 md:mt-24 -mb-16 md:-mb-32">
-              <HeroImageStack />
+          <FadeIn delay={0.2}>
+            <p className="mt-5 text-center text-[13px] text-[#71717a]">
+              Tanpa kartu kredit · Setup 5 menit · Printer Bluetooth &amp; LAN
+            </p>
+          </FadeIn>
+
+          <FadeIn delay={0.25}>
+            <div className="mt-16 md:mt-20">
+              <HeroPreview />
             </div>
           </FadeIn>
         </div>
       </section>
 
-      {/* PROOF STRIP */}
-      <section className="relative z-20 py-12 md:py-16 border-b border-black/[0.04] bg-white shadow-[0_-50px_50px_rgba(14,89,249,0.15)] overflow-hidden">
-        <div className="mx-auto max-w-[1200px] text-center">
-          <p className="text-[14px] font-medium text-[#666] mb-4">Supported & Integrated With:</p>
-
-          <div
-            className="flex overflow-hidden relative w-full pt-6 pb-4 group"
-            style={{ WebkitMaskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)' }}
-          >
-            <div className="flex shrink-0 animate-marquee items-center justify-around gap-16 min-w-full pr-16 group-hover:[animation-play-state:paused]">
-              {logos.map((logo, i) => (
-                <img
-                  key={`logo1-${i}`}
-                  src={logo.src}
-                  alt={logo.name}
-                  className="h-8 md:h-12 w-auto object-contain brightness-0 opacity-40 group-hover:brightness-100 group-hover:opacity-100 transition-all duration-300 cursor-pointer"
-                />
-              ))}
-            </div>
-            <div className="flex shrink-0 animate-marquee items-center justify-around gap-16 min-w-full pr-16 group-hover:[animation-play-state:paused]" aria-hidden="true">
-              {logos.map((logo, i) => (
-                <img
-                  key={`logo2-${i}`}
-                  src={logo.src}
-                  alt={logo.name}
-                  className="h-8 md:h-12 w-auto object-contain brightness-0 opacity-40 group-hover:brightness-100 group-hover:opacity-100 transition-all duration-300 cursor-pointer"
-                />
-              ))}
-            </div>
+      {/* HIGHLIGHTS — peta isi halaman */}
+      <section className="mt-24 px-6 md:mt-28" aria-label="Sorotan produk">
+        <div className="mx-auto max-w-[1100px] border-t border-black/[0.08] pt-6">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <span className="mr-1 font-display text-[15px] font-semibold tracking-[-0.02em] text-[#0a0a0a]">
+              Lihat sorotannya.
+            </span>
+            {highlights.map((h) => (
+              <a
+                key={h.label}
+                href={h.href}
+                className="rounded-full border border-black/[0.08] px-3.5 py-1.5 text-[13px] text-[#52525b] transition-colors hover:border-black/20 hover:text-[#0a0a0a]"
+              >
+                {h.label}
+              </a>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* CORE FEATURES (Authentic High-Fidelity Workspace Showcase) */}
-      <section className="py-24 md:py-32 px-6 bg-slate-50/50 border-y border-slate-200/70" id="features">
-        <div className="mx-auto max-w-[1200px]">
-          {/* Header */}
-          <FadeIn>
-            <div className="text-center mb-14 max-w-3xl mx-auto">
-              <span className="text-xs font-bold uppercase tracking-widest text-[#0E59F9] mb-3 block">
-                Integrated POS & Table Ordering
+      {/* ANGKA KUNCI */}
+      <section className="px-6 py-20 md:py-24" aria-label="Angka kunci">
+        <div className="mx-auto max-w-[1100px]">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-10 md:grid-cols-4">
+            {keyNumbers.map((n, i) => (
+              <FadeIn key={n.label} delay={i * 0.05}>
+                <div>
+                  <div className="font-display text-[clamp(34px,4.4vw,52px)] font-semibold leading-none tracking-[-0.04em] tabular-nums text-[#0a0a0a]">
+                    {n.value}
+                    {n.unit && (
+                      <span className="ml-1 text-[0.45em] font-medium tracking-normal text-[#71717a]">
+                        {n.unit}
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-3 max-w-[22ch] text-[13.5px] leading-snug text-[#52525b]">
+                    {n.label}
+                    {n.note && <sup className="ml-0.5 text-[#a1a1aa]">{n.note}</sup>}
+                  </p>
+                </div>
+              </FadeIn>
+            ))}
+          </div>
+
+          <ol className="mt-12 space-y-1.5 border-t border-black/[0.08] pt-5 text-[12px] leading-relaxed text-[#71717a]">
+            {keyNumberNotes.map((note, i) => (
+              <li key={i}>
+                <sup className="mr-1">{i + 1}</sup>
+                {note}
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      {/* MITRA PEMBAYARAN */}
+      <section className="border-y border-black/[0.06] bg-[#fafafa] px-6 py-10" aria-label="Mitra pembayaran">
+        <div className="mx-auto flex max-w-[1100px] flex-col items-center gap-5 sm:flex-row sm:justify-between">
+          <p className="text-[13px] text-[#71717a]">
+            Pembayaran diproses lewat penyelenggara berizin
+          </p>
+          {/* Wordmark tipografis, bukan file logo.
+              Aset logo resmi (versi gelap di atas terang) belum tersedia —
+              logo Midtrans yang ada di repo berwarna putih dan tidak terbaca di
+              latar terang. Lihat docs/landing-revamp/IMPLEMENTATION-PLAN.md §5.3. */}
+          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
+            {logos.map((logo) => (
+              <span
+                key={logo.name}
+                className="font-display text-[14px] font-medium tracking-[-0.01em] text-[#52525b]"
+              >
+                {logo.name}
               </span>
-              <h2 className="text-[clamp(32px,4.5vw,48px)] font-extrabold leading-[1.12] tracking-[-0.03em] text-slate-900">
-                Modern Table Self-Ordering.<br />
-                <span className="text-[#0E59F9]">Fast Cashier, Automated Kitchen.</span>
-              </h2>
-              <p className="text-base md:text-lg text-slate-600 mt-4 leading-relaxed">
-                Guests self-order and pay from their seats via QRIS, cashiers process counter orders with rapid receipt printing, and all branches stay synced in real time.
-              </p>
-            </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* EKOSISTEM — showcase perangkat */}
+      <section className="px-6 py-24 md:py-32" id="ekosistem">
+        <div className="mx-auto max-w-[1100px]">
+          <FadeIn>
+            <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#71717a]">
+              Ekosistem
+            </p>
+            <h2 className="mt-4 max-w-[18ch] font-display text-[clamp(30px,4.2vw,48px)] font-semibold leading-[1.08] tracking-[-0.035em] text-[#0a0a0a] text-balance">
+              Empat layar, satu pesanan yang sama.
+            </h2>
+            <p className="mt-5 max-w-[60ch] text-[16px] leading-relaxed text-[#52525b]">
+              Meja tamu, kasir, laci uang, dan kantor pusat melihat data yang sama pada detik yang
+              sama. Pindah tab untuk melihat masing-masing sisi.
+            </p>
           </FadeIn>
 
-          {/* Main Interactive Software Frame */}
-          <FadeIn delay={0.15}>
+          <FadeIn delay={0.1} className="mt-12">
             <InteractivePOSShowcase />
           </FadeIn>
-
-          {/* 3 High-Impact Value Pillars */}
-          <div className="mt-14 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <FadeIn delay={0.2} className="h-full">
-              <div className="p-6 md:p-8 rounded-2xl bg-gradient-to-b from-blue-50/90 via-blue-50/30 to-white border border-blue-100/80 shadow-xs hover:border-blue-300 hover:shadow-md transition-all h-full flex flex-col justify-between">
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900 mb-2">Table QR Self-Ordering</h3>
-                  <p className="text-sm text-slate-600 leading-relaxed">
-                    Guests sit at their table, scan the QR sticker with their phone camera without downloading any app, customize menu items, and checkout via QRIS. Reduces register lines by up to 80%.
-                  </p>
-                </div>
-                <div className="mt-6 pt-4 border-t border-blue-100/80 flex items-center justify-between text-xs font-semibold text-slate-500">
-                  <span>Browser-Based (No App)</span>
-                  <span className="text-emerald-600 font-bold">Instant QRIS Sync</span>
-                </div>
-              </div>
-            </FadeIn>
-
-            <FadeIn delay={0.3} className="h-full">
-              <div className="p-6 md:p-8 rounded-2xl bg-gradient-to-b from-blue-50/90 via-blue-50/30 to-white border border-blue-100/80 shadow-xs hover:border-blue-300 hover:shadow-md transition-all h-full flex flex-col justify-between">
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900 mb-2">POS Register & Live Reports</h3>
-                  <p className="text-sm text-slate-600 leading-relaxed">
-                    For walk-in and take-away counter orders. Search products effortlessly, print 58/80mm thermal receipts, and every transaction syncs automatically to sales and inventory analytics.
-                  </p>
-                </div>
-                <div className="mt-6 pt-4 border-t border-blue-100/80 flex items-center justify-between text-xs font-semibold text-slate-500">
-                  <span>58/80mm Thermal Receipt</span>
-                  <span className="text-emerald-600 font-bold">Real-Time Reporting</span>
-                </div>
-              </div>
-            </FadeIn>
-
-            <FadeIn delay={0.4} className="h-full">
-              <div className="p-6 md:p-8 rounded-2xl bg-gradient-to-b from-blue-50/90 via-blue-50/30 to-white border border-blue-100/80 shadow-xs hover:border-blue-300 hover:shadow-md transition-all h-full flex flex-col justify-between">
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900 mb-2">Shift Cash Audit & Multi-Branch</h3>
-                  <p className="text-sm text-slate-600 leading-relaxed">
-                    Enforce opening float entry and track petty cash expenses. At shift closing, the system automatically matches counted physical cash with system totals to ensure zero cash variance.
-                  </p>
-                </div>
-                <div className="mt-6 pt-4 border-t border-blue-100/80 flex items-center justify-between text-xs font-semibold text-slate-500">
-                  <span>Multi-Tenant PostgreSQL</span>
-                  <span className="text-[#0E59F9] font-bold">Variance: Rp 0</span>
-                </div>
-              </div>
-            </FadeIn>
-          </div>
         </div>
       </section>
 
-      {/* FEATURE LIST (Side by side) */}
-      <section className="py-24 md:py-32 px-6">
-        <div className="mx-auto max-w-[1200px] flex flex-col lg:flex-row items-center gap-16">
-          <FadeIn className="w-full lg:w-1/2">
-            <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-black/[0.04] bg-[#F8F9FA] aspect-square max-h-[600px] flex items-center justify-center">
-              <Image src="/img/hero/img2.png" alt="Feature showcase" fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover object-left" unoptimized={true} />
-            </div>
+      {/* CARA LAMA vs MENUIN */}
+      <section className="border-t border-black/[0.06] bg-[#fafafa] px-6 py-24 md:py-32">
+        <div className="mx-auto max-w-[1100px]">
+          <FadeIn>
+            <h2 className="max-w-[20ch] font-display text-[clamp(28px,3.8vw,44px)] font-semibold leading-[1.1] tracking-[-0.035em] text-[#0a0a0a] text-balance">
+              Lima hal yang berubah sejak hari pertama.
+            </h2>
           </FadeIn>
 
-          <div className="w-full lg:w-1/2">
-            <FadeIn delay={0.1}>
-              <h2 className="text-[clamp(30px,4vw,40px)] font-bold leading-[1.15] tracking-[-0.02em] text-[#111] mb-4">
-                Built to Scale <br /> <span className="text-[#0E59F9]">Your F&B Business</span>
-              </h2>
-              <p className="text-[16px] text-[#666] mb-10 leading-relaxed">
-                Discover how MENUIN helps you streamline operations, eliminate order delays, and maximize profitability across single and multi-branch operations.
-              </p>
-            </FadeIn>
-
-            <div className="space-y-8">
-              {features.map((f, i) => {
-                return (
-                  <FadeIn key={i} delay={0.15 + (i * 0.1)}>
-                    <div className="border-l-2 border-slate-200 hover:border-[#0E59F9] pl-5 transition-colors">
-                      <h4 className="text-[18px] font-bold text-[#111] mb-1.5">{f.title}</h4>
-                      <p className="text-[15px] text-[#666] leading-relaxed">{f.desc}</p>
-                    </div>
-                  </FadeIn>
-                );
-              })}
-            </div>
+          <div className="mt-12 border-t border-black/[0.08]">
+            {comparisonRows.map((row, i) => (
+              <FadeIn key={i} delay={i * 0.04}>
+                <div className="grid grid-cols-1 gap-2 border-b border-black/[0.08] py-6 md:grid-cols-12 md:gap-8">
+                  <div className="md:col-span-1">
+                    <span className="font-display text-[13px] tabular-nums text-[#a1a1aa]">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                  </div>
+                  <p className="text-[15px] leading-relaxed text-[#a1a1aa] line-through decoration-[#d4d4d8] md:col-span-5">
+                    {row.old}
+                  </p>
+                  <p className="text-[15px] leading-relaxed text-[#0a0a0a] md:col-span-6">
+                    {row.now}
+                  </p>
+                </div>
+              </FadeIn>
+            ))}
           </div>
         </div>
       </section>
+
+      {/* PILAR PRODUK */}
+      <section className="px-6 py-24 md:py-32" id="pilar">
+        <div className="mx-auto max-w-[1100px]">
+          <FadeIn>
+            <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#71717a]">
+              Yang dikerjakan Menuin
+            </p>
+          </FadeIn>
+
+          <div className="mt-10 divide-y divide-black/[0.08] border-y border-black/[0.08]">
+            {pillars.map((pillar, i) => {
+              const Icon = pillar.icon;
+              return (
+                <FadeIn key={pillar.index} delay={i * 0.04}>
+                  <article className="grid grid-cols-1 gap-6 py-12 md:grid-cols-12 md:gap-10 md:py-16">
+                    <div className="md:col-span-5">
+                      <div className="flex items-center gap-3">
+                        <span className="font-display text-[13px] tabular-nums text-[#a1a1aa]">
+                          {pillar.index}
+                        </span>
+                        <Icon className="h-4 w-4 text-[#0E59F9]" strokeWidth={1.5} />
+                        <span className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#71717a]">
+                          {pillar.eyebrow}
+                        </span>
+                      </div>
+                      <h3 className="mt-5 max-w-[16ch] font-display text-[clamp(24px,3vw,34px)] font-semibold leading-[1.12] tracking-[-0.035em] text-[#0a0a0a] text-balance">
+                        {pillar.title}
+                      </h3>
+                    </div>
+
+                    <div className="md:col-span-7">
+                      <p className="max-w-[60ch] text-[15.5px] leading-relaxed text-[#52525b]">
+                        {pillar.body}
+                      </p>
+                      <dl className="mt-7 space-y-0">
+                        {pillar.specs.map((spec) => (
+                          <div
+                            key={spec.k}
+                            className="grid grid-cols-1 gap-1 border-t border-black/[0.06] py-3 sm:grid-cols-12 sm:gap-4"
+                          >
+                            <dt className="text-[13px] text-[#71717a] sm:col-span-4">{spec.k}</dt>
+                            <dd className="text-[14px] text-[#0a0a0a] sm:col-span-8">{spec.v}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </div>
+                  </article>
+                </FadeIn>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* SPESIFIKASI TEKNIS */}
+      <section className="border-t border-black/[0.06] bg-[#fafafa] px-6 py-24 md:py-32">
+        <div className="mx-auto max-w-[1100px]">
+          <FadeIn>
+            <h2 className="max-w-[20ch] font-display text-[clamp(28px,3.8vw,44px)] font-semibold leading-[1.1] tracking-[-0.035em] text-[#0a0a0a] text-balance">
+              Di balik layarnya.
+            </h2>
+          </FadeIn>
+
+          <div className="mt-12 grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-black/[0.08] bg-black/[0.08] md:grid-cols-6">
+            {specs.map((spec, i) => {
+              const Icon = spec.icon;
+              return (
+                <div
+                  key={spec.title}
+                  className={`bg-white p-7 md:p-9 ${spec.wide ? "md:col-span-4" : "md:col-span-2"}`}
+                >
+                  <Icon className="h-5 w-5 text-[#0E59F9]" strokeWidth={1.5} />
+                  <p className="mt-6 font-display text-[clamp(20px,2.2vw,26px)] font-semibold leading-tight tracking-[-0.03em] text-[#0a0a0a]">
+                    {spec.value}
+                  </p>
+                  <h3 className="mt-2 text-[14px] font-medium text-[#0a0a0a]">{spec.title}</h3>
+                  <p className="mt-2 max-w-[46ch] text-[13.5px] leading-relaxed text-[#71717a]">
+                    {spec.body}
+                  </p>
+                  <span className="sr-only">{i + 1}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
 
       {/* WRAPPER FOR TESTIMONIAL & PRICING */}
       <div className="relative overflow-hidden bg-[#FAFAFA]">
@@ -1596,20 +1819,20 @@ export default function LandingPage({
               <FadeIn className="lg:col-span-4 pr-0 lg:pr-4 pt-3">
                 <div className="space-y-1">
                   <h2 className="text-[clamp(32px,3.8vw,46px)] font-black leading-[1.08] tracking-[-0.04em] text-slate-900">
-                    Monthly Renewal,
+                    Langganan bulanan,
                   </h2>
                   <h2 className="text-[clamp(32px,3.8vw,46px)] font-black leading-[1.08] tracking-[-0.04em] text-[#0E59F9]">
-                    No Fixed Term Contracts
+                    tanpa kontrak tahunan.
                   </h2>
                 </div>
 
                 <p className="text-slate-500 text-sm sm:text-[14.5px] mt-6 leading-relaxed">
-                  Flexible monthly subscription without long-term commitments. Digitize orders, cashier POS, tables, kitchen display, and stock in one unified platform.
+                  Bayar per bulan, per outlet. Tidak ada biaya pemasangan awal, tidak ada potongan komisi per transaksi menu, dan tidak ada kontrak yang mengikat.
                 </p>
 
                 <div className="mt-8 flex items-center gap-2.5 text-xs font-semibold text-slate-700">
                   <span className="w-2.5 h-2.5 rounded-full bg-[#0E59F9]" />
-                  <span>Instant Activation & Free Setup Support</span>
+                  <span>Aktivasi instan dan bantuan setup dari tim kami</span>
                 </div>
               </FadeIn>
 
@@ -1625,24 +1848,24 @@ export default function LandingPage({
                       </h3>
                       <div className="flex items-baseline gap-1 mt-2 mb-6">
                         <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-                          Rp199k
+                          Rp 199.000
                         </span>
                         <span className="text-xs sm:text-sm font-semibold text-slate-400">
-                          /mo
+                          /bulan per outlet
                         </span>
                       </div>
 
                       <div className="border-t border-slate-100 divide-y divide-slate-100">
                         {[
-                          "Fast Cloud POS & Receipt Printing",
-                          "Unlimited QR Code Table Self-Ordering",
-                          "Automated Dynamic QRIS Payment",
-                          "Kitchen Display System (KDS Dapur)",
-                          "Multi-Staff & Role-Based Access Control",
-                          "Live Inventory & Low Stock Alerts",
-                          "Real-Time Sales, Shift & Profit Reports",
-                          "Bluetooth & LAN Cashier Printer Integration",
-                          "Real-Time Excel & PDF Data Export",
+                          "Kasir cloud dan cetak struk termal",
+                          "QR meja tanpa batas jumlah pesanan",
+                          "QRIS dinamis terverifikasi otomatis",
+                          "Layar dapur (KDS) tanpa kertas",
+                          "Hak akses kasir, manajer, dan superadmin",
+                          "Stok berjalan dan peringatan stok menipis",
+                          "Laporan penjualan, shift, dan laba",
+                          "Printer kasir Bluetooth dan LAN (58/80 mm)",
+                          "Ekspor data ke Excel dan PDF",
                         ].map((feat, idx) => (
                           <div key={idx} className="py-2.5 text-[12.5px] sm:text-[13px] font-medium text-slate-700 leading-snug">
                             {feat}
@@ -1660,7 +1883,7 @@ export default function LandingPage({
                           <ArrowRight className="w-3.5 h-3.5" />
                         </div>
                         <span className="text-xs sm:text-[13px] font-bold text-slate-900 group-hover:text-[#0E59F9] transition-colors">
-                          Inquire Now
+                          Mulai sekarang
                         </span>
                       </a>
                     </div>
@@ -1672,25 +1895,25 @@ export default function LandingPage({
                   <div className="flex flex-col justify-between p-7 sm:p-8 rounded-[32px] bg-white border border-slate-200/80 shadow-[0_4px_24px_rgba(0,0,0,0.04)] hover:shadow-xl transition-all h-full">
                     <div>
                       <h3 className="text-xl font-bold text-slate-900">
-                        Custom
+                        Enterprise
                       </h3>
                       <div className="flex items-baseline gap-1 mt-2 mb-6">
                         <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-                          Custom
+                          Hubungi kami
                         </span>
                       </div>
 
                       <div className="border-t border-slate-100 divide-y divide-slate-100">
                         {[
-                          "Unlimited Outlets & Multi-Branch Network",
-                          "Everything in Pro Plan Included",
-                          "Custom Domain & White-Label Branding",
-                          "Full API & External ERP Integrations",
-                          "Dedicated Account Manager & Onboarding",
-                          "24/7 Priority Support (99.9% SLA)",
-                          "Custom Hardware Setup & Staff Training",
-                          "Custom Feature Development on Demand",
-                          "Full Historical Data & Menu Migration",
+                          "Outlet tanpa batas dalam satu jaringan",
+                          "Seluruh fitur paket Pro",
+                          "Domain sendiri dan white-label",
+                          "Integrasi API dan ERP eksternal",
+                          "Account manager khusus dan onboarding",
+                          "Dukungan prioritas dengan SLA tertulis",
+                          "Setup perangkat dan pelatihan staf",
+                          "Pengembangan fitur sesuai kebutuhan",
+                          "Migrasi data historis dan menu",
                         ].map((feat, idx) => (
                           <div key={idx} className="py-2.5 text-[12.5px] sm:text-[13px] font-medium text-slate-700 leading-snug">
                             {feat}
@@ -1701,7 +1924,7 @@ export default function LandingPage({
 
                     <div className="pt-6 mt-4">
                       <a
-                        href="https://wa.me/628123456789?text=Halo%20MENUIN,%20saya%20tertarik%20dengan%20Custom%20Enterprise%20Plan"
+                        href={CONTACT_WHATSAPP}
                         target="_blank"
                         rel="noreferrer"
                         className="inline-flex items-center gap-3 group"
@@ -1710,7 +1933,7 @@ export default function LandingPage({
                           <ArrowRight className="w-3.5 h-3.5" />
                         </div>
                         <span className="text-xs sm:text-[13px] font-bold text-slate-900 group-hover:text-[#0E59F9] transition-colors">
-                          Inquire Now
+                          Mulai sekarang
                         </span>
                       </a>
                     </div>
