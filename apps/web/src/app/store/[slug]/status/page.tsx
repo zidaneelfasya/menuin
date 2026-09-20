@@ -94,6 +94,23 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
     return () => clearInterval(interval);
   }, [orderStatus, currentOrderNumber, fetchOrder]);
 
+  // Clean up active order in localStorage when order completes or cancels
+  useEffect(() => {
+    if (!order) return;
+    const computed = resolveOrderStatus(order);
+    const terminalStatuses = ['COMPLETED', 'CANCELLED', 'CANCELED', 'REJECTED', 'PAYMENT_FAILED'];
+    const currentStatusUpper = (order.status || '').toUpperCase();
+    const isTerminal = terminalStatuses.includes(computed) || terminalStatuses.includes(currentStatusUpper);
+
+    if (isTerminal) {
+      const storageKey = `menuin_active_order_${unwrappedParams.slug}`;
+      if (localStorage.getItem(storageKey)) {
+        localStorage.removeItem(storageKey);
+        window.dispatchEvent(new Event("menuin_active_order_updated"));
+      }
+    }
+  }, [order, unwrappedParams.slug]);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!orderNumber.trim()) return;
@@ -137,7 +154,7 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
         <header className="bg-white/95 backdrop-blur-xs border-b border-gray-150 px-4 py-3.5 flex items-center justify-between sticky top-0 z-20 shadow-2xs">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" asChild className="h-9 w-9 shrink-0 rounded-full hover:bg-gray-100">
-              <Link href="/" aria-label="Kembali ke menu">
+              <Link href={`/store/${unwrappedParams.slug}`} aria-label="Kembali ke menu restoran">
                 <ArrowLeft className="h-4.5 w-4.5" />
               </Link>
             </Button>
@@ -344,6 +361,30 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
                   ))}
                 </div>
               </div>
+
+              {/* 5. Re-order / Back to Store CTA when Completed */}
+              {(() => {
+                const computedStatus = resolveOrderStatus(order);
+                const effectiveStatus = previewStatus || computedStatus;
+                const isFinished = ['COMPLETED', 'CANCELLED', 'REJECTED'].includes(effectiveStatus);
+
+                if (!isFinished) return null;
+
+                return (
+                  <div className="pt-2">
+                    <Button
+                      asChild
+                      className="w-full h-12 rounded-2xl text-sm font-bold text-white shadow-xs transition-opacity hover:opacity-95 flex items-center justify-center gap-2"
+                      style={{ backgroundColor: "var(--outlet-primary, #2563eb)" }}
+                    >
+                      <Link href={`/store/${unwrappedParams.slug}`}>
+                        <span>Pesan Menu Lain</span>
+                        <ArrowLeft className="w-4 h-4 rotate-180" />
+                      </Link>
+                    </Button>
+                  </div>
+                );
+              })()}
             </div>
           )}
         </main>

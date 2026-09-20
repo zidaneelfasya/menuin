@@ -3,6 +3,7 @@ export interface ProductDto {
   sku: string;
   name: string;
   price: string;
+  costPrice?: string | null;
   stock: number;
   minStock: number;
   categoryName: string | null;
@@ -12,6 +13,7 @@ export interface ProductDto {
   barcode: string | null;
   isAvailableOnline?: boolean;
   isFeatured?: boolean;
+  isActive?: boolean;
   trackStock?: boolean;
   status: string;
   modifierGroupIds?: string[];

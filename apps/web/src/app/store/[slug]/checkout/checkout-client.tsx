@@ -260,6 +260,7 @@ export function CheckoutClient({ tenantSlug, settings }: CheckoutClientProps) {
 
       if (result.orderNumber) {
         localStorage.setItem(`menuin_active_order_${tenantSlug}`, result.orderNumber);
+        window.dispatchEvent(new Event("menuin_active_order_updated"));
       }
 
       setIsSuccess(true);

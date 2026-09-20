@@ -2,7 +2,7 @@
 
 import { db } from '@/lib/db';
 import { products, categories, productModifierGroups, modifierGroups } from '@/lib/db/schema';
-import { eq, and, sql, desc } from 'drizzle-orm';
+import { eq, and, sql, desc, inArray } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { getCurrentUser } from './auth';
@@ -39,6 +39,7 @@ export async function getProducts(): Promise<{ success: boolean, data?: ProductD
         sku: products.sku,
         name: products.name,
         price: products.price,
+        costPrice: products.costPrice,
         stock: products.stock,
         minStock: products.minStock,
         trackStock: products.trackStock,
@@ -49,7 +50,8 @@ export async function getProducts(): Promise<{ success: boolean, data?: ProductD
         barcode: products.barcode,
         isAvailableOnline: products.isAvailableOnline,
         isFeatured: products.isFeatured,
-        status: sql<string>`CASE WHEN ${products.trackStock} = false THEN 'active' WHEN ${products.stock} > 0 THEN 'active' ELSE 'inactive' END`,
+        isActive: products.isActive,
+        status: sql<string>`CASE WHEN ${products.isActive} = false THEN 'inactive' WHEN ${products.trackStock} = false THEN 'active' WHEN ${products.stock} > 0 THEN 'active' ELSE 'out_of_stock' END`,
       })
       .from(products)
       .leftJoin(categories, eq(products.categoryId, categories.id))
@@ -130,6 +132,7 @@ export async function createProduct(formData: z.infer<typeof productSchema>) {
       stock: validatedData.stock,
       minStock: validatedData.minStock,
       trackStock: validatedData.trackStock ?? true,
+      isActive: validatedData.isActive ?? true,
       imageUrl: validatedData.imageUrl,
       description: validatedData.description || null,
       barcode: finalBarcode,
@@ -171,6 +174,7 @@ export async function updateProduct(id: string, formData: z.infer<typeof product
         stock: validatedData.stock,
         minStock: validatedData.minStock,
         trackStock: validatedData.trackStock ?? true,
+        ...(validatedData.isActive !== undefined ? { isActive: validatedData.isActive } : {}),
         imageUrl: validatedData.imageUrl,
         description: validatedData.description || null,
         barcode: validatedData.barcode,
@@ -216,3 +220,95 @@ export async function deleteProduct(id: string) {
     return { success: false, error: 'Gagal menghapus produk. Pastikan produk ini belum memiliki riwayat transaksi.' };
   }
 }
+
+export async function bulkToggleProductBestSeller(productIds: string[], isFeatured: boolean) {
+  try {
+    const user = await getCurrentUser();
+    if (!user || !user.tenantId) return { success: false, error: 'Unauthorized' };
+    if (!productIds || productIds.length === 0) return { success: true, count: 0 };
+
+    await db.update(products)
+      .set({ isFeatured, updatedAt: new Date() })
+      .where(and(inArray(products.id, productIds), eq(products.tenantId, user.tenantId)));
+
+    if (user && typeof user === "object" && "outletKey" in user) { 
+      revalidatePath(`/outlet/${user.outletKey}`, "layout"); 
+      revalidatePath(`/outlet/${user.outletKey}/items`, "page"); 
+    }
+    return { success: true, count: productIds.length };
+  } catch (error) {
+    console.error('Error bulk toggling best seller status:', error);
+    return { success: false, error: 'Gagal mengubah status Best Seller produk terpilih' };
+  }
+}
+
+export async function bulkDeleteProducts(productIds: string[]) {
+  try {
+    const user = await getCurrentUser();
+    if (!user || !user.tenantId) return { success: false, error: 'Unauthorized' };
+    if (!productIds || productIds.length === 0) return { success: true, count: 0 };
+
+    await db.delete(productModifierGroups).where(inArray(productModifierGroups.productId, productIds));
+    await db.delete(products).where(and(inArray(products.id, productIds), eq(products.tenantId, user.tenantId)));
+
+    // Non-blocking audit logs
+    for (const id of productIds) {
+      AuditService.log('DELETE', 'products', id).catch(console.error);
+    }
+
+    if (user && typeof user === "object" && "outletKey" in user) { 
+      revalidatePath(`/outlet/${user.outletKey}`, "layout"); 
+      revalidatePath(`/outlet/${user.outletKey}/items`, "page"); 
+    }
+    return { success: true, count: productIds.length };
+  } catch (error) {
+    console.error('Error bulk deleting products:', error);
+    return { success: false, error: 'Gagal menghapus beberapa produk. Pastikan produk tidak memiliki riwayat transaksi aktif.' };
+  }
+}
+
+export async function toggleProductActiveStatus(productId: string, isActive: boolean) {
+  try {
+    const user = await getCurrentUser();
+    if (!user || !user.tenantId) return { success: false, error: 'Unauthorized' };
+
+    await db.update(products)
+      .set({ isActive, updatedAt: new Date() })
+      .where(and(eq(products.id, productId), eq(products.tenantId, user.tenantId)));
+
+    if (user && typeof user === "object" && "outletKey" in user) { 
+      revalidatePath(`/outlet/${user.outletKey}`, "layout"); 
+      revalidatePath(`/outlet/${user.outletKey}/items`, "page"); 
+      revalidatePath(`/outlet/${user.outletKey}/pos`, "page"); 
+    }
+    revalidatePath("/store/[slug]", "layout");
+    return { success: true };
+  } catch (error) {
+    console.error('Error toggling product active status:', error);
+    return { success: false, error: 'Gagal mengubah status ketersediaan item' };
+  }
+}
+
+export async function bulkToggleProductActiveStatus(productIds: string[], isActive: boolean) {
+  try {
+    const user = await getCurrentUser();
+    if (!user || !user.tenantId) return { success: false, error: 'Unauthorized' };
+    if (!productIds || productIds.length === 0) return { success: true, count: 0 };
+
+    await db.update(products)
+      .set({ isActive, updatedAt: new Date() })
+      .where(and(inArray(products.id, productIds), eq(products.tenantId, user.tenantId)));
+
+    if (user && typeof user === "object" && "outletKey" in user) { 
+      revalidatePath(`/outlet/${user.outletKey}`, "layout"); 
+      revalidatePath(`/outlet/${user.outletKey}/items`, "page"); 
+      revalidatePath(`/outlet/${user.outletKey}/pos`, "page"); 
+    }
+    revalidatePath("/store/[slug]", "layout");
+    return { success: true, count: productIds.length };
+  } catch (error) {
+    console.error('Error bulk toggling product active status:', error);
+    return { success: false, error: 'Gagal mengubah status ketersediaan beberapa produk' };
+  }
+}
+
