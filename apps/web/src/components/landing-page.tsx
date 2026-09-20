@@ -76,15 +76,6 @@ function FadeIn({
 const CONTACT_WHATSAPP =
   "https://wa.me/628123456789?text=Halo%20Menuin%2C%20saya%20ingin%20berdiskusi%20soal%20paket%20Enterprise";
 
-// Peta isi halaman — mengikuti pola "Get the highlights" Apple.
-const highlights = [
-  { label: "QR Meja", href: "#ekosistem" },
-  { label: "Kasir POS", href: "#ekosistem" },
-  { label: "Layar Dapur", href: "#pilar" },
-  { label: "Audit Kas", href: "#pilar" },
-  { label: "Multi-Outlet", href: "#pilar" },
-];
-
 // Setiap angka di sini harus bisa dijelaskan asalnya (lihat catatan kaki).
 const keyNumbers = [
   { value: "< 200", unit: "ms", label: "Pesanan meja sampai ke layar dapur", note: 1 },
@@ -223,11 +214,16 @@ const specs = [
 // Hanya mitra pembayaran & teknologi yang benar-benar terintegrasi.
 // Logo lembaga pemerintah sengaja tidak ditampilkan di sini — lihat
 // docs/landing-revamp/IMPLEMENTATION-PLAN.md §8 R1.
+// Semua di-host lokal; tidak ada lagi hotlink ke Wikimedia.
+// `midtrans-ink.svg` adalah salinan wordmark Midtrans yang fill putihnya
+// ditukar ke abu tinta — berkas aslinya dibuat untuk latar gelap.
+// Tinggi dipakai untuk menyamakan bobot optis, bukan tinggi kotaknya.
 const logos = [
-  { name: "Midtrans" },
-  { name: "QRIS" },
-  { name: "BCA · Mandiri · BRI · BNI" },
-  { name: "GoPay · OVO · DANA · ShopeePay" },
+  { name: "Midtrans", src: "/img/brand_logo/midtrans-ink.svg", h: 18 },
+  { name: "QRIS", src: "/img/brand_logo/qris.svg", h: 22 },
+  { name: "BCA", src: "/img/brand_logo/bca.svg", h: 20 },
+  { name: "Bank Mandiri", src: "/img/brand_logo/mandiri.svg", h: 18 },
+  { name: "BNI", src: "/img/brand_logo/bni.svg", h: 22 },
 ];
 
 /**
@@ -1431,51 +1427,37 @@ export default function LandingPage({
         </div>
       </section>
 
-      {/* HIGHLIGHTS — peta isi halaman */}
-      <section className="mt-24 px-6 md:mt-28" aria-label="Sorotan produk">
-        <div className="mx-auto max-w-[1100px] border-t border-black/[0.08] pt-6">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <span className="mr-1 font-display text-[15px] font-semibold tracking-[-0.02em] text-[#0a0a0a]">
-              Lihat sorotannya.
-            </span>
-            {highlights.map((h) => (
-              <a
-                key={h.label}
-                href={h.href}
-                className="rounded-full border border-black/[0.08] px-3.5 py-1.5 text-[13px] text-[#52525b] transition-colors hover:border-black/20 hover:text-[#0a0a0a]"
-              >
-                {h.label}
-              </a>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ANGKA KUNCI */}
-      <section className="px-6 py-20 md:py-24" aria-label="Angka kunci">
+      <section className="px-6 py-16 md:py-20" aria-label="Angka kunci">
         <div className="mx-auto max-w-[1100px]">
-          <div className="grid grid-cols-2 gap-x-6 gap-y-10 md:grid-cols-4">
+          {/* Garis pemisah tipis menahan angka-angka ini supaya tidak
+              mengambang di tengah ruang putih. */}
+          <div className="grid grid-cols-2 border-t border-black/[0.08] md:grid-cols-4">
             {keyNumbers.map((n, i) => (
-              <FadeIn key={n.label} delay={i * 0.05}>
-                <div>
-                  <div className="font-display text-[clamp(34px,4.4vw,52px)] font-semibold leading-none tracking-[-0.04em] tabular-nums text-[#0a0a0a]">
-                    {n.value}
-                    {n.unit && (
-                      <span className="ml-1 text-[0.45em] font-medium tracking-normal text-[#71717a]">
-                        {n.unit}
-                      </span>
-                    )}
-                  </div>
-                  <p className="mt-3 max-w-[22ch] text-[13.5px] leading-snug text-[#52525b]">
-                    {n.label}
-                    {n.note && <sup className="ml-0.5 text-[#a1a1aa]">{n.note}</sup>}
-                  </p>
+              <FadeIn
+                key={n.label}
+                delay={i * 0.05}
+                className={`border-b border-black/[0.08] px-0 py-7 md:border-b-0 md:py-8 ${
+                  i > 0 ? "md:border-l md:border-black/[0.08] md:pl-7" : ""
+                } ${i % 2 === 1 ? "border-l border-black/[0.08] pl-6 md:pl-7" : ""}`}
+              >
+                <div className="font-display text-[clamp(32px,4vw,46px)] font-semibold leading-none tracking-[-0.04em] tabular-nums text-[#0a0a0a]">
+                  {n.value}
+                  {n.unit && (
+                    <span className="ml-1 text-[0.45em] font-medium tracking-normal text-[#71717a]">
+                      {n.unit}
+                    </span>
+                  )}
                 </div>
+                <p className="mt-3 max-w-[20ch] text-[13.5px] leading-snug text-[#52525b]">
+                  {n.label}
+                  {n.note && <sup className="ml-0.5 text-[#a1a1aa]">{n.note}</sup>}
+                </p>
               </FadeIn>
             ))}
           </div>
 
-          <ol className="mt-12 space-y-1.5 border-t border-black/[0.08] pt-5 text-[12px] leading-relaxed text-[#71717a]">
+          <ol className="mt-8 space-y-1.5 border-t border-black/[0.08] pt-5 text-[12px] leading-relaxed text-[#71717a]">
             {keyNumberNotes.map((note, i) => (
               <li key={i}>
                 <sup className="mr-1">{i + 1}</sup>
@@ -1487,23 +1469,21 @@ export default function LandingPage({
       </section>
 
       {/* MITRA PEMBAYARAN */}
-      <section className="border-y border-black/[0.06] bg-[#fafafa] px-6 py-10" aria-label="Mitra pembayaran">
-        <div className="mx-auto flex max-w-[1100px] flex-col items-center gap-5 sm:flex-row sm:justify-between">
-          <p className="text-[13px] text-[#71717a]">
+      <section className="border-y border-black/[0.06] bg-[#fafafa] px-6 py-8" aria-label="Mitra pembayaran">
+        <div className="mx-auto max-w-[1100px] text-center">
+          <p className="text-[12px] uppercase tracking-[0.14em] text-[#a1a1aa]">
             Pembayaran diproses lewat penyelenggara berizin
           </p>
-          {/* Wordmark tipografis, bukan file logo.
-              Aset logo resmi (versi gelap di atas terang) belum tersedia —
-              logo Midtrans yang ada di repo berwarna putih dan tidak terbaca di
-              latar terang. Lihat docs/landing-revamp/IMPLEMENTATION-PLAN.md §5.3. */}
-          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-10 gap-y-5">
             {logos.map((logo) => (
-              <span
+              <img
                 key={logo.name}
-                className="font-display text-[14px] font-medium tracking-[-0.01em] text-[#52525b]"
-              >
-                {logo.name}
-              </span>
+                src={logo.src}
+                alt={logo.name}
+                loading="lazy"
+                style={{ height: logo.h }}
+                className="w-auto opacity-55 grayscale transition-opacity hover:opacity-100"
+              />
             ))}
           </div>
         </div>
