@@ -9,17 +9,15 @@ import {
   CreditCard,
   Monitor,
   Printer,
-  Clock,
-  Store,
   ShieldCheck,
   RefreshCw,
   Layers,
   Building2,
-  Smartphone,
   Laptop,
   Tv,
-  Search,
 } from "lucide-react";
+import EcosystemGallery from "@/components/landing/ecosystem-gallery";
+import { HeroIntro, ScrollReveal } from "@/components/landing/scroll-reveal";
 import FaqEditorial from "@/components/ui/faq-editorial";
 import FooterReadyToBegin from "@/components/ui/footer-ready-to-begin";
 import FooterSuperfluidStyle from "@/components/ui/footer-superfluid-style";
@@ -225,29 +223,6 @@ const logos = [
   { name: "Bank Mandiri", src: "/img/brand_logo/mandiri.svg", h: 18 },
   { name: "BNI", src: "/img/brand_logo/bni.svg", h: 22 },
 ];
-
-/**
- * Thumbnail produk tanpa foto stok.
- * Kasir sungguhan sering belum punya foto untuk semua menu, dan memasang foto
- * Unsplash di landing page membuat produk terlihat bukan milik sendiri.
- */
-function ProductThumb({ name, className = "" }: { name: string; className?: string }) {
-  const initials = name
-    .split(" ")
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase();
-
-  return (
-    <div
-      aria-hidden="true"
-      className={`flex items-center justify-center bg-slate-100 text-slate-500 font-semibold tracking-tight ${className}`}
-    >
-      {initials}
-    </div>
-  );
-}
 
 /**
  * Visual hero: foto kasir Menuin dipakai di gerai sungguhan.
@@ -578,518 +553,6 @@ function RealCard({ data }: { data: any }) {
 
 // --- UNIFIED HIGH-FIDELITY POS WORKSPACE SHOWCASE ---
 
-type ShowcaseTab = 'qr-order' | 'pos' | 'shift' | 'outlets';
-
-function InteractivePOSShowcase() {
-  const [activeTab, setActiveTab] = useState<ShowcaseTab>('qr-order');
-  const [activeCategory, setActiveCategory] = useState('Semua item');
-  const [activeOutletIdx, setActiveOutletIdx] = useState(0);
-
-  const sampleProducts = [
-    {
-      name: 'Signature Mocca Cake',
-      sku: 'BLP-001',
-      price: 'Rp 45.000',
-      category: 'Bakery & Kue',
-      stock: 24
-    },
-    {
-      name: 'Cheese Cake Panggang',
-      sku: 'BLP-002',
-      price: 'Rp 50.000',
-      category: 'Bakery & Kue',
-      stock: 18
-    },
-    {
-      name: 'Chiffon Pandan',
-      sku: 'BLK-001',
-      price: 'Rp 35.000',
-      category: 'Bakery & Kue',
-      stock: 30
-    },
-    {
-      name: 'Kastengel Keju',
-      sku: 'KKR-002',
-      price: 'Rp 90.000',
-      category: 'Pastry',
-      stock: 15
-    },
-    {
-      name: 'Es Kopi Gula Aren',
-      sku: 'MNM-001',
-      price: 'Rp 18.000',
-      category: 'Minuman',
-      stock: 85
-    },
-    {
-      name: 'Es Teh Susu Segar',
-      sku: 'MNM-002',
-      price: 'Rp 15.000',
-      category: 'Minuman',
-      stock: 60
-    },
-  ];
-
-  const filteredProducts = activeCategory === 'Semua item'
-    ? sampleProducts
-    : sampleProducts.filter(p => p.category === activeCategory);
-
-  const outlets = [
-    { name: 'Outlet Pusat (HQ)', address: 'Jl. Sudirman No. 42', role: 'SUPERADMIN', revenue: 'Rp 14.850.000', cashier: '4 kasir aktif', orders: 124, status: 'Buka' },
-    { name: 'Cabang Mall Gandaria', address: 'Gandaria City UG-12', role: 'SUPERADMIN', revenue: 'Rp 8.420.000', cashier: '2 kasir aktif', orders: 68, status: 'Buka' },
-    { name: 'Food Truck Festival', address: 'GBK Gate 5', role: 'CASHIER', revenue: 'Rp 3.190.000', cashier: '1 kasir aktif', orders: 32, status: 'Buka' },
-  ];
-
-  return (
-    <div className="w-full max-w-[1100px] mx-auto bg-white rounded-3xl border border-slate-200/90 shadow-[0_20px_60px_-15px_rgba(15,23,42,0.06)] overflow-hidden">
-      {/* Clean Window Header */}
-      <div className="bg-slate-50/80 border-b border-slate-200/80 px-4 md:px-6 py-3 flex items-center justify-between">
-        {/* Left: Window Dots */}
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-slate-300" />
-          <span className="w-2.5 h-2.5 rounded-full bg-slate-300" />
-          <span className="w-2.5 h-2.5 rounded-full bg-slate-300" />
-        </div>
-
-        {/* Center: Modern Segmented Switcher */}
-        <div className="flex items-center bg-slate-200/70 p-1 rounded-xl gap-1 max-w-full overflow-x-auto scrollbar-none">
-          {[
-            { id: 'qr-order', label: 'QR Meja', icon: QrCode },
-            { id: 'pos', label: 'Kasir POS', icon: Monitor },
-            { id: 'shift', label: 'Audit Shift', icon: Clock },
-            { id: 'outlets', label: 'Multi-Outlet', icon: Store },
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as ShowcaseTab)}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap ${isActive
-                  ? 'bg-white text-[#0E59F9] shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
-                  }`}
-              >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#0E59F9]' : 'text-slate-400'}`} />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Right: Balanced Spacing */}
-        <div className="w-10 hidden sm:block" />
-      </div>
-
-      {/* Tab Contents */}
-      <div className="p-5 md:p-8 bg-white min-h-[460px]">
-        {/* TAB 1: TABLE QR SELF-ORDERING */}
-        {activeTab === 'qr-order' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            {/* Left: Customer Smartphone Mockup */}
-            <div className="lg:col-span-5 flex justify-center">
-              <div className="w-full max-w-[320px] bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden flex flex-col h-[460px] select-none text-slate-900">
-                {/* Browser URL / Status Bar */}
-                <div className="bg-slate-50 border-b border-slate-200 px-3.5 py-2.5 flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[10px] font-mono text-slate-600 w-full justify-between">
-                    <span className="truncate">menuin.id/table/08</span>
-                    <span className="text-emerald-600 text-[9px] font-bold">QRIS aktif</span>
-                  </div>
-                </div>
-
-                {/* Table Header inside Customer Phone */}
-                <div className="bg-white border-b border-slate-100 px-4 py-3 flex items-center justify-between">
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900">Kopi Ruang Teduh</h4>
-                    <span className="text-[10px] text-slate-500 font-medium">Meja 08 · Dine-in</span>
-                  </div>
-                  <span className="px-2 py-0.5 rounded-full bg-blue-50 text-[#0E59F9] text-[9px] font-bold border border-blue-100">
-                    Pesan mandiri
-                  </span>
-                </div>
-
-                {/* Cart Content in Customer Phone */}
-                <div className="p-3.5 flex-1 overflow-y-auto space-y-2.5 text-xs bg-slate-50/50">
-                  <div className="p-2.5 rounded-xl bg-white border border-slate-200/80 flex items-start gap-2.5 shadow-2xs">
-                    <ProductThumb name="Signature Mocca Cake" className="w-10 h-10 rounded-lg border border-slate-100 shrink-0 text-[10px]" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between font-bold">
-                        <span className="truncate">1x Signature Mocca Cake</span>
-                        <span className="shrink-0 ml-1 font-extrabold text-[#0E59F9]">Rp 45.000</span>
-                      </div>
-                      <p className="text-[10px] text-slate-500 mt-0.5">Catatan: potong 8</p>
-                    </div>
-                  </div>
-
-                  <div className="p-2.5 rounded-xl bg-white border border-slate-200/80 flex items-start gap-2.5 shadow-2xs">
-                    <ProductThumb name="Es Kopi Gula Aren" className="w-10 h-10 rounded-lg border border-slate-100 shrink-0 text-[10px]" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between font-bold">
-                        <span className="truncate">2x Es Kopi Gula Aren</span>
-                        <span className="shrink-0 ml-1 font-extrabold text-[#0E59F9]">Rp 36.000</span>
-                      </div>
-                      <p className="text-[10px] text-slate-500 mt-0.5">Catatan: less ice, less sugar</p>
-                    </div>
-                  </div>
-
-                  <div className="pt-2 border-t border-slate-200 space-y-1 text-[11px] text-slate-600">
-                    <div className="flex justify-between">
-                      <span>Subtotal</span>
-                      <span>Rp 81.000</span>
-                    </div>
-                    <div className="flex justify-between text-rose-600 font-medium">
-                      <span>Diskon promo meja (10%)</span>
-                      <span>-Rp 8.100</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Pajak layanan (10%)</span>
-                      <span>+Rp 7.290</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Phone Bottom Sticky Checkout */}
-                <div className="p-3 bg-white border-t border-slate-200">
-                  <div className="flex justify-between items-baseline mb-2">
-                    <span className="text-[10px] text-slate-500 font-semibold">Total tagihan (Meja 08)</span>
-                    <span className="text-sm font-extrabold text-slate-900">Rp 80.190</span>
-                  </div>
-                  <button
-                    type="button"
-                    className="w-full h-9 rounded-xl bg-[#0E59F9] text-white text-[11px] font-bold flex items-center justify-center gap-1.5 shadow-sm hover:bg-[#0B48CC] transition-colors"
-                  >
-                    <CreditCard className="w-3.5 h-3.5" />
-                    <span>Bayar dengan QRIS</span>
-                  </button>
-                  <span className="text-[9px] text-center text-slate-400 block mt-1">
-                    Langsung diteruskan ke dapur dan kasir
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right: The 3-Step Instant Table Flow */}
-            <div className="lg:col-span-7 space-y-5">
-              <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-[#0E59F9] mb-1.5 block">
-                  Pesan mandiri dari meja
-                </span>
-                <h3 className="text-xl md:text-2xl font-extrabold text-slate-900 leading-tight">
-                  Tamu memesan dan membayar dari mejanya sendiri
-                </h3>
-                <p className="text-xs md:text-sm text-slate-600 mt-2 leading-relaxed">
-                  Antrean di kasir berkurang dan pelayan tidak perlu bolak-balik. Tamu memindai QR di meja dengan kamera bawaan ponsel, memilih varian, lalu membayar tanpa mengunduh aplikasi apa pun.
-                </p>
-              </div>
-
-              <div className="space-y-3.5 pt-2">
-                <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
-                  <div className="w-8 h-8 rounded-xl bg-blue-100 text-[#0E59F9] flex items-center justify-center shrink-0 font-bold text-xs">
-                    1
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900">Pindai QR di meja</h4>
-                    <p className="text-[11px] text-slate-600 mt-0.5">
-                      Tanpa unduh aplikasi. Kamera ponsel biasa langsung membuka katalog digital di browser.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
-                  <div className="w-8 h-8 rounded-xl bg-blue-100 text-[#0E59F9] flex items-center justify-center shrink-0 font-bold text-xs">
-                    2
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900">Pilih varian, lalu bayar</h4>
-                    <p className="text-[11px] text-slate-600 mt-0.5">
-                      Tamu memilih rasa, menambahkan catatan penyajian, lalu membayar via QRIS atau di kasir.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 font-bold text-xs">
-                    3
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900">Diteruskan ke dapur dan kasir</h4>
-                    <p className="text-[11px] text-slate-600 mt-0.5">
-                      Layar dapur dan kasir menerima tiket berisi nomor meja dan catatan persis seperti yang dipilih tamu.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 2: POS REGISTER */}
-        {activeTab === 'pos' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Left: Product Catalog */}
-            <div className="lg:col-span-7 flex flex-col gap-4">
-              {/* Product Search Bar */}
-              <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  readOnly
-                  value="Signature Mocca Cake"
-                  placeholder="Cari produk..."
-                  className="w-full h-11 pl-10 pr-4 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700 outline-none select-none"
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-medium border border-slate-200 hidden sm:inline">
-                  Filter cepat
-                </span>
-              </div>
-
-              {/* Categories */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-                {['Semua item', 'Bakery & Kue', 'Pastry', 'Minuman'].map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setActiveCategory(cat)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer whitespace-nowrap ${activeCategory === cat
-                      ? 'bg-slate-900 text-white'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200/70'
-                      }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-
-              {/* Products Grid with Admin-Style Photos */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {filteredProducts.map((p, idx) => (
-                  <div
-                    key={idx}
-                    className="rounded-2xl border border-slate-200/80 hover:border-[#0E59F9]/50 hover:shadow-md transition-all bg-white flex flex-col justify-between overflow-hidden select-none group cursor-pointer"
-                  >
-                    {/* Aspect 4/3 Product Image like Admin POS */}
-                    <div className="aspect-[4/3] bg-slate-100 relative overflow-hidden flex items-center justify-center">
-                      <ProductThumb name={p.name} className="w-full h-full text-base" />
-                      <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md bg-white/90 backdrop-blur-xs text-slate-700 text-[9px] font-mono font-bold shadow-xs">
-                        {p.sku}
-                      </span>
-                      <span className="absolute top-2 right-2 px-1.5 py-0.5 rounded-md bg-black/60 backdrop-blur-xs text-white text-[9px] font-medium">
-                        Stok: {p.stock}
-                      </span>
-                    </div>
-
-                    {/* Product Details */}
-                    <div className="p-3 flex flex-col flex-1 justify-between">
-                      <h4 className="text-xs font-bold text-slate-900 group-hover:text-[#0E59F9] transition-colors leading-tight line-clamp-1">
-                        {p.name}
-                      </h4>
-                      <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between">
-                        <span className="text-xs font-extrabold text-[#0E59F9]">{p.price}</span>
-                        <div className="w-6 h-6 rounded-lg bg-blue-50 text-[#0E59F9] flex items-center justify-center font-bold text-xs group-hover:bg-[#0E59F9] group-hover:text-white transition-colors shadow-2xs">
-                          +
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Right: Order Cart & Struk Preview */}
-            <div className="lg:col-span-5 bg-slate-50/70 rounded-2xl p-4 md:p-5 border border-slate-200/80 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-900">Pesanan aktif #MN-8921</h3>
-                    <p className="text-[11px] text-slate-500">Meja 04 · Kasir dine-in</p>
-                  </div>
-                  <span className="px-2.5 py-1 rounded-full bg-blue-50 text-[#0E59F9] text-[11px] font-bold border border-blue-100">
-                    2 item
-                  </span>
-                </div>
-
-                <div className="py-3 space-y-2.5 border-b border-slate-200 text-xs">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <ProductThumb name="Cheese Cake Panggang" className="w-9 h-9 rounded-lg border border-slate-200 shrink-0 text-[10px]" />
-                      <div className="truncate">
-                        <p className="font-semibold text-slate-800 truncate">1x Cheese Cake Panggang</p>
-                        <p className="text-[10px] text-slate-400 font-mono">BLP-002</p>
-                      </div>
-                    </div>
-                    <span className="font-bold text-slate-900 shrink-0 ml-2">Rp 50.000</span>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <ProductThumb name="Es Kopi Gula Aren" className="w-9 h-9 rounded-lg border border-slate-200 shrink-0 text-[10px]" />
-                      <div className="truncate">
-                        <p className="font-semibold text-slate-800 truncate">2x Es Kopi Gula Aren</p>
-                        <p className="text-[10px] text-slate-400 font-mono">MNM-001</p>
-                      </div>
-                    </div>
-                    <span className="font-bold text-slate-900 shrink-0 ml-2">Rp 36.000</span>
-                  </div>
-                </div>
-
-                <div className="py-2.5 space-y-1 text-xs text-slate-600 border-b border-slate-200">
-                  <div className="flex justify-between">
-                    <span>Subtotal</span>
-                    <span>Rp 86.000</span>
-                  </div>
-                  <div className="flex justify-between text-rose-600 font-medium">
-                    <span>Diskon promo (10%)</span>
-                    <span>-Rp 8.600</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Pajak restoran (PB1 10%)</span>
-                    <span>+Rp 7.740</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4 pt-2">
-                <div className="flex justify-between items-baseline mb-3">
-                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Total tagihan</span>
-                  <span className="text-lg font-black text-slate-900">Rp 85.140</span>
-                </div>
-
-                <div className="grid grid-cols-3 gap-2 mb-3">
-                  <div className="py-1.5 text-center text-xs font-semibold rounded-lg bg-white border border-[#0E59F9] text-[#0E59F9] shadow-sm">
-                    QRIS
-                  </div>
-                  <div className="py-1.5 text-center text-xs font-medium rounded-lg bg-white border border-slate-200 text-slate-600">
-                    Tunai
-                  </div>
-                  <div className="py-1.5 text-center text-xs font-medium rounded-lg bg-white border border-slate-200 text-slate-600">
-                    Debit / Kartu
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  className="w-full h-10 rounded-xl bg-[#0E59F9] text-white text-xs font-bold hover:bg-[#0C4CD6] transition-colors flex items-center justify-center gap-2 shadow-sm"
-                >
-                  <Printer className="w-3.5 h-3.5" />
-                  <span>Proses & cetak struk (58/80 mm)</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 3: SHIFT MANAGEMENT */}
-        {activeTab === 'shift' && (
-          <div className="space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-[#0E59F9] font-bold text-sm">
-                  SR
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-bold text-slate-900">Shift Pagi 1 — Kasir: Sarah Rahma</h3>
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200">
-                      SHIFT AKTIF
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500 mt-0.5">Jadwal 07.00–15.00 · Terminal kasir 01</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <span className="text-[11px] text-slate-500 block">Pesanan selama shift</span>
-                <span className="text-sm font-bold text-slate-900">72 pesanan selesai</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="p-4 rounded-xl bg-white border border-slate-200">
-                <span className="text-xs text-slate-500 font-medium block">Modal awal laci</span>
-                <span className="text-base font-extrabold text-slate-900 mt-1 block">Rp 200.000</span>
-                <span className="text-[10px] text-slate-400 mt-0.5 block">Dihitung saat buka shift</span>
-              </div>
-              <div className="p-4 rounded-xl bg-white border border-slate-200">
-                <span className="text-xs text-slate-500 font-medium block">Penjualan tunai</span>
-                <span className="text-base font-extrabold text-emerald-600 mt-1 block">+Rp 1.425.000</span>
-                <span className="text-[10px] text-slate-400 mt-0.5 block">24 transaksi tunai</span>
-              </div>
-              <div className="p-4 rounded-xl bg-white border border-slate-200">
-                <span className="text-xs text-slate-500 font-medium block">Non-tunai & QRIS</span>
-                <span className="text-base font-extrabold text-[#0E59F9] mt-1 block">Rp 2.890.000</span>
-                <span className="text-[10px] text-slate-400 mt-0.5 block">48 transaksi digital</span>
-              </div>
-              <div className="p-4 rounded-xl bg-white border border-slate-200">
-                <span className="text-xs text-slate-500 font-medium block">Kas keluar (petty cash)</span>
-                <span className="text-base font-extrabold text-rose-600 mt-1 block">-Rp 25.000</span>
-                <span className="text-[10px] text-slate-400 mt-0.5 block">Pengeluaran operasional</span>
-              </div>
-            </div>
-
-            <div className="p-5 rounded-2xl bg-emerald-50 border border-emerald-200 flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
-                  <ShieldCheck className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-emerald-950">Rekonsiliasi laci kas otomatis</h4>
-                  <p className="text-xs text-emerald-800">
-                    Kas seharusnya: <strong className="text-emerald-950">Rp 1.600.000</strong> • Uang fisik dihitung: <strong className="text-emerald-950">Rp 1.600.000</strong>
-                  </p>
-                </div>
-              </div>
-              <div className="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-extrabold shadow-sm">
-                Selisih: Rp 0
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 4: MULTI OUTLET & ANALYTICS */}
-        {activeTab === 'outlets' && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {outlets.map((outlet, idx) => (
-                <div
-                  key={idx}
-                  onClick={() => setActiveOutletIdx(idx)}
-                  className={`p-4 rounded-2xl border transition-all cursor-pointer ${activeOutletIdx === idx
-                    ? 'border-[#0E59F9] bg-blue-50/20 shadow-sm ring-1 ring-[#0E59F9]'
-                    : 'border-slate-200 bg-white hover:border-slate-300'
-                    }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-900 text-white">
-                      {outlet.role}
-                    </span>
-                    <span className="text-[11px] font-semibold text-emerald-600">{outlet.status}</span>
-                  </div>
-                  <h4 className="text-sm font-bold text-slate-900">{outlet.name}</h4>
-                  <p className="text-[11px] text-slate-500 mt-0.5">{outlet.address}</p>
-
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] text-slate-400 block">Omzet berjalan</span>
-                      <span className="text-xs font-bold text-slate-900">{outlet.revenue}</span>
-                    </div>
-                    <span className="text-[11px] text-slate-500">{outlet.cashier}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs text-slate-600">
-              <div className="flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-[#0E59F9]" />
-                <span className="font-semibold text-slate-900">Arsitektur multi-tenant PostgreSQL:</span>
-                <span>Data tiap cabang terisolasi lewat tenant ID masing-masing.</span>
-              </div>
-              <span className="font-mono text-slate-400 hidden lg:inline">UUID: d9f2e8-4a1b</span>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 export default function LandingPage({
   isLoggedIn = false,
@@ -1367,29 +830,30 @@ export default function LandingPage({
 
       {/* HERO */}
       <section className="relative px-6 pt-32 md:pt-40">
+        <HeroIntro>
         <div className="mx-auto max-w-[1100px]">
-          <FadeIn>
+          <div data-hero-item>
             <p className="text-center text-[12px] font-semibold uppercase tracking-[0.18em] text-[#71717a]">
               Ekosistem operasional F&amp;B
             </p>
-          </FadeIn>
+          </div>
 
-          <FadeIn delay={0.05}>
+          <div data-hero-item>
             <h1 className="mx-auto mt-6 max-w-[20ch] text-center font-display text-[clamp(34px,6.2vw,76px)] font-semibold leading-[1.03] tracking-[-0.04em] text-[#0a0a0a] text-balance">
               Satu sentuhan di meja.
               <span className="block">Kasir bergerak kilat.</span>
               <span className="block">Dapur tepat waktu.</span>
             </h1>
-          </FadeIn>
+          </div>
 
-          <FadeIn delay={0.1}>
+          <div data-hero-item>
             <p className="mx-auto mt-7 max-w-[62ch] text-center text-[16px] leading-relaxed text-[#52525b] md:text-[17px]">
               Menuin menyatukan pemesanan mandiri lewat QR di meja, kasir cloud untuk jam sibuk, dan
               layar dapur tanpa kertas — dalam satu sistem yang sama.
             </p>
-          </FadeIn>
+          </div>
 
-          <FadeIn delay={0.15}>
+          <div data-hero-item>
             <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <a
                 href={isLoggedIn ? "/select-tenant" : "/auth/signup"}
@@ -1411,20 +875,21 @@ export default function LandingPage({
                 <ArrowRight className="h-4 w-4 text-[#71717a]" />
               </a>
             </div>
-          </FadeIn>
+          </div>
 
-          <FadeIn delay={0.2}>
+          <div data-hero-item>
             <p className="mt-5 text-center text-[13px] text-[#71717a]">
               Tanpa kartu kredit · Setup 5 menit · Printer Bluetooth &amp; LAN
             </p>
-          </FadeIn>
+          </div>
 
-          <FadeIn delay={0.25}>
+          <div data-hero-item>
             <div className="mt-14 md:mt-16">
               <HeroPhoto />
             </div>
-          </FadeIn>
+          </div>
         </div>
+        </HeroIntro>
       </section>
 
       {/* ANGKA KUNCI */}
@@ -1432,7 +897,7 @@ export default function LandingPage({
         <div className="mx-auto max-w-[1100px]">
           {/* Garis pemisah tipis menahan angka-angka ini supaya tidak
               mengambang di tengah ruang putih. */}
-          <div className="grid grid-cols-2 border-t border-black/[0.08] md:grid-cols-4">
+          <ScrollReveal className="grid grid-cols-2 border-t border-black/[0.08] md:grid-cols-4" stagger={0.1}>
             {keyNumbers.map((n, i) => (
               <FadeIn
                 key={n.label}
@@ -1455,7 +920,7 @@ export default function LandingPage({
                 </p>
               </FadeIn>
             ))}
-          </div>
+          </ScrollReveal>
 
           <ol className="mt-8 space-y-1.5 border-t border-black/[0.08] pt-5 text-[12px] leading-relaxed text-[#71717a]">
             {keyNumberNotes.map((note, i) => (
@@ -1506,7 +971,7 @@ export default function LandingPage({
           </FadeIn>
 
           <FadeIn delay={0.1} className="mt-12">
-            <InteractivePOSShowcase />
+            <EcosystemGallery />
           </FadeIn>
         </div>
       </section>
@@ -1520,25 +985,26 @@ export default function LandingPage({
             </h2>
           </FadeIn>
 
-          <div className="mt-12 border-t border-black/[0.08]">
+          <ScrollReveal className="mt-12 border-t border-black/[0.08]" stagger={0.06} y={18}>
             {comparisonRows.map((row, i) => (
-              <FadeIn key={i} delay={i * 0.04}>
-                <div className="grid grid-cols-1 gap-2 border-b border-black/[0.08] py-6 md:grid-cols-12 md:gap-8">
-                  <div className="md:col-span-1">
-                    <span className="font-display text-[13px] tabular-nums text-[#a1a1aa]">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                  </div>
-                  <p className="text-[15px] leading-relaxed text-[#a1a1aa] line-through decoration-[#d4d4d8] md:col-span-5">
-                    {row.old}
-                  </p>
-                  <p className="text-[15px] leading-relaxed text-[#0a0a0a] md:col-span-6">
-                    {row.now}
-                  </p>
+              <div
+                key={i}
+                className="grid grid-cols-1 gap-2 border-b border-black/[0.08] py-6 md:grid-cols-12 md:gap-8"
+              >
+                <div className="md:col-span-1">
+                  <span className="font-display text-[13px] tabular-nums text-[#a1a1aa]">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
                 </div>
-              </FadeIn>
+                <p className="text-[15px] leading-relaxed text-[#a1a1aa] line-through decoration-[#d4d4d8] md:col-span-5">
+                  {row.old}
+                </p>
+                <p className="text-[15px] leading-relaxed text-[#0a0a0a] md:col-span-6">
+                  {row.now}
+                </p>
+              </div>
             ))}
-          </div>
+          </ScrollReveal>
         </div>
       </section>
 
@@ -1615,7 +1081,7 @@ export default function LandingPage({
             </h2>
           </FadeIn>
 
-          <div className="mt-12 grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-black/[0.08] bg-black/[0.08] md:grid-cols-6">
+          <ScrollReveal className="mt-12 grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-black/[0.08] bg-black/[0.08] md:grid-cols-6" stagger={0.09} y={18}>
             {specs.map((spec, i) => {
               const Icon = spec.icon;
               return (
@@ -1635,7 +1101,7 @@ export default function LandingPage({
                 </div>
               );
             })}
-          </div>
+          </ScrollReveal>
         </div>
       </section>
 
