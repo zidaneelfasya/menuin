@@ -318,3 +318,33 @@ Ketentuan: light mode, jam konsisten (mis. 12.15), tanpa nama/nomor/email asli, 
 2. Jalankan Fase 0 (fondasi + `content/landing.ts`) — tidak mengubah tampilan, aman.
 3. Paralel: siapkan tenant demo + ambil 10 screenshot (§5.1).
 4. Fase 1 → checkpoint review desain sebelum lanjut ke Fase 2–5.
+
+---
+
+## 10. Catatan Aset (pembaruan 2026-09-20)
+
+Empat aset dari folder Drive tim sudah masuk repo di `apps/web/public/img/landing/`
+(dikompres ke WebP, total 372 KB):
+
+| File | Asal | Dipakai di |
+| :-- | :-- | :-- |
+| `hero-kasir.webp` (81 KB) | `menuin-use.jpeg` | Visual hero |
+| `pos-ipad.webp` (123 KB) | `group3.png` | Pilar 02 — Kasir Cloud POS |
+| `katalog-iphone.webp` (47 KB) | `group4 (2).png` | Pilar 01 — QR Self-Order |
+| `dashboard-macbook.webp` (108 KB) | `group5.png` | Pilar 05 — Multi-Outlet |
+
+Yang perlu diperhatikan pada aset ini:
+
+1. **Empat file `ChatGPT Image …` di folder itu sengaja tidak dipakai.** Halaman ini
+   justru sedang dibersihkan dari kesan AI-generated; memakai mockup tangan hasil
+   generate berisiko merusak kredibilitas yang sedang dibangun.
+2. **`dashboard-macbook.webp` memuat URL `kopijotos.localhost:3000`** di breadcrumb.
+   Terbaca kalau gambar ditampilkan besar. Sebaiknya diambil ulang dengan domain
+   yang pantas.
+3. **`pos-ipad.webp` dan `katalog-iphone.webp` memuat tombol gear biru melayang**
+   (FAB debug) yang menutupi sebagian kartu produk. Perlu di-retake tanpa tombol itu.
+4. **`hero-kasir.webp` perlu dipastikan status hak pakainya** — apakah foto asli
+   milik tim atau hasil komposit. Kalau hasil generate, sebaiknya diganti foto nyata.
+
+Kebutuhan aset di §5.1 yang belum tersedia (KDS, tutup shift, laporan HPP) sementara
+digantikan panel yang dibangun dari markup di `landing-page.tsx`, bukan screenshot.

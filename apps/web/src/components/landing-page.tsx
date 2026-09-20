@@ -133,6 +133,7 @@ const pillars = [
       { k: "Pembayaran", v: "QRIS dinamis via Midtrans, atau bayar di kasir" },
     ],
     icon: QrCode,
+    visual: { kind: "image", src: "/img/landing/katalog-iphone.webp", alt: "Katalog menu Menuin di layar ponsel", w: 900, h: 1019, narrow: true },
   },
   {
     index: "02",
@@ -145,6 +146,7 @@ const pillars = [
       { k: "Pembayaran", v: "Tunai, debit, kartu, QRIS, transfer" },
     ],
     icon: Monitor,
+    visual: { kind: "image", src: "/img/landing/pos-ipad.webp", alt: "Kasir POS Menuin di layar tablet", w: 1800, h: 1382, narrow: false },
   },
   {
     index: "03",
@@ -157,6 +159,7 @@ const pillars = [
       { k: "Notifikasi", v: "Peringatan audio saat tiket baru masuk" },
     ],
     icon: Tv,
+    visual: { kind: "kds" },
   },
   {
     index: "04",
@@ -169,6 +172,7 @@ const pillars = [
       { k: "Void", v: "Pembatalan struk butuh PIN manajer" },
     ],
     icon: ShieldCheck,
+    visual: { kind: "shift" },
   },
   {
     index: "05",
@@ -181,6 +185,7 @@ const pillars = [
       { k: "Ekspor", v: "Excel dan PDF, sekali klik" },
     ],
     icon: Building2,
+    visual: { kind: "image", src: "/img/landing/dashboard-macbook.webp", alt: "Kasir Menuin berjalan di browser laptop", w: 1800, h: 1145, narrow: false },
   },
 ];
 
@@ -249,11 +254,53 @@ function ProductThumb({ name, className = "" }: { name: string; className?: stri
 }
 
 /**
- * Visual hero dibangun dari markup, bukan screenshot.
- * Screenshot produk yang ada (public/img/hero/*.png) masih memperlihatkan
- * tenant kosong ("Tidak ada data" / "Rp 0"), jadi tidak dipakai di sini.
+ * Visual hero: foto kasir Menuin dipakai di gerai sungguhan.
+ * Screenshot lama di public/img/hero/*.png tidak dipakai karena masih
+ * memperlihatkan tenant kosong ("Tidak ada data" / "Rp 0").
  */
-function HeroPreview() {
+function HeroPhoto() {
+  return (
+    <figure className="relative mx-auto w-full max-w-[1100px]">
+      <div className="overflow-hidden rounded-[24px] bg-[#f4f4f5] shadow-[var(--landing-lift-lg)]">
+        <Image
+          src="/img/landing/hero-kasir.webp"
+          alt="Kasir sebuah coffee shop memproses pesanan lewat Menuin di tablet"
+          width={1357}
+          height={1024}
+          priority
+          sizes="(max-width: 1100px) 100vw, 1100px"
+          className="h-full w-full object-cover"
+        />
+      </div>
+
+      {/* Kartu status pesanan — sisi tamu dari transaksi yang sama */}
+      <div className="absolute -bottom-6 left-4 hidden w-[220px] rounded-2xl border border-black/[0.06] bg-white/95 p-4 shadow-[var(--landing-lift-lg)] backdrop-blur md:block lg:-left-6 lg:w-[248px]">
+        <div className="flex items-baseline justify-between">
+          <span className="text-[11px] text-[#71717a]">Meja 12</span>
+          <span className="font-display text-[11px] tabular-nums text-[#71717a]">02:14</span>
+        </div>
+        <p className="mt-1 text-[14px] font-semibold leading-snug text-[#0a0a0a]">
+          Sedang disiapkan barista
+        </p>
+        <ol className="mt-3 flex items-center gap-1.5">
+          {[true, true, false, false].map((done, i) => (
+            <li
+              key={i}
+              className={`h-1 flex-1 rounded-full ${done ? "bg-[#0E59F9]" : "bg-slate-200"}`}
+            />
+          ))}
+        </ol>
+        <p className="mt-2 text-[11px] text-[#71717a]">Diterima · Disiapkan · Siap · Selesai</p>
+      </div>
+    </figure>
+  );
+}
+
+/**
+ * Layar dapur. Dibuat gelap karena KDS sungguhan memang dipasang gelap
+ * supaya tiket terbaca dari seberang dapur.
+ */
+function KdsPanel() {
   const tickets = [
     {
       table: "Meja 12",
@@ -262,7 +309,6 @@ function HeroPreview() {
       tone: "accent",
       items: [
         { qty: 2, name: "Es Kopi Gula Aren", note: "Less ice, less sugar" },
-        { qty: 1, name: "Signature Mocca Cake", note: "Potong 8" },
         { qty: 1, name: "Butter Croissant", note: "" },
       ],
     },
@@ -282,107 +328,127 @@ function HeroPreview() {
       wait: "05:02",
       tone: "done",
       items: [
-        { qty: 1, name: "Chiffon Pandan", note: "Kotak terpisah" },
-        { qty: 1, name: "Es Teh Susu Segar", note: "" },
+        { qty: 1, name: "New York Cheesecake", note: "Kotak terpisah" },
         { qty: 3, name: "Butter Croissant", note: "" },
       ],
     },
   ];
 
   return (
-    <div className="relative mx-auto w-full max-w-[1000px]">
-      {/* Layar dapur / KDS */}
-      <div className="rounded-[26px] border border-black/[0.08] bg-white shadow-[var(--landing-lift-lg)] overflow-hidden">
-        <div className="flex items-center justify-between border-b border-black/[0.06] px-5 py-3">
-          <div className="flex items-center gap-2.5">
-            <span className="text-[13px] font-semibold text-[#0a0a0a]">Layar Dapur</span>
-            <span className="text-[12px] text-[#71717a]">Kopi Ruang Teduh · Stasiun Utama</span>
-          </div>
-          <div className="flex items-center gap-2 text-[12px] text-[#71717a] font-display tabular-nums">
-            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            <span>3 tiket aktif</span>
-            <span className="hidden sm:inline">· 12.15</span>
-          </div>
+    <div className="overflow-hidden rounded-[20px] bg-[#0b0b0c] text-white shadow-[var(--landing-lift-lg)]">
+      <div className="flex items-center justify-between border-b border-white/10 px-5 py-3.5">
+        <div className="flex items-center gap-2.5">
+          <span className="text-[13px] font-semibold">Layar Dapur</span>
+          <span className="text-[12px] text-white/45">Stasiun Utama</span>
         </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-black/[0.06]">
-          {tickets.map((t) => (
-            <div key={t.table} className="bg-white p-4 min-h-[190px] flex flex-col">
-              <div className="flex items-baseline justify-between">
-                <span className="text-[13px] font-semibold text-[#0a0a0a]">{t.table}</span>
-                <span className="font-display text-[12px] tabular-nums text-[#71717a]">{t.wait}</span>
-              </div>
-
-              <span
-                className={`mt-2 inline-flex w-fit items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                  t.tone === "accent"
-                    ? "bg-[#0E59F9]/8 text-[#0E59F9]"
-                    : t.tone === "done"
-                      ? "bg-emerald-50 text-emerald-700"
-                      : "bg-slate-100 text-slate-600"
-                }`}
-              >
-                {t.status}
-              </span>
-
-              <ul className="mt-3 space-y-2 text-[12px] leading-snug">
-                {t.items.map((item) => (
-                  <li key={item.name} className="flex gap-2">
-                    <span className="font-display tabular-nums text-[#0a0a0a]">{item.qty}×</span>
-                    <span className="min-w-0">
-                      <span className="block truncate text-[#0a0a0a]">{item.name}</span>
-                      {item.note && (
-                        <span className="block text-[11px] text-[#71717a]">{item.note}</span>
-                      )}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+        <div className="flex items-center gap-2 font-display text-[12px] tabular-nums text-white/45">
+          <span className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+          <span>3 tiket aktif</span>
         </div>
       </div>
 
-      {/* Ponsel tamu — status pesanan yang sama, dari sisi meja */}
-      <div className="absolute -bottom-10 right-2 hidden w-[186px] rounded-[26px] border border-black/[0.08] bg-white p-2 shadow-[var(--landing-lift-lg)] sm:block md:-right-6 md:w-[212px]">
-        <div className="rounded-[18px] border border-black/[0.06] overflow-hidden">
-          <div className="border-b border-black/[0.06] px-3 py-2">
-            <span className="block font-mono text-[10px] text-[#71717a]">menuin.id/meja/12</span>
-          </div>
-          <div className="px-3 py-3">
-            <span className="text-[11px] text-[#71717a]">Pesanan #MN-8921</span>
-            <p className="mt-0.5 text-[13px] font-semibold leading-snug text-[#0a0a0a]">
-              Sedang disiapkan barista
-            </p>
+      <div className="grid grid-cols-1 gap-px bg-white/10 sm:grid-cols-3">
+        {tickets.map((t) => (
+          <div key={t.table} className="flex min-h-[172px] flex-col bg-[#0b0b0c] p-4">
+            <div className="flex items-baseline justify-between">
+              <span className="text-[13px] font-semibold">{t.table}</span>
+              <span className="font-display text-[12px] tabular-nums text-white/45">{t.wait}</span>
+            </div>
 
-            <ol className="mt-3 space-y-2">
-              {[
-                { s: "Diterima", done: true },
-                { s: "Disiapkan", done: true },
-                { s: "Siap diantar", done: false },
-                { s: "Selesai", done: false },
-              ].map((step) => (
-                <li key={step.s} className="flex items-center gap-2 text-[11px]">
-                  <span
-                    className={`h-1.5 w-1.5 rounded-full ${step.done ? "bg-[#0E59F9]" : "bg-slate-300"}`}
-                  />
-                  <span className={step.done ? "text-[#0a0a0a]" : "text-[#a1a1aa]"}>{step.s}</span>
+            <span
+              className={`mt-2 inline-flex w-fit items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                t.tone === "accent"
+                  ? "bg-[#0E59F9]/20 text-[#7aa8ff]"
+                  : t.tone === "done"
+                    ? "bg-emerald-400/15 text-emerald-300"
+                    : "bg-white/10 text-white/70"
+              }`}
+            >
+              {t.status}
+            </span>
+
+            <ul className="mt-3 space-y-2 text-[12px] leading-snug">
+              {t.items.map((item) => (
+                <li key={item.name} className="flex gap-2">
+                  <span className="font-display tabular-nums text-white/90">{item.qty}×</span>
+                  <span className="min-w-0">
+                    <span className="block truncate">{item.name}</span>
+                    {item.note && <span className="block text-[11px] text-white/45">{item.note}</span>}
+                  </span>
                 </li>
               ))}
-            </ol>
-
-            <div className="mt-3 flex items-baseline justify-between border-t border-black/[0.06] pt-2">
-              <span className="text-[10px] text-[#71717a]">Total</span>
-              <span className="font-display text-[12px] font-semibold tabular-nums text-[#0a0a0a]">
-                Rp 80.190
-              </span>
-            </div>
+            </ul>
           </div>
-        </div>
+        ))}
       </div>
     </div>
   );
 }
+
+/** Ringkasan tutup shift — angka yang dilihat kasir saat menghitung laci. */
+function ShiftPanel() {
+  const rows = [
+    { k: "Modal awal laci", v: "Rp 200.000" },
+    { k: "Penjualan tunai", v: "+Rp 1.425.000" },
+    { k: "Kas keluar (petty cash)", v: "−Rp 25.000" },
+  ];
+
+  return (
+    <div className="rounded-[20px] border border-black/[0.08] bg-white p-6 shadow-[var(--landing-lift)]">
+      <div className="flex items-baseline justify-between">
+        <span className="text-[13px] font-semibold text-[#0a0a0a]">Tutup shift · Sarah Rahma</span>
+        <span className="font-display text-[12px] tabular-nums text-[#71717a]">15.02</span>
+      </div>
+
+      <dl className="mt-5">
+        {rows.map((r) => (
+          <div key={r.k} className="flex justify-between border-t border-black/[0.06] py-2.5">
+            <dt className="text-[13px] text-[#52525b]">{r.k}</dt>
+            <dd className="font-display text-[13px] tabular-nums text-[#0a0a0a]">{r.v}</dd>
+          </div>
+        ))}
+        <div className="flex justify-between border-t border-black/[0.06] py-2.5">
+          <dt className="text-[13px] text-[#52525b]">Kas seharusnya</dt>
+          <dd className="font-display text-[13px] tabular-nums text-[#0a0a0a]">Rp 1.600.000</dd>
+        </div>
+        <div className="flex justify-between border-t border-black/[0.06] py-2.5">
+          <dt className="text-[13px] text-[#52525b]">Uang fisik dihitung</dt>
+          <dd className="font-display text-[13px] tabular-nums text-[#0a0a0a]">Rp 1.600.000</dd>
+        </div>
+      </dl>
+
+      <div className="mt-4 flex items-center justify-between rounded-xl bg-emerald-50 px-4 py-3">
+        <span className="text-[13px] font-medium text-emerald-900">Selisih</span>
+        <span className="font-display text-[15px] font-semibold tabular-nums text-emerald-700">
+          Rp 0
+        </span>
+      </div>
+    </div>
+  );
+}
+
+type PillarVisualSpec =
+  | { kind: "image"; src: string; alt: string; w: number; h: number; narrow: boolean }
+  | { kind: "kds" }
+  | { kind: "shift" };
+
+function PillarVisual({ visual }: { visual: PillarVisualSpec }) {
+  if (visual.kind === "kds") return <KdsPanel />;
+  if (visual.kind === "shift") return <ShiftPanel />;
+
+  return (
+    <Image
+      src={visual.src}
+      alt={visual.alt}
+      width={visual.w}
+      height={visual.h}
+      loading="lazy"
+      sizes="(max-width: 768px) 100vw, 540px"
+      className={`h-auto w-full ${visual.narrow ? "mx-auto max-w-[280px]" : ""}`}
+    />
+  );
+}
+
 
 const testimonialsData = [
   {
@@ -1216,7 +1282,7 @@ export default function LandingPage({
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-black/[0.06]">
         <div className="mx-auto max-w-[1100px] h-[64px] flex items-center justify-between px-6">
           <Link href="/" className="flex items-center">
-            <Image src="/menuin.svg" alt="Menuin" width={104} height={28} className="h-6 w-auto md:h-7" priority />
+            <Image src="/menuin.png" alt="Menuin" width={220} height={60} className="h-7 w-auto md:h-8" priority />
           </Link>
 
           <nav className="hidden md:flex items-center gap-8 text-[14px] font-medium text-slate-600">
@@ -1315,8 +1381,8 @@ export default function LandingPage({
           <FadeIn delay={0.05}>
             <h1 className="mx-auto mt-6 max-w-[20ch] text-center font-display text-[clamp(34px,6.2vw,76px)] font-semibold leading-[1.03] tracking-[-0.04em] text-[#0a0a0a] text-balance">
               Satu sentuhan di meja.
-              <span className="block text-[#71717a]">Kasir bergerak kilat.</span>
-              <span className="block text-[#71717a]">Dapur tepat waktu.</span>
+              <span className="block">Kasir bergerak kilat.</span>
+              <span className="block">Dapur tepat waktu.</span>
             </h1>
           </FadeIn>
 
@@ -1358,8 +1424,8 @@ export default function LandingPage({
           </FadeIn>
 
           <FadeIn delay={0.25}>
-            <div className="mt-16 md:mt-20">
-              <HeroPreview />
+            <div className="mt-14 md:mt-16">
+              <HeroPhoto />
             </div>
           </FadeIn>
         </div>
@@ -1508,10 +1574,16 @@ export default function LandingPage({
           <div className="mt-10 divide-y divide-black/[0.08] border-y border-black/[0.08]">
             {pillars.map((pillar, i) => {
               const Icon = pillar.icon;
+              // Sisi visual berganti kiri–kanan supaya lima pilar tidak
+              // terbaca sebagai satu dinding teks.
+              const visualFirst = i % 2 === 1;
+
               return (
                 <FadeIn key={pillar.index} delay={i * 0.04}>
-                  <article className="grid grid-cols-1 gap-6 py-12 md:grid-cols-12 md:gap-10 md:py-16">
-                    <div className="md:col-span-5">
+                  <article className="grid grid-cols-1 items-center gap-8 py-14 md:grid-cols-12 md:gap-12 md:py-20">
+                    <div
+                      className={`md:col-span-6 ${visualFirst ? "md:order-2" : ""}`}
+                    >
                       <div className="flex items-center gap-3">
                         <span className="font-display text-[13px] tabular-nums text-[#a1a1aa]">
                           {pillar.index}
@@ -1521,16 +1593,16 @@ export default function LandingPage({
                           {pillar.eyebrow}
                         </span>
                       </div>
-                      <h3 className="mt-5 max-w-[16ch] font-display text-[clamp(24px,3vw,34px)] font-semibold leading-[1.12] tracking-[-0.035em] text-[#0a0a0a] text-balance">
+
+                      <h3 className="mt-5 max-w-[16ch] font-display text-[clamp(26px,3.2vw,38px)] font-semibold leading-[1.08] tracking-[-0.035em] text-[#0a0a0a] text-balance">
                         {pillar.title}
                       </h3>
-                    </div>
 
-                    <div className="md:col-span-7">
-                      <p className="max-w-[60ch] text-[15.5px] leading-relaxed text-[#52525b]">
+                      <p className="mt-5 max-w-[52ch] text-[15.5px] leading-relaxed text-[#52525b]">
                         {pillar.body}
                       </p>
-                      <dl className="mt-7 space-y-0">
+
+                      <dl className="mt-7">
                         {pillar.specs.map((spec) => (
                           <div
                             key={spec.k}
@@ -1541,6 +1613,10 @@ export default function LandingPage({
                           </div>
                         ))}
                       </dl>
+                    </div>
+
+                    <div className={`md:col-span-6 ${visualFirst ? "md:order-1" : ""}`}>
+                      <PillarVisual visual={pillar.visual as PillarVisualSpec} />
                     </div>
                   </article>
                 </FadeIn>
