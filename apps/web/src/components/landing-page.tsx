@@ -231,7 +231,7 @@ const logos = [
  */
 function HeroPhoto() {
   return (
-    <figure className="relative mx-auto w-full max-w-[1100px]">
+    <figure className="relative mx-auto w-full max-w-[1280px]">
       <div className="overflow-hidden rounded-[24px] bg-[#f4f4f5] shadow-[var(--landing-lift-lg)]">
         <Image
           src="/img/landing/hero-kasir.webp"
@@ -736,10 +736,10 @@ export default function LandingPage({
   const userInitial = (userName || "U").trim().charAt(0).toUpperCase();
 
   return (
-    <div className="min-h-screen bg-white text-[#111] font-sans antialiased selection:bg-[#0E59F9] selection:text-white overflow-x-clip">
+    <div className="min-h-screen bg-white text-[#111] font-sans antialiased selection:bg-[#0E59F9] selection:text-white">
       {/* NAVBAR */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-black/[0.06]">
-        <div className="mx-auto max-w-[1100px] h-[64px] flex items-center justify-between px-6">
+        <div className="mx-auto max-w-[1280px] h-[64px] flex items-center justify-between px-6">
           <Link href="/" className="flex items-center">
             <Image src="/menuin.png" alt="Menuin" width={220} height={60} className="h-7 w-auto md:h-8" priority />
           </Link>
@@ -831,7 +831,7 @@ export default function LandingPage({
       {/* HERO */}
       <section className="relative px-6 pt-32 md:pt-40">
         <HeroIntro>
-        <div className="mx-auto max-w-[1100px]">
+        <div className="mx-auto max-w-[1280px]">
           <div data-hero-item>
             <p className="text-center text-[12px] font-semibold uppercase tracking-[0.18em] text-[#71717a]">
               Ekosistem operasional F&amp;B
@@ -894,7 +894,7 @@ export default function LandingPage({
 
       {/* ANGKA KUNCI */}
       <section className="px-6 py-16 md:py-20" aria-label="Angka kunci">
-        <div className="mx-auto max-w-[1100px]">
+        <div className="mx-auto max-w-[1280px]">
           {/* Garis pemisah tipis menahan angka-angka ini supaya tidak
               mengambang di tengah ruang putih. */}
           <ScrollReveal className="grid grid-cols-2 border-t border-black/[0.08] md:grid-cols-4" stagger={0.1}>
@@ -935,7 +935,7 @@ export default function LandingPage({
 
       {/* MITRA PEMBAYARAN */}
       <section className="border-y border-black/[0.06] bg-[#fafafa] px-6 py-8" aria-label="Mitra pembayaran">
-        <div className="mx-auto max-w-[1100px] text-center">
+        <div className="mx-auto max-w-[1280px] text-center">
           <p className="text-[12px] uppercase tracking-[0.14em] text-[#a1a1aa]">
             Pembayaran diproses lewat penyelenggara berizin
           </p>
@@ -959,7 +959,7 @@ export default function LandingPage({
 
       {/* CARA LAMA vs MENUIN */}
       <section className="border-t border-black/[0.06] bg-[#fafafa] px-6 py-24 md:py-32">
-        <div className="mx-auto max-w-[1100px]">
+        <div className="mx-auto max-w-[1280px]">
           <FadeIn>
             <h2 className="max-w-[20ch] font-display text-[clamp(28px,3.8vw,44px)] font-semibold leading-[1.1] tracking-[-0.035em] text-[#0a0a0a] text-balance">
               Lima hal yang berubah sejak hari pertama.
@@ -991,7 +991,7 @@ export default function LandingPage({
 
       {/* PILAR PRODUK */}
       <section className="px-6 py-24 md:py-32" id="pilar">
-        <div className="mx-auto max-w-[1100px]">
+        <div className="mx-auto max-w-[1280px]">
           <FadeIn>
             <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#71717a]">
               Yang dikerjakan Menuin
@@ -1055,7 +1055,7 @@ export default function LandingPage({
 
       {/* SPESIFIKASI TEKNIS */}
       <section className="border-t border-black/[0.06] bg-[#fafafa] px-6 py-24 md:py-32">
-        <div className="mx-auto max-w-[1100px]">
+        <div className="mx-auto max-w-[1280px]">
           <FadeIn>
             <h2 className="max-w-[20ch] font-display text-[clamp(28px,3.8vw,44px)] font-semibold leading-[1.1] tracking-[-0.035em] text-[#0a0a0a] text-balance">
               Di balik layarnya.

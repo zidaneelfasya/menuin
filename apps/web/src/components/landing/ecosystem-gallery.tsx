@@ -200,6 +200,7 @@ const panelBody: Record<string, React.ReactNode> = {
 
 export default function EcosystemGallery() {
   const sectionRef = useRef<HTMLElement>(null);
+  const scrollerRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const [progress, setProgress] = useState(0);
 
@@ -208,48 +209,71 @@ export default function EcosystemGallery() {
 
     const mm = gsap.matchMedia();
 
-    mm.add("(min-width: 768px) and (prefers-reduced-motion: no-preference)", () => {
-      const track = trackRef.current;
-      const section = sectionRef.current;
-      if (!track || !section) return;
+    // Pin dipasang di semua desktop, termasuk saat reduced-motion aktif:
+    // geseran panel di sini bukan hiasan, melainkan satu-satunya cara
+    // melihat keempat layar. Yang dihormati untuk reduced-motion adalah
+    // penghalusannya — scrub: true mengikat gerak 1:1 ke input scroll,
+    // tanpa easing atau kelembaman.
+    mm.add(
+      {
+        isDesktop: "(min-width: 768px)",
+        motionOk: "(prefers-reduced-motion: no-preference)",
+      },
+      (ctx) => {
+        const { isDesktop, motionOk } = ctx.conditions as {
+          isDesktop: boolean;
+          motionOk: boolean;
+        };
+        if (!isDesktop) return;
 
-      // Jarak tempuh = selisih lebar track dengan layar, plus satu gutter
-      // supaya panel terakhir tidak mepet tepi kanan.
-      const distance = () => Math.max(0, track.scrollWidth - window.innerWidth + 48);
+        const track = trackRef.current;
+        const scroller = scrollerRef.current;
+        const section = sectionRef.current;
+        if (!track || !scroller || !section) return;
 
-      const tween = gsap.to(track, {
-        x: () => -distance(),
-        ease: "none",
-        scrollTrigger: {
-          trigger: section,
-          start: "top top",
-          end: () => `+=${distance()}`,
-          pin: true,
-          anticipatePin: 1,
-          scrub: 0.6,
-          invalidateOnRefresh: true,
-          onUpdate: (self) => setProgress(self.progress),
-        },
-      });
+        // Saat di-pin, scroll horizontal native dimatikan supaya tidak
+        // berebut kendali dengan GSAP.
+        scroller.style.overflowX = "hidden";
 
-      // Gambar panel dimuat belakangan; hitung ulang setelah semuanya siap.
-      const onLoad = () => ScrollTrigger.refresh();
-      window.addEventListener("load", onLoad);
+        // Jarak tempuh = selisih lebar track dengan layar, plus satu gutter
+        // supaya panel terakhir tidak mepet tepi kanan.
+        const distance = () => Math.max(0, track.scrollWidth - window.innerWidth + 48);
 
-      return () => {
-        window.removeEventListener("load", onLoad);
-        tween.scrollTrigger?.kill();
-        tween.kill();
-        gsap.set(track, { x: 0 });
-      };
-    });
+        const tween = gsap.to(track, {
+          x: () => -distance(),
+          ease: "none",
+          scrollTrigger: {
+            trigger: section,
+            start: "top top",
+            end: () => `+=${distance()}`,
+            pin: true,
+            anticipatePin: 1,
+            scrub: motionOk ? 0.6 : true,
+            invalidateOnRefresh: true,
+            onUpdate: (self) => setProgress(self.progress),
+          },
+        });
+
+        // Gambar panel dimuat belakangan; hitung ulang setelah semuanya siap.
+        const onLoad = () => ScrollTrigger.refresh();
+        window.addEventListener("load", onLoad);
+
+        return () => {
+          window.removeEventListener("load", onLoad);
+          tween.scrollTrigger?.kill();
+          tween.kill();
+          gsap.set(track, { x: 0 });
+          scroller.style.overflowX = "";
+        };
+      }
+    );
 
     return () => mm.revert();
   }, []);
 
   return (
     <section ref={sectionRef} id="ekosistem" className="relative overflow-hidden py-20 md:py-24">
-      <div className="mx-auto w-full max-w-[1100px] px-6">
+      <div className="mx-auto w-full max-w-[1280px] px-6">
         <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#71717a]">
           Ekosistem
         </p>
@@ -263,11 +287,19 @@ export default function EcosystemGallery() {
       </div>
 
       {/* Track full-bleed: sengaja keluar dari container supaya bisa
-          berjalan melintasi layar seperti galeri halaman produk Apple. */}
-      <div className="mt-12 overflow-hidden">
+          berjalan melintasi layar seperti galeri halaman produk Apple.
+
+          Scroller ini tetap bisa di-scroll menyamping walau GSAP tidak
+          aktif (layar sempit, JS gagal, atau pin di-kill). Galeri tidak
+          boleh pernah jadi deretan panel yang terpotong dan tak
+          terjangkau — itu bug yang sempat terjadi. */}
+      <div
+        ref={scrollerRef}
+        className="mt-12 overflow-x-auto pb-4 md:pb-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
         <div
           ref={trackRef}
-          className="flex snap-x snap-mandatory gap-5 overflow-x-auto px-6 pb-4 md:snap-none md:gap-6 md:overflow-x-visible md:pb-0 md:pl-[max(24px,calc((100vw-1100px)/2))] md:pr-0"
+          className="flex w-max snap-x snap-mandatory gap-5 px-6 md:gap-6 md:pl-[max(24px,calc((100vw-1280px)/2))] md:pr-8"
         >
           {panels.map((p) => (
             <article
@@ -292,7 +324,7 @@ export default function EcosystemGallery() {
       </div>
 
       {/* Indikator posisi — bergerak seiring track berjalan */}
-      <div className="mx-auto mt-10 hidden w-full max-w-[1100px] px-6 md:block">
+      <div className="mx-auto mt-10 hidden w-full max-w-[1280px] px-6 md:block">
         <div className="h-px w-[200px] bg-black/[0.08]">
           <div
             className="h-px bg-[#0a0a0a]"
