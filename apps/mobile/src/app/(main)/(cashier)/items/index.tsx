@@ -266,51 +266,54 @@ export default function ItemsListScreen() {
         </View>
 
         {/* Modifier Groups / Toppings */}
-        <View className="mb-4">
-          <Text className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">
+        <View className="mb-6">
+          <Text className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">
             Pilihan Variasi / Topping ({productModifiers.length})
           </Text>
           {productModifiers.length > 0 ? (
-            <View className="space-y-2">
+            <View>
               {productModifiers.map((modGroup) => (
                 <View
                   key={modGroup.id}
-                  className="p-3 bg-white border border-gray-200/80 rounded-xl"
+                  className="p-4 bg-white border border-gray-200/90 rounded-2xl mb-4 shadow-2xs"
                 >
-                  <View className="flex-row justify-between items-center mb-1.5">
-                    <Text className="text-xs font-black text-gray-900">{modGroup.name}</Text>
-                    <Text className="text-[10px] text-gray-400 font-semibold">
+                  <View className="flex-row justify-between items-center pb-2.5 mb-3 border-b border-gray-100">
+                    <Text className="text-sm font-black text-gray-900 tracking-tight">{modGroup.name}</Text>
+                    <Text className="text-[11px] text-gray-400 font-semibold">
                       {modGroup.isRequired ? 'Wajib' : 'Opsional'}
                     </Text>
                   </View>
-                  <View className="space-y-1.5 mt-1">
-                    {modGroup.options.map((opt) => {
+                  <View>
+                    {modGroup.options.map((opt, optIdx) => {
                       const isAvailable = opt.isAvailable !== false;
+                      const isLastOpt = optIdx === modGroup.options.length - 1;
                       return (
                         <View
                           key={opt.id}
-                          className={`p-2.5 rounded-xl border flex-row items-center justify-between ${
+                          className={`p-3.5 rounded-xl border flex-row items-center justify-between ${
+                            !isLastOpt ? 'mb-2.5' : ''
+                          } ${
                             isAvailable
                               ? 'bg-gray-50/70 border-gray-200/80'
                               : 'bg-rose-50/60 border-rose-200'
                           }`}
                         >
-                          <View className="flex-1 pr-2">
-                            <View className="flex-row items-center gap-1.5">
+                          <View className="flex-1 pr-3">
+                            <View className="flex-row items-center gap-2">
                               <Text
-                                className={`text-xs font-bold ${
-                                  isAvailable ? 'text-gray-800' : 'text-rose-800 line-through'
+                                className={`text-sm font-bold ${
+                                  isAvailable ? 'text-gray-900' : 'text-rose-900 line-through'
                                 }`}
                               >
                                 {opt.name}
                               </Text>
                               {!isAvailable && (
-                                <View className="px-1.5 py-0.2 bg-rose-100 rounded border border-rose-200">
-                                  <Text className="text-[9px] font-black text-rose-700">Habis</Text>
+                                <View className="px-1.5 py-0.5 bg-rose-100 rounded border border-rose-200">
+                                  <Text className="text-[10px] font-bold text-rose-700">Habis</Text>
                                 </View>
                               )}
                             </View>
-                            <Text className="text-[10px] text-gray-500 mt-0.5">
+                            <Text className="text-xs font-semibold text-gray-500 mt-1">
                               {opt.price > 0 ? `+${formatPrice(opt.price)}` : 'Gratis'}
                             </Text>
                           </View>
@@ -325,7 +328,7 @@ export default function ItemsListScreen() {
                             }}
                             trackColor={{ false: '#fecdd3', true: '#86efac' }}
                             thumbColor={isAvailable ? '#16a34a' : '#e11d48'}
-                            style={{ transform: [{ scaleX: 0.85 }, { scaleY: 0.85 }] }}
+                            style={{ transform: [{ scaleX: 0.9 }, { scaleY: 0.9 }] }}
                           />
                         </View>
                       );
@@ -692,10 +695,10 @@ export default function ItemsListScreen() {
                 {filteredModifierGroups.map((group) => (
                   <View
                     key={group.id}
-                    className="bg-white border border-gray-200/90 rounded-2xl p-4 shadow-2xs mb-3"
+                    className="bg-white border border-gray-200/90 rounded-2xl p-4 shadow-2xs mb-4"
                   >
                     {/* Group Header */}
-                    <View className="flex-row justify-between items-center pb-2.5 mb-2.5 border-b border-gray-100">
+                    <View className="flex-row justify-between items-center pb-2.5 mb-3 border-b border-gray-100">
                       <View>
                         <Text className="text-sm font-black text-gray-900 tracking-tight">{group.name}</Text>
                         <Text className="text-[11px] text-gray-400 font-medium">
@@ -710,45 +713,48 @@ export default function ItemsListScreen() {
                     </View>
 
                     {/* Options Rows */}
-                    <View className="space-y-2">
-                      {group.options?.map((opt) => {
+                    <View>
+                      {group.options?.map((opt, optIdx) => {
                         const isAvailable = opt.isAvailable !== false;
+                        const isLastOpt = optIdx === (group.options?.length || 0) - 1;
 
                         return (
                           <View
                             key={opt.id}
-                            className={`flex-row items-center justify-between p-3 rounded-xl border ${
+                            className={`flex-row items-center justify-between p-3.5 rounded-xl border ${
+                              !isLastOpt ? 'mb-2.5' : ''
+                            } ${
                               isAvailable
                                 ? 'bg-gray-50/70 border-gray-200/70'
                                 : 'bg-rose-50/60 border-rose-200'
                             }`}
                           >
                             <View className="flex-1 pr-3">
-                              <View className="flex-row items-center gap-1.5 mb-0.5">
+                              <View className="flex-row items-center gap-2 mb-0.5">
                                 <View
                                   className={`w-2 h-2 rounded-full ${
                                     isAvailable ? 'bg-emerald-500' : 'bg-rose-500'
                                   }`}
                                 />
                                 <Text
-                                  className={`text-xs font-black ${
+                                  className={`text-sm font-bold ${
                                     isAvailable ? 'text-gray-900' : 'text-rose-900 line-through'
                                   }`}
                                 >
                                   {opt.name}
                                 </Text>
                                 {!isAvailable && (
-                                  <View className="px-1.5 py-0.2 bg-rose-100 rounded border border-rose-200">
-                                    <Text className="text-[9px] font-black text-rose-700">Habis</Text>
+                                  <View className="px-1.5 py-0.5 bg-rose-100 rounded border border-rose-200">
+                                    <Text className="text-[10px] font-bold text-rose-700">Habis</Text>
                                   </View>
                                 )}
                               </View>
-                              <Text className="text-[11px] font-semibold text-blue-600">
+                              <Text className="text-xs font-semibold text-blue-600 mt-1">
                                 {opt.price > 0 ? `+${formatPrice(opt.price)}` : 'Gratis'}
                               </Text>
                             </View>
 
-                            <View className="flex-row items-center gap-2">
+                            <View className="flex-row items-center gap-2.5">
                               <Text
                                 className={`text-[11px] font-bold ${
                                   isAvailable ? 'text-emerald-700' : 'text-rose-700'
@@ -767,7 +773,7 @@ export default function ItemsListScreen() {
                                 trackColor={{ false: '#fecdd3', true: '#86efac' }}
                                 thumbColor={isAvailable ? '#16a34a' : '#e11d48'}
                                 ios_backgroundColor="#fecdd3"
-                                style={{ transform: [{ scaleX: 1.0 }, { scaleY: 1.0 }] }}
+                                style={{ transform: [{ scaleX: 0.95 }, { scaleY: 0.95 }] }}
                               />
                             </View>
                           </View>
