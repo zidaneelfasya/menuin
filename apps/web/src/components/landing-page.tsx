@@ -736,7 +736,7 @@ export default function LandingPage({
   const userInitial = (userName || "U").trim().charAt(0).toUpperCase();
 
   return (
-    <div className="min-h-screen bg-white text-[#111] font-sans antialiased selection:bg-[#0E59F9] selection:text-white overflow-x-hidden">
+    <div className="min-h-screen bg-white text-[#111] font-sans antialiased selection:bg-[#0E59F9] selection:text-white overflow-x-clip">
       {/* NAVBAR */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-black/[0.06]">
         <div className="mx-auto max-w-[1100px] h-[64px] flex items-center justify-between px-6">
@@ -954,27 +954,8 @@ export default function LandingPage({
         </div>
       </section>
 
-      {/* EKOSISTEM — showcase perangkat */}
-      <section className="px-6 py-24 md:py-32" id="ekosistem">
-        <div className="mx-auto max-w-[1100px]">
-          <FadeIn>
-            <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#71717a]">
-              Ekosistem
-            </p>
-            <h2 className="mt-4 max-w-[18ch] font-display text-[clamp(30px,4.2vw,48px)] font-semibold leading-[1.08] tracking-[-0.035em] text-[#0a0a0a] text-balance">
-              Empat layar, satu pesanan yang sama.
-            </h2>
-            <p className="mt-5 max-w-[60ch] text-[16px] leading-relaxed text-[#52525b]">
-              Meja tamu, kasir, laci uang, dan kantor pusat melihat data yang sama pada detik yang
-              sama. Pindah tab untuk melihat masing-masing sisi.
-            </p>
-          </FadeIn>
-
-          <FadeIn delay={0.1} className="mt-12">
-            <EcosystemGallery />
-          </FadeIn>
-        </div>
-      </section>
+      {/* EKOSISTEM — galeri horizontal ber-pin (GSAP) */}
+      <EcosystemGallery />
 
       {/* CARA LAMA vs MENUIN */}
       <section className="border-t border-black/[0.06] bg-[#fafafa] px-6 py-24 md:py-32">

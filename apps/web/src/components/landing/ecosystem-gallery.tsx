@@ -199,7 +199,7 @@ const panelBody: Record<string, React.ReactNode> = {
 };
 
 export default function EcosystemGallery() {
-  const sectionRef = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const [progress, setProgress] = useState(0);
 
@@ -213,7 +213,9 @@ export default function EcosystemGallery() {
       const section = sectionRef.current;
       if (!track || !section) return;
 
-      const distance = () => Math.max(0, track.scrollWidth - window.innerWidth + 96);
+      // Jarak tempuh = selisih lebar track dengan layar, plus satu gutter
+      // supaya panel terakhir tidak mepet tepi kanan.
+      const distance = () => Math.max(0, track.scrollWidth - window.innerWidth + 48);
 
       const tween = gsap.to(track, {
         x: () => -distance(),
@@ -223,13 +225,19 @@ export default function EcosystemGallery() {
           start: "top top",
           end: () => `+=${distance()}`,
           pin: true,
+          anticipatePin: 1,
           scrub: 0.6,
           invalidateOnRefresh: true,
           onUpdate: (self) => setProgress(self.progress),
         },
       });
 
+      // Gambar panel dimuat belakangan; hitung ulang setelah semuanya siap.
+      const onLoad = () => ScrollTrigger.refresh();
+      window.addEventListener("load", onLoad);
+
       return () => {
+        window.removeEventListener("load", onLoad);
         tween.scrollTrigger?.kill();
         tween.kill();
         gsap.set(track, { x: 0 });
@@ -240,37 +248,58 @@ export default function EcosystemGallery() {
   }, []);
 
   return (
-    <div ref={sectionRef} className="overflow-hidden">
-      <div
-        ref={trackRef}
-        className="flex snap-x snap-mandatory gap-5 overflow-x-auto pb-4 md:snap-none md:overflow-x-visible md:pb-0"
-      >
-        {panels.map((p) => (
-          <article
-            key={p.id}
-            className="w-[78vw] max-w-[320px] shrink-0 snap-start md:w-[340px] md:max-w-none"
-          >
-            <div className="flex items-baseline gap-3">
-              <span className="font-display text-[13px] tabular-nums text-[#a1a1aa]">{p.index}</span>
-              <h3 className="text-[15px] font-semibold tracking-[-0.01em] text-[#0a0a0a]">
-                {p.label}
-              </h3>
-            </div>
-            <p className="mt-1.5 min-h-[36px] max-w-[34ch] text-[13.5px] leading-snug text-[#52525b]">
-              {p.caption}
-            </p>
-            <div className="mt-4 h-[352px]">{panelBody[p.id]}</div>
-          </article>
-        ))}
+    <section ref={sectionRef} id="ekosistem" className="relative overflow-hidden py-20 md:py-24">
+      <div className="mx-auto w-full max-w-[1100px] px-6">
+        <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#71717a]">
+          Ekosistem
+        </p>
+        <h2 className="mt-4 max-w-[18ch] font-display text-[clamp(30px,4.2vw,48px)] font-semibold leading-[1.08] tracking-[-0.035em] text-[#0a0a0a] text-balance">
+          Empat layar, satu pesanan yang sama.
+        </h2>
+        <p className="mt-5 max-w-[58ch] text-[16px] leading-relaxed text-[#52525b]">
+          Satu pesanan dari Meja 12, dilihat dari empat sisi. Ponsel tamu, layar kasir, layar
+          dapur, dan dashboard pemilik — semuanya membaca data yang sama pada detik yang sama.
+        </p>
       </div>
 
-      {/* Indikator posisi — hanya relevan saat galeri di-pin */}
-      <div className="mt-8 hidden h-px w-full max-w-[220px] bg-black/[0.08] md:block">
+      {/* Track full-bleed: sengaja keluar dari container supaya bisa
+          berjalan melintasi layar seperti galeri halaman produk Apple. */}
+      <div className="mt-12 overflow-hidden">
         <div
-          className="h-px bg-[#0a0a0a] transition-none"
-          style={{ width: `${Math.max(8, progress * 100)}%` }}
-        />
+          ref={trackRef}
+          className="flex snap-x snap-mandatory gap-5 overflow-x-auto px-6 pb-4 md:snap-none md:gap-6 md:overflow-x-visible md:pb-0 md:pl-[max(24px,calc((100vw-1100px)/2))] md:pr-0"
+        >
+          {panels.map((p) => (
+            <article
+              key={p.id}
+              className="w-[80vw] max-w-[340px] shrink-0 snap-start md:w-[420px] md:max-w-none lg:w-[480px]"
+            >
+              <div className="flex items-baseline gap-3">
+                <span className="font-display text-[13px] tabular-nums text-[#a1a1aa]">
+                  {p.index}
+                </span>
+                <h3 className="text-[16px] font-semibold tracking-[-0.01em] text-[#0a0a0a]">
+                  {p.label}
+                </h3>
+              </div>
+              <p className="mt-1.5 min-h-[40px] max-w-[36ch] text-[13.5px] leading-snug text-[#52525b]">
+                {p.caption}
+              </p>
+              <div className="mt-4 h-[380px]">{panelBody[p.id]}</div>
+            </article>
+          ))}
+        </div>
       </div>
-    </div>
+
+      {/* Indikator posisi — bergerak seiring track berjalan */}
+      <div className="mx-auto mt-10 hidden w-full max-w-[1100px] px-6 md:block">
+        <div className="h-px w-[200px] bg-black/[0.08]">
+          <div
+            className="h-px bg-[#0a0a0a]"
+            style={{ width: `${Math.max(10, progress * 100)}%` }}
+          />
+        </div>
+      </div>
+    </section>
   );
 }
