@@ -292,3 +292,51 @@ export async function getPublicOrderByNumber(orderNumber: string, tenantSlug: st
     }
   };
 }
+
+export async function getActiveOrderStatus(orderNumber: string, tenantSlug: string) {
+  try {
+    let formattedOrderNum = orderNumber.trim().toUpperCase();
+    if (!formattedOrderNum.startsWith('#')) {
+      formattedOrderNum = '#' + formattedOrderNum;
+    }
+
+    const tenantResult = await db.select({ id: tenants.id }).from(tenants).where(eq(tenants.slug, tenantSlug)).limit(1);
+    if (tenantResult.length === 0) return { isActive: false, status: null, orderNumber: formattedOrderNum };
+    const tenant = tenantResult[0];
+
+    const txs = await db
+      .select({
+        id: transactions.id,
+        status: transactions.status,
+        paymentStatus: transactions.paymentStatus,
+        paymentMethod: transactions.paymentMethod,
+        createdAt: transactions.createdAt,
+      })
+      .from(transactions)
+      .where(and(eq(transactions.orderNumber, formattedOrderNum), eq(transactions.tenantId, tenant.id)))
+      .limit(1);
+
+    if (txs.length === 0) return { isActive: false, status: null, orderNumber: formattedOrderNum };
+    const tx = txs[0];
+
+    const terminalStatuses = ['COMPLETED', 'CANCELLED', 'CANCELED', 'REJECTED'];
+    const isTerminal = terminalStatuses.includes((tx.status || '').toUpperCase());
+    const isPaymentFailed = ['FAILED', 'DENIED', 'EXPIRED'].includes((tx.paymentStatus || '').toUpperCase());
+
+    // Check TTL: orders older than 24 hours are considered no longer active
+    const isTooOld = tx.createdAt && (Date.now() - new Date(tx.createdAt).getTime() > 24 * 60 * 60 * 1000);
+
+    const isActive = !isTerminal && !isPaymentFailed && !isTooOld;
+
+    return {
+      isActive,
+      status: tx.status,
+      paymentStatus: tx.paymentStatus,
+      paymentMethod: tx.paymentMethod,
+      orderNumber: formattedOrderNum,
+    };
+  } catch (error) {
+    console.error('Error fetching active order status:', error);
+    return { isActive: false, status: null, orderNumber };
+  }
+}

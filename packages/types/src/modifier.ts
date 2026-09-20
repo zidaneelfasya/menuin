@@ -3,6 +3,7 @@ export interface ModifierDto {
   groupId: string;
   name: string;
   price: string;
+  isAvailable?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }

@@ -15,14 +15,24 @@ export interface ChartDataPoint {
 }
 
 export interface PeriodMetrics {
-  totalOmzet: number;
+  grossSales: number;
+  grossSalesGrowth: number;
+  netSales: number;
+  netSalesGrowth: number;
+  grossProfit: number;
+  grossProfitGrowth: number;
   totalTransactions: number;
+  transactionsGrowth: number;
   averageOrderValue: number;
+  aovGrowth: number;
+  grossMargin: number;
+  grossMarginGrowth: number;
+  comparisonLabel?: string;
+  // Backward compatibility aliases
+  totalOmzet: number;
   totalLaba: number;
   profitMargin: number;
   omzetGrowth: number;
-  transactionsGrowth: number;
-  aovGrowth: number;
   labaGrowth: number;
 }
 

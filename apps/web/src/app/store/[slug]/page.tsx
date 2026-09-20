@@ -37,6 +37,7 @@ export default async function StorePage({
     .from(products)
     .where(and(
       eq(products.tenantId, tenant.id),
+      eq(products.isActive, true),
       eq(products.isAvailableOnline, true)
     ));
 

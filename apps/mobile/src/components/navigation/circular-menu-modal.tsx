@@ -81,10 +81,10 @@ export function CircularMenuModal({ isOpen, onClose, anchorY }: CircularMenuModa
   const isClosingRef = useRef(false);
 
   // Exact coordinates matching AppTopHeader blue logo
-  const topPadding = Math.max(insets.top, Platform.OS === 'ios' ? 12 : 8);
-  const headerHeight = topPadding + 46;
+  const topPadding = Math.max(insets.top, Platform.OS === 'ios' ? 14 : 24) + (Platform.OS === 'ios' ? 8 : 12);
   const logoWidth = isTablet ? 110 : 88;
   const logoHeight = isTablet ? 26 : 22;
+  const headerHeight = topPadding + logoHeight + 10;
 
   // Bottom bar layout dimensions
   const bottomBarPaddingBottom =
@@ -226,7 +226,7 @@ export function CircularMenuModal({ isOpen, onClose, anchorY }: CircularMenuModa
             {
               height: headerHeight,
               paddingTop: topPadding,
-              paddingBottom: 8,
+              paddingBottom: 10,
               opacity: contentOpacity,
             },
           ]}

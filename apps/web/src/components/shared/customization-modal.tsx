@@ -12,6 +12,7 @@ export type Modifier = {
   name: string;
   price: string | number;
   quantity?: number;
+  isAvailable?: boolean;
 };
 
 export type ModifierGroup = {
@@ -99,7 +100,17 @@ export function CustomizationModal({
     });
   }, [product, productGroups, selectedMap]);
 
-  const isValid = !missingRequiredGroup;
+  // Validation: Check if any required group has fewer available options than minSelections
+  const unavailableRequiredGroups = React.useMemo(() => {
+    if (!product) return [];
+    return productGroups.filter(group => {
+      if (!group.isRequired) return false;
+      const availableOptions = (group.modifiers || []).filter(m => m.isAvailable !== false);
+      return availableOptions.length < Math.max(1, group.minSelections || 1);
+    });
+  }, [product, productGroups]);
+
+  const isValid = !missingRequiredGroup && unavailableRequiredGroups.length === 0;
   const basePrice = product ? Number(product.price) : 0;
   const grandTotal = (basePrice + extraPrice) * quantity;
 
@@ -119,6 +130,7 @@ export function CustomizationModal({
 
   // Single or Multi toggle handler for full-row clicks
   const handleToggleModifier = (group: ModifierGroup, modifier: Modifier) => {
+    if (modifier.isAvailable === false) return;
     const isSingleSelect = group.maxSelections === 1;
 
     if (isSingleSelect) {
@@ -162,6 +174,7 @@ export function CustomizationModal({
 
   // Inline increment button handler
   const handleIncrementModifier = (group: ModifierGroup, modifier: Modifier) => {
+    if (modifier.isAvailable === false) return;
     const currentGroup = selectedMap[group.id] || {};
     const currentGroupTotal = Object.values(currentGroup).reduce((a, b) => a + b, 0);
 
@@ -326,6 +339,8 @@ export function CustomizationModal({
                   aria-label={group.name}
                 >
                   {group.modifiers?.map(mod => {
+                    const isAvailable = mod.isAvailable !== false;
+                    const groupSelections = selectedMap[group.id] || {};
                     const selectedQty = groupSelections[mod.id] || 0;
                     const isSelected = selectedQty > 0;
                     const modPrice = Number(mod.price);
@@ -334,23 +349,27 @@ export function CustomizationModal({
                     return (
                       <div
                         key={mod.id}
-                        onClick={() => handleToggleModifier(group, mod)}
+                        onClick={() => isAvailable && handleToggleModifier(group, mod)}
                         role={isSingleSelect ? "radio" : "checkbox"}
                         aria-checked={isSelected}
-                        tabIndex={0}
+                        aria-disabled={!isAvailable}
+                        tabIndex={isAvailable ? 0 : -1}
                         onKeyDown={(e) => {
+                          if (!isAvailable) return;
                           if (e.key === "Enter" || e.key === " ") {
                             e.preventDefault();
                             handleToggleModifier(group, mod);
                           }
                         }}
-                        className={`min-h-[48px] w-full px-3.5 py-3 rounded-xl border transition-all duration-150 flex items-center justify-between gap-3 text-left cursor-pointer select-none active:scale-[0.99] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-[var(--outlet-primary,#0E59F9)]/30 ${
-                          isSelected
-                            ? "shadow-2xs font-medium"
-                            : "bg-white border-gray-200/80 hover:bg-gray-50/70 hover:border-gray-300"
+                        className={`min-h-[48px] w-full px-3.5 py-3 rounded-xl border transition-all duration-150 flex items-center justify-between gap-3 text-left select-none ${
+                          !isAvailable
+                            ? "opacity-50 cursor-not-allowed bg-gray-50/70 border-dashed border-gray-200"
+                            : isSelected
+                            ? "shadow-2xs font-medium cursor-pointer active:scale-[0.99] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-[var(--outlet-primary,#0E59F9)]/30"
+                            : "bg-white border-gray-200/80 hover:bg-gray-50/70 hover:border-gray-300 cursor-pointer active:scale-[0.99] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-[var(--outlet-primary,#0E59F9)]/30"
                         }`}
                         style={
-                          isSelected
+                          isAvailable && isSelected
                             ? {
                                 backgroundColor: "color-mix(in srgb, var(--outlet-primary, #0E59F9) 6%, white)",
                                 borderColor: "color-mix(in srgb, var(--outlet-primary, #0E59F9) 35%, transparent)",
@@ -404,7 +423,11 @@ export function CustomizationModal({
 
                           <span
                             className={`text-sm leading-tight transition-colors ${
-                              isSelected ? "font-bold text-gray-900" : "font-normal text-gray-700"
+                              !isAvailable
+                                ? "line-through text-gray-400 font-normal"
+                                : isSelected
+                                ? "font-bold text-gray-900"
+                                : "font-normal text-gray-700"
                             }`}
                           >
                             {mod.name}
@@ -412,10 +435,19 @@ export function CustomizationModal({
                         </div>
 
                         {/* Right: Price & Multi-Quantity Stepper */}
-                        <div className="flex items-center gap-2.5 shrink-0 text-right">
+                        <div className="flex items-center gap-2 shrink-0 text-right">
+                          {!isAvailable && (
+                            <span className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded">
+                              Habis
+                            </span>
+                          )}
                           <span
                             className={`text-xs sm:text-sm font-semibold ${
-                              isSelected ? "text-gray-900" : "text-gray-500"
+                              !isAvailable
+                                ? "text-gray-400"
+                                : isSelected
+                                ? "text-gray-900"
+                                : "text-gray-500"
                             }`}
                           >
                             {displayPrice > 0 ? `+${formatCurrency(displayPrice)}` : "Gratis"}
@@ -485,15 +517,22 @@ export function CustomizationModal({
 
         {/* 4. Sticky Bottom Action Bar (Footer) */}
         <div className="bg-white border-t border-gray-150 p-4 sm:p-5 shadow-lg flex flex-col gap-2.5 sticky bottom-0 z-20">
-          {/* Helpful Missing Requirement Indicator */}
-          {!isValid && missingRequiredGroup && (
+          {/* Missing Requirement or Out-of-Stock Alert */}
+          {unavailableRequiredGroups.length > 0 ? (
+            <div className="flex items-center gap-1.5 text-xs text-amber-800 bg-amber-50/90 border border-amber-200 px-3 py-1.5 rounded-lg animate-in fade-in duration-200">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0 text-amber-600" />
+              <span>
+                Bahan untuk pilihan wajib ({unavailableRequiredGroups.map(g => g.name).join(', ')}) sedang habis.
+              </span>
+            </div>
+          ) : !isValid && missingRequiredGroup ? (
             <div className="flex items-center gap-1.5 text-xs text-amber-800 bg-amber-50/90 border border-amber-200 px-3 py-1.5 rounded-lg animate-in fade-in duration-200">
               <AlertCircle className="w-3.5 h-3.5 shrink-0 text-amber-600" />
               <span>
                 Pilih <strong>{missingRequiredGroup.name}</strong> terlebih dahulu
               </span>
             </div>
-          )}
+          ) : null}
 
           <div className="flex items-center justify-between gap-3">
             {/* Quantity Stepper with >= 44px Touch Targets */}
@@ -501,7 +540,7 @@ export function CustomizationModal({
               <button
                 type="button"
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                disabled={quantity <= 1}
+                disabled={quantity <= 1 || unavailableRequiredGroups.length > 0}
                 className="w-11 h-11 rounded-lg bg-white border border-gray-200 shadow-2xs flex items-center justify-center text-gray-700 hover:bg-gray-50 active:scale-95 transition-all disabled:opacity-35 disabled:cursor-not-allowed"
                 aria-label="Kurangi jumlah pesanan"
               >
@@ -513,7 +552,8 @@ export function CustomizationModal({
               <button
                 type="button"
                 onClick={() => setQuantity(quantity + 1)}
-                className="w-11 h-11 rounded-lg bg-white border border-gray-200 shadow-2xs flex items-center justify-center text-gray-700 hover:bg-gray-50 active:scale-95 transition-all"
+                disabled={unavailableRequiredGroups.length > 0}
+                className="w-11 h-11 rounded-lg bg-white border border-gray-200 shadow-2xs flex items-center justify-center text-gray-700 hover:bg-gray-50 active:scale-95 transition-all disabled:opacity-35 disabled:cursor-not-allowed"
                 aria-label="Tambah jumlah pesanan"
               >
                 <Plus className="w-4 h-4 stroke-[2.5]" />
@@ -532,9 +572,17 @@ export function CustomizationModal({
                   : "#9ca3af",
               }}
             >
-              <span>Tambah ke Keranjang</span>
-              <span className="opacity-60">&bull;</span>
-              <span>{formatCurrency(grandTotal)}</span>
+              <span>
+                {unavailableRequiredGroups.length > 0
+                  ? "Bahan Utama Habis"
+                  : "Tambah ke Keranjang"}
+              </span>
+              {isValid && (
+                <>
+                  <span className="opacity-60">&bull;</span>
+                  <span>{formatCurrency(grandTotal)}</span>
+                </>
+              )}
             </button>
           </div>
         </div>

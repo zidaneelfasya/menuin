@@ -12,6 +12,7 @@ export const productSchema = z.object({
   description: z.string().optional().nullable(),
   barcode: z.string().optional().nullable(),
   trackStock: z.boolean().default(true).optional(),
+  isActive: z.boolean().default(true).optional(),
   modifierGroupIds: z.array(z.string()).optional(),
 });
 

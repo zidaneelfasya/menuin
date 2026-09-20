@@ -8,6 +8,7 @@ interface ProductCardProps {
   product: Product;
   cardWidth: number;
   onPress: (product: Product) => void;
+  onLongPress?: (product: Product) => void;
   formatPrice: (price: string | number) => string;
 }
 
@@ -15,6 +16,7 @@ export const ProductCard = React.memo(function ProductCard({
   product,
   cardWidth,
   onPress,
+  onLongPress,
   formatPrice,
 }: ProductCardProps) {
   const [imageError, setImageError] = useState(false);
@@ -26,7 +28,9 @@ export const ProductCard = React.memo(function ProductCard({
   );
 
   const hasModifiers = product.modifierGroupIds && product.modifierGroupIds.length > 0;
-  const isOutOfStock = product.stock !== null && product.stock <= 0;
+  const isDeactivated = product.isActive === false;
+  const isOutOfStock = !isDeactivated && product.stock !== null && product.stock <= 0;
+  const isUnavailable = isDeactivated || isOutOfStock;
 
   // Choose an appropriate icon based on category/name
   const getFallbackIcon = () => {
@@ -42,12 +46,16 @@ export const ProductCard = React.memo(function ProductCard({
 
   return (
     <TouchableOpacity
-      activeOpacity={0.75}
+      activeOpacity={isUnavailable ? 1 : 0.75}
+      disabled={isUnavailable}
       style={{ width: cardWidth }}
-      disabled={isOutOfStock}
-      onPress={() => onPress(product)}
+      onPress={() => {
+        if (!isUnavailable) {
+          onPress(product);
+        }
+      }}
       className={`bg-white rounded-2xl overflow-hidden border border-gray-200/90 shadow-2xs mb-2.5 active:border-blue-400 active:shadow-sm ${
-        isOutOfStock ? 'opacity-50' : ''
+        isUnavailable ? 'opacity-40 bg-gray-100 border-dashed border-gray-300' : ''
       }`}
     >
       {/* Product Image / Graceful Fallback Container */}
@@ -85,12 +93,20 @@ export const ProductCard = React.memo(function ProductCard({
           </View>
         )}
 
-        {/* Out of Stock Overlay */}
-        {isOutOfStock && (
-          <View className="absolute inset-0 bg-black/60 items-center justify-center">
-            <Text className="text-white font-black text-xs tracking-wider uppercase">Habis</Text>
+        {/* Out of Stock / Deactivated Overlay */}
+        {isDeactivated ? (
+          <View className="absolute inset-0 bg-slate-950/80 items-center justify-center p-2 z-10">
+            <View className="bg-rose-600 px-2.5 py-1 rounded-md shadow-xs">
+              <Text className="text-white font-black text-[10px] tracking-wider uppercase">Tidak Tersedia</Text>
+            </View>
           </View>
-        )}
+        ) : isOutOfStock ? (
+          <View className="absolute inset-0 bg-slate-950/75 items-center justify-center p-2 z-10">
+            <View className="bg-amber-600 px-2.5 py-1 rounded-md shadow-xs">
+              <Text className="text-white font-black text-[10px] tracking-wider uppercase">Stok Habis</Text>
+            </View>
+          </View>
+        ) : null}
       </View>
 
       {/* Product Info Section */}
@@ -103,21 +119,31 @@ export const ProductCard = React.memo(function ProductCard({
             {product.name}
           </Text>
 
-          {product.stock !== null && (
-            <Text className={`text-[10px] mt-0.5 font-medium ${isOutOfStock ? 'text-rose-500 font-bold' : 'text-gray-400'}`}>
+          {isDeactivated ? (
+            <Text className="text-[10px] mt-0.5 font-bold text-rose-500">
+              Tidak Tersedia
+            </Text>
+          ) : product.stock !== null ? (
+            <Text className={`text-[10px] mt-0.5 font-medium ${isOutOfStock ? 'text-amber-600 font-bold' : 'text-gray-400'}`}>
               {isOutOfStock ? 'Stok Habis' : `Stok: ${product.stock}`}
             </Text>
-          )}
+          ) : null}
         </View>
 
-        {/* Price & Quick Add Button */}
+        {/* Price & Action */}
         <View className="flex-row items-center justify-between mt-2 pt-1.5 border-t border-gray-100">
           <Text className="text-blue-600 font-black text-xs">
             {formatPrice(product.price)}
           </Text>
 
-          <View className="w-6 h-6 bg-blue-50 rounded-lg items-center justify-center border border-blue-100 active:bg-blue-600">
-            <Plus size={13} color="#2563eb" />
+          <View
+            className={`w-6 h-6 rounded-lg items-center justify-center border ${
+              isUnavailable 
+                ? 'bg-gray-100 border-gray-200' 
+                : 'bg-blue-50 border-blue-100 active:bg-blue-600'
+            }`}
+          >
+            <Plus size={13} color={isUnavailable ? '#9ca3af' : '#2563eb'} />
           </View>
         </View>
       </View>
