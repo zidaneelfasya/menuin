@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -24,8 +24,8 @@ import {
   OrderItemDto,
 } from './api/use-orders';
 import { formatCurrency, formatDate } from '@menuin/utils';
-import { supabase } from '@/lib/supabase';
 import { useQueryClient } from '@tanstack/react-query';
+
 import {
   Search,
   RefreshCw,
@@ -113,6 +113,12 @@ export const STATUS_CONFIGS: Record<StatusKey, StatusConfig> = {
   },
 };
 
+const elapsedFormatter = new Intl.DateTimeFormat('id-ID', {
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false,
+});
+
 function formatElapsed(dateInput: Date | string): string {
   try {
     const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
@@ -122,244 +128,44 @@ function formatElapsed(dateInput: Date | string): string {
     if (diffMin < 60) return `${diffMin}m lalu`;
     const diffHours = Math.floor(diffMin / 60);
     if (diffHours < 24) return `${diffHours}j lalu`;
-    return new Intl.DateTimeFormat('id-ID', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    }).format(date);
+    return elapsedFormatter.format(date);
   } catch {
     return '';
   }
 }
 
-export function OrdersScreen() {
-  const { data: queryResult, isLoading, error, refetch, isRefetching } = useOrdersData();
-  const updateStatusMutation = useUpdateOrderStatus();
-  const bulkUpdateMutation = useBulkUpdateOrderStatus();
-  const toggleItemMutation = useToggleOrderItemStatus();
-  const queryClient = useQueryClient();
+interface OrderCardItemProps {
+  order: OrderDto;
+  onSelect: (order: OrderDto) => void;
+  onStartPrepare: (order: OrderDto) => void;
+  onUpdateStatus: (orderId: string, status: string) => void;
+  onToggleItem: (itemId: string, currentCompleted: boolean) => void;
+  isUpdating: boolean;
+}
 
-  const insets = useSafeAreaInsets();
-  const { width, height } = useWindowDimensions();
-  const isLandscape = width > height;
-  const isTablet = Math.min(width, height) >= 600 || width >= 768;
-  const isPhoneLandscape = !isTablet && isLandscape;
+const OrderCardItem = React.memo(function OrderCardItem({
+  order,
+  onSelect,
+  onStartPrepare,
+  onUpdateStatus,
+  onToggleItem,
+  isUpdating,
+}: OrderCardItemProps) {
+  const isTakeaway = order.orderType === 'TAKE_AWAY' || order.orderType === 'TAKEAWAY';
+  const isOnline = order.orderType === 'ONLINE' || order.orderType === 'DELIVERY';
+  const isPaid = order.paymentStatus === 'PAID';
+  const itemsList = Array.isArray(order.items) ? order.items : [];
+  const completedItemsCount = itemsList.filter((i) => i.isCompleted).length;
+  const totalItemsCount = itemsList.length;
+  const config = STATUS_CONFIGS[order.status as StatusKey] || STATUS_CONFIGS.NEW;
 
-  // Search & Filters state
-  const [searchQuery, setSearchQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState<'ALL' | 'DINE_IN' | 'TAKEAWAY' | 'ONLINE'>('ALL');
-  const [activeStage, setActiveStage] = useState<StatusKey>('NEW');
-
-  // Modal states
-  const [selectedOrder, setSelectedOrder] = useState<OrderDto | null>(null);
-  const [orderToPrepare, setOrderToPrepare] = useState<OrderDto | null>(null);
-  const [isPrepareModalOpen, setIsPrepareModalOpen] = useState(false);
-  const [bulkTargetStage, setBulkTargetStage] = useState<StatusKey>('NEW');
-  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
-  // Rotation animation for manual refresh button
-  const spinAnim = useRef(new Animated.Value(0)).current;
-
-  const startSpin = () => {
-    spinAnim.setValue(0);
-    Animated.timing(spinAnim, {
-      toValue: 1,
-      duration: 700,
-      easing: Easing.linear,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const spinInterpolate = spinAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
-
-  // Realtime Supabase subscription for incoming & updated orders
-  useEffect(() => {
-    const channel = supabase
-      .channel('mobile-orders-sync')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'transactions',
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['active-orders'] });
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'transaction_items',
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['active-orders'] });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [queryClient]);
-
-  const allOrders: OrderDto[] = useMemo(() => {
-    return queryResult?.data || [];
-  }, [queryResult]);
-
-  // Filter orders by order type and search query
-  const filteredOrders = useMemo(() => {
-    return allOrders.filter((order) => {
-      // Filter by order type
-      if (typeFilter === 'DINE_IN') {
-        if (order.orderType !== 'DINE_IN') return false;
-      } else if (typeFilter === 'TAKEAWAY') {
-        if (order.orderType !== 'TAKE_AWAY' && order.orderType !== 'TAKEAWAY') return false;
-      } else if (typeFilter === 'ONLINE') {
-        if (order.orderType !== 'ONLINE' && order.orderType !== 'DELIVERY') return false;
-      }
-
-      // Filter by search query
-      if (!searchQuery.trim()) return true;
-      const q = searchQuery.toLowerCase();
-      return (
-        order.orderNumber?.toLowerCase().includes(q) ||
-        order.customerName?.toLowerCase().includes(q) ||
-        (order.tableNumber && `meja ${order.tableNumber}`.toLowerCase().includes(q))
-      );
-    });
-  }, [allOrders, typeFilter, searchQuery]);
-
-  // Counts for the 4 Kanban stages (PENDING, NEW, PROCESSING, READY)
-  const stageCounts = useMemo(() => {
-    const counts: Record<StatusKey, number> = {
-      PENDING: 0,
-      NEW: 0,
-      PROCESSING: 0,
-      READY: 0,
-    };
-    filteredOrders.forEach((o) => {
-      if (counts[o.status as StatusKey] !== undefined) {
-        counts[o.status as StatusKey]++;
-      }
-    });
-    return counts;
-  }, [filteredOrders]);
-
-  const handleManualRefresh = async () => {
-    setIsRefreshing(true);
-    startSpin();
-    try {
-      await refetch();
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-
-  const handleUpdateStatus = (orderId: string, newStatus: string) => {
-    updateStatusMutation.mutate(
-      { orderId, status: newStatus },
-      {
-        onSuccess: () => {
-          if (selectedOrder && selectedOrder.id === orderId) {
-            setSelectedOrder(null);
-          }
-          if (orderToPrepare && orderToPrepare.id === orderId) {
-            setIsPrepareModalOpen(false);
-            setOrderToPrepare(null);
-          }
-        },
-        onError: () => {
-          Alert.alert('Gagal', 'Tidak dapat mengupdate status pesanan.');
-        },
-      }
-    );
-  };
-
-  const handleToggleItem = (itemId: string, currentCompleted: boolean) => {
-    // Optimistic cache update
-    queryClient.setQueryData(['active-orders'], (old: any) => {
-      if (!old || !old.data) return old;
-      return {
-        ...old,
-        data: old.data.map((order: OrderDto) => ({
-          ...order,
-          items: order.items.map((item: OrderItemDto) =>
-            item.id === itemId ? { ...item, isCompleted: !currentCompleted } : item
-          ),
-        })),
-      };
-    });
-
-    toggleItemMutation.mutate(
-      { itemId, isCompleted: !currentCompleted },
-      {
-        onError: () => {
-          queryClient.invalidateQueries({ queryKey: ['active-orders'] });
-        },
-      }
-    );
-  };
-
-  const handleStartPrepareClick = (order: OrderDto) => {
-    setOrderToPrepare(order);
-    setIsPrepareModalOpen(true);
-  };
-
-  const handleOpenBulkModal = (stageKey: StatusKey) => {
-    setBulkTargetStage(stageKey);
-    setIsBulkModalOpen(true);
-  };
-
-  const handleConfirmBulkAdvance = () => {
-    const targetConfig = STATUS_CONFIGS[bulkTargetStage];
-    const targetOrders = filteredOrders.filter((o) => o.status === bulkTargetStage);
-    const orderIds = targetOrders.map((o) => o.id);
-
-    if (orderIds.length === 0) {
-      setIsBulkModalOpen(false);
-      return;
-    }
-
-    bulkUpdateMutation.mutate(
-      { orderIds, status: targetConfig.nextStatus },
-      {
-        onSuccess: () => {
-          setIsBulkModalOpen(false);
-          Alert.alert(
-            'Berhasil',
-            `${orderIds.length} pesanan berhasil dipindahkan ke "${targetConfig.nextStatusTitle}".`
-          );
-        },
-        onError: () => {
-          Alert.alert('Gagal', 'Terjadi kesalahan saat memindahkan seluruh pesanan.');
-        },
-      }
-    );
-  };
-
-  const renderOrderCard = (order: OrderDto) => {
-    const isTakeaway = order.orderType === 'TAKE_AWAY' || order.orderType === 'TAKEAWAY';
-    const isOnline = order.orderType === 'ONLINE' || order.orderType === 'DELIVERY';
-    const isPaid = order.paymentStatus === 'PAID';
-    const completedItemsCount = order.items.filter((i) => i.isCompleted).length;
-    const totalItemsCount = order.items.length;
-    const config = STATUS_CONFIGS[order.status as StatusKey] || STATUS_CONFIGS.NEW;
-
-    return (
+  return (
+    <View className="bg-white rounded-2xl p-3.5 mb-3 border border-slate-200/90 shadow-2xs">
+      {/* Clickable Card Header: Order Number, Payment Status, Elapsed Time & Service Info */}
       <TouchableOpacity
-        key={order.id}
-        activeOpacity={0.9}
-        onPress={() => setSelectedOrder(order)}
-        className="bg-white rounded-2xl p-3.5 mb-3 border border-slate-200/90 shadow-2xs"
+        activeOpacity={0.7}
+        onPress={() => onSelect(order)}
       >
-        {/* Card Header: Order Number, Payment Status, Elapsed Time */}
         <View className="flex-row items-center justify-between pb-2 mb-2 border-b border-slate-100">
           <View className="flex-row items-center gap-1.5">
             <Text className="font-mono text-xs font-black text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
@@ -427,121 +233,332 @@ export function OrdersScreen() {
             </View>
           )}
         </View>
+      </TouchableOpacity>
 
-        {/* Items Checklist Box */}
-        <View className="bg-slate-50/90 rounded-xl p-2.5 border border-slate-100/90 mb-3">
-          <View className="flex-row justify-between items-center mb-1.5 pb-1 border-b border-slate-200/50">
-            <Text className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-              Item Menu
-            </Text>
-            <Text className="text-[10px] font-semibold text-slate-500">
-              {completedItemsCount}/{totalItemsCount} Siap
-            </Text>
-          </View>
-
-          <View className="space-y-1.5">
-            {order.items.slice(0, 4).map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                activeOpacity={0.7}
-                onPress={() => handleToggleItem(item.id, item.isCompleted)}
-                className="flex-row items-start gap-2 py-0.5"
-              >
-                <View
-                  className={`w-4 h-4 mt-0.5 rounded items-center justify-center ${
-                    item.isCompleted
-                      ? 'bg-emerald-600 border border-emerald-600'
-                      : 'border border-slate-300 bg-white'
-                  }`}
-                >
-                  {item.isCompleted && <Check size={10} color="#ffffff" strokeWidth={3} />}
-                </View>
-                <View className="flex-1">
-                  <Text
-                    className={`text-xs ${
-                      item.isCompleted
-                        ? 'line-through text-slate-400 font-medium'
-                        : 'text-slate-800 font-semibold'
-                    }`}
-                    numberOfLines={1}
-                  >
-                    <Text className="font-mono font-bold text-slate-900">{item.quantity}x</Text>{' '}
-                    {item.productName}
-                  </Text>
-                  {Array.isArray(item.modifiers) && item.modifiers.length > 0 && (
-                    <Text className="text-[10px] text-slate-500 ml-4 font-normal" numberOfLines={1}>
-                      + {item.modifiers.map((m: any) => m.name || m.optionName).filter(Boolean).join(', ')}
-                    </Text>
-                  )}
-                  {item.notes && (
-                    <Text className="text-[10px] text-amber-600 italic ml-4 font-normal" numberOfLines={1}>
-                      Catatan: {item.notes}
-                    </Text>
-                  )}
-                </View>
-              </TouchableOpacity>
-            ))}
-
-            {order.items.length > 4 && (
-              <Text className="text-[10px] text-slate-400 font-medium italic pt-0.5 pl-6">
-                +{order.items.length - 4} item lainnya...
-              </Text>
-            )}
-          </View>
+      {/* Items Checklist Box */}
+      <View className="bg-slate-50/90 rounded-xl p-2.5 border border-slate-100/90 mb-3">
+        <View className="flex-row justify-between items-center mb-1.5 pb-1 border-b border-slate-200/50">
+          <Text className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+            Item Menu
+          </Text>
+          <Text className="text-[10px] font-semibold text-slate-500">
+            {completedItemsCount}/{totalItemsCount} Siap
+          </Text>
         </View>
 
-        {/* Card Footer: Total Price & Stage Action Button */}
-        <View className="flex-row items-center justify-between pt-1 border-t border-slate-100">
-          <View>
-            <Text className="text-[10px] text-slate-400 font-medium">Total Pesanan</Text>
-            <Text className="text-xs font-black text-slate-900 font-mono">
-              {formatCurrency(Number(order.grandTotal))}
-            </Text>
-          </View>
+        <View className="space-y-1.5">
+          {itemsList.slice(0, 4).map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              activeOpacity={0.7}
+              onPress={() => onToggleItem(item.id, item.isCompleted)}
+              className="flex-row items-start gap-2 py-0.5"
+            >
+              <View
+                className={`w-4 h-4 mt-0.5 rounded items-center justify-center ${
+                  item.isCompleted
+                    ? 'bg-emerald-600 border border-emerald-600'
+                    : 'border border-slate-300 bg-white'
+                }`}
+              >
+                {item.isCompleted && <Check size={10} color="#ffffff" strokeWidth={3} />}
+              </View>
+              <View className="flex-1">
+                <Text
+                  className={`text-xs ${
+                    item.isCompleted
+                      ? 'line-through text-slate-400 font-medium'
+                      : 'text-slate-800 font-semibold'
+                  }`}
+                  numberOfLines={1}
+                >
+                  <Text className="font-mono font-bold text-slate-900">{item.quantity}x</Text>{' '}
+                  {item.productName}
+                </Text>
+                {Array.isArray(item.modifiers) && item.modifiers.length > 0 && (
+                  <Text className="text-[10px] text-slate-500 ml-4 font-normal" numberOfLines={1}>
+                    + {item.modifiers.map((m: any) => m.name || m.optionName).filter(Boolean).join(', ')}
+                  </Text>
+                )}
+                {item.notes && (
+                  <Text className="text-[10px] text-amber-600 italic ml-4 font-normal" numberOfLines={1}>
+                    Catatan: {item.notes}
+                  </Text>
+                )}
+              </View>
+            </TouchableOpacity>
+          ))}
 
-          <View className="flex-row items-center gap-1.5">
+          {itemsList.length > 4 && (
+            <Text className="text-[10px] text-slate-400 font-medium italic pt-0.5 pl-6">
+              +{itemsList.length - 4} item lainnya...
+            </Text>
+          )}
+        </View>
+      </View>
+
+      {/* Card Footer: Total Price & Stage Action Button */}
+      <View className="flex-row items-center justify-between pt-1 border-t border-slate-100">
+        <TouchableOpacity activeOpacity={0.7} onPress={() => onSelect(order)}>
+          <Text className="text-[10px] text-slate-400 font-medium">Total Pesanan</Text>
+          <Text className="text-xs font-black text-slate-900 font-mono">
+            {formatCurrency(Number(order.grandTotal))}
+          </Text>
+        </TouchableOpacity>
+
+        <View className="flex-row items-center gap-1.5">
+          <TouchableOpacity
+            onPress={() => {
+              if (order.status === 'NEW') {
+                onStartPrepare(order);
+              } else {
+                onUpdateStatus(order.id, config.nextStatus);
+              }
+            }}
+            disabled={isUpdating}
+            activeOpacity={0.75}
+            style={{ backgroundColor: config.btnBg }}
+            className="px-3.5 py-2 rounded-xl flex-row items-center gap-1.5 shadow-2xs"
+          >
+            {order.status === 'NEW' ? (
+              <ChefHat size={12} color={config.btnText} />
+            ) : (
+              <ChevronRight size={12} color={config.btnText} />
+            )}
+            <Text style={{ color: config.btnText }} className="text-xs font-bold">
+              {config.actionLabel}
+            </Text>
+          </TouchableOpacity>
+
+          {(order.status === 'PENDING' || order.status === 'NEW') && (
             <TouchableOpacity
               onPress={() => {
-                if (order.status === 'NEW') {
-                  handleStartPrepareClick(order);
-                } else {
-                  handleUpdateStatus(order.id, config.nextStatus);
-                }
+                Alert.alert('Batalkan Pesanan', 'Apakah Anda yakin ingin membatalkan pesanan ini?', [
+                  { text: 'Tidak', style: 'cancel' },
+                  {
+                    text: 'Ya, Batalkan',
+                    style: 'destructive',
+                    onPress: () => onUpdateStatus(order.id, 'CANCELLED'),
+                  },
+                ]);
               }}
-              disabled={updateStatusMutation.isPending}
-              style={{ backgroundColor: config.btnBg }}
-              className="px-3.5 py-2 rounded-xl flex-row items-center gap-1.5 shadow-xs active:opacity-90"
+              activeOpacity={0.7}
+              className="px-2.5 py-2 rounded-xl border border-red-200 items-center justify-center bg-white"
             >
-              {order.status === 'NEW' ? (
-                <ChefHat size={12} color={config.btnText} />
-              ) : (
-                <ChevronRight size={12} color={config.btnText} />
-              )}
-              <Text style={{ color: config.btnText }} className="text-xs font-bold">
-                {config.actionLabel}
-              </Text>
+              <X size={13} color="#ef4444" />
             </TouchableOpacity>
-
-            {(order.status === 'PENDING' || order.status === 'NEW') && (
-              <TouchableOpacity
-                onPress={() => {
-                  Alert.alert('Batalkan Pesanan', 'Apakah Anda yakin ingin membatalkan pesanan ini?', [
-                    { text: 'Tidak', style: 'cancel' },
-                    {
-                      text: 'Ya, Batalkan',
-                      style: 'destructive',
-                      onPress: () => handleUpdateStatus(order.id, 'CANCELLED'),
-                    },
-                  ]);
-                }}
-                className="px-2.5 py-2 rounded-xl border border-red-200 items-center justify-center active:bg-red-50"
-              >
-                <X size={13} color="#ef4444" />
-              </TouchableOpacity>
-            )}
-          </View>
+          )}
         </View>
-      </TouchableOpacity>
+      </View>
+    </View>
+  );
+});
+
+
+export function OrdersScreen() {
+  const { data: queryResult, isLoading, error, refetch, isRefetching } = useOrdersData();
+  const updateStatusMutation = useUpdateOrderStatus();
+  const bulkUpdateMutation = useBulkUpdateOrderStatus();
+  const toggleItemMutation = useToggleOrderItemStatus();
+  const queryClient = useQueryClient();
+  const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
+  const isTablet = Math.min(width, height) >= 600 || width >= 768;
+  const isPhoneLandscape = !isTablet && isLandscape;
+
+  // Search & Filters state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState<'ALL' | 'DINE_IN' | 'TAKEAWAY' | 'ONLINE'>('ALL');
+  const [activeStage, setActiveStage] = useState<StatusKey>('NEW');
+
+  // Modal states
+  const [selectedOrder, setSelectedOrder] = useState<OrderDto | null>(null);
+  const [orderToPrepare, setOrderToPrepare] = useState<OrderDto | null>(null);
+  const [isPrepareModalOpen, setIsPrepareModalOpen] = useState(false);
+  const [bulkTargetStage, setBulkTargetStage] = useState<StatusKey>('NEW');
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isPullRefreshing, setIsPullRefreshing] = useState(false);
+
+  // Rotation animation for manual refresh button
+  const spinAnim = useRef(new Animated.Value(0)).current;
+
+  const startSpin = () => {
+    spinAnim.setValue(0);
+    Animated.timing(spinAnim, {
+      toValue: 1,
+      duration: 700,
+      easing: Easing.linear,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const spinInterpolate = spinAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  const allOrders: OrderDto[] = useMemo(() => {
+    return queryResult?.data || [];
+  }, [queryResult]);
+
+  // Filter orders by order type and search query
+  const filteredOrders = useMemo(() => {
+    return allOrders.filter((order) => {
+      // Filter by order type
+      if (typeFilter === 'DINE_IN') {
+        if (order.orderType !== 'DINE_IN') return false;
+      } else if (typeFilter === 'TAKEAWAY') {
+        if (order.orderType !== 'TAKE_AWAY' && order.orderType !== 'TAKEAWAY') return false;
+      } else if (typeFilter === 'ONLINE') {
+        if (order.orderType !== 'ONLINE' && order.orderType !== 'DELIVERY') return false;
+      }
+
+      // Filter by search query
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase();
+      return (
+        order.orderNumber?.toLowerCase().includes(q) ||
+        order.customerName?.toLowerCase().includes(q) ||
+        (order.tableNumber && `meja ${order.tableNumber}`.toLowerCase().includes(q))
+      );
+    });
+  }, [allOrders, typeFilter, searchQuery]);
+
+  // Counts for the 4 Kanban stages (PENDING, NEW, PROCESSING, READY)
+  const stageCounts = useMemo(() => {
+    const counts: Record<StatusKey, number> = {
+      PENDING: 0,
+      NEW: 0,
+      PROCESSING: 0,
+      READY: 0,
+    };
+    filteredOrders.forEach((o) => {
+      if (counts[o.status as StatusKey] !== undefined) {
+        counts[o.status as StatusKey]++;
+      }
+    });
+    return counts;
+  }, [filteredOrders]);
+
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    startSpin();
+    try {
+      await refetch();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const handlePullRefresh = async () => {
+    setIsPullRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setIsPullRefreshing(false);
+    }
+  };
+
+  const handleUpdateStatus = (orderId: string, newStatus: string) => {
+    updateStatusMutation.mutate(
+      { orderId, status: newStatus },
+      {
+        onSuccess: () => {
+          if (selectedOrder && selectedOrder.id === orderId) {
+            setSelectedOrder(null);
+          }
+          if (orderToPrepare && orderToPrepare.id === orderId) {
+            setIsPrepareModalOpen(false);
+            setOrderToPrepare(null);
+          }
+        },
+        onError: () => {
+          Alert.alert('Gagal', 'Tidak dapat mengupdate status pesanan.');
+        },
+      }
+    );
+  };
+
+  const handleToggleItem = (itemId: string, currentCompleted: boolean) => {
+    const updateCache = (old: any) => {
+      if (!old || !old.data) return old;
+      return {
+        ...old,
+        data: old.data.map((order: OrderDto) => ({
+          ...order,
+          items: order.items.map((item: OrderItemDto) =>
+            item.id === itemId ? { ...item, isCompleted: !currentCompleted } : item
+          ),
+        })),
+      };
+    };
+
+    // Optimistic cache update for query key
+    queryClient.setQueryData(['orders'], updateCache);
+
+    toggleItemMutation.mutate(
+      { itemId, isCompleted: !currentCompleted },
+      {
+        onError: () => {
+          queryClient.invalidateQueries({ queryKey: ['orders'] });
+        },
+      }
+    );
+  };
+
+  const handleSelectOrder = useCallback((order: OrderDto) => {
+    setSelectedOrder(order);
+  }, []);
+
+  const handleStartPrepare = useCallback((order: OrderDto) => {
+    setOrderToPrepare(order);
+    setIsPrepareModalOpen(true);
+  }, []);
+
+  const handleUpdateStatusCallback = useCallback((orderId: string, newStatus: string) => {
+    handleUpdateStatus(orderId, newStatus);
+  }, [updateStatusMutation]);
+
+  const handleToggleItemCallback = useCallback((itemId: string, currentCompleted: boolean) => {
+    handleToggleItem(itemId, currentCompleted);
+  }, [toggleItemMutation, queryClient]);
+
+  const handleStartPrepareClick = (order: OrderDto) => {
+    setOrderToPrepare(order);
+    setIsPrepareModalOpen(true);
+  };
+
+  const handleOpenBulkModal = (stageKey: StatusKey) => {
+    setBulkTargetStage(stageKey);
+    setIsBulkModalOpen(true);
+  };
+
+  const handleConfirmBulkAdvance = () => {
+    const targetConfig = STATUS_CONFIGS[bulkTargetStage];
+    const targetOrders = filteredOrders.filter((o) => o.status === bulkTargetStage);
+    const orderIds = targetOrders.map((o) => o.id);
+
+    if (orderIds.length === 0) {
+      setIsBulkModalOpen(false);
+      return;
+    }
+
+    bulkUpdateMutation.mutate(
+      { orderIds, status: targetConfig.nextStatus },
+      {
+        onSuccess: () => {
+          setIsBulkModalOpen(false);
+          Alert.alert(
+            'Berhasil',
+            `${orderIds.length} pesanan berhasil dipindahkan ke "${targetConfig.nextStatusTitle}".`
+          );
+        },
+        onError: () => {
+          Alert.alert('Gagal', 'Terjadi kesalahan saat memindahkan seluruh pesanan.');
+        },
+      }
     );
   };
 
@@ -554,7 +571,7 @@ export function OrdersScreen() {
         key={stageKey}
         className={`${
           isTabletColumn ? 'w-80 mr-3.5' : 'flex-1'
-        } bg-slate-50/70 rounded-2xl border border-slate-200/80 overflow-hidden flex-1`}
+        } bg-slate-50/70 rounded-2xl border border-slate-200/80 overflow-hidden`}
       >
         {/* Column Header (Always visible in tablet column, or phone active column) */}
         <View className="bg-white px-3.5 py-2.5 border-b border-slate-200 flex-row items-center justify-between">
@@ -574,11 +591,12 @@ export function OrdersScreen() {
               }
             }}
             disabled={stageOrders.length === 0 || bulkUpdateMutation.isPending}
+            activeOpacity={0.75}
             accessibilityLabel={`Selesaikan semua pesanan ${config.title}`}
-            className={`w-7 h-7 rounded-lg border items-center justify-center transition-all ${
+            className={`w-7 h-7 rounded-lg border items-center justify-center ${
               stageOrders.length === 0
                 ? 'opacity-30 bg-slate-100 border-slate-200'
-                : 'bg-emerald-50 border-emerald-300 active:scale-90'
+                : 'bg-emerald-50 border-emerald-300'
             }`}
           >
             <Check size={15} strokeWidth={2.5} color={stageOrders.length === 0 ? '#94a3b8' : '#059669'} />
@@ -589,6 +607,8 @@ export function OrdersScreen() {
         <ScrollView
           className="flex-1 p-2.5"
           showsVerticalScrollIndicator={false}
+          nestedScrollEnabled={true}
+          keyboardShouldPersistTaps="handled"
           contentContainerStyle={{
             paddingBottom: isTabletColumn
               ? 40 + insets.bottom
@@ -596,7 +616,12 @@ export function OrdersScreen() {
           }}
           refreshControl={
             !isTabletColumn ? (
-              <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#2563eb" />
+              <RefreshControl
+                refreshing={isPullRefreshing}
+                onRefresh={handlePullRefresh}
+                tintColor="#2563eb"
+                colors={['#2563eb']}
+              />
             ) : undefined
           }
         >
@@ -608,7 +633,17 @@ export function OrdersScreen() {
               </Text>
             </View>
           ) : (
-            stageOrders.map((order) => renderOrderCard(order))
+            stageOrders.map((order) => (
+              <OrderCardItem
+                key={order.id}
+                order={order}
+                onSelect={handleSelectOrder}
+                onStartPrepare={handleStartPrepare}
+                onUpdateStatus={handleUpdateStatusCallback}
+                onToggleItem={handleToggleItemCallback}
+                isUpdating={updateStatusMutation.isPending}
+              />
+            ))
           )}
         </ScrollView>
       </View>
@@ -668,7 +703,8 @@ export function OrdersScreen() {
             <View className="flex-row items-center gap-1.5">
               <TouchableOpacity
                 onPress={() => setTypeFilter('ALL')}
-                className={`px-3 py-1.5 rounded-lg border transition-all ${
+                activeOpacity={0.8}
+                className={`px-3 py-1.5 rounded-lg border ${
                   typeFilter === 'ALL'
                     ? 'bg-blue-600 border-blue-600'
                     : 'bg-white border-slate-200'
@@ -685,7 +721,8 @@ export function OrdersScreen() {
 
               <TouchableOpacity
                 onPress={() => setTypeFilter('DINE_IN')}
-                className={`px-3 py-1.5 rounded-lg border transition-all ${
+                activeOpacity={0.8}
+                className={`px-3 py-1.5 rounded-lg border ${
                   typeFilter === 'DINE_IN'
                     ? 'bg-blue-600 border-blue-600'
                     : 'bg-white border-slate-200'
@@ -702,7 +739,8 @@ export function OrdersScreen() {
 
               <TouchableOpacity
                 onPress={() => setTypeFilter('TAKEAWAY')}
-                className={`px-3 py-1.5 rounded-lg border transition-all ${
+                activeOpacity={0.8}
+                className={`px-3 py-1.5 rounded-lg border ${
                   typeFilter === 'TAKEAWAY'
                     ? 'bg-blue-600 border-blue-600'
                     : 'bg-white border-slate-200'
@@ -719,7 +757,8 @@ export function OrdersScreen() {
 
               <TouchableOpacity
                 onPress={() => setTypeFilter('ONLINE')}
-                className={`px-3 py-1.5 rounded-lg border transition-all ${
+                activeOpacity={0.8}
+                className={`px-3 py-1.5 rounded-lg border ${
                   typeFilter === 'ONLINE'
                     ? 'bg-blue-600 border-blue-600'
                     : 'bg-white border-slate-200'
@@ -796,12 +835,20 @@ export function OrdersScreen() {
                     </Text>
                     <View
                       className={`px-1.5 py-0.5 rounded-full ${
-                        isActive ? 'bg-blue-100' : 'bg-slate-100'
+                        stageKey === 'PENDING' && count > 0
+                          ? 'bg-amber-100'
+                          : isActive
+                          ? 'bg-blue-100'
+                          : 'bg-slate-100'
                       }`}
                     >
                       <Text
                         className={`text-[10px] font-bold ${
-                          isActive ? 'text-blue-700' : 'text-slate-600'
+                          stageKey === 'PENDING' && count > 0
+                            ? 'text-amber-800'
+                            : isActive
+                            ? 'text-blue-700'
+                            : 'text-slate-600'
                         }`}
                       >
                         {count}
@@ -813,6 +860,31 @@ export function OrdersScreen() {
             </ScrollView>
           </View>
 
+          {/* Pending Orders Notification Banner (Smartphone only, when not on PENDING tab) */}
+          {activeStage !== 'PENDING' && stageCounts.PENDING > 0 && (
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => setActiveStage('PENDING')}
+              className="bg-amber-50 mx-3 mt-2.5 px-3 py-2.5 rounded-xl border border-amber-300 flex-row items-center justify-between shadow-xs"
+            >
+              <View className="flex-row items-center gap-2 flex-1 mr-2">
+                <View className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                <View className="flex-1">
+                  <Text className="text-xs font-bold text-amber-900 leading-tight">
+                    Ada {stageCounts.PENDING} pesanan menunggu pembayaran / konfirmasi
+                  </Text>
+                  <Text className="text-[10px] text-amber-700">
+                    Termasuk pesanan online dari storefront
+                  </Text>
+                </View>
+              </View>
+              <View className="bg-amber-600 px-2.5 py-1.5 rounded-lg flex-row items-center gap-1">
+                <Text className="text-[11px] font-bold text-white">Lihat & Proses</Text>
+                <ChevronRight size={12} color="#ffffff" />
+              </View>
+            </TouchableOpacity>
+          )}
+
           {/* Active Stage Column for Smartphone */}
           <View className="flex-1 p-3">
             {renderColumn(activeStage, false)}
@@ -821,421 +893,436 @@ export function OrdersScreen() {
       )}
 
       {/* 3. MODAL MULAI PENYIAPAN & CETAK STRUK/TIKET (PREPARE MODAL) */}
-      <Modal
-        visible={isPrepareModalOpen && !!orderToPrepare}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setIsPrepareModalOpen(false)}
-      >
-        <View className="flex-1 bg-black/50 justify-center items-center p-4">
-          <View className="bg-white w-full max-w-md rounded-2xl p-5 border border-slate-100 shadow-xl">
-            {/* Header */}
-            <View className="flex-row items-center justify-between border-b border-slate-100 pb-3">
-              <View className="flex-row items-center gap-2.5">
-                <View className="w-10 h-10 rounded-xl bg-blue-50 items-center justify-center">
-                  <ChefHat size={22} color="#2563eb" />
+      {isPrepareModalOpen && !!orderToPrepare && (
+        <Modal
+          visible={isPrepareModalOpen && !!orderToPrepare}
+          transparent
+          animationType="fade"
+          onRequestClose={() => {
+            setIsPrepareModalOpen(false);
+            setOrderToPrepare(null);
+          }}
+        >
+          <View className="flex-1 bg-black/50 justify-center items-center p-4">
+            <View className="bg-white w-full max-w-md rounded-2xl p-5 border border-slate-100 shadow-xl">
+              {/* Header */}
+              <View className="flex-row items-center justify-between border-b border-slate-100 pb-3">
+                <View className="flex-row items-center gap-2.5">
+                  <View className="w-10 h-10 rounded-xl bg-blue-50 items-center justify-center">
+                    <ChefHat size={22} color="#2563eb" />
+                  </View>
+                  <View>
+                    <Text className="text-base font-black text-slate-900">Mulai Penyiapan</Text>
+                    <Text className="text-xs text-slate-500 font-medium">Tiket dapur & struk pelanggan</Text>
+                  </View>
                 </View>
-                <View>
-                  <Text className="text-base font-black text-slate-900">Mulai Penyiapan</Text>
-                  <Text className="text-xs text-slate-500 font-medium">Tiket dapur & struk pelanggan</Text>
-                </View>
-              </View>
-              <TouchableOpacity
-                onPress={() => setIsPrepareModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 items-center justify-center"
-              >
-                <X size={16} color="#64748b" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Order Info & Items List */}
-            <View className="py-3.5 space-y-3">
-              <View className="flex-row justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
-                <View>
-                  <Text className="text-[10px] font-bold text-slate-400 uppercase">Nomor Order</Text>
-                  <Text className="font-mono text-sm font-black text-slate-900">
-                    #{orderToPrepare?.orderNumber || orderToPrepare?.id.slice(0, 5)}
-                  </Text>
-                </View>
-                <View className="items-end">
-                  <Text className="text-[10px] font-bold text-slate-400 uppercase">Layanan</Text>
-                  <Text className="text-xs font-bold text-slate-800">
-                    {orderToPrepare?.tableNumber
-                      ? `Meja ${orderToPrepare.tableNumber}`
-                      : orderToPrepare?.orderType.replace('_', ' ')}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Items Preview */}
-              <View className="bg-slate-50/80 rounded-xl p-3 border border-slate-100 max-h-36">
-                <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                  Daftar Menu ({orderToPrepare?.items.length})
-                </Text>
-                <ScrollView nestedScrollEnabled className="max-h-28">
-                  {orderToPrepare?.items.map((item, idx) => (
-                    <View
-                      key={idx}
-                      className="flex-row justify-between items-center py-1 border-b border-dashed border-slate-200 last:border-0"
-                    >
-                      <Text className="text-xs text-slate-800 flex-1 mr-2" numberOfLines={1}>
-                        <Text className="font-bold text-blue-600 font-mono">{item.quantity}x </Text>
-                        {item.productName}
-                      </Text>
-                      <Text className="text-[11px] font-mono text-slate-600">
-                        {formatCurrency(Number(item.subtotal))}
-                      </Text>
-                    </View>
-                  ))}
-                </ScrollView>
-              </View>
-
-              {/* Cetak Dokumen Fisik Quick Actions */}
-              <View className="space-y-2 pt-1">
-                <View className="flex-row justify-between items-center">
-                  <Text className="text-xs font-bold text-slate-800">Cetak Dokumen Fisik</Text>
-                  <Text className="text-[10px] text-slate-400 font-medium">Opsional</Text>
-                </View>
-
-                <View className="flex-row gap-2">
-                  <TouchableOpacity
-                    onPress={() =>
-                      Alert.alert(
-                        'Cetak Tiket Dapur',
-                        `Mencetak tiket dapur untuk pesanan #${orderToPrepare?.orderNumber}...`
-                      )
-                    }
-                    className="flex-1 py-2.5 px-2 bg-slate-50 border border-slate-200 rounded-xl flex-row items-center justify-center gap-1.5 active:bg-blue-50"
-                  >
-                    <ChefHat size={14} color="#d97706" />
-                    <Text className="text-xs font-bold text-slate-700">Tiket Dapur</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() =>
-                      Alert.alert(
-                        'Cetak Struk Pelanggan',
-                        `Mencetak struk pelanggan untuk pesanan #${orderToPrepare?.orderNumber}...`
-                      )
-                    }
-                    className="flex-1 py-2.5 px-2 bg-slate-50 border border-slate-200 rounded-xl flex-row items-center justify-center gap-1.5 active:bg-blue-50"
-                  >
-                    <Receipt size={14} color="#2563eb" />
-                    <Text className="text-xs font-bold text-slate-700">Struk Pelanggan</Text>
-                  </TouchableOpacity>
-                </View>
-
                 <TouchableOpacity
-                  onPress={() =>
-                    Alert.alert(
-                      'Cetak Dokumen',
-                      `Mencetak tiket dapur & struk pelanggan untuk pesanan #${orderToPrepare?.orderNumber}...`
-                    )
-                  }
-                  className="w-full py-2 bg-slate-50 border border-slate-200 rounded-xl flex-row items-center justify-center gap-1.5 active:bg-blue-50"
+                  onPress={() => {
+                    setIsPrepareModalOpen(false);
+                    setOrderToPrepare(null);
+                  }}
+                  className="w-8 h-8 rounded-full bg-slate-100 items-center justify-center"
                 >
-                  <Printer size={14} color="#475569" />
-                  <Text className="text-xs font-bold text-slate-700">
-                    Cetak Keduanya (Struk & Tiket Dapur)
-                  </Text>
+                  <X size={16} color="#64748b" />
                 </TouchableOpacity>
               </View>
-            </View>
 
-            {/* Modal Actions */}
-            <View className="flex-row gap-2 pt-3 border-t border-slate-100">
-              <TouchableOpacity
-                onPress={() => setIsPrepareModalOpen(false)}
-                className="flex-1 py-2.5 rounded-xl border border-slate-200 items-center justify-center active:bg-slate-50"
-              >
-                <Text className="text-xs font-bold text-slate-600">Batal</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => {
-                  if (orderToPrepare) {
-                    handleUpdateStatus(orderToPrepare.id, 'PROCESSING');
-                  }
-                }}
-                disabled={updateStatusMutation.isPending}
-                className="flex-1 py-2.5 rounded-xl bg-blue-600 items-center justify-center flex-row gap-1.5 shadow-sm active:bg-blue-700"
-              >
-                <ChefHat size={14} color="#fff" />
-                <Text className="text-xs font-bold text-white">Mulai Penyiapan</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+              {/* Order Info & Items List */}
+              <View className="py-3.5 space-y-3">
+                <View className="flex-row justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
+                  <View>
+                    <Text className="text-[10px] font-bold text-slate-400 uppercase">Nomor Order</Text>
+                    <Text className="font-mono text-sm font-black text-slate-900">
+                      #{orderToPrepare?.orderNumber || orderToPrepare?.id?.slice(0, 5) || ''}
+                    </Text>
+                  </View>
+                  <View className="items-end">
+                    <Text className="text-[10px] font-bold text-slate-400 uppercase">Layanan</Text>
+                    <Text className="text-xs font-bold text-slate-800">
+                      {orderToPrepare?.tableNumber
+                        ? `Meja ${orderToPrepare.tableNumber}`
+                        : (orderToPrepare?.orderType || '').replace('_', ' ')}
+                    </Text>
+                  </View>
+                </View>
 
-      {/* 4. MODAL KONFIRMASI SELESAI SEMUA PESANAN */}
-      <Modal
-        visible={isBulkModalOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setIsBulkModalOpen(false)}
-      >
-        <View className="flex-1 bg-black/50 justify-center items-center p-4">
-          <View className="bg-white w-full max-w-sm rounded-2xl p-5 border border-slate-100 shadow-lg">
-            <View className="flex-row items-center gap-2.5 border-b border-slate-100 pb-3">
-              <View className="w-9 h-9 rounded-xl bg-emerald-50 items-center justify-center">
-                <CheckCheck size={20} color="#059669" />
-              </View>
-              <View className="flex-1">
-                <Text className="text-sm font-bold text-slate-900">Lanjutkan Semua Pesanan?</Text>
-                <Text className="text-[11px] text-slate-500 font-medium">
-                  {STATUS_CONFIGS[bulkTargetStage]?.title} → {STATUS_CONFIGS[bulkTargetStage]?.nextStatusTitle}
-                </Text>
-              </View>
-            </View>
-
-            <View className="py-3.5 space-y-3">
-              <Text className="text-xs text-slate-600 leading-relaxed">
-                Apakah Anda yakin untuk menyelesaikan semua pesanan pada status{' '}
-                <Text className="font-bold text-slate-900">
-                  "{STATUS_CONFIGS[bulkTargetStage]?.title}"
-                </Text>{' '}
-                sebanyak{' '}
-                <Text className="font-bold text-emerald-600">
-                  {filteredOrders.filter((o) => o.status === bulkTargetStage).length} pesanan
-                </Text>{' '}
-                dan lanjut ke status tahap selanjutnya (
-                <Text className="font-bold text-blue-600">
-                  "{STATUS_CONFIGS[bulkTargetStage]?.nextStatusTitle}"
-                </Text>
-                )?
-              </Text>
-
-              {/* List of Affected Orders */}
-              <View className="bg-slate-50 rounded-xl p-2.5 border border-slate-200 max-h-40">
-                <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                  Daftar Pesanan ({filteredOrders.filter((o) => o.status === bulkTargetStage).length})
-                </Text>
-                <ScrollView nestedScrollEnabled className="max-h-32">
-                  {filteredOrders
-                    .filter((o) => o.status === bulkTargetStage)
-                    .map((o) => (
+                {/* Items Preview */}
+                <View className="bg-slate-50/80 rounded-xl p-3 border border-slate-100 max-h-36">
+                  <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                    Daftar Menu ({orderToPrepare?.items?.length || 0})
+                  </Text>
+                  <ScrollView nestedScrollEnabled className="max-h-28">
+                    {orderToPrepare?.items?.map((item, idx) => (
                       <View
-                        key={o.id}
-                        className="flex-row justify-between items-center py-1 border-b border-slate-100 last:border-0"
+                        key={item.id || idx}
+                        className="flex-row justify-between items-center py-1 border-b border-dashed border-slate-200 last:border-0"
                       >
-                        <View className="flex-row items-center gap-1.5">
-                          <Text className="font-mono text-[10px] font-bold text-slate-800 bg-slate-200 px-1.5 py-0.5 rounded">
-                            {o.orderNumber || `#${o.id.slice(0, 5)}`}
-                          </Text>
-                          <Text className="text-[11px] text-slate-700 font-medium truncate max-w-[120px]">
-                            {o.customerName || (o.tableNumber ? `Meja ${o.tableNumber}` : 'Pesanan')}
-                          </Text>
-                        </View>
-                        <Text className="text-[10px] font-bold text-slate-600">
-                          {formatCurrency(Number(o.grandTotal))}
+                        <Text className="text-xs text-slate-800 flex-1 mr-2" numberOfLines={1}>
+                          <Text className="font-bold text-blue-600 font-mono">{item.quantity}x </Text>
+                          {item.productName}
+                        </Text>
+                        <Text className="text-[11px] font-mono text-slate-600">
+                          {formatCurrency(Number(item.subtotal))}
                         </Text>
                       </View>
                     ))}
-                </ScrollView>
-              </View>
-            </View>
-
-            {/* Action Buttons */}
-            <View className="flex-row gap-2 pt-2 border-t border-slate-100">
-              <TouchableOpacity
-                onPress={() => setIsBulkModalOpen(false)}
-                disabled={bulkUpdateMutation.isPending}
-                className="flex-1 py-2.5 rounded-xl border border-slate-200 items-center justify-center active:bg-slate-50"
-              >
-                <Text className="text-xs font-bold text-slate-600">Batal</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleConfirmBulkAdvance}
-                disabled={bulkUpdateMutation.isPending}
-                className="flex-1 py-2.5 rounded-xl bg-emerald-600 items-center justify-center flex-row gap-1.5 shadow-sm active:bg-emerald-700"
-              >
-                {bulkUpdateMutation.isPending ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <>
-                    <CheckCheck size={14} color="#fff" />
-                    <Text className="text-xs font-bold text-white">
-                      Ya, Lanjutkan ({filteredOrders.filter((o) => o.status === bulkTargetStage).length})
-                    </Text>
-                  </>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* 5. MODAL DETAIL PESANAN LENGKAP (BOTTOM SHEET / MODAL) */}
-      <Modal
-        visible={!!selectedOrder}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setSelectedOrder(null)}
-      >
-        <Pressable
-          className="flex-1 bg-black/40 justify-end"
-          onPress={() => setSelectedOrder(null)}
-        >
-          <Pressable
-            className="bg-white rounded-t-3xl max-h-[88%] p-5 border-t border-slate-100"
-            onPress={(e) => e.stopPropagation()}
-          >
-            {/* Sheet Handle */}
-            <View className="items-center -mt-2 pb-3">
-              <View className="w-10 h-1 rounded-full bg-slate-300" />
-            </View>
-
-            <View className="flex-row items-center justify-between pb-3 border-b border-slate-100">
-              <View>
-                <Text className="text-base font-black text-slate-900">
-                  Pesanan #{selectedOrder?.orderNumber || selectedOrder?.id.slice(0, 5)}
-                </Text>
-                <Text className="text-xs text-slate-500 font-medium">
-                  {selectedOrder?.createdAt ? formatDate(selectedOrder.createdAt) : ''}
-                </Text>
-              </View>
-              <TouchableOpacity
-                onPress={() => setSelectedOrder(null)}
-                className="w-8 h-8 rounded-full bg-slate-100 items-center justify-center"
-              >
-                <X size={16} color="#64748b" />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView className="py-3" showsVerticalScrollIndicator={false}>
-              {/* Order Meta Card */}
-              <View className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 mb-4 flex-row justify-between">
-                <View>
-                  <Text className="text-[10px] font-bold text-slate-400 uppercase">Tipe Pesanan</Text>
-                  <Text className="text-xs font-bold text-slate-800 mt-0.5">
-                    {selectedOrder?.tableNumber
-                      ? `Meja ${selectedOrder.tableNumber}`
-                      : selectedOrder?.orderType.replace('_', ' ')}
-                  </Text>
+                  </ScrollView>
                 </View>
-                {selectedOrder?.customerName && (
-                  <View className="items-end">
-                    <Text className="text-[10px] font-bold text-slate-400 uppercase">Pelanggan</Text>
-                    <Text className="text-xs font-bold text-slate-800 mt-0.5">
-                      {selectedOrder.customerName}
-                    </Text>
+
+                {/* Cetak Dokumen Fisik Quick Actions */}
+                <View className="space-y-2 pt-1">
+                  <View className="flex-row justify-between items-center">
+                    <Text className="text-xs font-bold text-slate-800">Cetak Dokumen Fisik</Text>
+                    <Text className="text-[10px] text-slate-400 font-medium">Opsional</Text>
                   </View>
-                )}
-              </View>
 
-              {/* Items List */}
-              <View className="mb-4">
-                <Text className="text-xs font-bold text-slate-900 mb-2">Daftar Item Menu</Text>
-                <View className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
-                  {selectedOrder?.items.map((item) => (
+                  <View className="flex-row gap-2">
                     <TouchableOpacity
-                      key={item.id}
-                      activeOpacity={0.7}
-                      onPress={() => handleToggleItem(item.id, item.isCompleted)}
-                      className={`flex-row items-center p-3 ${
-                        item.isCompleted ? 'bg-emerald-50/20' : 'bg-white'
-                      }`}
-                    >
-                      <View
-                        className={`w-5 h-5 rounded mr-3 items-center justify-center ${
-                          item.isCompleted ? 'bg-emerald-600' : 'border border-slate-300 bg-white'
-                        }`}
-                      >
-                        {item.isCompleted && <Check size={12} color="#fff" strokeWidth={3} />}
-                      </View>
-                      <View className="flex-1">
-                        <Text
-                          className={`text-xs ${
-                            item.isCompleted
-                              ? 'line-through text-slate-400 font-medium'
-                              : 'font-bold text-slate-800'
-                          }`}
-                        >
-                          <Text className="font-mono font-black text-slate-900">
-                            {item.quantity}x
-                          </Text>{' '}
-                          {item.productName}
-                        </Text>
-                        {Array.isArray(item.modifiers) && item.modifiers.length > 0 && (
-                          <Text className="text-[10px] text-slate-500 font-medium mt-0.5">
-                            + {item.modifiers.map((m: any) => m.name || m.optionName).filter(Boolean).join(', ')}
-                          </Text>
-                        )}
-                        {item.notes && (
-                          <Text className="text-[10px] text-amber-600 font-medium italic mt-0.5">
-                            Catatan: {item.notes}
-                          </Text>
-                        )}
-                      </View>
-                      <Text className="text-xs font-mono font-bold text-slate-700">
-                        {formatCurrency(Number(item.subtotal))}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-
-              {/* Total Summary */}
-              <View className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 mb-4 flex-row justify-between items-center">
-                <Text className="text-xs font-bold text-slate-600">Total Pembayaran</Text>
-                <Text className="text-sm font-black text-slate-900 font-mono">
-                  {formatCurrency(Number(selectedOrder?.grandTotal || 0))}
-                </Text>
-              </View>
-
-              {/* Primary Action in Sheet */}
-              {selectedOrder && (
-                <View className="space-y-2">
-                  <TouchableOpacity
-                    onPress={() => {
-                      if (selectedOrder.status === 'NEW') {
-                        const target = selectedOrder;
-                        setSelectedOrder(null);
-                        handleStartPrepareClick(target);
-                      } else {
-                        const next = STATUS_CONFIGS[selectedOrder.status as StatusKey]?.nextStatus;
-                        if (next) {
-                          handleUpdateStatus(selectedOrder.id, next);
-                        }
+                      onPress={() =>
+                        Alert.alert(
+                          'Cetak Tiket Dapur',
+                          `Mencetak tiket dapur untuk pesanan #${orderToPrepare?.orderNumber || ''}...`
+                        )
                       }
-                    }}
-                    disabled={updateStatusMutation.isPending}
-                    className="w-full py-3 rounded-xl bg-blue-600 items-center justify-center flex-row gap-2 shadow-sm active:bg-blue-700"
+                      className="flex-1 py-2.5 px-2 bg-slate-50 border border-slate-200 rounded-xl flex-row items-center justify-center gap-1.5 active:bg-blue-50"
+                    >
+                      <ChefHat size={14} color="#d97706" />
+                      <Text className="text-xs font-bold text-slate-700">Tiket Dapur</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() =>
+                        Alert.alert(
+                          'Cetak Struk Pelanggan',
+                          `Mencetak struk pelanggan untuk pesanan #${orderToPrepare?.orderNumber || ''}...`
+                        )
+                      }
+                      className="flex-1 py-2.5 px-2 bg-slate-50 border border-slate-200 rounded-xl flex-row items-center justify-center gap-1.5 active:bg-blue-50"
+                    >
+                      <Receipt size={14} color="#2563eb" />
+                      <Text className="text-xs font-bold text-slate-700">Struk Pelanggan</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <TouchableOpacity
+                    onPress={() =>
+                      Alert.alert(
+                        'Cetak Dokumen',
+                        `Mencetak tiket dapur & struk pelanggan untuk pesanan #${orderToPrepare?.orderNumber || ''}...`
+                      )
+                    }
+                    className="w-full py-2 bg-slate-50 border border-slate-200 rounded-xl flex-row items-center justify-center gap-1.5 active:bg-blue-50"
                   >
-                    <CheckCircle2 size={16} color="#fff" />
-                    <Text className="text-xs font-bold text-white">
-                      {selectedOrder.status === 'NEW'
-                        ? 'Mulai Penyiapan (Dapur)'
-                        : STATUS_CONFIGS[selectedOrder.status as StatusKey]?.actionLabel || 'Proses'}
+                    <Printer size={14} color="#475569" />
+                    <Text className="text-xs font-bold text-slate-700">
+                      Cetak Keduanya (Struk & Tiket Dapur)
                     </Text>
                   </TouchableOpacity>
+                </View>
+              </View>
 
-                  {(selectedOrder.status === 'PENDING' || selectedOrder.status === 'NEW') && (
-                    <TouchableOpacity
-                      onPress={() => {
-                        Alert.alert('Batalkan Pesanan', 'Yakin ingin membatalkan pesanan ini?', [
-                          { text: 'Tidak', style: 'cancel' },
-                          {
-                            text: 'Ya, Batalkan',
-                            style: 'destructive',
-                            onPress: () => {
-                              handleUpdateStatus(selectedOrder.id, 'CANCELLED');
-                              setSelectedOrder(null);
-                            },
-                          },
-                        ]);
-                      }}
-                      className="w-full py-2.5 rounded-xl border border-red-200 items-center justify-center active:bg-red-50"
-                    >
-                      <Text className="text-xs font-bold text-red-600">Batalkan Pesanan</Text>
-                    </TouchableOpacity>
+              {/* Modal Actions */}
+              <View className="flex-row gap-2 pt-3 border-t border-slate-100">
+                <TouchableOpacity
+                  onPress={() => {
+                    setIsPrepareModalOpen(false);
+                    setOrderToPrepare(null);
+                  }}
+                  className="flex-1 py-2.5 rounded-xl border border-slate-200 items-center justify-center active:bg-slate-50"
+                >
+                  <Text className="text-xs font-bold text-slate-600">Batal</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    if (orderToPrepare) {
+                      handleUpdateStatus(orderToPrepare.id, 'PROCESSING');
+                    }
+                  }}
+                  disabled={updateStatusMutation.isPending}
+                  className="flex-1 py-2.5 rounded-xl bg-blue-600 items-center justify-center flex-row gap-1.5 shadow-sm active:bg-blue-700"
+                >
+                  <ChefHat size={14} color="#fff" />
+                  <Text className="text-xs font-bold text-white">Mulai Penyiapan</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
+
+      {/* 4. MODAL KONFIRMASI SELESAI SEMUA PESANAN */}
+      {isBulkModalOpen && (
+        <Modal
+          visible={isBulkModalOpen}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setIsBulkModalOpen(false)}
+        >
+          <View className="flex-1 bg-black/50 justify-center items-center p-4">
+            <View className="bg-white w-full max-w-sm rounded-2xl p-5 border border-slate-100 shadow-lg">
+              <View className="flex-row items-center gap-2.5 border-b border-slate-100 pb-3">
+                <View className="w-9 h-9 rounded-xl bg-emerald-50 items-center justify-center">
+                  <CheckCheck size={20} color="#059669" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-sm font-bold text-slate-900">Lanjutkan Semua Pesanan?</Text>
+                  <Text className="text-[11px] text-slate-500 font-medium">
+                    {STATUS_CONFIGS[bulkTargetStage]?.title} → {STATUS_CONFIGS[bulkTargetStage]?.nextStatusTitle}
+                  </Text>
+                </View>
+              </View>
+
+              <View className="py-3.5 space-y-3">
+                <Text className="text-xs text-slate-600 leading-relaxed">
+                  Apakah Anda yakin untuk menyelesaikan semua pesanan pada status{' '}
+                  <Text className="font-bold text-slate-900">
+                    "{STATUS_CONFIGS[bulkTargetStage]?.title}"
+                  </Text>{' '}
+                  sebanyak{' '}
+                  <Text className="font-bold text-emerald-600">
+                    {filteredOrders.filter((o) => o.status === bulkTargetStage).length} pesanan
+                  </Text>{' '}
+                  dan lanjut ke status tahap selanjutnya (
+                  <Text className="font-bold text-blue-600">
+                    "{STATUS_CONFIGS[bulkTargetStage]?.nextStatusTitle}"
+                  </Text>
+                  )?
+                </Text>
+
+                {/* List of Affected Orders */}
+                <View className="bg-slate-50 rounded-xl p-2.5 border border-slate-200 max-h-40">
+                  <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                    Daftar Pesanan ({filteredOrders.filter((o) => o.status === bulkTargetStage).length})
+                  </Text>
+                  <ScrollView nestedScrollEnabled className="max-h-32">
+                    {filteredOrders
+                      .filter((o) => o.status === bulkTargetStage)
+                      .map((o) => (
+                        <View
+                          key={o.id}
+                          className="flex-row justify-between items-center py-1 border-b border-slate-100 last:border-0"
+                        >
+                          <View className="flex-row items-center gap-1.5">
+                            <Text className="font-mono text-[10px] font-bold text-slate-800 bg-slate-200 px-1.5 py-0.5 rounded">
+                              {o.orderNumber || `#${o.id.slice(0, 5)}`}
+                            </Text>
+                            <Text className="text-[11px] text-slate-700 font-medium max-w-[120px]" numberOfLines={1}>
+                              {o.customerName || (o.tableNumber ? `Meja ${o.tableNumber}` : 'Pesanan')}
+                            </Text>
+                          </View>
+                          <Text className="text-[10px] font-bold text-slate-600">
+                            {formatCurrency(Number(o.grandTotal))}
+                          </Text>
+                        </View>
+                      ))}
+                  </ScrollView>
+                </View>
+              </View>
+
+              {/* Action Buttons */}
+              <View className="flex-row gap-2 pt-2 border-t border-slate-100">
+                <TouchableOpacity
+                  onPress={() => setIsBulkModalOpen(false)}
+                  disabled={bulkUpdateMutation.isPending}
+                  className="flex-1 py-2.5 rounded-xl border border-slate-200 items-center justify-center active:bg-slate-50"
+                >
+                  <Text className="text-xs font-bold text-slate-600">Batal</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleConfirmBulkAdvance}
+                  disabled={bulkUpdateMutation.isPending}
+                  className="flex-1 py-2.5 rounded-xl bg-emerald-600 items-center justify-center flex-row gap-1.5 shadow-sm active:bg-emerald-700"
+                >
+                  {bulkUpdateMutation.isPending ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <>
+                      <CheckCheck size={14} color="#fff" />
+                      <Text className="text-xs font-bold text-white">
+                        Ya, Lanjutkan ({filteredOrders.filter((o) => o.status === bulkTargetStage).length})
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
+
+      {/* 5. MODAL DETAIL PESANAN LENGKAP (BOTTOM SHEET / MODAL) */}
+      {!!selectedOrder && (
+        <Modal
+          visible={!!selectedOrder}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setSelectedOrder(null)}
+        >
+          <Pressable
+            className="flex-1 bg-black/40 justify-end"
+            onPress={() => setSelectedOrder(null)}
+          >
+            <Pressable
+              className="bg-white rounded-t-3xl max-h-[88%] p-5 border-t border-slate-100"
+              onPress={(e) => e.stopPropagation()}
+            >
+              {/* Sheet Handle */}
+              <View className="items-center -mt-2 pb-3">
+                <View className="w-10 h-1 rounded-full bg-slate-300" />
+              </View>
+
+              <View className="flex-row items-center justify-between pb-3 border-b border-slate-100">
+                <View>
+                  <Text className="text-base font-black text-slate-900">
+                    Pesanan #{selectedOrder?.orderNumber || selectedOrder?.id?.slice(0, 5) || ''}
+                  </Text>
+                  <Text className="text-xs text-slate-500 font-medium">
+                    {selectedOrder?.createdAt ? formatDate(selectedOrder.createdAt) : ''}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => setSelectedOrder(null)}
+                  className="w-8 h-8 rounded-full bg-slate-100 items-center justify-center"
+                >
+                  <X size={16} color="#64748b" />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView className="py-3" showsVerticalScrollIndicator={false}>
+                {/* Order Meta Card */}
+                <View className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 mb-4 flex-row justify-between">
+                  <View>
+                    <Text className="text-[10px] font-bold text-slate-400 uppercase">Tipe Pesanan</Text>
+                    <Text className="text-xs font-bold text-slate-800 mt-0.5">
+                      {selectedOrder?.tableNumber
+                        ? `Meja ${selectedOrder.tableNumber}`
+                        : (selectedOrder?.orderType || '').replace('_', ' ')}
+                    </Text>
+                  </View>
+                  {selectedOrder?.customerName && (
+                    <View className="items-end">
+                      <Text className="text-[10px] font-bold text-slate-400 uppercase">Pelanggan</Text>
+                      <Text className="text-xs font-bold text-slate-800 mt-0.5">
+                        {selectedOrder.customerName}
+                      </Text>
+                    </View>
                   )}
                 </View>
-              )}
-            </ScrollView>
+
+                {/* Items List */}
+                <View className="mb-4">
+                  <Text className="text-xs font-bold text-slate-900 mb-2">Daftar Item Menu</Text>
+                  <View className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
+                    {selectedOrder?.items?.map((item) => (
+                      <TouchableOpacity
+                        key={item.id}
+                        activeOpacity={0.7}
+                        onPress={() => handleToggleItem(item.id, item.isCompleted)}
+                        className={`flex-row items-center p-3 ${
+                          item.isCompleted ? 'bg-emerald-50/20' : 'bg-white'
+                        }`}
+                      >
+                        <View
+                          className={`w-5 h-5 rounded mr-3 items-center justify-center ${
+                            item.isCompleted ? 'bg-emerald-600' : 'border border-slate-300 bg-white'
+                          }`}
+                        >
+                          {item.isCompleted && <Check size={12} color="#fff" strokeWidth={3} />}
+                        </View>
+                        <View className="flex-1">
+                          <Text
+                            className={`text-xs ${
+                              item.isCompleted
+                                ? 'line-through text-slate-400 font-medium'
+                                : 'font-bold text-slate-800'
+                            }`}
+                          >
+                            <Text className="font-mono font-black text-slate-900">
+                              {item.quantity}x
+                            </Text>{' '}
+                            {item.productName}
+                          </Text>
+                          {Array.isArray(item.modifiers) && item.modifiers.length > 0 && (
+                            <Text className="text-[10px] text-slate-500 font-medium mt-0.5">
+                              + {item.modifiers.map((m: any) => m.name || m.optionName).filter(Boolean).join(', ')}
+                            </Text>
+                          )}
+                          {item.notes && (
+                            <Text className="text-[10px] text-amber-600 font-medium italic mt-0.5">
+                              Catatan: {item.notes}
+                            </Text>
+                          )}
+                        </View>
+                        <Text className="text-xs font-mono font-bold text-slate-700">
+                          {formatCurrency(Number(item.subtotal))}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+
+                {/* Total Summary */}
+                <View className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 mb-4 flex-row justify-between items-center">
+                  <Text className="text-xs font-bold text-slate-600">Total Pembayaran</Text>
+                  <Text className="text-sm font-black text-slate-900 font-mono">
+                    {formatCurrency(Number(selectedOrder?.grandTotal || 0))}
+                  </Text>
+                </View>
+
+                {/* Primary Action in Sheet */}
+                {selectedOrder && (
+                  <View className="space-y-2">
+                    <TouchableOpacity
+                      onPress={() => {
+                        if (selectedOrder.status === 'NEW') {
+                          const target = selectedOrder;
+                          setSelectedOrder(null);
+                          handleStartPrepareClick(target);
+                        } else {
+                          const next = STATUS_CONFIGS[selectedOrder.status as StatusKey]?.nextStatus;
+                          if (next) {
+                            handleUpdateStatus(selectedOrder.id, next);
+                          }
+                        }
+                      }}
+                      disabled={updateStatusMutation.isPending}
+                      className="w-full py-3 rounded-xl bg-blue-600 items-center justify-center flex-row gap-2 shadow-sm active:bg-blue-700"
+                    >
+                      <CheckCircle2 size={16} color="#fff" />
+                      <Text className="text-xs font-bold text-white">
+                        {selectedOrder.status === 'NEW'
+                          ? 'Mulai Penyiapan (Dapur)'
+                          : STATUS_CONFIGS[selectedOrder.status as StatusKey]?.actionLabel || 'Proses'}
+                      </Text>
+                    </TouchableOpacity>
+
+                    {(selectedOrder.status === 'PENDING' || selectedOrder.status === 'NEW') && (
+                      <TouchableOpacity
+                        onPress={() => {
+                          Alert.alert('Batalkan Pesanan', 'Yakin ingin membatalkan pesanan ini?', [
+                            { text: 'Tidak', style: 'cancel' },
+                            {
+                              text: 'Ya, Batalkan',
+                              style: 'destructive',
+                              onPress: () => {
+                                handleUpdateStatus(selectedOrder.id, 'CANCELLED');
+                                setSelectedOrder(null);
+                              },
+                            },
+                          ]);
+                        }}
+                        className="w-full py-2.5 rounded-xl border border-red-200 items-center justify-center active:bg-red-50"
+                      >
+                        <Text className="text-xs font-bold text-red-600">Batalkan Pesanan</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                )}
+              </ScrollView>
+            </Pressable>
           </Pressable>
-        </Pressable>
-      </Modal>
+        </Modal>
+      )}
     </View>
   );
 }

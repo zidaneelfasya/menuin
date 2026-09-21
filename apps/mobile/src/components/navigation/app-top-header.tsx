@@ -176,8 +176,9 @@ export function AppTopHeader() {
       {/* ============================================================ */}
       {/* MODAL PILIHAN OUTLET & KONEKSI PERANGKAT                    */}
       {/* ============================================================ */}
-      <Modal
-        visible={isModalOpen}
+      {isModalOpen && (
+        <Modal
+          visible={isModalOpen}
         transparent={true}
         statusBarTranslucent={true}
         navigationBarTranslucent={true}
@@ -308,13 +309,15 @@ export function AppTopHeader() {
             </View>
           </View>
         </View>
-      </Modal>
+        </Modal>
+      )}
 
       {/* ============================================================ */}
       {/* MODAL DETAIL PROFIL OUTLET                                   */}
       {/* ============================================================ */}
-      <Modal
-        visible={isProfileModalOpen}
+      {isProfileModalOpen && (
+        <Modal
+          visible={isProfileModalOpen}
         transparent={true}
         statusBarTranslucent={true}
         navigationBarTranslucent={true}
@@ -398,7 +401,8 @@ export function AppTopHeader() {
             </TouchableOpacity>
           </View>
         </View>
-      </Modal>
+        </Modal>
+      )}
     </>
   );
 }

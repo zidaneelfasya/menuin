@@ -23,7 +23,7 @@ import { useOrders } from '@/hooks/use-orders';
 import { useActiveShift } from '@/hooks/use-shifts';
 import {
   MENUIN_BLUE,
-  ActiveHomeIcon,
+  ActiveStoreIcon,
   ActiveReceiptIcon,
   ActiveGridIcon,
   ActiveSettingsIcon,
@@ -81,7 +81,7 @@ export function AdaptiveBottomBar({
   };
 
   // Check active state for POS tabs
-  const isHomeActive =
+  const isPosActive =
     ((pathname.includes('/pos') || pathname.includes('/dashboard')) &&
       !pathname.includes('/orders') &&
       !pathname.includes('/custom')) ||
@@ -138,9 +138,9 @@ export function AdaptiveBottomBar({
       {/* Mode 1: POINT OF SALES (POS) - 4 Full-Width Evenly Distributed Tabs */}
       {currentMode === 'pos' && (
         <View className="flex-row items-center w-full">
-          {/* Left Wing (Home & Orders) */}
+          {/* Left Wing (POS & Orders) */}
           <View className="flex-row items-center flex-1">
-            {/* Tab 1: Home */}
+            {/* Tab 1: POS */}
             <TouchableOpacity
               onPress={() => navigateTo('/(main)/(cashier)/pos')}
               activeOpacity={0.7}
@@ -150,10 +150,10 @@ export function AdaptiveBottomBar({
                   : 'flex-col items-center justify-center py-1 px-1'
               } bg-transparent`}
             >
-              {isHomeActive ? (
-                <ActiveHomeIcon size={iconSize} color={MENUIN_BLUE} />
+              {isPosActive ? (
+                <ActiveStoreIcon size={iconSize} color={MENUIN_BLUE} />
               ) : (
-                <Home
+                <Store
                   size={iconSize}
                   color="#64748b"
                   strokeWidth={1.8}
@@ -161,8 +161,8 @@ export function AdaptiveBottomBar({
               )}
               <Text
                 style={{
-                  color: isHomeActive ? MENUIN_BLUE : '#64748b',
-                  fontWeight: isHomeActive ? '700' : '500',
+                  color: isPosActive ? MENUIN_BLUE : '#64748b',
+                  fontWeight: isPosActive ? '700' : '500',
                 }}
                 className={
                   isTablet
@@ -171,7 +171,7 @@ export function AdaptiveBottomBar({
                 }
                 numberOfLines={1}
               >
-                Home
+                POS
               </Text>
             </TouchableOpacity>
 
@@ -380,7 +380,7 @@ export function AdaptiveBottomBar({
             activeOpacity={0.7}
             className="flex-1 flex-row items-center justify-center py-2 sm:py-2.5 px-3 rounded-xl bg-transparent active:bg-blue-50/50"
           >
-            <ActiveHomeIcon size={18} color={MENUIN_BLUE} />
+            <ActiveStoreIcon size={18} color={MENUIN_BLUE} />
             <Text style={{ color: MENUIN_BLUE }} className="text-xs sm:text-sm font-bold ml-2">
               Kasir (POS)
             </Text>
