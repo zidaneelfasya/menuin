@@ -1,27 +1,87 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, ViewStyle, TextStyle } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  ActivityIndicator,
+  ViewStyle,
+  TextStyle,
+  Animated,
+} from 'react-native';
 import { useOrders } from '@/hooks/use-orders';
 import { ChefHat, Check, User, Hash, X, Clock } from 'lucide-react-native';
-import Animated, { SlideInRight, SlideOutRight } from 'react-native-reanimated';
+
+const priceFormatter = new Intl.NumberFormat('id-ID', {
+  style: 'currency',
+  currency: 'IDR',
+  minimumFractionDigits: 0,
+});
 
 export function GlobalIncomingOrderToast() {
   const { data: ordersData, updateStatus } = useOrders();
   const [dismissedOrderIds, setDismissedOrderIds] = useState<Set<string>>(new Set());
   const [isAccepting, setIsAccepting] = useState(false);
+
+  // Core Animated values for rock-solid native driver performance
+  const translateX = useRef(new Animated.Value(360)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
   
   const formatPrice = (price: string | number) => {
-    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Number(price));
+    return priceFormatter.format(Number(price));
   };
 
-  const newOrders = ordersData?.data.filter(o => o.status === 'NEW' && !dismissedOrderIds.has(o.id)) || [];
+  const newOrders = ordersData?.data.filter(
+    (o) =>
+      (o.status === 'NEW' || (o.status === 'PENDING' && (o.orderType === 'ONLINE' || (o as any).source === 'ONLINE'))) &&
+      !dismissedOrderIds.has(o.id)
+  ) || [];
   const currentOrder = newOrders[0];
+
+  const animateDismiss = (callback?: () => void) => {
+    Animated.parallel([
+      Animated.timing(translateX, {
+        toValue: 360,
+        duration: 220,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      if (currentOrder) {
+        setDismissedOrderIds((prev) => new Set([...prev, currentOrder.id]));
+      }
+      callback?.();
+    });
+  };
 
   useEffect(() => {
     if (!currentOrder) return;
+
+    // Reset and animate in smoothly
+    translateX.setValue(360);
+    opacity.setValue(0);
+    Animated.parallel([
+      Animated.spring(translateX, {
+        toValue: 0,
+        damping: 18,
+        stiffness: 180,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+    ]).start();
     
     // Auto dismiss after 10 seconds to not block UI forever
     const timer = setTimeout(() => {
-      setDismissedOrderIds(prev => new Set(prev).add(currentOrder.id));
+      animateDismiss();
     }, 10000);
     
     return () => clearTimeout(timer);
@@ -30,15 +90,16 @@ export function GlobalIncomingOrderToast() {
   if (!currentOrder) return null;
 
   const handleDismiss = () => {
-    setDismissedOrderIds(prev => new Set(prev).add(currentOrder.id));
+    animateDismiss();
   };
 
   const handleAccept = () => {
     setIsAccepting(true);
-    updateStatus({ orderId: currentOrder.id, status: 'PROCESSING' }, {
+    const nextStatus = currentOrder.status === 'PENDING' ? 'NEW' : 'PROCESSING';
+    updateStatus({ orderId: currentOrder.id, status: nextStatus }, {
       onSuccess: () => {
         setIsAccepting(false);
-        handleDismiss();
+        animateDismiss();
       },
       onError: () => {
         setIsAccepting(false);
@@ -48,11 +109,16 @@ export function GlobalIncomingOrderToast() {
 
   return (
     <Animated.View 
-      entering={SlideInRight.springify()} 
-      exiting={SlideOutRight}
-      style={styles.container}
+      pointerEvents="box-none"
+      style={[
+        styles.container,
+        {
+          transform: [{ translateX }],
+          opacity,
+        },
+      ]}
     >
-      <View style={styles.card}>
+      <View style={styles.card} pointerEvents="auto">
         {/* Top blue bar */}
         <View style={styles.topBar} />
         
@@ -64,9 +130,11 @@ export function GlobalIncomingOrderToast() {
                 <ChefHat size={16} color="#2563eb" />
               </View>
               <View>
-                <Text style={styles.titleText}>Pesanan Baru</Text>
+                <Text style={styles.titleText}>
+                  {currentOrder.status === 'PENDING' ? 'Pesanan Masuk' : 'Pesanan Baru'}
+                </Text>
                 <Text style={styles.orderTypeText}>
-                  {currentOrder.orderType.replace('_', ' ')}
+                  {(currentOrder.orderType || '').replace('_', ' ')}
                 </Text>
               </View>
             </View>
@@ -102,7 +170,7 @@ export function GlobalIncomingOrderToast() {
           {/* Items */}
           <View style={styles.itemsContainer}>
             <ScrollView showsVerticalScrollIndicator={false}>
-              {currentOrder.items.map((item, idx) => (
+              {currentOrder.items?.map((item, idx) => (
                 <View key={item.id || idx} style={styles.itemRow}>
                   <View style={styles.itemDetails}>
                     <View style={styles.qtyBadge}>
@@ -138,7 +206,9 @@ export function GlobalIncomingOrderToast() {
               ) : (
                 <>
                   <Check size={14} color="#ffffff" />
-                  <Text style={styles.acceptText}>Terima</Text>
+                  <Text style={styles.acceptText}>
+                    {currentOrder.status === 'PENDING' ? 'Konfirmasi' : 'Terima'}
+                  </Text>
                 </>
               )}
             </TouchableOpacity>
