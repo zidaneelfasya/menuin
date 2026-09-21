@@ -36,7 +36,7 @@ function ScreenFrame({
         <span className="text-[12px] font-medium text-[#0a0a0a]">{label}</span>
         <span className="font-display text-[11px] tabular-nums text-[#a1a1aa]">#MN-8921</span>
       </div>
-      <div className="flex-1 p-4">{children}</div>
+      <div className="flex flex-1 flex-col p-4">{children}</div>
     </div>
   );
 }
@@ -44,7 +44,7 @@ function ScreenFrame({
 function PanelMeja() {
   return (
     <ScreenFrame label="menuin.id/meja/12">
-      <div className="space-y-2.5 text-[12px]">
+      <div className="flex flex-1 flex-col gap-2.5 text-[12px]">
         {[
           { q: 2, n: "Es Kopi Gula Aren", note: "Less ice, less sugar", p: "Rp 36.000" },
           { q: 1, n: "Butter Croissant", note: "Potong 2", p: "Rp 20.000" },
@@ -78,7 +78,7 @@ function PanelMeja() {
           </span>
         </div>
 
-        <div className="flex h-9 items-center justify-center gap-2 rounded-xl bg-[#0E59F9] text-[12px] font-medium text-white">
+        <div className="mt-auto flex h-9 items-center justify-center gap-2 rounded-xl bg-[#0E59F9] text-[12px] font-medium text-white">
           <CreditCard className="h-3.5 w-3.5" strokeWidth={1.5} />
           Bayar dengan QRIS
         </div>
@@ -90,7 +90,7 @@ function PanelMeja() {
 function PanelKasir() {
   return (
     <ScreenFrame label="Kasir · Terminal 01">
-      <div className="space-y-3 text-[12px]">
+      <div className="flex flex-1 flex-col gap-3 text-[12px]">
         <div className="flex items-center justify-between rounded-xl bg-[#0E59F9]/[0.06] px-3 py-2">
           <span className="text-[12px] font-medium text-[#0E59F9]">Pesanan baru dari Meja 12</span>
           <span className="font-display text-[11px] tabular-nums text-[#0E59F9]">baru saja</span>
@@ -110,7 +110,7 @@ function PanelKasir() {
           ))}
         </dl>
 
-        <div className="flex h-9 items-center justify-center gap-2 rounded-xl border border-black/[0.08] text-[12px] font-medium text-[#0a0a0a]">
+        <div className="mt-auto flex h-9 items-center justify-center gap-2 rounded-xl border border-black/[0.08] text-[12px] font-medium text-[#0a0a0a]">
           <Printer className="h-3.5 w-3.5" strokeWidth={1.5} />
           Cetak struk 58 mm
         </div>
@@ -126,7 +126,7 @@ function PanelDapur() {
         <span className="text-[12px] font-medium">Stasiun Bar</span>
         <span className="font-display text-[11px] tabular-nums text-white/45">#MN-8921</span>
       </div>
-      <div className="flex-1 p-4">
+      <div className="flex flex-1 flex-col p-4">
         <div className="flex items-baseline justify-between">
           <span className="text-[13px] font-semibold">Meja 12</span>
           <span className="font-display text-[12px] tabular-nums text-white/45">02:14</span>
@@ -144,7 +144,7 @@ function PanelDapur() {
             <span className="block text-[11px] text-white/45">Potong 2</span>
           </li>
         </ul>
-        <div className="mt-4 flex h-9 items-center justify-center rounded-xl bg-emerald-500 text-[12px] font-medium text-emerald-950">
+        <div className="mt-auto flex h-9 items-center justify-center rounded-xl bg-emerald-500 text-[12px] font-medium text-emerald-950">
           Tandai siap
         </div>
       </div>
@@ -156,7 +156,7 @@ function PanelOwner() {
   const bars = [38, 52, 44, 61, 73, 58, 86];
   return (
     <ScreenFrame label="Kopi Ruang Teduh · hari ini">
-      <div className="space-y-4">
+      <div className="flex flex-1 flex-col gap-4">
         <div>
           <span className="text-[11px] text-[#71717a]">Omzet berjalan</span>
           <p className="font-display text-[22px] font-semibold tabular-nums leading-tight text-[#0a0a0a]">
@@ -174,7 +174,7 @@ function PanelOwner() {
           ))}
         </div>
 
-        <dl className="space-y-2 text-[12px]">
+        <dl className="mt-auto space-y-2 text-[12px]">
           {[
             ["Transaksi", "128"],
             ["Rata-rata per nota", "Rp 33.739"],
@@ -250,9 +250,34 @@ export default function EcosystemGallery() {
             anticipatePin: 1,
             scrub: motionOk ? 0.6 : true,
             invalidateOnRefresh: true,
-            onUpdate: (self) => setProgress(self.progress),
+            onUpdate: (self) => {
+              setProgress(self.progress);
+              focusNearestPanel();
+            },
           },
         });
+
+        // Panel yang sedang melintasi tengah layar diberi bobot; yang lain
+        // mundur sedikit. Ini yang membuat track terasa sebagai sesuatu yang
+        // dijalankan scroll, bukan sekadar deretan yang digeser.
+        //
+        // Ditulis langsung ke style, bukan lewat quickSetter: nilainya bisa
+        // dibaca balik dari getComputedStyle sehingga efeknya benar-benar
+        // bisa diverifikasi, bukan diasumsikan.
+        const panelEls = gsap.utils.toArray<HTMLElement>("[data-panel]", track);
+
+        function focusNearestPanel() {
+          const mid = window.innerWidth / 2;
+          for (const el of panelEls) {
+            const r = el.getBoundingClientRect();
+            const d = Math.abs(r.left + r.width / 2 - mid);
+            const t = gsap.utils.clamp(0, 1, d / (window.innerWidth * 0.7));
+            el.style.opacity = String(gsap.utils.interpolate(1, 0.55, t));
+            el.style.transform = `scale(${gsap.utils.interpolate(1, 0.97, t)})`;
+          }
+        }
+
+        focusNearestPanel();
 
         // Gambar panel dimuat belakangan; hitung ulang setelah semuanya siap.
         const onLoad = () => ScrollTrigger.refresh();
@@ -263,6 +288,10 @@ export default function EcosystemGallery() {
           tween.scrollTrigger?.kill();
           tween.kill();
           gsap.set(track, { x: 0 });
+          panelEls.forEach((el) => {
+            el.style.opacity = "";
+            el.style.transform = "";
+          });
           scroller.style.overflowX = "";
         };
       }
@@ -305,7 +334,7 @@ export default function EcosystemGallery() {
             <article
               key={p.id}
               data-panel
-              className="w-[82vw] max-w-[360px] shrink-0 snap-start transition-opacity duration-300 md:w-[460px] md:max-w-none lg:w-[520px]"
+              className="w-[82vw] max-w-[360px] shrink-0 snap-start transition-[opacity,transform] duration-200 md:w-[460px] md:max-w-none lg:w-[520px]"
             >
               <div className="flex items-baseline justify-between gap-3">
                 <div className="flex items-baseline gap-3">

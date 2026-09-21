@@ -96,6 +96,15 @@
   }
 }
 
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
 .landing-reveal {
   opacity: 0;
   transform: translateY(24px);

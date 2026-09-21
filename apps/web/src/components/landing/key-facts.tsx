@@ -5,16 +5,19 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 /**
- * Angka kunci.
+ * Empat angka kunci.
  *
- * Versi sebelumnya memajang catatan kaki berisi bantahan ("bukan jaminan
- * SLA", "selisih tetap mungkin terjadi") — itu bahasa halaman syarat &
- * ketentuan, bukan halaman jualan. Akar masalahnya bukan catatan kakinya,
- * melainkan angkanya: klaim latensi dan target selisih kas memang menuntut
- * pagar hukum.
+ * Catatan revisi:
+ * - Catatan kaki berisi bantahan ("bukan jaminan SLA") dibuang bersama
+ *   angka yang menuntutnya. Empat angka di sini benar menurut definisi
+ *   produknya sendiri, jadi tidak butuh pagar hukum.
+ * - Latar gelap dibatalkan. Bidang hitam yang muncul mendadak di tengah
+ *   halaman terang terbaca sebagai potongan dari desain lain, bukan
+ *   sebagai jeda berirama.
  *
- * Empat angka di bawah ini benar menurut definisi produknya sendiri, jadi
- * tidak butuh pagar apa pun.
+ * Yang memberi section ini bobot sekarang adalah garis yang ditarik oleh
+ * scroll: garis mengisi dari kiri ke kanan dan tiap angka menyala saat
+ * garis melewatinya.
  */
 
 const facts = [
@@ -31,23 +34,38 @@ export default function KeyFacts() {
     gsap.registerPlugin(ScrollTrigger);
 
     const mm = gsap.matchMedia();
+
     mm.add("(prefers-reduced-motion: no-preference)", () => {
       const el = rootRef.current;
       if (!el) return;
 
-      const items = el.querySelectorAll("[data-fact]");
-      const tween = gsap.from(items, {
-        opacity: 0,
-        yPercent: 40,
-        duration: 0.9,
-        ease: "power3.out",
-        stagger: 0.09,
-        scrollTrigger: { trigger: el, start: "top 80%", once: true },
+      const line = el.querySelector<HTMLElement>("[data-line]");
+      const items = gsap.utils.toArray<HTMLElement>("[data-fact]", el);
+
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: el,
+          start: "top 78%",
+          end: "bottom 65%",
+          scrub: 0.8,
+        },
+      });
+
+      // Garis ditarik oleh scroll; angka menyala menyusul di belakangnya.
+      tl.fromTo(line, { scaleX: 0 }, { scaleX: 1, ease: "none", duration: items.length });
+
+      items.forEach((item, i) => {
+        tl.fromTo(
+          item,
+          { opacity: 0.12, y: 16 },
+          { opacity: 1, y: 0, ease: "power2.out", duration: 0.6 },
+          i * 0.85
+        );
       });
 
       return () => {
-        tween.scrollTrigger?.kill();
-        tween.kill();
+        tl.scrollTrigger?.kill();
+        tl.kill();
       };
     });
 
@@ -55,32 +73,37 @@ export default function KeyFacts() {
   }, []);
 
   return (
-    <section
-      ref={rootRef}
-      className="bg-[#0b0b0c] px-6 py-20 text-white md:py-24"
-      aria-label="Angka kunci"
-    >
+    <section ref={rootRef} className="px-6 py-24 md:py-28" aria-label="Angka kunci">
       <div className="mx-auto max-w-[1280px]">
-        <div className="grid grid-cols-1 gap-y-10 sm:grid-cols-2 md:grid-cols-4 md:gap-x-8">
+        {/* Rel yang ditarik scroll */}
+        <div className="relative h-px w-full bg-black/[0.08]">
+          <div
+            data-line
+            className="absolute inset-0 origin-left bg-[#0a0a0a]"
+            aria-hidden="true"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 gap-y-12 pt-10 sm:grid-cols-2 md:grid-cols-4 md:gap-x-8">
           {facts.map((f, i) => (
             <div
               key={f.value + f.unit}
               data-fact
-              className={`md:px-8 ${i > 0 ? "md:border-l md:border-white/12" : "md:pl-0"} ${
+              className={`md:px-8 ${i > 0 ? "md:border-l md:border-black/[0.08]" : "md:pl-0"} ${
                 i === facts.length - 1 ? "md:pr-0" : ""
               }`}
             >
               <div className="flex items-baseline gap-2">
-                <span className="font-display text-[clamp(44px,5vw,64px)] font-semibold leading-none tracking-[-0.045em] tabular-nums">
+                <span className="font-display text-[clamp(44px,5vw,64px)] font-semibold leading-none tracking-[-0.045em] tabular-nums text-[#0a0a0a]">
                   {f.value}
                 </span>
                 {f.unit && (
-                  <span className="font-display text-[16px] font-medium text-white/45">
+                  <span className="font-display text-[16px] font-medium text-[#a1a1aa]">
                     {f.unit}
                   </span>
                 )}
               </div>
-              <p className="mt-4 max-w-[30ch] text-[14px] leading-relaxed text-white/60">
+              <p className="mt-4 max-w-[30ch] text-[14px] leading-relaxed text-[#52525b]">
                 {f.label}
               </p>
             </div>

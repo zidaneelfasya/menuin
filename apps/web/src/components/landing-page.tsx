@@ -16,9 +16,10 @@ import {
   Laptop,
   Tv,
 } from "lucide-react";
+import SmoothScroll from "@/components/landing/smooth-scroll";
 import EcosystemGallery from "@/components/landing/ecosystem-gallery";
 import KeyFacts from "@/components/landing/key-facts";
-import ComparisonSwitch from "@/components/landing/comparison-switch";
+import ComparisonScroll from "@/components/landing/comparison-scroll";
 import SpecBento from "@/components/landing/spec-bento";
 import { HeroIntro } from "@/components/landing/scroll-reveal";
 import FaqEditorial from "@/components/ui/faq-editorial";
@@ -673,6 +674,8 @@ export default function LandingPage({
 
   return (
     <div className="min-h-screen bg-white text-[#111] font-sans antialiased selection:bg-[#0E59F9] selection:text-white">
+      <SmoothScroll />
+
       {/* NAVBAR */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-black/[0.06]">
         <div className="mx-auto max-w-[1280px] h-[64px] flex items-center justify-between px-6">
@@ -855,7 +858,7 @@ export default function LandingPage({
       {/* EKOSISTEM — galeri horizontal ber-pin (GSAP) */}
       <EcosystemGallery />
 
-      <ComparisonSwitch />
+      <ComparisonScroll />
 
       {/* PILAR PRODUK */}
       <section className="px-6 py-24 md:py-32" id="pilar">
