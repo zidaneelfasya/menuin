@@ -1,11 +1,15 @@
 'use client';
 
 import * as React from 'react';
-import { Plus, Search, Star, Sparkles } from 'lucide-react';
+import { Plus, Search, Star, Sparkles, Power, PowerOff, CheckCircle2, SlidersHorizontal, Package, X } from 'lucide-react';
 import { useCartStore } from '../stores/use-cart-store';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils/format';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { toggleProductActiveStatus } from '@/lib/actions/products';
 import { useBarcodeScanner } from '@/hooks/use-barcode-scanner';
 import { toast } from 'sonner';
 import { CustomizationModal } from '@/components/shared/customization-modal';
@@ -26,6 +30,7 @@ type Product = {
   imageUrl: string | null;
   barcode: string | null;
   isFeatured?: boolean;
+  isActive?: boolean;
   trackStock?: boolean;
   status: string;
   modifierGroupIds?: string[];
@@ -47,8 +52,48 @@ export function ProductCatalog({
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const observerTarget = React.useRef<HTMLDivElement>(null);
   
+  const [localProducts, setLocalProducts] = React.useState<Product[]>(products);
+  const [isAvailabilityModalOpen, setIsAvailabilityModalOpen] = React.useState(false);
+  const [availabilitySearch, setAvailabilitySearch] = React.useState('');
+
+  React.useEffect(() => {
+    setLocalProducts(products);
+  }, [products]);
+
   const [selectedProductForModal, setSelectedProductForModal] = React.useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
+
+  const handleToggleProductAvailability = async (product: Product) => {
+    const currentVal = product.isActive !== false;
+    const nextVal = !currentVal;
+
+    // Optimistic UI update
+    setLocalProducts((prev) =>
+      prev.map((p) => (p.id === product.id ? { ...p, isActive: nextVal } : p))
+    );
+
+    const res = await toggleProductActiveStatus(product.id, nextVal);
+    if (!res.success) {
+      toast.error(res.error || 'Gagal mengubah status ketersediaan item');
+      setLocalProducts((prev) =>
+        prev.map((p) => (p.id === product.id ? { ...p, isActive: currentVal } : p))
+      );
+    } else {
+      toast.success(
+        nextVal
+          ? `${product.name} sekarang Tersedia`
+          : `${product.name} dimatikan (Tidak Tersedia)`
+      );
+    }
+  };
+
+  const filteredAvailabilityProducts = React.useMemo(() => {
+    if (!availabilitySearch.trim()) return localProducts;
+    const q = availabilitySearch.toLowerCase();
+    return localProducts.filter(
+      (p) => p.name.toLowerCase().includes(q) || (p.sku && p.sku.toLowerCase().includes(q))
+    );
+  }, [localProducts, availabilitySearch]);
 
   const handleAddToCart = (product: { id: string, name: string, price: string | number, imageUrl?: string | null }, modifiers: any[] = [], notes: string = '', quantity: number = 1) => {
     let extraPrice = 0;
@@ -66,21 +111,33 @@ export function ProductCatalog({
     }
   };
 
-  // Sort best sellers first
+  // Sort available products first (unavailable items go to the very bottom, even if Best Seller)
   const sortedProducts = React.useMemo(() => {
-    return [...products].sort((a, b) => {
-      if (a.isFeatured && !b.isFeatured) return -1;
-      if (!a.isFeatured && b.isFeatured) return 1;
+    return [...localProducts].sort((a, b) => {
+      const isAUnavailable = a.isActive === false || (a.trackStock !== false && a.stock <= 0);
+      const isBUnavailable = b.isActive === false || (b.trackStock !== false && b.stock <= 0);
+
+      // 1. Available products ALWAYS come before Unavailable products
+      if (isAUnavailable !== isBUnavailable) {
+        return isAUnavailable ? 1 : -1;
+      }
+
+      // 2. Best Sellers come first within availability group
+      if (a.isFeatured !== b.isFeatured) {
+        return a.isFeatured ? -1 : 1;
+      }
+
+      // 3. Alphabetical by name
       return a.name.localeCompare(b.name);
     });
-  }, [products]);
+  }, [localProducts]);
 
   // Sync cart images with current product list
   React.useEffect(() => {
-    if (products && products.length > 0) {
-      useCartStore.getState().syncProductImages(products);
+    if (localProducts && localProducts.length > 0) {
+      useCartStore.getState().syncProductImages(localProducts);
     }
-  }, [products]);
+  }, [localProducts]);
 
   // Reset visible count when filter changes
   React.useEffect(() => {
@@ -179,17 +236,29 @@ export function ProductCatalog({
 
   return (
     <div className="flex flex-col h-full space-y-4">
-      {/* Search and Scanner Input */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input 
-          ref={searchInputRef}
-          placeholder="Cari produk atau scan barcode..." 
-          className="pl-9 bg-card border-border rounded-xl h-11"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          onKeyDown={handleSearchKeyDown}
-        />
+      {/* Search Bar + Quick Availability Shortcut Button */}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input 
+            ref={searchInputRef}
+            placeholder="Cari produk atau scan barcode..." 
+            className="pl-9 bg-card border-border rounded-xl h-11 text-sm"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
+          />
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsAvailabilityModalOpen(true)}
+          className="h-11 px-3.5 rounded-xl border-slate-200 dark:border-slate-800 text-xs font-semibold gap-1.5 shrink-0 bg-white dark:bg-slate-900 shadow-2xs hover:bg-slate-50 transition-colors"
+          title="Kelola ketersediaan menu secara cepat"
+        >
+          <Power className="w-3.5 h-3.5 text-emerald-600" />
+          <span className="hidden sm:inline">Ketersediaan Menu</span>
+        </Button>
       </div>
 
       {/* Categories with Best Seller Option */}
@@ -240,14 +309,19 @@ export function ProductCatalog({
       {/* Product Grid */}
       <div className="flex-1 overflow-y-auto pr-2 pb-24">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          {filteredProducts.slice(0, visibleCount).map(product => {
-            const isAvailable = product.trackStock === false || product.stock > 0;
+          {filteredProducts.slice(0, visibleCount).map((product) => {
+            const isActive = product.isActive !== false;
+            const isOutOfStock = product.trackStock !== false && product.stock <= 0;
+            const isAvailable = isActive && !isOutOfStock;
+
             return (
               <div 
                 key={product.id} 
                 className={cn(
-                  "bg-card border rounded-2xl overflow-hidden hover:shadow-md hover:border-primary/50 transition-all flex flex-col relative",
-                  isAvailable ? "cursor-pointer group" : "opacity-50 cursor-not-allowed"
+                  "bg-card border rounded-2xl overflow-hidden transition-all flex flex-col relative select-none",
+                  isAvailable 
+                    ? "cursor-pointer group hover:shadow-md hover:border-primary/50 active:scale-[0.98]" 
+                    : "opacity-40 grayscale-[30%] bg-slate-100 dark:bg-slate-900/60 border-dashed border-slate-300 dark:border-slate-800 cursor-not-allowed pointer-events-none"
                 )}
                 onClick={() => {
                   if (isAvailable) {
@@ -260,6 +334,21 @@ export function ProductCatalog({
                   }
                 }}
               >
+                {!isActive ? (
+                  <div className="absolute inset-0 bg-slate-950/70 z-20 flex flex-col items-center justify-center p-2 text-center backdrop-blur-[1px]">
+                    <span className="text-white text-[11px] font-bold tracking-wider uppercase bg-rose-600/95 px-2.5 py-1 rounded-md shadow-xs">
+                      TIDAK TERSEDIA
+                    </span>
+                    <span className="text-[10px] text-slate-300 mt-1 font-medium">Menu Dinonaktifkan</span>
+                  </div>
+                ) : isOutOfStock ? (
+                  <div className="absolute inset-0 bg-slate-950/60 z-20 flex flex-col items-center justify-center p-2 text-center backdrop-blur-[1px]">
+                    <span className="text-white text-[11px] font-bold tracking-wider uppercase bg-amber-600/95 px-2.5 py-1 rounded-md shadow-xs">
+                      STOK HABIS
+                    </span>
+                  </div>
+                ) : null}
+
                 {product.isFeatured && (
                   <div className="absolute top-2 left-2 z-10 bg-amber-500/95 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-md flex items-center gap-1 backdrop-blur-sm">
                     <Star className="w-3 h-3 fill-current" />
@@ -333,6 +422,97 @@ export function ProductCatalog({
           toast.success(`${product.name} ditambahkan`);
         }}
       />
+
+      {/* Quick Availability Modal in POS */}
+      <Dialog open={isAvailabilityModalOpen} onOpenChange={setIsAvailabilityModalOpen}>
+        <DialogContent className="max-w-lg p-0 overflow-hidden rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl">
+          <DialogHeader className="p-5 pb-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50">
+            <DialogTitle className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <Power className="w-5 h-5 text-emerald-600" />
+              Kelola Ketersediaan Menu Kasir
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+              Matikan menu yang habis atau tidak dapat disajikan agar kasir dan pelanggan tidak memesannya.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="p-4 border-b border-slate-100 dark:border-slate-800">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Cari item yang ingin diubah..."
+                value={availabilitySearch}
+                onChange={(e) => setAvailabilitySearch(e.target.value)}
+                className="pl-8 h-9 text-xs rounded-xl"
+              />
+            </div>
+          </div>
+
+          <div className="max-h-80 overflow-y-auto p-4 space-y-2">
+            {filteredAvailabilityProducts.map((p) => {
+              const isActive = p.isActive !== false;
+              return (
+                <div
+                  key={p.id}
+                  className="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900/60 transition-colors"
+                >
+                  <div className="flex items-center gap-3 min-w-0 pr-3">
+                    <div className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-xs text-primary shrink-0 overflow-hidden">
+                      {p.imageUrl ? (
+                        <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" />
+                      ) : (
+                        p.name.charAt(0)
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
+                        {p.name}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {formatCurrency(parseFloat(p.price))} {p.categoryName ? `• ${p.categoryName}` : ''}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span
+                      className={cn(
+                        "text-[10px] font-semibold px-2 py-0.5 rounded-md",
+                        isActive
+                          ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                          : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                      )}
+                    >
+                      {isActive ? 'Tersedia' : 'Nonaktif'}
+                    </span>
+                    <Switch
+                      checked={isActive}
+                      onCheckedChange={() => handleToggleProductAvailability(p)}
+                      className="data-[state=checked]:bg-emerald-600 scale-90 cursor-pointer"
+                    />
+                  </div>
+                </div>
+              );
+            })}
+            {filteredAvailabilityProducts.length === 0 && (
+              <div className="py-8 text-center text-xs text-muted-foreground">
+                Tidak ada produk yang cocok dengan pencarian.
+              </div>
+            )}
+          </div>
+
+          <div className="p-3.5 px-5 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setIsAvailabilityModalOpen(false)}
+              className="rounded-xl px-4 text-xs font-medium"
+            >
+              Selesai
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

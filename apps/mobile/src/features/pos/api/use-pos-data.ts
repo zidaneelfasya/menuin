@@ -16,7 +16,7 @@ export function usePosData() {
   return useQuery({
     queryKey: ['pos-data'],
     queryFn: async () => {
-      const response = await fetchWithAuth('/mobile/v1/pos');
+      const response = await fetchWithAuth('/api/mobile/v1/pos');
       return response as PosDataResponse;
     },
   });
@@ -25,7 +25,7 @@ export function usePosData() {
 export function useSubmitOrder() {
   return useMutation({
     mutationFn: async (payload: any) => {
-      const response = await fetchWithAuth('/mobile/v1/pos', {
+      const response = await fetchWithAuth('/api/mobile/v1/pos', {
         method: 'POST',
         body: JSON.stringify(payload),
       });

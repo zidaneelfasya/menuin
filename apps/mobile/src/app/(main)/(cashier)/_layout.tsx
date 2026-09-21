@@ -15,12 +15,13 @@ import {
 } from 'lucide-react-native';
 import { useAuthStore } from '@/store/auth-store';
 import { useActiveShift } from '@/hooks/use-shifts';
-import { useOrders } from '@/hooks/use-orders';
+import { useOrders, useOrdersRealtime } from '@/hooks/use-orders';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePathname, useRouter } from 'expo-router';
 import { AdaptiveBottomBar } from '@/components/navigation/adaptive-bottom-bar';
 import { CircularMenuModal } from '@/components/navigation/circular-menu-modal';
 import { AppTopHeader } from '@/components/navigation/app-top-header';
+
 
 interface NavItemProps {
   icon: React.ReactNode;
@@ -272,7 +273,14 @@ export default function CashierDrawerLayout() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { width } = useWindowDimensions();
   const pathname = usePathname();
+  const user = useAuthStore((state) => state.user);
+
+  // Multiplexed Supabase WebSocket listener: zero database queries on server when idle
+  useOrdersRealtime(user?.tenantId);
+
   const isCartScreen = pathname.includes('/cart');
+  const isOrdersScreen = pathname.includes('/orders') || pathname.endsWith('/orders');
+
 
   // Responsive drawer width: 75% on mobile, capped at 340 on tablet/landscape
   const drawerWidth = Math.min(Math.max(width * 0.75, 260), 340);
@@ -322,6 +330,7 @@ export default function CashierDrawerLayout() {
           onToggleMenu={() => setIsMenuOpen((prev) => !prev)}
         />
       )}
+
     </View>
   );
 }

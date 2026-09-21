@@ -40,7 +40,7 @@ export default function SignUpPage() {
       localStorage.setItem("menuin_dummy_business", restaurantName);
       localStorage.setItem("menuin_dummy_email", email);
 
-      router.push(`/checkout?email=${encodeURIComponent(email)}`);
+      router.push(`/auth/sign-up-success?email=${encodeURIComponent(email)}`);
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
     } finally {

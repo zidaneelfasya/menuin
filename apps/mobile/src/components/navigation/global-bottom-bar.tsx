@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useOrders } from '@/hooks/use-orders';
 import {
   MENUIN_BLUE,
-  ActiveHomeIcon,
+  ActiveStoreIcon,
   ActiveReceiptIcon,
   ActiveClockIcon,
 } from './nav-icons';
@@ -80,7 +80,7 @@ export function GlobalBottomBar({ tabs, activeTab, onTabPress }: GlobalBottomBar
           className="flex-1 flex-col items-center justify-center py-1 bg-transparent"
         >
           {isCurrentActive('pos') ? (
-            <ActiveHomeIcon size={iconSize} color={MENUIN_BLUE} />
+            <ActiveStoreIcon size={iconSize} color={MENUIN_BLUE} />
           ) : (
             <Store size={iconSize} color="#64748b" strokeWidth={1.8} />
           )}
@@ -91,7 +91,7 @@ export function GlobalBottomBar({ tabs, activeTab, onTabPress }: GlobalBottomBar
             }}
             className="text-[10.5px] mt-1 tracking-tight leading-tight"
           >
-            Kasir
+            POS
           </Text>
         </TouchableOpacity>
 

@@ -60,6 +60,7 @@ export default {
       fontFamily: {
         sans: ["var(--font-poppins)", "sans-serif"],
         heading: ["var(--font-poppins)", "sans-serif"],
+        display: ["var(--font-display)", "-apple-system", "Segoe UI", "sans-serif"],
         rounded: ["var(--font-poppins)", "sans-serif"],
       },
       keyframes: {

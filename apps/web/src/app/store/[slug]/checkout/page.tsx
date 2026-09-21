@@ -24,6 +24,7 @@ export default async function CheckoutPage({
   }
 
   const settings = {
+    tenantName: tenant.name,
     dineInEnabled: tenant.dineInEnabled,
     takeAwayEnabled: tenant.takeAwayEnabled,
     deliveryEnabled: tenant.deliveryEnabled,
@@ -32,14 +33,15 @@ export default async function CheckoutPage({
     tableNumberRequired: tenant.tableNumberRequired,
     midtransEnvironment: tenant.midtransEnvironment,
     midtransClientKey: tenant.midtransClientKey,
+    onlinePaymentEnabled: tenant.onlinePaymentEnabled,
+    taxRate: parseFloat(tenant.posTaxRate || '0'),
+    taxName: tenant.taxName || 'Pajak (PB1)',
+    serviceChargeRate: parseFloat(tenant.serviceChargeRate || '0'),
   };
 
   return (
-    <div className="max-w-xl mx-auto space-y-6">
-      <div className="bg-white p-5 rounded-2xl border shadow-sm">
-        <h2 className="font-bold text-xl mb-6 text-gray-800">Ringkasan Pesanan Anda</h2>
-        <CheckoutClient tenantSlug={slug} settings={settings} />
-      </div>
+    <div className="max-w-xl mx-auto">
+      <CheckoutClient tenantSlug={slug} settings={settings} />
     </div>
   );
 }

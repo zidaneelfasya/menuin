@@ -112,6 +112,7 @@ export async function createModifier(groupId: string, formData: z.infer<typeof m
       groupId,
       name: validated.name,
       price: validated.price.toString(),
+      isAvailable: true,
     });
     
     if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
@@ -119,6 +120,28 @@ export async function createModifier(groupId: string, formData: z.infer<typeof m
   } catch (error) {
     console.error('Error creating modifier:', error);
     return { success: false, error: 'Gagal membuat opsi' };
+  }
+}
+
+export async function toggleModifierAvailability(id: string, isAvailable: boolean) {
+  try {
+    const user = await getCurrentUser();
+    if (!user || !user.tenantId) return { success: false, error: 'Unauthorized' };
+
+    await db.update(modifiers)
+      .set({ 
+        isAvailable, 
+        updatedAt: new Date() 
+      })
+      .where(and(eq(modifiers.id, id), eq(modifiers.tenantId, user.tenantId)));
+
+    if (user && typeof user === "object" && "outletKey" in user) {
+      revalidatePath(`/outlet/${user.outletKey}`, "layout");
+    }
+    return { success: true };
+  } catch (error) {
+    console.error('Error toggling modifier availability:', error);
+    return { success: false, error: 'Gagal mengubah ketersediaan opsi' };
   }
 }
 
@@ -135,3 +158,4 @@ export async function deleteModifier(id: string) {
     return { success: false, error: 'Gagal menghapus opsi' };
   }
 }
+

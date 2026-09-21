@@ -172,6 +172,52 @@ export async function updateOrderStatus(transactionId: string, newStatus: string
   }
 }
 
+export async function bulkUpdateOrderStatus(orderIds: string[], newStatus: string) {
+  const user = await getCurrentUser();
+  if (!user || !user.tenantId) throw new Error("Unauthorized");
+  if (!orderIds || orderIds.length === 0) return { success: true, count: 0 };
+
+  try {
+    const updates: any = { status: newStatus };
+
+    // If confirming PENDING orders to NEW, mark paymentStatus as PAID
+    if (newStatus === 'NEW') {
+      await db.update(transactions)
+        .set({ status: newStatus, paymentStatus: 'PAID' })
+        .where(
+          and(
+            inArray(transactions.id, orderIds),
+            eq(transactions.tenantId, user.tenantId),
+            eq(transactions.status, 'PENDING')
+          )
+        );
+    }
+
+    // Update all matching transactions
+    await db.update(transactions)
+      .set(updates)
+      .where(
+        and(
+          inArray(transactions.id, orderIds),
+          eq(transactions.tenantId, user.tenantId)
+        )
+      );
+
+    // Auto-complete all items if orders are marked ready or completed
+    if (newStatus === 'READY' || newStatus === 'COMPLETED') {
+      await db.update(transactionItems)
+        .set({ isCompleted: true })
+        .where(inArray(transactionItems.transactionId, orderIds));
+    }
+
+    if (user?.outletKey) revalidatePath(`/outlet/${user.outletKey}`, "layout");
+    return { success: true, count: orderIds.length };
+  } catch (error: any) {
+    console.error("Failed to bulk update order status:", error);
+    return { error: error.message || "Gagal memperbarui status seluruh pesanan." };
+  }
+}
+
 export async function updateOrderItemStatus(itemId: string, isCompleted: boolean) {
   const user = await getCurrentUser();
   if (!user || !user.tenantId) throw new Error("Unauthorized");
@@ -245,4 +291,52 @@ export async function getPublicOrderByNumber(orderNumber: string, tenantSlug: st
       primaryColor: tenant.primaryColor,
     }
   };
+}
+
+export async function getActiveOrderStatus(orderNumber: string, tenantSlug: string) {
+  try {
+    let formattedOrderNum = orderNumber.trim().toUpperCase();
+    if (!formattedOrderNum.startsWith('#')) {
+      formattedOrderNum = '#' + formattedOrderNum;
+    }
+
+    const tenantResult = await db.select({ id: tenants.id }).from(tenants).where(eq(tenants.slug, tenantSlug)).limit(1);
+    if (tenantResult.length === 0) return { isActive: false, status: null, orderNumber: formattedOrderNum };
+    const tenant = tenantResult[0];
+
+    const txs = await db
+      .select({
+        id: transactions.id,
+        status: transactions.status,
+        paymentStatus: transactions.paymentStatus,
+        paymentMethod: transactions.paymentMethod,
+        createdAt: transactions.createdAt,
+      })
+      .from(transactions)
+      .where(and(eq(transactions.orderNumber, formattedOrderNum), eq(transactions.tenantId, tenant.id)))
+      .limit(1);
+
+    if (txs.length === 0) return { isActive: false, status: null, orderNumber: formattedOrderNum };
+    const tx = txs[0];
+
+    const terminalStatuses = ['COMPLETED', 'CANCELLED', 'CANCELED', 'REJECTED'];
+    const isTerminal = terminalStatuses.includes((tx.status || '').toUpperCase());
+    const isPaymentFailed = ['FAILED', 'DENIED', 'EXPIRED'].includes((tx.paymentStatus || '').toUpperCase());
+
+    // Check TTL: orders older than 24 hours are considered no longer active
+    const isTooOld = tx.createdAt && (Date.now() - new Date(tx.createdAt).getTime() > 24 * 60 * 60 * 1000);
+
+    const isActive = !isTerminal && !isPaymentFailed && !isTooOld;
+
+    return {
+      isActive,
+      status: tx.status,
+      paymentStatus: tx.paymentStatus,
+      paymentMethod: tx.paymentMethod,
+      orderNumber: formattedOrderNum,
+    };
+  } catch (error) {
+    console.error('Error fetching active order status:', error);
+    return { isActive: false, status: null, orderNumber };
+  }
 }

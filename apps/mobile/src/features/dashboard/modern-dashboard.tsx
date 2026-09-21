@@ -13,6 +13,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import {
   TrendingUp,
+  TrendingDown,
+  Minus,
   ShoppingBag,
   Store,
   Smartphone,
@@ -30,16 +32,20 @@ import {
   Check,
   Copy,
   DollarSign,
+  BadgeDollarSign,
   Activity,
   GitBranch,
   Package,
   Cpu,
   X,
+  Trophy,
+  CheckCircle2,
 } from 'lucide-react-native';
 import Svg, { Path, Circle, Line, Defs, LinearGradient, Stop } from 'react-native-svg';
+import { usePosData } from '@/hooks/use-pos-data';
 import { useAuthStore } from '@/store/auth-store';
 import { useActiveShift } from '@/hooks/use-shifts';
-import { useDashboardData, ChartDataPoint, TopSellingProduct, BusinessInsight } from '@/hooks/use-dashboard';
+import { useDashboardData, ChartDataPoint, TopSellingProduct, BusinessInsight, AnnualMonthRecap, AttentionItem } from '@/hooks/use-dashboard';
 
 export type DashboardPeriod = 'harian' | 'bulanan' | 'tahunan';
 export type DailyPreset = 'today' | 'yesterday' | '7d' | '30d' | 'custom';
@@ -137,6 +143,10 @@ export function ModernDashboard() {
 
   // Live query from backend database
   const { data: liveData, isRefetching, refetch } = useDashboardData(queryParams);
+  const { data: posData } = usePosData();
+  const inactiveProductsCount = useMemo(() => {
+    return posData?.data?.products?.filter((p) => p.isActive === false).length || 0;
+  }, [posData]);
 
   // Calculate day difference for selected range
   const rangeDayCount = useMemo(() => {
@@ -258,33 +268,115 @@ export function ModernDashboard() {
     return chartPoints[chartPoints.length - 1] || null;
   }, [activePointIndex, chartPoints]);
 
+  // Context label for comparison (e.g. "kemarin", "bulan lalu", "tahun lalu")
+  const comparisonContext = useMemo(() => {
+    if (activePeriod === 'bulanan') return 'bulan lalu';
+    if (activePeriod === 'tahunan') return 'tahun lalu';
+    if (dailyPreset === 'today') return 'kemarin';
+    if (dailyPreset === 'yesterday') return '2 hari lalu';
+    if (dailyPreset === '7d') return '7 hari lalu';
+    if (dailyPreset === '30d') return '30 hari lalu';
+    return 'periode lalu';
+  }, [activePeriod, dailyPreset]);
+
+  // Dynamic comparison label (e.g. "vs kemarin", "vs bulan lalu")
+  const comparisonText = useMemo(() => {
+    return `vs ${comparisonContext}`;
+  }, [comparisonContext]);
+
   // KPI Metrics
   const metrics = useMemo(() => {
-    if (liveData?.metrics) {
+    const m = liveData?.metrics;
+    if (m) {
+      const grossSales = m.grossSales ?? m.totalOmzet ?? 0;
+      const netSales = m.netSales ?? m.totalOmzet ?? 0;
+      const grossProfit = m.grossProfit ?? m.totalLaba ?? 0;
+      const grossMargin = m.grossMargin ?? m.profitMargin ?? 0;
+      const totalTransactions = m.totalTransactions ?? 0;
+      const averageOrderValue = m.averageOrderValue ?? 0;
+
       return {
-        totalOmzet: liveData.metrics.totalOmzet,
-        omzetGrowth: liveData.metrics.omzetGrowth > 0 ? `+${liveData.metrics.omzetGrowth}%` : `${liveData.metrics.omzetGrowth}%`,
-        totalPesanan: liveData.metrics.totalTransactions,
-        pesananGrowth: liveData.metrics.transactionsGrowth > 0 ? `+${liveData.metrics.transactionsGrowth}%` : `${liveData.metrics.transactionsGrowth}%`,
-        averageOrderValue: liveData.metrics.averageOrderValue,
-        aovGrowth: liveData.metrics.aovGrowth > 0 ? `+${liveData.metrics.aovGrowth}%` : `${liveData.metrics.aovGrowth}%`,
-        totalLaba: liveData.metrics.totalLaba,
-        labaMargin: `${liveData.metrics.profitMargin || 60.0}%`,
-        comparisonText: activePeriod === 'bulanan' ? 'vs bulan lalu' : activePeriod === 'tahunan' ? 'vs tahun lalu' : 'vs 7 hari lalu',
+        grossSales,
+        grossSalesGrowth: m.grossSalesGrowth ?? m.omzetGrowth ?? 0,
+        netSales,
+        netSalesGrowth: m.netSalesGrowth ?? m.omzetGrowth ?? 0,
+        totalTransactions,
+        transactionsGrowth: m.transactionsGrowth ?? 0,
+        grossProfit,
+        grossProfitGrowth: m.grossProfitGrowth ?? m.labaGrowth ?? 0,
+        averageOrderValue,
+        aovGrowth: m.aovGrowth ?? 0,
+        grossMargin,
+        grossMarginGrowth: m.grossMarginGrowth ?? 0,
+        // Backward compatibility
+        totalOmzet: netSales,
+        omzetGrowth: m.netSalesGrowth ?? m.omzetGrowth ?? 0,
+        totalPesanan: totalTransactions,
+        pesananGrowth: m.transactionsGrowth ?? 0,
+        totalLaba: grossProfit,
+        labaMargin: `${grossMargin}%`,
+        comparisonText: `vs ${comparisonContext}`,
       };
     }
     return {
-      totalOmzet: 32400000,
-      omzetGrowth: '+11.8%',
-      totalPesanan: 512,
-      pesananGrowth: '+9.4%',
+      grossSales: 35600000,
+      grossSalesGrowth: 12.5,
+      netSales: 32400000,
+      netSalesGrowth: 11.8,
+      totalTransactions: 512,
+      transactionsGrowth: 9.4,
+      grossProfit: 19440000,
+      grossProfitGrowth: 10.2,
       averageOrderValue: 63280,
-      aovGrowth: '+4.2%',
+      aovGrowth: 4.2,
+      grossMargin: 60.0,
+      grossMarginGrowth: 1.5,
+      totalOmzet: 32400000,
+      omzetGrowth: 11.8,
+      totalPesanan: 512,
+      pesananGrowth: 9.4,
       totalLaba: 19440000,
       labaMargin: '60.0%',
-      comparisonText: 'vs 7 hari lalu',
+      comparisonText: `vs ${comparisonContext}`,
     };
-  }, [liveData, activePeriod]);
+  }, [liveData, comparisonContext]);
+
+  const renderPillBadge = (growth: number, unit = '%') => {
+    if (growth > 0) {
+      return (
+        <View className="flex-row items-center bg-emerald-50 border border-emerald-200/80 px-1.5 py-0.5 rounded-full">
+          <TrendingUp size={9} color="#059669" style={{ marginRight: 2 }} />
+          <Text className="text-[10px] font-bold text-emerald-700">
+            +{growth}{unit}
+          </Text>
+        </View>
+      );
+    }
+    if (growth < 0) {
+      return (
+        <View className="flex-row items-center bg-rose-50 border border-rose-200/80 px-1.5 py-0.5 rounded-full">
+          <TrendingDown size={9} color="#E11D48" style={{ marginRight: 2 }} />
+          <Text className="text-[10px] font-bold text-rose-700">
+            {growth}{unit}
+          </Text>
+        </View>
+      );
+    }
+    return (
+      <View className="flex-row items-center bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded-full">
+        <Minus size={9} color="#6B7280" style={{ marginRight: 2 }} />
+        <Text className="text-[10px] font-bold text-gray-600">
+          0{unit}
+        </Text>
+      </View>
+    );
+  };
+
+  const getTrendSentence = (growth: number, unit = '%') => {
+    if (growth > 0) return `Meningkat ${growth}${unit} vs ${comparisonContext}`;
+    if (growth < 0) return `Turun ${Math.abs(growth)}${unit} vs ${comparisonContext}`;
+    return `Stabil vs ${comparisonContext}`;
+  };
 
   // Top Products list
   const topProducts: TopSellingProduct[] = useMemo(() => {
@@ -493,9 +585,9 @@ export function ModernDashboard() {
       <ScrollView
         className="flex-1"
         contentContainerStyle={{
-          paddingTop: Math.max(insets.top, 12) + 8,
-          paddingBottom: bottomInset + 32,
-          paddingHorizontal: 16,
+          paddingTop: 16,
+          paddingBottom: bottomInset + 36,
+          paddingHorizontal: isTablet ? 24 : 16,
         }}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -507,46 +599,10 @@ export function ModernDashboard() {
           />
         }
       >
-        <View className="space-y-4 max-w-5xl mx-auto w-full">
-
-          {/* 0. TOP QUICK STATS CHIPS */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: 8 }}
-            className="pb-1"
-          >
-            <View className="flex-row items-center bg-white border border-gray-200/80 rounded-lg px-3 py-1.5 shadow-2xs">
-              <Text className="text-xs text-gray-500 mr-1.5">👥</Text>
-              <Text className="text-xs font-semibold text-gray-800">
-                {outletOverview.staffCount} Staf
-              </Text>
-            </View>
-
-            <View className="flex-row items-center bg-white border border-gray-200/80 rounded-lg px-3 py-1.5 shadow-2xs">
-              <Text className="text-xs text-gray-500 mr-1.5">📱</Text>
-              <Text className="text-xs font-semibold text-gray-800">
-                {outletOverview.deviceCount} POS Devices
-              </Text>
-            </View>
-
-            <View className="flex-row items-center bg-white border border-gray-200/80 rounded-lg px-3 py-1.5 shadow-2xs">
-              <Text className="text-xs text-gray-500 mr-1.5">📋</Text>
-              <Text className="text-xs font-semibold text-gray-800">
-                {outletOverview.totalLifetimeTransactions.toLocaleString('id-ID')} Tx Bulan Ini
-              </Text>
-            </View>
-
-            <View className="flex-row items-center bg-blue-50/70 border border-blue-200/60 rounded-lg px-3 py-1.5 shadow-2xs">
-              <Sparkles size={12} color="#2563EB" style={{ marginRight: 4 }} />
-              <Text className="text-xs font-semibold text-blue-700">
-                Cloud Sinkron
-              </Text>
-            </View>
-          </ScrollView>
+        <View style={{ gap: 20, width: '100%', maxWidth: 1152, alignSelf: 'center' }}>
 
           {/* 1. HERO OVERVIEW CARD */}
-          <View className="bg-white border border-gray-200/80 rounded-2xl p-5 shadow-sm space-y-4">
+          <View className="bg-white border border-gray-200/80 rounded-2xl p-5 shadow-xs" style={{ gap: 16 }}>
             <View className="flex-col sm:flex-row sm:items-center justify-between gap-2">
               <View>
                 <Text className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
@@ -583,18 +639,14 @@ export function ModernDashboard() {
               </View>
             </View>
 
-            {/* 6 Status Tiles Grid */}
-            <View className="grid grid-cols-2 gap-3 pt-2">
-              <View className="flex-row items-center p-2.5 bg-gray-50/60 border border-gray-100 rounded-xl">
+            {/* 6 Status Tiles Grid (Clean Responsive Flexbox Grid) */}
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }} className="pt-1">
+              <View
+                style={{ width: isTablet || isLandscape ? '31.8%' : '48.2%' }}
+                className="flex-row items-center p-2.5 bg-gray-50/70 border border-gray-100 rounded-xl"
+              >
                 <View className="w-8 h-8 rounded-lg bg-white border border-gray-200 items-center justify-center mr-2.5">
-                  <View className="flex-row flex-wrap w-4 h-4 justify-between content-between">
-                    <View className="w-1 h-1 rounded-full bg-emerald-500" />
-                    <View className="w-1 h-1 rounded-full bg-emerald-500" />
-                    <View className="w-1 h-1 rounded-full bg-emerald-500" />
-                    <View className="w-1 h-1 rounded-full bg-emerald-500" />
-                    <View className="w-1 h-1 rounded-full bg-emerald-500" />
-                    <View className="w-1 h-1 rounded-full bg-emerald-500" />
-                  </View>
+                  <Activity size={14} color="#059669" />
                 </View>
                 <View className="flex-1">
                   <Text className="text-[10px] font-mono text-gray-400 font-semibold uppercase">STATUS</Text>
@@ -602,19 +654,25 @@ export function ModernDashboard() {
                 </View>
               </View>
 
-              <View className="flex-row items-center p-2.5 bg-gray-50/60 border border-gray-100 rounded-xl">
+              <View
+                style={{ width: isTablet || isLandscape ? '31.8%' : '48.2%' }}
+                className="flex-row items-center p-2.5 bg-gray-50/70 border border-gray-100 rounded-xl"
+              >
                 <View className="w-8 h-8 rounded-lg bg-white border border-gray-200 items-center justify-center mr-2.5">
                   <Cpu size={14} color="#4B5563" />
                 </View>
                 <View className="flex-1">
                   <Text className="text-[10px] font-mono text-gray-400 font-semibold uppercase">SISTEM POS</Text>
-                  <View className="self-start bg-gray-200/80 px-1.5 py-0.5 rounded">
-                    <Text className="text-[9px] font-mono font-bold text-gray-700">ONLINE</Text>
+                  <View className="self-start bg-emerald-50 border border-emerald-200/60 px-1.5 py-0.5 rounded">
+                    <Text className="text-[9px] font-mono font-bold text-emerald-700">ONLINE</Text>
                   </View>
                 </View>
               </View>
 
-              <View className="flex-row items-center p-2.5 bg-gray-50/60 border border-gray-100 rounded-xl">
+              <View
+                style={{ width: isTablet || isLandscape ? '31.8%' : '48.2%' }}
+                className="flex-row items-center p-2.5 bg-gray-50/70 border border-gray-100 rounded-xl"
+              >
                 <View className="w-8 h-8 rounded-lg bg-white border border-gray-200 items-center justify-center mr-2.5">
                   <GitBranch size={14} color="#4B5563" />
                 </View>
@@ -626,7 +684,10 @@ export function ModernDashboard() {
                 </View>
               </View>
 
-              <View className="flex-row items-center p-2.5 bg-gray-50/60 border border-gray-100 rounded-xl">
+              <View
+                style={{ width: isTablet || isLandscape ? '31.8%' : '48.2%' }}
+                className="flex-row items-center p-2.5 bg-gray-50/70 border border-gray-100 rounded-xl"
+              >
                 <View className="w-8 h-8 rounded-lg bg-white border border-gray-200 items-center justify-center mr-2.5">
                   <Smartphone size={14} color="#4B5563" />
                 </View>
@@ -638,7 +699,10 @@ export function ModernDashboard() {
                 </View>
               </View>
 
-              <View className="flex-row items-center p-2.5 bg-gray-50/60 border border-gray-100 rounded-xl">
+              <View
+                style={{ width: isTablet || isLandscape ? '31.8%' : '48.2%' }}
+                className="flex-row items-center p-2.5 bg-gray-50/70 border border-gray-100 rounded-xl"
+              >
                 <View className="w-8 h-8 rounded-lg bg-white border border-gray-200 items-center justify-center mr-2.5">
                   <Receipt size={14} color="#4B5563" />
                 </View>
@@ -650,7 +714,10 @@ export function ModernDashboard() {
                 </View>
               </View>
 
-              <View className="flex-row items-center p-2.5 bg-gray-50/60 border border-gray-100 rounded-xl">
+              <View
+                style={{ width: isTablet || isLandscape ? '31.8%' : '48.2%' }}
+                className="flex-row items-center p-2.5 bg-gray-50/70 border border-gray-100 rounded-xl"
+              >
                 <View className="w-8 h-8 rounded-lg bg-white border border-gray-200 items-center justify-center mr-2.5">
                   <Package size={14} color="#4B5563" />
                 </View>
@@ -690,7 +757,7 @@ export function ModernDashboard() {
           </View>
 
           {/* 2. FILTER BAR & DATE PICKER CONTAINER */}
-          <View className="bg-white border border-gray-200/80 rounded-xl p-3.5 shadow-sm space-y-3">
+          <View className="bg-white border border-gray-200/80 rounded-xl p-4 shadow-xs" style={{ gap: 14 }}>
             {/* Segmented Period Tabs: Harian | Bulanan | Tahunan (Recap) */}
             <View className="flex-row bg-gray-100 p-1 rounded-lg border border-gray-200/60">
               <TouchableOpacity
@@ -768,7 +835,7 @@ export function ModernDashboard() {
             </View>
 
             {/* Periode Text Display */}
-            <View className="pt-0.5 border-t border-gray-100 flex-row items-center justify-between">
+            <View className="pt-2 border-t border-gray-100 flex-row items-center justify-between">
               <View className="flex-row items-center">
                 <Text className="text-[11px] text-gray-400">Periode: </Text>
                 <Text className="text-[11px] font-semibold text-gray-800">
@@ -785,398 +852,508 @@ export function ModernDashboard() {
             </View>
           </View>
 
-          {/* 3. PRIMARY KPI CARDS (DARI KIRI HINGGA KANAN - DALAM CARD & TIDAK MELEBAR KELUAR) */}
-          <View className="w-full">
+          {/* 3. PRIMARY KPI CARDS (6 METRIK FINANSIAL STANDAR SHADCN) */}
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, width: '100%' }}>
+            {/* Card 1: GROSS SALES */}
             <View
-              className={
-                isTablet || isLandscape
-                  ? "flex-row w-full gap-3"
-                  : "flex-row flex-wrap w-full gap-2.5"
-              }
+              style={{ width: isTablet || isLandscape ? '31.8%' : '48.2%' }}
+              className="bg-white border border-gray-200/80 rounded-xl p-4 shadow-xs justify-between"
             >
-              {/* Card 1: PENJUALAN (OMZET) */}
-              <View
-                style={isTablet || isLandscape ? { flex: 1, minWidth: 0 } : { width: '48%', flexGrow: 1 }}
-                className="bg-white border border-gray-200/80 rounded-xl p-4 shadow-sm"
-              >
-                <View className="flex-row items-center justify-between pb-2">
-                  <Text className="text-[11px] font-bold uppercase tracking-wider text-gray-500 truncate">
-                    PENJUALAN (OMZET)
+              <View>
+                <View className="flex-row items-center justify-between pb-1.5">
+                  <Text className="text-[10px] font-bold uppercase tracking-wider text-gray-500 truncate flex-1 pr-1">
+                    GROSS SALES
                   </Text>
-                  <View className="w-7 h-7 rounded-lg bg-blue-50 items-center justify-center">
-                    <DollarSign size={15} color="#2563EB" />
-                  </View>
+                  {renderPillBadge(metrics.grossSalesGrowth)}
                 </View>
-                <Text className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight">
-                  {formatRupiah(metrics.totalOmzet)}
+                <Text className="text-base sm:text-lg font-bold text-gray-900 tracking-tight my-1">
+                  {formatRupiah(metrics.grossSales)}
                 </Text>
-                <View className="flex-row items-center gap-1.5 pt-2">
-                  <View className="flex-row items-center bg-emerald-50 border border-emerald-200/60 px-1.5 py-0.5 rounded">
-                    <TrendingUp size={11} color="#059669" style={{ marginRight: 2 }} />
-                    <Text className="text-[10px] font-bold text-emerald-700">
-                      {metrics.omzetGrowth}
-                    </Text>
-                  </View>
-                  <Text className="text-[10px] text-gray-400 truncate">
-                    {metrics.comparisonText}
-                  </Text>
-                </View>
               </View>
-
-              {/* Card 2: PESANAN SELESAI */}
-              <View
-                style={isTablet || isLandscape ? { flex: 1, minWidth: 0 } : { width: '48%', flexGrow: 1 }}
-                className="bg-white border border-gray-200/80 rounded-xl p-4 shadow-sm"
-              >
-                <View className="flex-row items-center justify-between pb-2">
-                  <Text className="text-[11px] font-bold uppercase tracking-wider text-gray-500 truncate">
-                    PESANAN SELESAI
+              <View className="pt-2 border-t border-gray-100" style={{ gap: 2 }}>
+                <View className="flex-row items-center">
+                  <Text className="text-[10px] font-semibold text-gray-700 truncate flex-1">
+                    {getTrendSentence(metrics.grossSalesGrowth)}
                   </Text>
-                  <View className="w-7 h-7 rounded-lg bg-purple-50 items-center justify-center">
-                    <ShoppingBag size={15} color="#9333EA" />
-                  </View>
+                  {metrics.grossSalesGrowth > 0 ? (
+                    <TrendingUp size={10} color="#059669" style={{ marginLeft: 2 }} />
+                  ) : metrics.grossSalesGrowth < 0 ? (
+                    <TrendingDown size={10} color="#E11D48" style={{ marginLeft: 2 }} />
+                  ) : null}
                 </View>
-                <Text className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight">
-                  {metrics.totalPesanan}
+                <Text className="text-[9px] text-gray-400 truncate">
+                  Penjualan kotor sebelum diskon
                 </Text>
-                <View className="flex-row items-center gap-1.5 pt-2">
-                  <View className="flex-row items-center bg-emerald-50 border border-emerald-200/60 px-1.5 py-0.5 rounded">
-                    <TrendingUp size={11} color="#059669" style={{ marginRight: 2 }} />
-                    <Text className="text-[10px] font-bold text-emerald-700">
-                      {metrics.pesananGrowth}
-                    </Text>
-                  </View>
-                  <Text className="text-[10px] text-gray-400">pesanan</Text>
-                </View>
               </View>
+            </View>
 
-              {/* Card 3: RATA-RATA PESANAN */}
-              <View
-                style={isTablet || isLandscape ? { flex: 1, minWidth: 0 } : { width: '48%', flexGrow: 1 }}
-                className="bg-white border border-gray-200/80 rounded-xl p-4 shadow-sm"
-              >
-                <View className="flex-row items-center justify-between pb-2">
-                  <Text className="text-[11px] font-bold uppercase tracking-wider text-gray-500 truncate">
-                    RATA-RATA PESANAN
+            {/* Card 2: NET SALES */}
+            <View
+              style={{ width: isTablet || isLandscape ? '31.8%' : '48.2%' }}
+              className="bg-white border border-gray-200/80 rounded-xl p-4 shadow-xs justify-between"
+            >
+              <View>
+                <View className="flex-row items-center justify-between pb-1.5">
+                  <Text className="text-[10px] font-bold uppercase tracking-wider text-gray-500 truncate flex-1 pr-1">
+                    NET SALES
                   </Text>
-                  <View className="w-7 h-7 rounded-lg bg-emerald-50 items-center justify-center">
-                    <Receipt size={15} color="#059669" />
-                  </View>
+                  {renderPillBadge(metrics.netSalesGrowth)}
                 </View>
-                <Text className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight">
+                <Text className="text-base sm:text-lg font-bold text-gray-900 tracking-tight my-1">
+                  {formatRupiah(metrics.netSales)}
+                </Text>
+              </View>
+              <View className="pt-2 border-t border-gray-100" style={{ gap: 2 }}>
+                <View className="flex-row items-center">
+                  <Text className="text-[10px] font-semibold text-gray-700 truncate flex-1">
+                    {getTrendSentence(metrics.netSalesGrowth)}
+                  </Text>
+                  {metrics.netSalesGrowth > 0 ? (
+                    <TrendingUp size={10} color="#059669" style={{ marginLeft: 2 }} />
+                  ) : metrics.netSalesGrowth < 0 ? (
+                    <TrendingDown size={10} color="#E11D48" style={{ marginLeft: 2 }} />
+                  ) : null}
+                </View>
+                <Text className="text-[9px] text-gray-400 truncate">
+                  Penjualan setelah diskon & promo
+                </Text>
+              </View>
+            </View>
+
+            {/* Card 3: TRANSACTIONS */}
+            <View
+              style={{ width: isTablet || isLandscape ? '31.8%' : '48.2%' }}
+              className="bg-white border border-gray-200/80 rounded-xl p-4 shadow-xs justify-between"
+            >
+              <View>
+                <View className="flex-row items-center justify-between pb-1.5">
+                  <Text className="text-[10px] font-bold uppercase tracking-wider text-gray-500 truncate flex-1 pr-1">
+                    TRANSACTIONS
+                  </Text>
+                  {renderPillBadge(metrics.transactionsGrowth)}
+                </View>
+                <Text className="text-base sm:text-lg font-bold text-gray-900 tracking-tight my-1">
+                  {metrics.totalTransactions.toLocaleString('id-ID')}
+                </Text>
+              </View>
+              <View className="pt-2 border-t border-gray-100" style={{ gap: 2 }}>
+                <View className="flex-row items-center">
+                  <Text className="text-[10px] font-semibold text-gray-700 truncate flex-1">
+                    {getTrendSentence(metrics.transactionsGrowth)}
+                  </Text>
+                  {metrics.transactionsGrowth > 0 ? (
+                    <TrendingUp size={10} color="#059669" style={{ marginLeft: 2 }} />
+                  ) : metrics.transactionsGrowth < 0 ? (
+                    <TrendingDown size={10} color="#E11D48" style={{ marginLeft: 2 }} />
+                  ) : null}
+                </View>
+                <Text className="text-[9px] text-gray-400 truncate">
+                  Pesanan berhasil diselesaikan
+                </Text>
+              </View>
+            </View>
+
+            {/* Card 4: GROSS PROFIT */}
+            <View
+              style={{ width: isTablet || isLandscape ? '31.8%' : '48.2%' }}
+              className="bg-white border border-gray-200/80 rounded-xl p-4 shadow-xs justify-between"
+            >
+              <View>
+                <View className="flex-row items-center justify-between pb-1.5">
+                  <Text className="text-[10px] font-bold uppercase tracking-wider text-teal-700 truncate flex-1 pr-1">
+                    GROSS PROFIT
+                  </Text>
+                  {renderPillBadge(metrics.grossProfitGrowth)}
+                </View>
+                <Text className="text-base sm:text-lg font-bold text-teal-700 tracking-tight my-1">
+                  {formatRupiah(metrics.grossProfit)}
+                </Text>
+              </View>
+              <View className="pt-2 border-t border-gray-100" style={{ gap: 2 }}>
+                <View className="flex-row items-center">
+                  <Text className="text-[10px] font-semibold text-gray-700 truncate flex-1">
+                    {getTrendSentence(metrics.grossProfitGrowth)}
+                  </Text>
+                  {metrics.grossProfitGrowth > 0 ? (
+                    <TrendingUp size={10} color="#059669" style={{ marginLeft: 2 }} />
+                  ) : metrics.grossProfitGrowth < 0 ? (
+                    <TrendingDown size={10} color="#E11D48" style={{ marginLeft: 2 }} />
+                  ) : null}
+                </View>
+                <Text className="text-[9px] text-gray-400 truncate">
+                  Laba kotor setelah HPP (COGS)
+                </Text>
+              </View>
+            </View>
+
+            {/* Card 5: AVERAGE SALE PER TX */}
+            <View
+              style={{ width: isTablet || isLandscape ? '31.8%' : '48.2%' }}
+              className="bg-white border border-gray-200/80 rounded-xl p-4 shadow-xs justify-between"
+            >
+              <View>
+                <View className="flex-row items-center justify-between pb-1.5">
+                  <Text className="text-[10px] font-bold uppercase tracking-wider text-gray-500 truncate flex-1 pr-1">
+                    AVG SALE / TX
+                  </Text>
+                  {renderPillBadge(metrics.aovGrowth)}
+                </View>
+                <Text className="text-base sm:text-lg font-bold text-gray-900 tracking-tight my-1">
                   {formatRupiah(metrics.averageOrderValue)}
                 </Text>
-                <View className="pt-2">
-                  <Text className="text-[10px] text-gray-400 truncate">Nilai per pelanggan</Text>
-                </View>
               </View>
-
-              {/* Card 4: EST. KEUNTUNGAN */}
-              <View
-                style={isTablet || isLandscape ? { flex: 1, minWidth: 0 } : { width: '48%', flexGrow: 1 }}
-                className="bg-white border border-gray-200/80 rounded-xl p-4 shadow-sm"
-              >
-                <View className="flex-row items-center justify-between pb-2">
-                  <Text className="text-[11px] font-bold uppercase tracking-wider text-gray-500 truncate">
-                    EST. KEUNTUNGAN
+              <View className="pt-2 border-t border-gray-100" style={{ gap: 2 }}>
+                <View className="flex-row items-center">
+                  <Text className="text-[10px] font-semibold text-gray-700 truncate flex-1">
+                    {getTrendSentence(metrics.aovGrowth)}
                   </Text>
-                  <View className="w-7 h-7 rounded-lg bg-amber-50 items-center justify-center">
-                    <Percent size={15} color="#D97706" />
-                  </View>
+                  {metrics.aovGrowth > 0 ? (
+                    <TrendingUp size={10} color="#059669" style={{ marginLeft: 2 }} />
+                  ) : metrics.aovGrowth < 0 ? (
+                    <TrendingDown size={10} color="#E11D48" style={{ marginLeft: 2 }} />
+                  ) : null}
                 </View>
-                <Text className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight">
-                  {formatRupiah(metrics.totalLaba)}
+                <Text className="text-[9px] text-gray-400 truncate">
+                  Rata-rata belanja per pesanan
                 </Text>
-                <View className="pt-2">
-                  <Text className="text-[10px] font-bold text-emerald-700 truncate">
-                    Margin {metrics.labaMargin} <Text className="text-gray-400 font-normal">(HPP 40%)</Text>
+              </View>
+            </View>
+
+            {/* Card 6: GROSS MARGIN */}
+            <View
+              style={{ width: isTablet || isLandscape ? '31.8%' : '48.2%' }}
+              className="bg-white border border-gray-200/80 rounded-xl p-4 shadow-xs justify-between"
+            >
+              <View>
+                <View className="flex-row items-center justify-between pb-1.5">
+                  <Text className="text-[10px] font-bold uppercase tracking-wider text-purple-700 truncate flex-1 pr-1">
+                    GROSS MARGIN
                   </Text>
+                  {renderPillBadge(metrics.grossMarginGrowth, '%p')}
                 </View>
+                <Text className="text-base sm:text-lg font-bold text-purple-700 tracking-tight my-1">
+                  {metrics.grossMargin}%
+                </Text>
+              </View>
+              <View className="pt-2 border-t border-gray-100" style={{ gap: 2 }}>
+                <View className="flex-row items-center">
+                  <Text className="text-[10px] font-semibold text-gray-700 truncate flex-1">
+                    {getTrendSentence(metrics.grossMarginGrowth, '% poin')}
+                  </Text>
+                  {metrics.grossMarginGrowth > 0 ? (
+                    <TrendingUp size={10} color="#059669" style={{ marginLeft: 2 }} />
+                  ) : metrics.grossMarginGrowth < 0 ? (
+                    <TrendingDown size={10} color="#E11D48" style={{ marginLeft: 2 }} />
+                  ) : null}
+                </View>
+                <Text className="text-[9px] text-gray-400 truncate">
+                  Persentase margin laba kotor
+                </Text>
               </View>
             </View>
           </View>
 
-          {/* 4. GRAFIK PENJUALAN INTERAKTIF (Berdiam Utuh di Dalam Card, Tidak Tumpah) */}
+          {/* 4 & 5. RESPONSIVE SALES CHART & MENU TERLARIS */}
           <View
-            className="bg-white border border-gray-200/80 rounded-xl p-4 shadow-sm space-y-3"
-            style={{ overflow: 'hidden' }}
+            style={{
+              flexDirection: isTablet || isLandscape ? 'row' : 'column',
+              gap: 20,
+              alignItems: 'stretch',
+              width: '100%',
+            }}
           >
-            {/* Header: Judul & Metric Toggle */}
-            <View className="flex-row items-center justify-between">
-              <View>
-                <Text className="text-base font-bold text-gray-900">
-                  Grafik Penjualan
-                </Text>
-                <Text className="text-xs text-gray-500">
-                  {periodLabelText} — {activeMetric === 'omzet' ? 'Omzet Penjualan' : activeMetric === 'pesanan' ? 'Total Pesanan' : 'Keuntungan Bersih'}
-                </Text>
-              </View>
-
-              {/* Metric Toggle: [ Omzet | Pesanan | Laba ] */}
-              <View className="flex-row bg-gray-100 p-0.5 rounded-lg border border-gray-200/60">
-                <TouchableOpacity
-                  onPress={() => setActiveMetric('omzet')}
-                  className={`px-2.5 py-1 rounded-md transition-all ${activeMetric === 'omzet' ? 'bg-white shadow-2xs' : ''}`}
-                >
-                  <Text className={`text-xs ${activeMetric === 'omzet' ? 'font-bold text-gray-900' : 'text-gray-600'}`}>
-                    Omzet
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => setActiveMetric('pesanan')}
-                  className={`px-2.5 py-1 rounded-md transition-all ${activeMetric === 'pesanan' ? 'bg-white shadow-2xs' : ''}`}
-                >
-                  <Text className={`text-xs ${activeMetric === 'pesanan' ? 'font-bold text-gray-900' : 'text-gray-600'}`}>
-                    Pesanan
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => setActiveMetric('laba')}
-                  className={`px-2.5 py-1 rounded-md transition-all ${activeMetric === 'laba' ? 'bg-white shadow-2xs' : ''}`}
-                >
-                  <Text className={`text-xs ${activeMetric === 'laba' ? 'font-bold text-gray-900' : 'text-gray-600'}`}>
-                    Laba
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Selected Point Info Bar */}
-            <View className="flex-row items-center justify-between bg-gray-50/80 px-3 py-2 rounded-lg border border-gray-100">
-              <Text className="text-xs font-bold text-gray-900">
-                {activePoint?.label || 'Total'}
-              </Text>
-              <View className="flex-row items-center gap-2">
-                <Text className="text-xs font-bold text-blue-600">
-                  {formatRupiah(activePoint?.omzet || 0)}
-                </Text>
-                <Text className="text-xs text-gray-500 font-medium">
-                  {activePoint?.pesanan || 0} pesanan
-                </Text>
-              </View>
-            </View>
-
-            {/* Area & Line Curve Chart Container (Measured with onLayout) */}
+            {/* 4. GRAFIK PENJUALAN INTERAKTIF */}
             <View
-              onLayout={(e) => {
-                const w = e.nativeEvent.layout.width;
-                if (w > 0 && Math.abs(w - cardInnerWidth) > 1) {
-                  setCardInnerWidth(w);
-                }
-              }}
               style={{
-                height: chartHeight,
-                width: '100%',
+                flex: isTablet || isLandscape ? 1.6 : undefined,
                 overflow: 'hidden',
-                alignItems: 'center',
-                justifyContent: 'center',
+                gap: 14,
               }}
+              className="bg-white border border-gray-200/80 rounded-xl p-4 shadow-xs"
             >
-              {svgPathData.linePath && effectiveChartWidth > 0 ? (
-                <Svg height={chartHeight} width={effectiveChartWidth}>
-                  <Defs>
-                    <LinearGradient id="blueGradient" x1="0" y1="0" x2="0" y2="1">
-                      <Stop offset="0%" stopColor="#2563EB" stopOpacity="0.25" />
-                      <Stop offset="90%" stopColor="#2563EB" stopOpacity="0.0" />
-                    </LinearGradient>
-                  </Defs>
+              {/* Header: Judul & Metric Toggle */}
+              <View className="flex-row items-center justify-between">
+                <View>
+                  <Text className="text-base font-bold text-gray-900">
+                    Grafik Penjualan
+                  </Text>
+                  <Text className="text-xs text-gray-500">
+                    {periodLabelText} — {activeMetric === 'omzet' ? 'Omzet Penjualan' : activeMetric === 'pesanan' ? 'Total Pesanan' : 'Keuntungan Bersih'}
+                  </Text>
+                </View>
 
-                  {/* Shaded Area */}
-                  <Path d={svgPathData.areaPath} fill="url(#blueGradient)" />
+                {/* Metric Toggle: [ Omzet | Pesanan | Laba ] */}
+                <View className="flex-row bg-gray-100 p-0.5 rounded-lg border border-gray-200/60">
+                  <TouchableOpacity
+                    onPress={() => setActiveMetric('omzet')}
+                    className={`px-2.5 py-1 rounded-md transition-all ${activeMetric === 'omzet' ? 'bg-white shadow-2xs' : ''}`}
+                  >
+                    <Text className={`text-xs ${activeMetric === 'omzet' ? 'font-bold text-gray-900' : 'text-gray-600'}`}>
+                      Omzet
+                    </Text>
+                  </TouchableOpacity>
 
-                  {/* Stroke Curve */}
-                  <Path
-                    d={svgPathData.linePath}
-                    fill="none"
-                    stroke="#2563EB"
-                    strokeWidth={3}
-                    strokeLinecap="round"
-                  />
+                  <TouchableOpacity
+                    onPress={() => setActiveMetric('pesanan')}
+                    className={`px-2.5 py-1 rounded-md transition-all ${activeMetric === 'pesanan' ? 'bg-white shadow-2xs' : ''}`}
+                  >
+                    <Text className={`text-xs ${activeMetric === 'pesanan' ? 'font-bold text-gray-900' : 'text-gray-600'}`}>
+                      Pesanan
+                    </Text>
+                  </TouchableOpacity>
 
-                  {/* Guideline and Highlighted Selected Dot (Clean like Web) */}
-                  {svgPathData.coords.map((item) => {
-                    const isSelected = item.idx === activePointIndex;
-                    const showAllDots = chartPoints.length <= 8;
+                  <TouchableOpacity
+                    onPress={() => setActiveMetric('laba')}
+                    className={`px-2.5 py-1 rounded-md transition-all ${activeMetric === 'laba' ? 'bg-white shadow-2xs' : ''}`}
+                  >
+                    <Text className={`text-xs ${activeMetric === 'laba' ? 'font-bold text-gray-900' : 'text-gray-600'}`}>
+                      Laba
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
 
-                    if (!isSelected && !showAllDots) return null;
+              {/* Selected Point Info Bar */}
+              <View className="flex-row items-center justify-between bg-gray-50/80 px-3 py-2 rounded-lg border border-gray-100">
+                <Text className="text-xs font-bold text-gray-900">
+                  {activePoint?.label || 'Total'}
+                </Text>
+                <View className="flex-row items-center gap-2">
+                  <Text className="text-xs font-bold text-blue-600">
+                    {formatRupiah(activePoint?.omzet || 0)}
+                  </Text>
+                  <Text className="text-xs text-gray-500 font-medium">
+                    {activePoint?.pesanan || 0} pesanan
+                  </Text>
+                </View>
+              </View>
 
-                    return (
-                      <React.Fragment key={item.idx}>
-                        {isSelected && (
-                          <Line
-                            x1={item.x}
-                            y1={chartPaddingTop}
-                            x2={item.x}
-                            y2={chartHeight - chartPaddingBottom}
-                            stroke="#93C5FD"
-                            strokeDasharray="3 3"
-                            strokeWidth={1.5}
+              {/* Area & Line Curve Chart Container (Measured with onLayout) */}
+              <View
+                onLayout={(e) => {
+                  const w = e.nativeEvent.layout.width;
+                  if (w > 0 && Math.abs(w - cardInnerWidth) > 1) {
+                    setCardInnerWidth(w);
+                  }
+                }}
+                style={{
+                  height: chartHeight,
+                  width: '100%',
+                  overflow: 'hidden',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                {svgPathData.linePath && effectiveChartWidth > 0 ? (
+                  <Svg height={chartHeight} width={effectiveChartWidth}>
+                    <Defs>
+                      <LinearGradient id="blueGradient" x1="0" y1="0" x2="0" y2="1">
+                        <Stop offset="0%" stopColor="#2563EB" stopOpacity="0.25" />
+                        <Stop offset="90%" stopColor="#2563EB" stopOpacity="0.0" />
+                      </LinearGradient>
+                    </Defs>
+
+                    {/* Shaded Area */}
+                    <Path d={svgPathData.areaPath} fill="url(#blueGradient)" />
+
+                    {/* Stroke Curve */}
+                    <Path
+                      d={svgPathData.linePath}
+                      fill="none"
+                      stroke="#2563EB"
+                      strokeWidth={3}
+                      strokeLinecap="round"
+                    />
+
+                    {/* Guideline and Highlighted Selected Dot */}
+                    {svgPathData.coords.map((item) => {
+                      const isSelected = item.idx === activePointIndex;
+                      const showAllDots = chartPoints.length <= 8;
+
+                      if (!isSelected && !showAllDots) return null;
+
+                      return (
+                        <React.Fragment key={item.idx}>
+                          {isSelected && (
+                            <Line
+                              x1={item.x}
+                              y1={chartPaddingTop}
+                              x2={item.x}
+                              y2={chartHeight - chartPaddingBottom}
+                              stroke="#93C5FD"
+                              strokeDasharray="3 3"
+                              strokeWidth={1.5}
+                            />
+                          )}
+                          <Circle
+                            cx={item.x}
+                            cy={item.y}
+                            r={isSelected ? 6 : 4}
+                            fill={isSelected ? '#2563EB' : '#FFFFFF'}
+                            stroke="#2563EB"
+                            strokeWidth={isSelected ? 3 : 2}
                           />
-                        )}
-                        <Circle
-                          cx={item.x}
-                          cy={item.y}
-                          r={isSelected ? 6 : 3.5}
-                          fill={isSelected ? '#2563EB' : '#FFFFFF'}
-                          stroke="#2563EB"
-                          strokeWidth={isSelected ? 3 : 2}
-                        />
-                      </React.Fragment>
+                        </React.Fragment>
+                      );
+                    })}
+                  </Svg>
+                ) : null}
+
+                {/* Touch Scrubbing Layer */}
+                <View
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: chartPaddingBottom,
+                    flexDirection: 'row',
+                  }}
+                >
+                  {svgPathData.coords.map((item) => (
+                    <TouchableOpacity
+                      key={item.idx}
+                      style={{ flex: 1, height: '100%' }}
+                      onPress={() => setActivePointIndex(item.idx)}
+                      activeOpacity={1}
+                    />
+                  ))}
+                </View>
+
+                {/* X-Axis Labels Layer */}
+                <View
+                  style={{
+                    position: 'absolute',
+                    bottom: 4,
+                    left: 0,
+                    width: effectiveChartWidth,
+                    height: 20,
+                  }}
+                >
+                  {svgPathData.coords.map((item) => {
+                    if (!visibleLabelIndices.has(item.idx)) return null;
+                    const isSelected = item.idx === activePointIndex;
+                    return (
+                      <View
+                        key={item.idx}
+                        style={{
+                          position: 'absolute',
+                          left: Math.max(2, Math.min(item.x - 45, effectiveChartWidth - 90)),
+                          width: 90,
+                          alignItems: 'center',
+                        }}
+                      >
+                        <TouchableOpacity
+                          onPress={() => setActivePointIndex(item.idx)}
+                          hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }}
+                        >
+                          <Text
+                            numberOfLines={1}
+                            className={`text-[10px] ${
+                              isSelected ? 'font-bold text-blue-600' : 'text-gray-400 font-medium'
+                            }`}
+                          >
+                            {item.pt.label}
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
                     );
                   })}
-                </Svg>
-              ) : null}
-
-              {/* Touch Scrubbing Layer */}
-              <View
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: chartPaddingBottom,
-                  flexDirection: 'row',
-                }}
-              >
-                {svgPathData.coords.map((item) => (
-                  <TouchableOpacity
-                    key={item.idx}
-                    style={{ flex: 1, height: '100%' }}
-                    onPress={() => setActivePointIndex(item.idx)}
-                    activeOpacity={1}
-                  />
-                ))}
+                </View>
               </View>
 
-              {/* X-Axis Labels (Adaptive: max 6-8 labels, no overlapping) */}
-              <View
-                style={{
-                  position: 'absolute',
-                  bottom: 4,
-                  left: 0,
-                  right: 0,
-                  height: 20,
-                }}
-              >
-                {svgPathData.coords.map((item) => {
-                  if (!visibleLabelIndices.has(item.idx)) return null;
-                  const isSelected = item.idx === activePointIndex;
+              {/* Footer: Tap hint & pagination dots */}
+              <View className="flex-row items-center justify-between pt-2 border-t border-gray-100">
+                <Text className="text-[11px] text-gray-400">
+                  Tap titik grafik untuk melihat rincian tanggal
+                </Text>
+                <View className="flex-row items-center gap-1">
+                  <View className="w-1.5 h-1.5 rounded-full bg-gray-300" />
+                  <View className="w-1.5 h-1.5 rounded-full bg-gray-300" />
+                  <View className="w-1.5 h-1.5 rounded-full bg-gray-300" />
+                  <View className="w-1.5 h-1.5 rounded-full bg-gray-300" />
+                  <View className="w-1.5 h-1.5 rounded-full bg-gray-300" />
+                  <View className="w-3.5 h-1.5 rounded-full bg-blue-600" />
+                </View>
+              </View>
+            </View>
+
+            {/* 5. MENU TERLARIS */}
+            <View
+              style={{
+                flex: isTablet || isLandscape ? 1 : undefined,
+                gap: 14,
+              }}
+              className="bg-white border border-gray-200/80 rounded-xl p-4 shadow-xs justify-between"
+            >
+              <View className="flex-row items-center justify-between">
+                <View className="flex-row items-center gap-2">
+                  <View className="p-1.5 bg-amber-50 rounded-lg">
+                    <Utensils size={15} color="#D97706" />
+                  </View>
+                  <View>
+                    <Text className="text-base font-bold text-gray-900">Menu Terlaris</Text>
+                    <Text className="text-xs text-gray-500">Produk terfavorit periode ini</Text>
+                  </View>
+                </View>
+                <View className="bg-amber-50 border border-amber-200/60 px-2 py-0.5 rounded">
+                  <Text className="text-[10px] font-semibold text-amber-800">Top 5</Text>
+                </View>
+              </View>
+
+              <View style={{ gap: 12 }} className="pt-1">
+                {topProducts.map((item, idx) => {
+                  const isTop1 = idx === 0;
                   return (
-                    <View
-                      key={item.idx}
-                      style={{
-                        position: 'absolute',
-                        left: Math.max(2, Math.min(item.x - 45, effectiveChartWidth - 90)),
-                        width: 90,
-                        alignItems: 'center',
-                      }}
-                    >
-                      <TouchableOpacity
-                        onPress={() => setActivePointIndex(item.idx)}
-                        hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }}
-                      >
-                        <Text
-                          numberOfLines={1}
-                          className={`text-[10px] ${
-                            isSelected ? 'font-bold text-blue-600' : 'text-gray-400 font-medium'
-                          }`}
-                        >
-                          {item.pt.label}
-                        </Text>
-                      </TouchableOpacity>
+                    <View key={item.id || idx} style={{ gap: 6 }}>
+                      <View className="flex-row items-center justify-between">
+                        <View className="flex-row items-center gap-2 flex-1 pr-2">
+                          <View
+                            className={`w-5 h-5 rounded-full items-center justify-center ${
+                              isTop1
+                                ? 'bg-amber-100 border border-amber-300'
+                                : idx === 1
+                                ? 'bg-gray-200'
+                                : 'bg-gray-100'
+                            }`}
+                          >
+                            {isTop1 ? (
+                              <Star size={10} color="#B45309" fill="#B45309" />
+                            ) : (
+                              <Text className="text-[10px] font-bold text-gray-700">{idx + 1}</Text>
+                            )}
+                          </View>
+                          <Text className="text-xs font-semibold text-gray-900 truncate flex-1">
+                            {item.name}
+                          </Text>
+                        </View>
+
+                        <View className="flex-row items-center gap-1.5">
+                          <Text className="text-xs font-bold text-gray-900">
+                            {formatRupiah(item.totalRevenue)}
+                          </Text>
+                          <Text className="text-[11px] text-gray-400">
+                            ({item.totalSold} terjual)
+                          </Text>
+                        </View>
+                      </View>
+
+                      {/* Share Progress Bar */}
+                      <View className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                        <View
+                          className={`h-full rounded-full ${isTop1 ? 'bg-amber-500' : 'bg-blue-600'}`}
+                          style={{ width: `${Math.max(5, Math.min(100, item.sharePercentage))}%` }}
+                        />
+                      </View>
                     </View>
                   );
                 })}
               </View>
             </View>
-
-            {/* Footer: Tap hint & pagination dots */}
-            <View className="flex-row items-center justify-between pt-2 border-t border-gray-100">
-              <Text className="text-[11px] text-gray-400">
-                Tap titik grafik untuk melihat rincian tanggal
-              </Text>
-              <View className="flex-row items-center gap-1">
-                <View className="w-1.5 h-1.5 rounded-full bg-gray-300" />
-                <View className="w-1.5 h-1.5 rounded-full bg-gray-300" />
-                <View className="w-1.5 h-1.5 rounded-full bg-gray-300" />
-                <View className="w-1.5 h-1.5 rounded-full bg-gray-300" />
-                <View className="w-1.5 h-1.5 rounded-full bg-gray-300" />
-                <View className="w-3.5 h-1.5 rounded-full bg-blue-600" />
-              </View>
-            </View>
-          </View>
-
-          {/* 5. MENU TERLARIS */}
-          <View className="bg-white border border-gray-200/80 rounded-xl p-4 shadow-sm space-y-3">
-            <View className="flex-row items-center justify-between">
-              <View className="flex-row items-center gap-2">
-                <View className="p-1.5 bg-amber-50 rounded-lg">
-                  <Utensils size={15} color="#D97706" />
-                </View>
-                <View>
-                  <Text className="text-base font-bold text-gray-900">Menu Terlaris</Text>
-                  <Text className="text-xs text-gray-500">Produk terfavorit periode ini</Text>
-                </View>
-              </View>
-              <View className="bg-amber-50 border border-amber-200/60 px-2 py-0.5 rounded">
-                <Text className="text-[10px] font-semibold text-amber-800">Top 5</Text>
-              </View>
-            </View>
-
-            <View className="space-y-3 pt-1">
-              {topProducts.map((item, idx) => {
-                const isTop1 = idx === 0;
-                return (
-                  <View key={item.id || idx} className="space-y-1.5">
-                    <View className="flex-row items-center justify-between">
-                      <View className="flex-row items-center gap-2 flex-1 pr-2">
-                        <View
-                          className={`w-5 h-5 rounded-full items-center justify-center ${
-                            isTop1
-                              ? 'bg-amber-100 border border-amber-300'
-                              : idx === 1
-                              ? 'bg-gray-200'
-                              : 'bg-gray-100'
-                          }`}
-                        >
-                          {isTop1 ? (
-                            <Star size={10} color="#B45309" fill="#B45309" />
-                          ) : (
-                            <Text className="text-[10px] font-bold text-gray-700">{idx + 1}</Text>
-                          )}
-                        </View>
-                        <Text className="text-xs font-semibold text-gray-900 truncate flex-1">
-                          {item.name}
-                        </Text>
-                      </View>
-
-                      <View className="flex-row items-center gap-1.5">
-                        <Text className="text-xs font-bold text-gray-900">
-                          {formatRupiah(item.totalRevenue)}
-                        </Text>
-                        <Text className="text-[11px] text-gray-400">
-                          ({item.totalSold} terjual)
-                        </Text>
-                      </View>
-                    </View>
-
-                    {/* Share Progress Bar */}
-                    <View className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                      <View
-                        className={`h-full rounded-full ${isTop1 ? 'bg-amber-500' : 'bg-blue-600'}`}
-                        style={{ width: `${Math.max(5, Math.min(100, item.sharePercentage))}%` }}
-                      />
-                    </View>
-                  </View>
-                );
-              })}
-            </View>
           </View>
 
           {/* 6. RINGKASAN BISNIS */}
-          <View className="bg-white border border-gray-200/80 rounded-xl p-4 shadow-sm space-y-3">
+          <View className="bg-white border border-gray-200/80 rounded-xl p-4 shadow-xs" style={{ gap: 14 }}>
             <View className="flex-row items-center gap-2">
               <View className="p-1.5 bg-blue-50 rounded-lg">
                 <Sparkles size={15} color="#2563EB" />
@@ -1187,10 +1364,11 @@ export function ModernDashboard() {
               </View>
             </View>
 
-            <View className="space-y-2.5 pt-1">
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }} className="pt-1">
               {insights.map((item, idx) => (
                 <View
                   key={item.id || idx}
+                  style={{ width: isTablet || isLandscape ? '49%' : '100%' }}
                   className="flex-row items-start p-3 rounded-lg border border-gray-100 bg-gray-50/60"
                 >
                   <View className="p-1 rounded-md bg-white border border-gray-200 mr-2.5 mt-0.5">
@@ -1212,106 +1390,258 @@ export function ModernDashboard() {
             </View>
           </View>
 
-          {/* 7. PERFORMA OPERASIONAL */}
-          <View className="bg-white border border-gray-200/80 rounded-xl p-4 shadow-sm space-y-3">
-            <View className="flex-row items-center gap-2">
-              <View className="p-1.5 bg-gray-100 rounded-lg">
-                <Activity size={15} color="#374151" />
-              </View>
-              <View>
-                <Text className="text-base font-bold text-gray-900">Performa Operasional</Text>
-                <Text className="text-xs text-gray-500">Kondisi kasir, perangkat POS, dan stok bahan</Text>
-              </View>
-            </View>
-
-            <View className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-              {/* Shift Kasir */}
-              <View className="p-3 bg-gray-50/70 border border-gray-100 rounded-xl space-y-2">
-                <View className="flex-row items-center justify-between">
-                  <Text className="text-[10px] font-mono uppercase font-bold text-gray-400">SHIFT KASIR</Text>
-                  <Clock size={12} color="#6B7280" />
+          {/* 6B. REKAPITULASI BULANAN TAHUNAN (HANYA MUNCUL DI TAB TAHUNAN) */}
+          {activePeriod === 'tahunan' && (
+            <View className="bg-white border border-gray-200/80 rounded-xl p-4 shadow-xs" style={{ gap: 14 }}>
+              <View className="flex-row items-center justify-between">
+                <View className="flex-row items-center gap-2">
+                  <View className="p-1.5 bg-indigo-50 rounded-lg">
+                    <Calendar size={15} color="#4F46E5" />
+                  </View>
+                  <View>
+                    <Text className="text-base font-bold text-gray-900">Rekapitulasi Bulanan {selectedYear}</Text>
+                    <Text className="text-xs text-gray-500">Performa penjualan sepanjang tahun</Text>
+                  </View>
                 </View>
-                <View>
-                  <Text className="text-xs font-bold text-gray-900">
-                    {operationalPulse.shift.cashierName}
-                  </Text>
-                  <Text className="text-[11px] text-gray-500">
-                    Buka: {operationalPulse.shift.startedAt}
-                  </Text>
-                  <Text className="text-[11px] text-gray-500">
-                    Modal: {formatRupiah(operationalPulse.shift.startingCash)}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Perangkat POS */}
-              <View className="p-3 bg-gray-50/70 border border-gray-100 rounded-xl space-y-2">
-                <View className="flex-row items-center justify-between">
-                  <Text className="text-[10px] font-mono uppercase font-bold text-gray-400">PERANGKAT POS</Text>
-                  <Smartphone size={12} color="#6B7280" />
-                </View>
-                <View>
-                  <Text className="text-xs font-bold text-gray-900">
-                    {operationalPulse.devices.active} / {operationalPulse.devices.total} Online
-                  </Text>
-                  <Text className="text-[11px] text-emerald-600">
-                    Semua perangkat tersinkronisasi
-                  </Text>
-                </View>
-              </View>
-
-              {/* Kesehatan Stok */}
-              <View className="p-3 bg-gray-50/70 border border-gray-100 rounded-xl space-y-2">
-                <View className="flex-row items-center justify-between">
-                  <Text className="text-[10px] font-mono uppercase font-bold text-gray-400">STATUS STOK</Text>
-                  <Package size={12} color="#6B7280" />
-                </View>
-                <View>
-                  <Text className="text-xs font-bold text-gray-900">
-                    {operationalPulse.stock.total} Produk
-                  </Text>
-                  <Text className="text-[11px] text-gray-500">
-                    {operationalPulse.stock.safe} aman •{' '}
-                    <Text className={operationalPulse.stock.low > 0 ? 'text-amber-600 font-semibold' : ''}>
-                      {operationalPulse.stock.low} menipis
+                {liveData?.bestMonthName && (
+                  <View className="flex-row items-center bg-amber-50 border border-amber-200/60 px-2 py-0.5 rounded-full">
+                    <Star size={10} color="#B45309" fill="#B45309" style={{ marginRight: 3 }} />
+                    <Text className="text-[10px] font-bold text-amber-800">
+                      Terbaik: {liveData.bestMonthName}
                     </Text>
+                  </View>
+                )}
+              </View>
+
+              <View style={{ gap: 8 }} className="pt-1">
+                {(liveData?.annualBreakdown || []).map((item) => (
+                  <View
+                    key={item.monthIndex}
+                    className={`flex-row items-center justify-between p-2.5 rounded-xl border ${
+                      item.isBestMonth
+                        ? 'bg-amber-50/40 border-amber-300'
+                        : item.status === 'future'
+                        ? 'bg-gray-50/40 border-gray-100 opacity-60'
+                        : 'bg-white border-gray-100'
+                    }`}
+                  >
+                    <View className="flex-row items-center gap-2 flex-1">
+                      <View
+                        className={`w-7 h-7 rounded-lg items-center justify-center ${
+                          item.isBestMonth ? 'bg-amber-100' : 'bg-gray-100'
+                        }`}
+                      >
+                        <Text
+                          className={`text-xs font-bold ${
+                            item.isBestMonth ? 'text-amber-800' : 'text-gray-700'
+                          }`}
+                        >
+                          {shortMonthNames[item.monthIndex]}
+                        </Text>
+                      </View>
+                      <View className="flex-1">
+                        <View className="flex-row items-center gap-1.5">
+                          <Text className="text-xs font-semibold text-gray-900">
+                            {item.monthName}
+                          </Text>
+                          {item.isBestMonth && (
+                            <View className="bg-amber-100 px-1.5 py-0.2 rounded">
+                              <Text className="text-[9px] font-bold text-amber-800">Bulan Terbaik</Text>
+                            </View>
+                          )}
+                          {item.status === 'in_progress' && (
+                            <View className="bg-blue-50 px-1.5 py-0.2 rounded">
+                              <Text className="text-[9px] font-semibold text-blue-700">Berjalan</Text>
+                            </View>
+                          )}
+                        </View>
+                        <Text className="text-[10px] text-gray-400">
+                          {item.status === 'future'
+                            ? 'Belum ada data'
+                            : `${item.pesanan} pesanan • AOV ${formatRupiah(item.aov)}`}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View className="items-end">
+                      <Text className="text-xs font-bold text-gray-900">
+                        {item.status === 'future' ? '—' : formatRupiah(item.omzet)}
+                      </Text>
+                      {item.status !== 'future' && (
+                        <Text className="text-[10px] font-semibold text-emerald-700">
+                          Laba {formatRupiah(item.laba)}
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* 7 & 8. RESPONSIVE OPERATIONAL PULSE & ATTENTION NEEDED */}
+          <View
+            style={{
+              flexDirection: isTablet || isLandscape ? 'row' : 'column',
+              gap: 20,
+              alignItems: 'stretch',
+              width: '100%',
+            }}
+          >
+            {/* 7. PERFORMA OPERASIONAL */}
+            <View
+              style={{
+                flex: isTablet || isLandscape ? 1 : undefined,
+                gap: 14,
+              }}
+              className="bg-white border border-gray-200/80 rounded-xl p-4 shadow-xs"
+            >
+              <View className="flex-row items-center gap-2">
+                <View className="p-1.5 bg-gray-100 rounded-lg">
+                  <Activity size={15} color="#374151" />
+                </View>
+                <View>
+                  <Text className="text-base font-bold text-gray-900">Performa Operasional</Text>
+                  <Text className="text-xs text-gray-500">Kondisi kasir, perangkat POS, dan stok bahan</Text>
+                </View>
+              </View>
+
+              <View style={{ gap: 10 }} className="pt-1">
+                {/* Shift Kasir */}
+                <View className="p-3 bg-gray-50/70 border border-gray-100 rounded-xl" style={{ gap: 6 }}>
+                  <View className="flex-row items-center justify-between">
+                    <Text className="text-[10px] font-mono uppercase font-bold text-gray-400">SHIFT KASIR</Text>
+                    <Clock size={12} color="#6B7280" />
+                  </View>
+                  <View>
+                    <Text className="text-xs font-bold text-gray-900">
+                      {operationalPulse.shift.cashierName}
+                    </Text>
+                    <Text className="text-[11px] text-gray-500">
+                      Buka: {operationalPulse.shift.startedAt}
+                    </Text>
+                    <Text className="text-[11px] text-gray-500">
+                      Modal: {formatRupiah(operationalPulse.shift.startingCash)}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Perangkat POS */}
+                <View className="p-3 bg-gray-50/70 border border-gray-100 rounded-xl" style={{ gap: 6 }}>
+                  <View className="flex-row items-center justify-between">
+                    <Text className="text-[10px] font-mono uppercase font-bold text-gray-400">PERANGKAT POS</Text>
+                    <Smartphone size={12} color="#6B7280" />
+                  </View>
+                  <View>
+                    <Text className="text-xs font-bold text-gray-900">
+                      {operationalPulse.devices.active} / {operationalPulse.devices.total} Online
+                    </Text>
+                    <Text className="text-[11px] text-emerald-600">
+                      Semua perangkat tersinkronisasi
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Kesehatan Stok & Ketersediaan Menu */}
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => router.push('/(main)/(cashier)/items')}
+                  className="p-3 bg-gray-50/70 border border-gray-100 rounded-xl"
+                  style={{ gap: 6 }}
+                >
+                  <View className="flex-row items-center justify-between">
+                    <Text className="text-[10px] font-mono uppercase font-bold text-gray-400">STATUS STOK & MENU</Text>
+                    <Package size={12} color="#6B7280" />
+                  </View>
+                  <View>
+                    <Text className="text-xs font-bold text-gray-900">
+                      {operationalPulse.stock.total} Produk
+                    </Text>
+                    <Text className="text-[11px] text-gray-500">
+                      {operationalPulse.stock.safe} aman •{' '}
+                      <Text className={operationalPulse.stock.low > 0 ? 'text-amber-600 font-semibold' : ''}>
+                        {operationalPulse.stock.low} menipis
+                      </Text>
+                      {inactiveProductsCount > 0 && (
+                        <Text className="text-rose-600 font-semibold">
+                          {' '}• {inactiveProductsCount} dinonaktifkan
+                        </Text>
+                      )}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* 8. PERLU PERHATIAN (DATA OPERASIONAL DARI BACKEND) */}
+            <View
+              style={{
+                flex: isTablet || isLandscape ? 1 : undefined,
+                gap: 14,
+              }}
+              className="bg-white border border-gray-200/80 rounded-xl p-4 shadow-xs"
+            >
+              <View className="flex-row items-center justify-between">
+                <View className="flex-row items-center gap-2">
+                  <View className="p-1.5 bg-amber-50 rounded-lg">
+                    <AlertTriangle size={15} color="#D97706" />
+                  </View>
+                  <View>
+                    <Text className="text-base font-bold text-gray-900">Perlu Perhatian</Text>
+                    <Text className="text-xs text-gray-500">Peringatan operasional yang butuh tindakan</Text>
+                  </View>
+                </View>
+                <View className={`px-2 py-0.5 rounded-full ${((liveData?.attentionItems?.length ?? 0) > 0) ? 'bg-amber-100' : 'bg-emerald-100'}`}>
+                  <Text className={`text-[10px] font-bold ${((liveData?.attentionItems?.length ?? 0) > 0) ? 'text-amber-800' : 'text-emerald-800'}`}>
+                    {liveData?.attentionItems ? `${liveData.attentionItems.length} Isu` : '0 Isu'}
                   </Text>
                 </View>
               </View>
-            </View>
-          </View>
 
-          {/* 8. PERLU PERHATIAN */}
-          <View className="bg-white border border-gray-200/80 rounded-xl p-4 shadow-sm space-y-3">
-            <View className="flex-row items-center justify-between">
-              <View className="flex-row items-center gap-2">
-                <View className="p-1.5 bg-amber-50 rounded-lg">
-                  <AlertTriangle size={15} color="#D97706" />
+              {liveData?.attentionItems && liveData.attentionItems.length > 0 ? (
+                <View style={{ gap: 8 }}>
+                  {liveData.attentionItems.map((item) => (
+                    <View
+                      key={item.id}
+                      className={`p-3 rounded-xl border flex-row items-center justify-between ${
+                        item.severity === 'critical'
+                          ? 'bg-rose-50/60 border-rose-200/70'
+                          : 'bg-amber-50/50 border-amber-200/60'
+                      }`}
+                    >
+                      <View className="flex-row items-center gap-2.5 flex-1 pr-2">
+                        <Package size={16} color={item.severity === 'critical' ? '#E11D48' : '#D97706'} />
+                        <View className="flex-1">
+                          <Text className="text-xs font-bold text-gray-900">{item.title}</Text>
+                          <Text className="text-[11px] text-gray-600">{item.description}</Text>
+                        </View>
+                      </View>
+                      <TouchableOpacity
+                        onPress={() => {
+                          if (item.actionHref?.includes('shifts')) {
+                            router.push('/(main)/(cashier)/shift');
+                          } else if (item.actionHref?.includes('inventory') || item.actionHref?.includes('items')) {
+                            router.push('/(main)/(cashier)/items');
+                          } else {
+                            router.push('/(main)/(cashier)/pos');
+                          }
+                        }}
+                        className="bg-white border border-gray-200 px-2.5 py-1 rounded-lg shadow-2xs"
+                      >
+                        <Text className="text-xs font-semibold text-gray-800">{item.actionLabel || 'Cek'}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ))}
                 </View>
-                <View>
-                  <Text className="text-base font-bold text-gray-900">Perlu Perhatian</Text>
-                  <Text className="text-xs text-gray-500">Peringatan operasional yang butuh tindakan</Text>
+              ) : (
+                <View className="p-3 bg-emerald-50/60 border border-emerald-200/60 rounded-xl flex-row items-center gap-2.5">
+                  <CheckCircle2 size={16} color="#059669" />
+                  <View className="flex-1">
+                    <Text className="text-xs font-bold text-emerald-900">Operasional Aman</Text>
+                    <Text className="text-[11px] text-emerald-700">Semua stok bahan, shift kasir, dan perangkat POS dalam kondisi prima.</Text>
+                  </View>
                 </View>
-              </View>
-              <View className="bg-amber-100 px-2 py-0.5 rounded-full">
-                <Text className="text-[10px] font-bold text-amber-800">1 Isu</Text>
-              </View>
-            </View>
-
-            <View className="p-3 bg-amber-50/50 border border-amber-200/60 rounded-xl flex-row items-center justify-between">
-              <View className="flex-row items-center gap-2.5 flex-1 pr-2">
-                <Package size={16} color="#D97706" />
-                <View className="flex-1">
-                  <Text className="text-xs font-bold text-gray-900">2 Menu Stok Menipis</Text>
-                  <Text className="text-[11px] text-gray-600">Susu UHT dan Sirup Aren mendekati batas minimum.</Text>
-                </View>
-              </View>
-              <TouchableOpacity
-                onPress={() => router.push('/(main)/(cashier)/pos')}
-                className="bg-white border border-gray-200 px-2.5 py-1 rounded-lg"
-              >
-                <Text className="text-xs font-semibold text-gray-800">Cek</Text>
-              </TouchableOpacity>
+              )}
             </View>
           </View>
 
