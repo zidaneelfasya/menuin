@@ -98,7 +98,7 @@ export default async function StoreLayout({
         )}
         
         {!tenant.storeBannerUrl && (
-          <header className="bg-white sticky top-0 z-40 border-b shadow-sm">
+          <header className="bg-white border-b shadow-xs">
             <div className="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
               <a href={homeLink} className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
                 {tenant.storeLogoUrl ? (

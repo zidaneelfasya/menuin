@@ -66,7 +66,7 @@ export function CatalogProductList({ productsByCategory, categories, featuredPro
   const scrollToCategory = (id: string) => {
     const el = document.getElementById(`category-${id}`);
     if (el) {
-      const y = el.getBoundingClientRect().top + window.scrollY - 140;
+      const y = el.getBoundingClientRect().top + window.scrollY - 110;
       window.scrollTo({ top: y, behavior: 'smooth' });
     }
   };
@@ -261,41 +261,55 @@ export function CatalogProductList({ productsByCategory, categories, featuredPro
 
   return (
     <div className="pb-24">
-      {/* Search Bar */}
-      <div className="relative mb-6">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 h-5 w-5" />
-        <Input 
-          className="pl-11 h-12 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border-slate-200 dark:border-slate-800 focus-visible:ring-catalog-primary text-sm" 
-          placeholder="Cari makanan atau minuman..." 
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-      </div>
-
-      {/* Categories Navigation */}
-      {!searchQuery && (
-        <div className="sticky top-[64px] z-30 bg-[#f8fafc]/95 dark:bg-slate-950/95 backdrop-blur-md py-3 -mx-4 px-4 overflow-x-auto whitespace-nowrap scrollbar-hide shadow-sm border-b border-slate-200/60 dark:border-slate-800">
-          <div className="flex gap-2">
-            {featuredProducts.length > 0 && (
-              <button
-                onClick={() => scrollToCategory('featured')}
-                className="px-4 py-2 rounded-full text-xs sm:text-sm font-semibold bg-slate-900 text-white shadow-sm flex items-center gap-1.5 hover:bg-slate-800 transition-colors"
-              >
-                <Star className="w-3.5 h-3.5 fill-current text-amber-400" /> Best Seller Kami
-              </button>
-            )}
-            {allCategories.map(cat => (
-              <button
-                key={cat.id}
-                onClick={() => scrollToCategory(cat.id)}
-                className="px-4 py-2 rounded-full text-xs sm:text-sm font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm text-slate-700 dark:text-slate-300 hover:border-catalog-primary transition-colors"
-              >
-                {cat.name}
-              </button>
-            ))}
-          </div>
+      {/* Sticky Combined Header: Search Bar + Categories Navigation */}
+      <div className="sticky top-0 z-30 bg-[#f8fafc]/95 dark:bg-slate-950/95 backdrop-blur-md pt-2 pb-3 -mx-4 px-4 border-b border-slate-200/80 dark:border-slate-800 shadow-xs space-y-2.5 transition-all">
+        {/* Search Bar */}
+        <div className="relative">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4" />
+          <Input 
+            className="pl-10 pr-9 h-11 bg-white dark:bg-slate-900 rounded-xl shadow-xs border-slate-200 dark:border-slate-800 focus-visible:ring-catalog-primary text-sm placeholder:text-slate-400" 
+            placeholder="Cari makanan atau minuman..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          {searchQuery && (
+            <button 
+              type="button"
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-full w-5 h-5 flex items-center justify-center transition-colors"
+            >
+              ✕
+            </button>
+          )}
         </div>
-      )}
+
+        {/* Categories Navigation */}
+        {!searchQuery && (
+          <div className="overflow-x-auto whitespace-nowrap scrollbar-hide -mx-1 px-1">
+            <div className="flex gap-2">
+              {featuredProducts.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => scrollToCategory('featured')}
+                  className="px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold bg-slate-900 text-white shadow-xs flex items-center gap-1.5 hover:bg-slate-800 transition-colors shrink-0"
+                >
+                  <Star className="w-3.5 h-3.5 fill-current text-amber-400" /> Best Seller Kami
+                </button>
+              )}
+              {allCategories.map(cat => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => scrollToCategory(cat.id)}
+                  className="px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs text-slate-700 dark:text-slate-300 hover:border-catalog-primary transition-colors shrink-0"
+                >
+                  {cat.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Content */}
       <div className="mt-6 space-y-10">
@@ -315,7 +329,7 @@ export function CatalogProductList({ productsByCategory, categories, featuredPro
             {featuredProducts.length > 0 && (
               <div 
                 id="category-featured" 
-                className="scroll-mt-36 rounded-3xl p-5 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm"
+                className="scroll-mt-28 rounded-3xl p-5 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm"
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className="space-y-0.5">
@@ -346,7 +360,7 @@ export function CatalogProductList({ productsByCategory, categories, featuredPro
               if (!catProducts || catProducts.length === 0) return null;
 
               return (
-                <div key={cat.id} id={`category-${cat.id}`} className="scroll-mt-36">
+                <div key={cat.id} id={`category-${cat.id}`} className="scroll-mt-28">
                   <h3 className="font-bold text-lg mb-4 text-slate-800 dark:text-slate-100 flex items-center justify-between">
                     <span>{cat.name}</span>
                     <span className="text-xs font-normal text-slate-400">{catProducts.length} menu</span>

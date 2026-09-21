@@ -29,7 +29,7 @@ export default function FooterReadyToBegin({
         </div>
 
         {/* Heading */}
-        <h2 className="text-3xl sm:text-4xl md:text-[42px] font-extrabold tracking-tight text-white leading-tight mb-3">
+        <h2 className="text-3xl sm:text-4xl md:text-[42px] font-display tracking-tight text-white leading-tight mb-3">
           {title}
         </h2>
 
