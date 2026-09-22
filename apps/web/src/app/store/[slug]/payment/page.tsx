@@ -249,85 +249,81 @@ export default function OnlinePaymentPage({
         />
       )}
 
-      {/* Sticky Payment Top Navigation Header (Taller & Prominent - matches Cart page) */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-100 shadow-[0_4px_12px_rgba(0,0,0,0.06)]">
-        <div className="max-w-2xl mx-auto px-4 h-20 sm:h-20 flex items-center justify-between">
-          <div className="w-11 flex items-center justify-start">
+      {/* Floating Payment Top Navigation Header (Edge-to-edge with shadow) */}
+      <header className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.08)] pt-[env(safe-area-inset-top)]">
+        <div className="max-w-md mx-auto px-4 h-14 sm:h-16 flex items-center justify-between">
+          <div className="w-9 flex items-center justify-start">
             <Link
               href={`/store/${unwrappedParams.slug}${
                 order.tableNumber ? `?table=${order.tableNumber}` : ""
               }`}
-              className="w-11 h-11 -ml-2 flex items-center justify-center rounded-full text-gray-800 hover:text-gray-900 hover:bg-gray-100 active:scale-95 transition-all cursor-pointer"
+              className="w-9 h-9 -ml-1 flex items-center justify-center rounded-full text-gray-800 hover:text-gray-900 hover:bg-gray-100 active:scale-95 transition-all cursor-pointer"
               aria-label="Kembali ke Menu"
             >
-              <ArrowLeft className="w-6 h-6 stroke-[2.4]" />
+              <ArrowLeft className="w-5 h-5 stroke-[2.2]" />
             </Link>
           </div>
 
-          <h1 className="font-semibold text-xl sm:text-2xl text-gray-900 tracking-tight text-center truncate px-2">
+          <h1 className="font-semibold text-base sm:text-lg text-gray-900 tracking-tight text-center truncate px-2">
             Pembayaran
           </h1>
 
-          <div className="w-11 shrink-0 flex items-center justify-end">
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 shrink-0 whitespace-nowrap">
-              Menunggu Bayar
-            </span>
-          </div>
+          <div className="w-9 shrink-0" aria-hidden="true" />
         </div>
       </header>
 
-      {/* Main Content Container with generous bottom padding for taller sticky footer */}
-      <main className="max-w-2xl mx-auto px-4 py-4 sm:py-5 pb-48 sm:pb-52 w-full space-y-6">
-        {/* Main Summary Card - Matches Cart Page Style */}
-        <div className="bg-white p-5 sm:p-7 rounded-2xl border border-gray-200 shadow-sm space-y-7 sm:space-y-8">
+      {/* Main Content Container with top padding for fixed header and bottom padding for fixed footer */}
+      <main className="max-w-md mx-auto px-3.5 sm:px-4 pt-20 sm:pt-24 pb-36 sm:pb-40 w-full space-y-4">
+        {/* Main Summary Card */}
+        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200/90 shadow-2xs space-y-5 sm:space-y-6">
           {/* 1. INFORMASI PEMESANAN */}
-          <div className="space-y-4">
-            <div className="border-b border-gray-100 pb-3.5 flex items-start justify-between gap-3">
+          <div className="space-y-3.5">
+            <div className="border-b border-gray-100 pb-3 flex items-start justify-between gap-2">
               <div>
-                <h2 className="font-semibold text-xl sm:text-2xl text-gray-900 tracking-tight">
+                <h2 className="font-semibold text-base sm:text-lg text-gray-900 tracking-tight">
                   Informasi Pemesanan
                 </h2>
-                <p className="text-sm text-gray-500 mt-0.5">
-                  Rincian pemesan dan data layanan pesanan
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Rincian pemesan dan layanan pesanan
                 </p>
               </div>
-              <div className="text-right shrink-0">
-                <span className="text-[11px] uppercase font-semibold text-gray-400 block tracking-wider">
-                  No. Pesanan
+              <div className="text-right shrink-0 flex flex-col items-end">
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 mb-0.5 whitespace-nowrap">
+                  Menunggu Bayar
                 </span>
-                <span className="font-semibold text-sm sm:text-base text-gray-900">
+                <span className="font-semibold text-xs sm:text-sm text-gray-800">
                   {order.orderNumber}
                 </span>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
-              <div className="p-3.5 sm:p-4 rounded-xl bg-gray-50/80 border border-gray-100 space-y-1">
-                <span className="text-xs uppercase font-semibold tracking-wider text-gray-400 block">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-0.5">
+              <div className="p-3 rounded-xl bg-gray-50 border border-gray-100 space-y-0.5">
+                <span className="text-[11px] uppercase font-semibold tracking-wider text-gray-400 block">
                   Nama Pemesan
                 </span>
-                <span className="font-semibold text-base text-gray-900 block truncate">
+                <span className="font-semibold text-sm sm:text-base text-gray-900 block truncate">
                   {order.customerName || "-"}
                 </span>
                 {order.customerPhone && (
-                  <span className="text-sm text-gray-500 block truncate">
+                  <span className="text-xs text-gray-500 block truncate">
                     {order.customerPhone}
                   </span>
                 )}
               </div>
 
-              <div className="p-3.5 sm:p-4 rounded-xl bg-gray-50/80 border border-gray-100 space-y-1">
-                <span className="text-xs uppercase font-semibold tracking-wider text-gray-400 block">
+              <div className="p-3 rounded-xl bg-gray-50 border border-gray-100 space-y-0.5">
+                <span className="text-[11px] uppercase font-semibold tracking-wider text-gray-400 block">
                   Tipe Layanan
                 </span>
-                <span className="font-semibold text-base text-gray-900 block">
+                <span className="font-semibold text-sm sm:text-base text-gray-900 block">
                   {order.orderType === "DINE_IN"
                     ? `Dine-In (${order.tableNumber ? `Meja ${order.tableNumber}` : "Tanpa Meja"})`
                     : order.orderType === "TAKEAWAY"
                     ? "Bawa Pulang (Takeaway)"
                     : "Delivery"}
                 </span>
-                <span className="text-sm text-gray-500 block">
+                <span className="text-xs text-gray-500 block">
                   {new Date(order.createdAt).toLocaleDateString("id-ID", {
                     day: "numeric",
                     month: "short",
@@ -342,8 +338,8 @@ export default function OnlinePaymentPage({
 
           {/* 2. DAFTAR MENU DIPILIH (TANPA TOMBOL EDIT/TAMBAH/STEPPER) */}
           <div className="space-y-1 pt-2 border-t border-gray-100">
-            <div className="pb-3 border-b border-gray-100">
-              <div className="text-sm font-medium tracking-wider text-gray-500">
+            <div className="pb-2.5 border-b border-gray-100">
+              <div className="text-xs font-semibold uppercase tracking-wider text-gray-500">
                 Daftar Menu ({totalItemsCount} item)
               </div>
             </div>
@@ -354,8 +350,8 @@ export default function OnlinePaymentPage({
                 const itemSubtotal = Number(item.subtotal || itemPrice * item.quantity);
 
                 return (
-                  <div key={item.id} className="py-4 sm:py-5 flex gap-4 sm:gap-5 items-start">
-                    <div className="h-24 w-24 sm:h-20 sm:w-20 bg-gray-50 rounded-2xl flex-shrink-0 border border-gray-100 overflow-hidden relative flex items-center justify-center">
+                  <div key={item.id} className="py-3 sm:py-3.5 flex gap-3 sm:gap-4 items-start">
+                    <div className="h-20 w-20 sm:h-22 sm:w-22 bg-gray-50 rounded-2xl flex-shrink-0 border border-gray-100 overflow-hidden relative flex items-center justify-center">
                       <PaymentItemThumbnail
                         src={item.imageUrl}
                         alt={item.productName}
@@ -364,22 +360,22 @@ export default function OnlinePaymentPage({
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="font-semibold text-base sm:text-lg text-gray-900 leading-snug line-clamp-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="font-semibold text-sm sm:text-base text-gray-900 leading-snug line-clamp-2">
                           {item.productName}
                         </div>
-                        <div className="font-semibold text-base sm:text-lg text-gray-900 whitespace-nowrap">
+                        <div className="font-semibold text-sm sm:text-base text-gray-900 whitespace-nowrap">
                           {formatCurrency(itemSubtotal)}
                         </div>
                       </div>
 
-                      <div className="text-sm text-gray-500 mt-0.5">
+                      <div className="text-xs text-gray-500 mt-0.5">
                         {formatCurrency(itemPrice)} / porsi
                       </div>
 
                       {/* Modifiers list */}
                       {item.modifiers && item.modifiers.length > 0 && (
-                        <div className="text-sm text-gray-600 mt-1 line-clamp-2">
+                        <div className="text-xs text-gray-600 mt-1 line-clamp-2">
                           {item.modifiers
                             .map((m: any) =>
                               Number(m.price) > 0
@@ -392,13 +388,13 @@ export default function OnlinePaymentPage({
 
                       {/* Notes */}
                       {item.notes && (
-                        <div className="text-xs sm:text-sm text-gray-600 italic mt-1.5 bg-amber-50/70 border border-amber-200/60 rounded-xl px-3 py-1 line-clamp-2">
+                        <div className="text-[11px] text-gray-600 italic mt-1 bg-amber-50/70 border border-amber-200/60 rounded-lg px-2.5 py-0.5 line-clamp-2">
                           "{item.notes}"
                         </div>
                       )}
 
-                      <div className="flex items-center gap-2 mt-2.5">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">
+                      <div className="flex items-center gap-1.5 mt-2">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-gray-100 text-gray-700">
                           {item.quantity} porsi
                         </span>
                       </div>
@@ -410,12 +406,12 @@ export default function OnlinePaymentPage({
           </div>
 
           {/* 3. SUBTOTAL MENU & RINCIAN PEMBAYARAN */}
-          <div className="space-y-3.5 pt-4 border-t border-gray-100">
-            <h3 className="font-semibold text-base sm:text-lg text-gray-900 tracking-tight">
+          <div className="space-y-3 pt-3 border-t border-gray-100">
+            <h3 className="font-semibold text-sm sm:text-base text-gray-900 tracking-tight">
               Rincian Pembayaran
             </h3>
 
-            <div className="space-y-2.5 text-sm sm:text-base pt-1">
+            <div className="space-y-2 text-xs sm:text-sm pt-0.5">
               <div className="flex justify-between text-gray-600">
                 <span>Subtotal ({totalItemsCount} menu)</span>
                 <span className="font-semibold text-gray-800">
@@ -448,9 +444,9 @@ export default function OnlinePaymentPage({
                 </div>
               )}
 
-              <div className="border-t border-dashed border-gray-200 pt-3 flex justify-between items-baseline font-semibold text-base sm:text-lg text-gray-900">
+              <div className="border-t border-dashed border-gray-200 pt-2.5 flex justify-between items-baseline font-semibold text-sm sm:text-base text-gray-900">
                 <span>Total Tagihan</span>
-                <span className="text-xl sm:text-2xl text-catalog-primary font-semibold tracking-tight">
+                <span className="text-lg sm:text-xl text-catalog-primary font-semibold tracking-tight">
                   {formatCurrency(Number(order.grandTotal))}
                 </span>
               </div>
@@ -458,26 +454,26 @@ export default function OnlinePaymentPage({
           </div>
 
           {/* 4. METODE PEMBAYARAN ONLINE */}
-          <div className="space-y-3.5 pt-2 border-t border-gray-100">
+          <div className="space-y-2.5 pt-2 border-t border-gray-100">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-base tracking-wider text-gray-500">
+              <h3 className="font-semibold text-xs sm:text-sm tracking-wider text-gray-500 uppercase">
                 Metode Pembayaran
               </h3>
-              
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                Midtrans Online
+              </span>
             </div>
 
-            <div className="p-4 sm:p-5 rounded-2xl border-2 border-catalog-primary bg-catalog-primary/5 flex items-start gap-3.5">
-              <div className="h-11 w-11 rounded-xl bg-catalog-primary text-white flex items-center justify-center shrink-0">
-                <CreditCard className="w-5 h-5" />
+            <div className="p-3.5 rounded-xl border-2 border-catalog-primary bg-catalog-primary/5 flex items-start gap-3">
+              <div className="h-9 w-9 rounded-lg bg-catalog-primary text-white flex items-center justify-center shrink-0 mt-0.5">
+                <CreditCard className="w-4.5 h-4.5" />
               </div>
-              <div className="space-y-1">
-                <div className="font-semibold text-sm sm:text-base text-gray-900 flex items-center gap-2">
-                  <span>Pembayaran Online Instan</span>
+              <div className="space-y-0.5">
+                <div className="font-semibold text-xs sm:text-sm text-gray-900">
+                  Pembayaran Online Instan
                 </div>
-                <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-                  Mendukung pembayaran melalui <strong>QRIS</strong>, <strong>GoPay</strong>,{" "}
-                  <strong>ShopeePay</strong>, <strong>OVO</strong>, <strong>Virtual Account</strong>, dan{" "}
-                  <strong>Kartu Kredit</strong>.
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  Mendukung <strong>QRIS</strong>, <strong>GoPay</strong>, <strong>ShopeePay</strong>, <strong>OVO</strong>, <strong>Virtual Account</strong>, dan <strong>Kartu Kredit</strong>.
                 </p>
               </div>
             </div>
@@ -485,17 +481,17 @@ export default function OnlinePaymentPage({
         </div>
 
         {/* Fallback Option: Kendala Pembayaran Online -> Bayar di Kasir */}
-        <div className="bg-amber-50/70 rounded-2xl p-4 sm:p-5 border border-amber-200/80 space-y-3 shadow-xs">
-          <div className="flex items-start gap-3">
-            <div className="h-9 w-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
-              <AlertTriangle className="w-5 h-5" />
+        <div className="bg-amber-50/70 rounded-2xl p-3.5 sm:p-4 border border-amber-200/80 space-y-2.5 shadow-2xs">
+          <div className="flex items-start gap-2.5">
+            <div className="h-8 w-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
+              <AlertTriangle className="w-4 h-4" />
             </div>
-            <div className="space-y-1">
-              <h3 className="font-semibold text-sm text-amber-950">
+            <div className="space-y-0.5">
+              <h3 className="font-semibold text-xs sm:text-sm text-amber-950">
                 Kendala Pembayaran Online?
               </h3>
               <p className="text-xs text-amber-900/90 leading-relaxed">
-                Jika saldo e-wallet tidak cukup, QRIS gagal dipindai, atau terjadi gangguan transaksi, Anda dapat mengubah metode pembayaran ke kasir.
+                Jika saldo tidak mencukupi atau terjadi kendala, Anda dapat mengubah metode pembayaran ke kasir.
               </p>
             </div>
           </div>
@@ -505,7 +501,7 @@ export default function OnlinePaymentPage({
             variant="outline"
             onClick={handlePayCash}
             disabled={isSwitchingToCash || isProcessing}
-            className="w-full h-12 bg-white hover:bg-amber-100/50 border-amber-300 text-amber-950 rounded-xl font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer"
+            className="w-full h-11 bg-white hover:bg-amber-100/50 border-amber-300 text-amber-950 rounded-xl font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-2xs transition-all cursor-pointer"
           >
             {isSwitchingToCash ? (
               <>
@@ -523,13 +519,13 @@ export default function OnlinePaymentPage({
         </div>
       </main>
 
-      {/* Sticky Bottom Footer (Taller & Prominent with Rounded Top - matches Cart page) */}
-      <footer className="fixed bottom-0 left-0 right-0 z-40 bg-white rounded-t-[32px] sm:rounded-t-[36px] border-t border-gray-100 shadow-[0_-12px_40px_rgba(0,0,0,0.09)]">
-        <div className="max-w-2xl mx-auto px-6 sm:px-8 py-5 sm:py-6 flex items-center justify-between gap-4">
+      {/* Sticky Bottom Footer (Constrained to max-w-md with safe-area padding) */}
+      <footer className="fixed bottom-0 left-0 right-0 z-40 bg-white rounded-t-2xl sm:rounded-t-3xl border-t border-gray-100 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="max-w-md mx-auto px-4 py-3 sm:py-3.5 flex items-center justify-between gap-3">
           {/* Left: Total Tagihan */}
-          <div className="flex flex-col min-w-0">
-            <span className="text-xs sm:text-sm text-gray-500 font-medium mb-1">Total Tagihan</span>
-            <span className="text-2xl sm:text-3xl font-semibold text-gray-900 tracking-tight whitespace-nowrap">
+          <div className="flex flex-col shrink-0 justify-center">
+            <span className="text-[11px] text-gray-500 font-medium leading-none mb-1">Total Tagihan</span>
+            <span className="text-lg sm:text-xl font-semibold text-gray-900 tracking-tight leading-tight whitespace-nowrap">
               {formatCurrency(Number(order.grandTotal))}
             </span>
           </div>
@@ -539,16 +535,16 @@ export default function OnlinePaymentPage({
             type="button"
             onClick={handlePayOnline}
             disabled={isProcessing || isSwitchingToCash}
-            className="h-14 sm:h-15 px-7 sm:px-9 bg-catalog-primary hover:bg-catalog-primary/90 text-white rounded-2xl font-semibold text-base sm:text-lg shadow-sm active:scale-[0.98] transition-all cursor-pointer shrink-0 disabled:opacity-50"
+            className="h-11 sm:h-12 px-5 bg-catalog-primary hover:bg-catalog-primary/90 text-white rounded-xl font-semibold text-xs sm:text-sm shadow-xs active:scale-[0.98] transition-all cursor-pointer shrink-0 disabled:opacity-50"
           >
             {isProcessing ? (
-              <div className="flex items-center gap-2">
-                <Loader2 className="w-5 h-5 animate-spin shrink-0" />
-                <span>Membuka Pembayaran...</span>
+              <div className="flex items-center gap-1.5">
+                <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                <span>Membuka...</span>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
-                <CreditCard className="w-5 h-5 shrink-0" />
+              <div className="flex items-center gap-1.5">
+                <CreditCard className="w-4 h-4 shrink-0" />
                 <span>Bayar Sekarang</span>
               </div>
             )}
