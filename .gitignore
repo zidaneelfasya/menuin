@@ -16,6 +16,7 @@ node_modules
 skills-lock.json
 /.cursor
 /.agents/skills
+/.aider-desk
 
 # testing
 /coverage
