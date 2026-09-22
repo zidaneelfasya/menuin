@@ -584,7 +584,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                   )}
                   <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex justify-between items-baseline">
                     <span className="font-bold text-sm text-slate-900 dark:text-slate-100">Total Pembayaran</span>
-                    <span className="font-extrabold text-base font-mono text-primary">
+                    <span className="font-bold text-base font-mono text-primary">
                       {formatCurrency(parseFloat(selectedTxDetail.transaction.grandTotal || '0'))}
                     </span>
                   </div>

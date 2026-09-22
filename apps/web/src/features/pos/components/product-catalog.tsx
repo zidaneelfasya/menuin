@@ -350,7 +350,7 @@ export function ProductCatalog({
                 ) : null}
 
                 {product.isFeatured && (
-                  <div className="absolute top-2 left-2 z-10 bg-amber-500/95 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-md flex items-center gap-1 backdrop-blur-sm">
+                  <div className="absolute top-2 left-2 z-10 bg-amber-500/95 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md flex items-center gap-1 backdrop-blur-sm">
                     <Star className="w-3 h-3 fill-current" />
                     BEST SELLER
                   </div>

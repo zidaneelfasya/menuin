@@ -40,6 +40,7 @@ import {
   updateKitchenTicketSettings
 } from '@/lib/actions/settings';
 import { PosSettingsForm } from './pos-settings-form';
+import { ImageUploader } from '@/components/ui/image-uploader';
 
 export function SettingsClient({ 
   tenant, 
@@ -75,6 +76,7 @@ export function SettingsClient({
 
   const [storeName, setStoreName] = React.useState(tenant?.name || '');
   const [storeDescription, setStoreDescription] = React.useState(tenant?.storeDescription || '');
+  const [storeLogoUrl, setStoreLogoUrl] = React.useState<string | null>(tenant?.storeLogoUrl || null);
   const [primaryColor, setPrimaryColor] = React.useState(tenant?.primaryColor || '#2563EB');
 
   const [midtransEnvironment, setMidtransEnvironment] = React.useState(tenant?.midtransEnvironment || 'sandbox');
@@ -108,6 +110,7 @@ export function SettingsClient({
   const hasStoreChanges = 
     storeName !== (tenant?.name || '') ||
     storeDescription !== (tenant?.storeDescription || '') ||
+    storeLogoUrl !== (tenant?.storeLogoUrl || null) ||
     primaryColor !== (tenant?.primaryColor || '#2563EB');
 
   const hasTaxChanges = 
@@ -250,6 +253,7 @@ export function SettingsClient({
     const fd = new FormData();
     fd.append('name', storeName);
     fd.append('storeDescription', storeDescription);
+    if (storeLogoUrl) fd.append('storeLogoUrl', storeLogoUrl);
     fd.append('primaryColor', primaryColor);
 
     const res = await updateStoreGeneralSettings(fd);
@@ -438,6 +442,18 @@ export function SettingsClient({
                       onChange={(e) => setStoreDescription(e.target.value)}
                       placeholder="Tuliskan deskripsi singkat mengenai outlet Anda..."
                       className="bg-slate-50/50"
+                    />
+                  </div>
+
+                  <div className="space-y-2 pt-2 border-t">
+                    <ImageUploader
+                      label="Logo Toko / Outlet (Supabase Storage)"
+                      description="Rasio 1:1 persegi direkomendasikan. Tampil di aplikasi dan struk kasir."
+                      value={storeLogoUrl}
+                      onChange={setStoreLogoUrl}
+                      bucket="storefront_images"
+                      aspectRatio="square"
+                      previewHeight="h-32"
                     />
                   </div>
 
@@ -745,20 +761,15 @@ export function SettingsClient({
                           <CardContent className="space-y-5">
                             {/* LOGO URL */}
                             <div className="space-y-2">
-                              <Label htmlFor="receiptLogoUrl" className="font-semibold text-xs uppercase tracking-wider text-slate-700">
-                                URL / Link Gambar Logo Struk
-                              </Label>
-                              <Input
-                                id="receiptLogoUrl"
-                                type="url"
-                                value={receiptLogoUrl}
-                                onChange={(e) => setReceiptLogoUrl(e.target.value)}
-                                placeholder="https://example.com/logo.png"
-                                className="bg-slate-50/50 text-sm h-10"
+                              <ImageUploader
+                                label="Logo Struk Kasir (Supabase Storage)"
+                                description="Unggah logo hitam-putih atau transparan untuk struk kasir. Kosongkan jika ingin menggunakan logo utama toko."
+                                value={receiptLogoUrl || null}
+                                onChange={(val) => setReceiptLogoUrl(val || '')}
+                                bucket="storefront_images"
+                                aspectRatio="square"
+                                previewHeight="h-32"
                               />
-                              <p className="text-xs text-muted-foreground">
-                                Masukkan link langsung gambar logo. Kosongkan jika ingin menggunakan logo utama toko.
-                              </p>
                             </div>
 
                             {/* HEADER */}

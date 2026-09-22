@@ -111,19 +111,25 @@ export async function updateStoreGeneralSettings(formData: FormData) {
 
     const name = formData.get('name') as string;
     const storeDescription = formData.get('storeDescription') as string;
+    const storeLogoUrl = formData.get('storeLogoUrl') as string | null;
     const primaryColor = (formData.get('primaryColor') as string) || '#2563EB';
 
     if (!name || name.trim() === '') {
       return { success: false, error: 'Nama toko tidak boleh kosong' };
     }
 
+    const updatePayload: any = {
+      name,
+      storeDescription,
+      primaryColor,
+      updatedAt: new Date(),
+    };
+    if (storeLogoUrl !== undefined) {
+      updatePayload.storeLogoUrl = storeLogoUrl ? storeLogoUrl.trim() : null;
+    }
+
     await db.update(tenants)
-      .set({
-        name,
-        storeDescription,
-        primaryColor,
-        updatedAt: new Date(),
-      })
+      .set(updatePayload)
       .where(eq(tenants.id, user.tenantId));
 
     if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }

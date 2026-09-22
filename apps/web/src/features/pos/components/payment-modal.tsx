@@ -349,7 +349,7 @@ export function PaymentModal({ isOpen, onClose, subtotalAmount, onConfirm, posSe
                     <span className="text-[11px] text-green-700 dark:text-green-400">Promo berhasil diterapkan</span>
                   </div>
                 </div>
-                <span className="font-extrabold text-sm text-green-700 dark:text-green-300">
+                <span className="font-bold text-sm text-green-700 dark:text-green-300">
                   -{formatCurrency(appliedPromo.discountAmount)}
                 </span>
               </div>
@@ -430,7 +430,7 @@ export function PaymentModal({ isOpen, onClose, subtotalAmount, onConfirm, posSe
 
             <div className="border-t pt-2 flex justify-between items-center">
               <span className="font-bold text-sm">Total Tagihan:</span>
-              <span className="font-extrabold text-2xl text-primary">{formatCurrency(grandTotal)}</span>
+              <span className="font-bold text-2xl text-primary">{formatCurrency(grandTotal)}</span>
             </div>
 
             {/* Platform online food deduction info */}
@@ -524,7 +524,7 @@ export function PaymentModal({ isOpen, onClose, subtotalAmount, onConfirm, posSe
                   <span className="text-xs font-medium block mb-0.5">
                     {change >= 0 ? 'Kembalian' : 'Uang Kurang'}
                   </span>
-                  <span className="text-2xl font-extrabold">
+                  <span className="text-2xl font-bold">
                     {formatCurrency(Math.abs(change))}
                   </span>
                 </div>
