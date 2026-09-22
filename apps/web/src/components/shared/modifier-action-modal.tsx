@@ -42,7 +42,7 @@ export function ModifierActionModal({
           style={{
             "--outlet-primary": primaryColor || "var(--catalog-primary, #f43f5e)",
           } as React.CSSProperties}
-          className="fixed bottom-0 left-0 right-0 z-50 w-full sm:left-1/2 sm:-translate-x-1/2 sm:max-w-md md:max-w-lg rounded-t-[28px] sm:rounded-t-[32px] rounded-b-none p-0 m-0 flex flex-col bg-white shadow-2xl overflow-hidden outline-none border-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom duration-300"
+          className="fixed bottom-0 left-0 right-0 z-50 w-full sm:left-1/2 sm:-translate-x-1/2 sm:max-w-md rounded-t-[28px] sm:rounded-t-[32px] rounded-b-none p-0 m-0 flex flex-col bg-white shadow-2xl overflow-hidden outline-none border-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom duration-300"
         >
           <DialogTitle className="sr-only">Pilihan {product.name}</DialogTitle>
 
@@ -146,14 +146,14 @@ export function ModifierActionModal({
           </div>
 
           {/* 3. Bottom Sticky Bar: "Make another" Button */}
-          <div className="p-4 sm:p-5 pb-6 border-t border-gray-100 bg-white">
+          <div className="p-4 sm:p-5 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-gray-100 bg-white">
             <button
               type="button"
               onClick={() => {
                 onClose();
                 onMakeAnother(product);
               }}
-              className="w-full h-14 sm:h-14 rounded-2xl text-white font-semibold text-base shadow-sm hover:opacity-95 active:scale-[0.99] flex items-center justify-center transition-all cursor-pointer"
+              className="w-full h-12 sm:h-13 rounded-xl sm:rounded-2xl text-white font-semibold text-sm sm:text-base shadow-sm hover:opacity-95 active:scale-[0.99] flex items-center justify-center transition-all cursor-pointer"
               style={{
                 backgroundColor: "var(--outlet-primary, #f43f5e)",
               }}

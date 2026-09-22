@@ -374,56 +374,56 @@ export function CheckoutClient({
         />
       )}
 
-      {/* Sticky Cart Top Navigation Header (Taller & Prominent) */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-100 shadow-[0_4px_12px_rgba(0,0,0,0.06)]">
-        <div className="max-w-2xl mx-auto px-4 h-20 sm:h-20 flex items-center justify-between">
-          <div className="w-11 flex items-center justify-start">
+      {/* Floating Cart Top Navigation Header (Edge-to-edge with shadow) */}
+      <header className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.08)] pt-[env(safe-area-inset-top)]">
+        <div className="max-w-md mx-auto px-4 h-14 sm:h-16 flex items-center justify-between">
+          <div className="w-9 flex items-center justify-start">
             <Link
               href={`/store/${tenantSlug}${tableNumber ? `?table=${tableNumber}` : ''}`}
-              className="w-11 h-11 -ml-2 flex items-center justify-center rounded-full text-gray-800 hover:text-gray-900 hover:bg-gray-100 active:scale-95 transition-all cursor-pointer"
+              className="w-9 h-9 -ml-1 flex items-center justify-center rounded-full text-gray-800 hover:text-gray-900 hover:bg-gray-100 active:scale-95 transition-all cursor-pointer"
               aria-label="Kembali ke Menu"
             >
-              <ArrowLeft className="w-6 h-6 stroke-[2.4]" />
+              <ArrowLeft className="w-5 h-5 stroke-[2.2]" />
             </Link>
           </div>
 
-          <h1 className="font-semibold text-xl sm:text-2xl text-gray-900 tracking-tight text-center truncate px-2">
+          <h1 className="font-semibold text-base sm:text-lg text-gray-900 tracking-tight text-center truncate px-2 ">
             Keranjang
           </h1>
 
-          <div className="w-11 shrink-0" aria-hidden="true" />
+          <div className="w-9 shrink-0" aria-hidden="true" />
         </div>
       </header>
 
-      {/* Main Content Container with generous bottom padding for taller sticky footer */}
-      <main className="max-w-2xl mx-auto px-4 py-4 sm:py-5 pb-48 sm:pb-52 w-full space-y-6">
+      {/* Main Content Container with top padding for fixed header and bottom padding for fixed footer */}
+      <main className="max-w-md mx-auto px-3.5 sm:px-4 pt-20 sm:pt-24 pb-36 sm:pb-40 w-full space-y-4">
         {items.length === 0 ? (
-          <div className="bg-white p-8 sm:p-12 rounded-2xl border border-gray-200 shadow-sm text-center flex flex-col items-center justify-center space-y-4 my-4 sm:my-8">
-            <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center text-gray-400">
-              <ShoppingBag className="w-8 h-8 stroke-[1.8]" />
+          <div className="bg-white p-6 sm:p-8 rounded-2xl border border-gray-200/90 shadow-2xs text-center flex flex-col items-center justify-center space-y-3.5 my-4 sm:my-6">
+            <div className="w-14 h-14 rounded-2xl bg-gray-50 flex items-center justify-center text-gray-400">
+              <ShoppingBag className="w-7 h-7 stroke-[1.8]" />
             </div>
-            <div className="space-y-1.5 max-w-sm">
-              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Keranjang Masih Kosong</h2>
-              <p className="text-sm text-gray-500">
+            <div className="space-y-1 max-w-sm">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900">Keranjang Masih Kosong</h2>
+              <p className="text-xs sm:text-sm text-gray-500">
                 Belum ada menu yang dipilih. Silakan kembali ke menu untuk memilih pesanan Anda.
               </p>
             </div>
             <Link
               href={`/store/${tenantSlug}${tableNumber ? `?table=${tableNumber}` : ""}`}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-catalog-primary text-white font-semibold text-sm hover:bg-catalog-primary/90 transition-all shadow-sm active:scale-98 cursor-pointer mt-2"
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-catalog-primary text-white font-semibold text-xs sm:text-sm hover:bg-catalog-primary/90 transition-all shadow-xs active:scale-98 cursor-pointer mt-1"
             >
               <span>Pilih Menu Sekarang</span>
             </Link>
           </div>
         ) : (
-          <div className="bg-white p-5 sm:p-7 rounded-2xl border border-gray-200 shadow-sm space-y-7 sm:space-y-8">
+          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200/90 shadow-2xs space-y-5 sm:space-y-6">
             {/* 1. INFORMASI PEMESANAN (DI PALING ATAS) */}
-          <div className="space-y-5">
-            <div className="border-b border-gray-100 pb-3.5">
-              <h2 className="font-semibold text-xl sm:text-2xl text-gray-900 tracking-tight">
+          <div className="space-y-4">
+            <div className="border-b border-gray-100 pb-3">
+              <h2 className="font-semibold text-base sm:text-lg text-gray-900 tracking-tight">
                 Informasi Pemesanan
               </h2>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 mt-0.5">
                 Pilih tipe layanan dan lengkapi rincian pemesanan Anda
               </p>
             </div>
@@ -621,16 +621,16 @@ export function CheckoutClient({
               </div>
               <Link
                 href={`/store/${tenantSlug}${tableNumber ? `?table=${tableNumber}` : ''}`}
-                className="text-sm sm:text-sm font-semibold text-catalog-primary hover:bg-catalog-primary/5 px-3.5 py-1.5 rounded-xl border border-catalog-primary/30 flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="text-xs font-semibold text-catalog-primary hover:bg-catalog-primary/5 px-2.5 py-1 rounded-lg border border-catalog-primary/30 flex items-center gap-1 transition-colors cursor-pointer"
               >
-                <Plus className="w-6 h-6 stroke-[2.5]" />
+                <Plus className="w-3.5 h-3.5 stroke-[2.2]" />
                 <span>Add Item</span>
               </Link>
             </div>
             <div className="divide-y divide-gray-100">
               {items.map((item) => (
-                <div key={item.cartItemId} className="py-4 sm:py-5 flex gap-4 sm:gap-5 items-start">
-                  <div className="h-28 w-28 sm:h-24 sm:w-24 bg-gray-50 rounded-2xl flex-shrink-0 border border-gray-100 overflow-hidden relative flex items-center justify-center">
+                <div key={item.cartItemId} className="py-3 sm:py-3.5 flex gap-3 sm:gap-4 items-start">
+                  <div className="h-20 w-20 sm:h-22 sm:w-22 bg-gray-50 rounded-2xl flex-shrink-0 border border-gray-100 overflow-hidden relative flex items-center justify-center">
                     <CheckoutItemThumbnail
                       src={item.imageUrl}
                       alt={item.name}
@@ -639,23 +639,23 @@ export function CheckoutClient({
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="font-semibold text-base sm:text-lg text-gray-900 leading-snug line-clamp-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="font-semibold text-sm sm:text-base text-gray-900 leading-snug line-clamp-2">
                         {item.name}
                       </div>
-                      <div className="font-semibold text-base sm:text-lg text-gray-900 whitespace-nowrap">
+                      <div className="font-semibold text-sm sm:text-base text-gray-900 whitespace-nowrap">
                         {formatCurrency(item.price * item.quantity)}
                       </div>
                     </div>
 
-                    <div className="text-sm text-gray-500 mt-0.5">
+                    <div className="text-xs text-gray-500 mt-0.5">
                       {formatCurrency(item.price)} / porsi
                     </div>
 
                     {item.modifiers && item.modifiers.length > 0 && (
                       <div
                         onClick={() => handleOpenEditSheet(item)}
-                        className="text-sm text-gray-600 mt-1 cursor-pointer hover:text-gray-900 transition-colors line-clamp-2"
+                        className="text-xs text-gray-600 mt-1 cursor-pointer hover:text-gray-900 transition-colors line-clamp-2"
                         title="Klik untuk mengubah pilihan"
                       >
                         {item.modifiers
@@ -669,42 +669,42 @@ export function CheckoutClient({
                     )}
 
                     {item.notes && (
-                      <div className="text-xs sm:text-sm text-gray-600 italic mt-1.5 bg-amber-50/70 border border-amber-200/60 rounded-xl px-3 py-1 line-clamp-2">
+                      <div className="text-[11px] text-gray-600 italic mt-1 bg-amber-50/70 border border-amber-200/60 rounded-lg px-2.5 py-0.5 line-clamp-2">
                         "{item.notes}"
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between mt-3.5 pt-1">
-                      {/* Stepper: Circular buttons without outer container border */}
-                      <div className="flex items-center gap-2.5 sm:gap-3">
+                    <div className="flex items-center justify-between mt-2.5 pt-0.5">
+                      {/* Stepper: Circular buttons */}
+                      <div className="flex items-center gap-2">
                         <button
                           type="button"
                           onClick={() => updateQuantity(item.cartItemId, item.quantity - 1)}
-                          className="w-8 h-8 sm:w-8 sm:h-8 flex items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 active:scale-95 transition-all shadow-2xs cursor-pointer"
+                          className="w-7 h-7 flex items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 active:scale-95 transition-all shadow-2xs cursor-pointer"
                           aria-label="Kurangi jumlah"
                         >
-                          <Minus className="w-4 h-4 stroke-[2.5]" />
+                          <Minus className="w-3.5 h-3.5 stroke-[2.2]" />
                         </button>
-                        <span className="text-base sm:text-lg font-semibold w-7 sm:w-8 text-center text-gray-900 tabular-nums select-none">
+                        <span className="text-sm font-semibold w-6 text-center text-gray-900 tabular-nums select-none">
                           {item.quantity}
                         </span>
                         <button
                           type="button"
                           onClick={() => updateQuantity(item.cartItemId, item.quantity + 1)}
-                          className="w-8 h-8 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-catalog-primary text-white hover:bg-catalog-primary/90 active:scale-95 transition-all shadow-xs cursor-pointer"
+                          className="w-7 h-7 flex items-center justify-center rounded-full bg-catalog-primary text-white hover:bg-catalog-primary/90 active:scale-95 transition-all shadow-xs cursor-pointer"
                           aria-label="Tambah jumlah"
                         >
-                          <Plus className="w-4 h-4 stroke-[2.5]" />
+                          <Plus className="w-3.5 h-3.5 stroke-[2.2]" />
                         </button>
                       </div>
 
                       <button
                         type="button"
                         onClick={() => handleOpenEditSheet(item)}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-catalog-primary bg-catalog-primary/10 hover:bg-catalog-primary/20 border border-catalog-primary/20 transition-all active:scale-95 cursor-pointer"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-catalog-primary bg-catalog-primary/10 hover:bg-catalog-primary/20 border border-catalog-primary/20 transition-all active:scale-95 cursor-pointer"
                         aria-label={`Edit ${item.name}`}
                       >
-                        <Pencil className="w-4 h-4 stroke-[2.2]" />
+                        <Pencil className="w-3 h-3 stroke-[2.2]" />
                         <span>Edit</span>
                       </button>
                     </div>
@@ -871,13 +871,13 @@ export function CheckoutClient({
       )}
     </main>
 
-    {/* Sticky Bottom Footer (Taller & Prominent with Rounded Top) */}
-    <footer className="fixed bottom-0 left-0 right-0 z-40 bg-white rounded-t-[32px] sm:rounded-t-[36px] border-t border-gray-100 shadow-[0_-12px_40px_rgba(0,0,0,0.09)]">
-      <div className="max-w-2xl mx-auto px-6 sm:px-8 py-5 sm:py-6 flex items-center justify-between gap-4">
+    {/* Sticky Bottom Footer (Constrained to max-w-md with safe-area padding) */}
+    <footer className="fixed bottom-0 left-0 right-0 z-40 bg-white rounded-t-2xl sm:rounded-t-3xl border-t border-gray-100 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <div className="max-w-md mx-auto px-4 py-3 sm:py-3.5 flex items-center justify-between gap-3">
         {/* Left: Total Pembayaran */}
-        <div className="flex flex-col min-w-0">
-          <span className="text-xs sm:text-sm text-gray-500 font-medium mb-1">Total Pembayaran</span>
-          <span className="text-2xl sm:text-3xl font-semibold text-gray-900 tracking-tight whitespace-nowrap">
+        <div className="flex flex-col shrink-0 justify-center">
+          <span className="text-[11px] text-gray-500 font-medium leading-none mb-1">Total Pembayaran</span>
+          <span className="text-lg sm:text-xl font-semibold text-gray-900 tracking-tight leading-tight whitespace-nowrap">
             {formatCurrency(grandTotal)}
           </span>
         </div>
@@ -887,12 +887,12 @@ export function CheckoutClient({
           type="button"
           onClick={handleProceedToPayment}
           disabled={items.length === 0 || isLoading}
-          className="h-14 sm:h-15 px-7 sm:px-9 bg-catalog-primary hover:bg-catalog-primary/90 text-white rounded-2xl font-semibold text-base sm:text-lg shadow-sm active:scale-[0.98] transition-all cursor-pointer shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="h-11 sm:h-12 px-4 sm:px-5 bg-catalog-primary hover:bg-catalog-primary/90 text-white rounded-xl font-semibold text-xs sm:text-sm shadow-xs active:scale-[0.98] transition-all cursor-pointer shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? (
-            <div className="flex items-center gap-2">
-              <Loader2 className="w-5 h-5 animate-spin shrink-0" />
-              <span>Membuat Pesanan...</span>
+            <div className="flex items-center gap-1.5">
+              <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+              <span>Memproses...</span>
             </div>
           ) : (
             <span>

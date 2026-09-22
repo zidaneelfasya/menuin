@@ -299,70 +299,70 @@ export function CatalogProductList({
         className="group py-2 sm:py-2 flex items-center justify-between gap-3.5 sm:gap-6 border-b border-gray-150 sm:border-gray-200 last:border-b-0 cursor-pointer transition-colors w-full"
       >
         {/* Left Column: Title, Sold Count, Description, Price, Tambah Button */}
-        <div className="flex-1 min-w-0 pr-2 sm:pr-4 flex flex-col justify-between py-2">
-          <div className="space-y-1">
+        <div className="flex-1 min-w-0 pr-2 sm:pr-3 flex flex-col justify-between py-1">
+          <div className="space-y-0.5">
             {/* Title */}
-            <h4 className="font-semibold text-base sm:text-base md:text-lg text-gray-900 uppercase leading-snug line-clamp-2 group-hover:text-catalog-primary transition-colors">
+            <h4 className="font-semibold text-sm sm:text-base text-gray-900 leading-snug line-clamp-2 group-hover:text-catalog-primary transition-colors">
               {product.name}
             </h4>
 
             {/* Sold Count */}
             {soldText && (
-              <div className="inline-flex items-center gap-1 text-[12px] sm:text-xs font-semibold text-gray-500 py-0.5">
+              <div className="inline-flex items-center gap-1 text-[11px] font-medium text-gray-500 py-0.5">
                 <span>{soldText}</span>
               </div>
             )}
 
             {/* Description */}
             {product.description && product.description.trim() !== "" && (
-              <p className="text-xs sm:text-[13px] text-gray-500 line-clamp-2 leading-relaxed pt-0.5">
+              <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed pt-0.5">
                 {product.description}
               </p>
             )}
           </div>
 
           {/* Bottom Area: Price & Tambah / Stepper Directly Below Price */}
-          <div className="pt-2.5 sm:pt-3 mt-auto space-y-2">
+          <div className="pt-2 mt-auto space-y-1.5">
             <div>
-              <span className="font-semibold  text-base sm:text-base md:text-lg text-gray-900 block leading-tight">
+              <span className="font-semibold text-sm sm:text-base text-gray-900 block leading-tight">
                 {formatCurrency(Number(product.price))}
               </span>
             </div>
 
-            {/* Action Button: Located below the price (taller) */}
-            <div className="py-2"> 
+            {/* Action Button: Located below the price */}
+            <div className="py-1"> 
               {totalQty === 0 ? (
                 <button
                   type="button"
                   onClick={(e) => handleAddButtonClick(e, product)}
-                  className="w-full h-10 sm:h-9.5 px-5 sm:px-6 rounded-full border-2 border-catalog-primary bg-white text-catalog-primary hover:bg-catalog-primary hover:text-white font-semibold text-sm sm:text-sm flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-2xs"
+                  className="w-full h-8 sm:h-8.5 px-4 rounded-full border border-catalog-primary bg-white text-catalog-primary hover:bg-catalog-primary hover:text-white font-semibold text-xs flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-2xs"
                 >
                   Tambah
                 </button>
               ) : (
-                /* Stepper without border, taller buttons */
+                /* Stepper without border */
                 <div
                   onClick={(e) => e.stopPropagation()}
-                  className="flex items-center justify-between gap-3"
+                  className="flex items-center justify-between gap-2"
                 >
                   <button
                     type="button"
                     onClick={(e) => handleMinusClick(e, product)}
-                    className="w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-full flex items-center justify-center bg-catalog-primary/10 text-catalog-primary hover:bg-catalog-primary/20 transition-colors cursor-pointer active:scale-90"
+                    className="w-7 h-7 rounded-full flex items-center justify-center bg-catalog-primary/10 text-catalog-primary hover:bg-catalog-primary/20 transition-colors cursor-pointer active:scale-90"
                     aria-label={`Kurangi ${product.name}`}
                   >
-                    <Minus className="w-4 h-4 stroke-[2.5]" />
+                    <Minus className="w-3.5 h-3.5 stroke-[2.2]" />
                   </button>
-                  <span className="text-base sm:text-base font-bold text-gray-900 min-w-[20px] text-center select-none font-mono">
+                  <span className="text-sm font-semibold text-gray-900 min-w-[18px] text-center select-none font-sans">
                     {totalQty}
                   </span>
                   <button
                     type="button"
                     onClick={(e) => handlePlusClick(e, product)}
-                    className="w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-full flex items-center justify-center bg-catalog-primary text-white hover:bg-catalog-primary/90 transition-colors cursor-pointer active:scale-90 shadow-2xs"
+                    className="w-7 h-7 rounded-full flex items-center justify-center bg-catalog-primary text-white hover:bg-catalog-primary/90 transition-colors cursor-pointer active:scale-90 shadow-2xs"
                     aria-label={`Tambah ${product.name}`}
                   >
-                    <Plus className="w-4 h-4 stroke-[2.5]" />
+                    <Plus className="w-3.5 h-3.5 stroke-[2.2]" />
                   </button>
                 </div>
               )}
@@ -371,7 +371,7 @@ export function CatalogProductList({
         </div>
 
         {/* Right Column: Square Image centered vertically */}
-        <div className="w-44 h-44 sm:w-36 sm:h-36 md:w-40 md:h-40 rounded-xl bg-gray-100 overflow-hidden relative border border-gray-200/80 shadow-xs shrink-0 aspect-square self-center">
+        <div className="w-24 h-24 sm:w-24 sm:h-24 rounded-2xl bg-gray-100 overflow-hidden relative border border-gray-150 shadow-2xs shrink-0 aspect-square self-center">
           {product.imageUrl && !hasImageError ? (
             <img
               src={product.imageUrl}
@@ -381,7 +381,7 @@ export function CatalogProductList({
             />
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-50 p-2 text-center">
-              <Utensils className="w-6 h-6 text-gray-300 mb-1" />
+              <Utensils className="w-5 h-5 text-gray-300 mb-1" />
               <span className="text-[10px] text-gray-400 font-medium leading-tight line-clamp-1">{product.name}</span>
             </div>
           )}
@@ -476,7 +476,7 @@ export function CatalogProductList({
                 >
                   <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
                 </button>
-                <span className="font-bold text-xs sm:text-sm text-gray-900 font-mono min-w-[20px] text-center">
+                <span className="font-bold text-xs sm:text-sm text-gray-900 font-sans min-w-[20px] text-center">
                   {totalQty}
                 </span>
                 <button
@@ -535,9 +535,9 @@ export function CatalogProductList({
                   }}
                   type="button"
                   onClick={() => scrollToCategory(cat.id)}
-                  className={`pb-2.5 pt-1.5 px-1 text-md sm:text-md font-semibold uppercase tracking-wider transition-colors shrink-0 relative cursor-pointer ${
+                  className={`pb-2 pt-1 px-1 text-xs sm:text-sm font-semibold uppercase tracking-wider transition-colors shrink-0 relative cursor-pointer ${
                     isActive
-                      ? "text-catalog-primary font-black"
+                      ? "text-catalog-primary"
                       : "text-gray-500 hover:text-gray-800"
                   }`}
                 >
@@ -645,41 +645,38 @@ export function CatalogProductList({
         )}
       </div>
 
-      {/* Floating Cart Bar (Screenshot 4) */}
+      {/* Floating Cart Bar */}
       {getTotalItems() > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 p-3 sm:p-4 z-40 bg-gradient-to-t from-[#f8fafc] via-[#f8fafc]/90 to-transparent">
-          <div className="max-w-2xl mx-auto">
+        <div className="fixed bottom-0 left-0 right-0 p-3 sm:p-4 z-40 bg-gradient-to-t from-[#f8fafc] via-[#f8fafc]/90 to-transparent pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <div className="max-w-md mx-auto">
             <Link
               href={`/store/${tenantSlug}/checkout${tableParam ? `?table=${tableParam}` : ""}`}
               className="block w-full"
             >
-              <div className="bg-catalog-primary text-white rounded-2xl px-4 py-3 sm:py-3.5 flex items-center justify-between shadow-xl hover:opacity-95 transition-transform active:scale-[0.99] gap-3">
+              <div className="bg-catalog-primary text-white rounded-2xl px-3.5 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between shadow-lg hover:opacity-95 transition-transform active:scale-[0.99] gap-3">
                 {/* Left: Bag icon with Badge & Total Price */}
-                <div className="flex items-center gap-3 min-w-0">
+                <div className="flex items-center gap-2.5 min-w-0">
                   <div className="relative shrink-0 flex items-center justify-center">
-                    <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                      <ShoppingBag className="h-5 w-5 text-white stroke-[2.2]" />
+                    <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
+                      <ShoppingBag className="h-4.5 w-4.5 text-white stroke-[2.2]" />
                     </div>
-                    <span className="absolute -top-1.5 -right-1.5 bg-slate-900 text-white text-[10px] font-black h-5 w-5 rounded-full flex items-center justify-center shadow-md border border-white">
-                      {getTotalItems()}
-                    </span>
+                    
                   </div>
 
                   <div className="min-w-0 leading-tight">
-                    <span className="text-[11px] text-white/80 block uppercase font-semibold tracking-wider">
+                    <span className="text-[10px] text-white/80 block uppercase font-medium tracking-wider">
                       Total
                     </span>
-                    <span className="text-base sm:text-lg font-semibold text-white">
+                    <span className=" text-sm sm:text-base font-semibold text-white">
                       {formatCurrency(getTotalPrice())}
                     </span>
                   </div>
                 </div>
 
-                {/* Right: Prominent "CHECK OUT (X)" Button */}
-                <div className="shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-base sm:text-base font-semibold uppercase tracking-wider">
-                  <span>CHECK OUT ({getTotalItems()})</span>
+                {/* Right: Checkout Button */}
+                <div className="shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white text-catalog-primary text-xs sm:text-sm font-semibold tracking-wide shadow-xs">
+                  <span>Checkout</span>
                   
-
                 </div>
               </div>
             </Link>

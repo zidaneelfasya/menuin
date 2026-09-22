@@ -256,7 +256,7 @@ export function ProductDetailSheet({
             style={{
               "--outlet-primary": primaryColor || "var(--catalog-primary, #f43f5e)",
             } as React.CSSProperties}
-            className="fixed bottom-0 left-0 right-0 z-50 w-full sm:left-1/2 sm:-translate-x-1/2 sm:max-w-md md:max-w-lg h-[90vh] max-h-[92vh] sm:h-[88vh] sm:max-h-[88vh] rounded-t-[28px] sm:rounded-t-[32px] rounded-b-none p-0 m-0 flex flex-col bg-white shadow-2xl overflow-hidden outline-none border-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom duration-300"
+            className="fixed bottom-0 left-0 right-0 z-50 w-full sm:left-1/2 sm:-translate-x-1/2 sm:max-w-md h-[90vh] max-h-[92vh] sm:h-[88vh] sm:max-h-[88vh] rounded-t-[28px] sm:rounded-t-[32px] rounded-b-none p-0 m-0 flex flex-col bg-white shadow-2xl overflow-hidden outline-none border-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom duration-300"
           >
             <DialogTitle className="sr-only">{product.name}</DialogTitle>
 
@@ -460,10 +460,10 @@ export function ProductDetailSheet({
           </div>
 
           {/* 5. Sticky Bottom Bar: Total Order Stepper & Add Orders CTA Button */}
-          <div className="bg-white border-t border-gray-150 p-4 sm:p-5 pb-5 sm:pb-6 shadow-lg flex flex-col gap-4 shrink-0 z-20">
+          <div className="bg-white border-t border-gray-150 p-4 sm:p-5 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-lg flex flex-col gap-3.5 shrink-0 z-20">
             {/* Stepper Row: "Total Order" + [-] [qty] [+] */}
             <div className="flex items-center justify-between">
-              <span className="text-lg sm:text-lg font-medium text-gray-900 tracking-tight">
+              <span className="text-base sm:text-lg font-medium text-gray-900 tracking-tight">
                 Total Order
               </span>
               <div className="flex items-center gap-3">
@@ -471,7 +471,7 @@ export function ProductDetailSheet({
                   type="button"
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
                   disabled={quantity <= 1}
-                  className="w-8 h-8 sm:w-8 sm:h-8 rounded-full border border-gray-900 flex items-center justify-center text-gray-900 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed active:scale-90 transition-all cursor-pointer"
+                  className="w-8 h-8 rounded-full border border-gray-900 flex items-center justify-center text-gray-900 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed active:scale-90 transition-all cursor-pointer"
                   aria-label="Kurangi jumlah pesanan"
                 >
                   <Minus className="w-4 h-4 stroke-[2.5]" />
@@ -482,7 +482,7 @@ export function ProductDetailSheet({
                 <button
                   type="button"
                   onClick={() => setQuantity(quantity + 1)}
-                  className="w-8 h-8 sm:w-8 sm:h-8 rounded-full border border-gray-900 flex items-center justify-center text-gray-900 hover:bg-gray-100 active:scale-90 transition-all cursor-pointer"
+                  className="w-8 h-8 rounded-full border border-gray-900 flex items-center justify-center text-gray-900 hover:bg-gray-100 active:scale-90 transition-all cursor-pointer"
                   aria-label="Tambah jumlah pesanan"
                 >
                   <Plus className="w-4 h-4 stroke-[2.5]" />
@@ -502,7 +502,7 @@ export function ProductDetailSheet({
               type="button"
               disabled={!isValid}
               onClick={handleAddAction}
-              className="w-full h-14 sm:h-14 rounded-2xl font-semibold text-base sm:text-lg text-white shadow-sm flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-95 active:scale-[0.99] cursor-pointer"
+              className="w-full h-12 sm:h-13 rounded-xl sm:rounded-2xl font-semibold text-sm sm:text-base text-white shadow-sm flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-95 active:scale-[0.99] cursor-pointer"
               style={{
                 backgroundColor: isValid
                   ? 'var(--catalog-primary, #f43f5e)'

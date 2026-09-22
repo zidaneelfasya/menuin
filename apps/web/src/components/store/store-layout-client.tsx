@@ -18,18 +18,22 @@ export function StoreLayoutClient({
 
   if (isCleanLayout) {
     return (
-      <div className="min-h-screen bg-[#f8fafc] font-sans text-gray-800 w-full">
-        {children}
+      <div className="min-h-screen bg-slate-100/60 font-sans text-gray-800 w-full flex justify-center">
+        <div className="w-full max-w-md min-h-screen bg-[#f8fafc] relative">
+          {children}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] pb-24 font-sans text-gray-800 w-full max-w-full overflow-x-clip">
-      <StoreHeroHeader {...headerProps} />
-      <main className="max-w-2xl mx-auto px-4 py-4 w-full">
-        {children}
-      </main>
+    <div className="min-h-screen bg-slate-100/60 font-sans text-gray-800 w-full flex justify-center">
+      <div className="w-full max-w-md min-h-screen bg-[#f8fafc] pb-24 relative overflow-x-clip">
+        <StoreHeroHeader {...headerProps} />
+        <main className="w-full px-3.5 sm:px-4 py-3 sm:py-4">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }
