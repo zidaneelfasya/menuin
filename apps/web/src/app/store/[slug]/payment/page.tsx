@@ -459,9 +459,7 @@ export default function OnlinePaymentPage({
               <h3 className="font-semibold text-xs sm:text-sm tracking-wider text-gray-500 uppercase">
                 Metode Pembayaran
               </h3>
-              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
-                Midtrans Online
-              </span>
+              
             </div>
 
             <div className="p-3.5 rounded-xl border-2 border-catalog-primary bg-catalog-primary/5 flex items-start gap-3">
@@ -520,7 +518,7 @@ export default function OnlinePaymentPage({
       </main>
 
       {/* Sticky Bottom Footer (Constrained to max-w-md with safe-area padding) */}
-      <footer className="fixed bottom-0 left-0 right-0 z-40 bg-white rounded-t-2xl sm:rounded-t-3xl border-t border-gray-100 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <footer className="fixed bottom-0 left-0 right-0 z-40 bg-white rounded-t-2xl sm:rounded-t-3xl border-t border-gray-100 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] ">
         <div className="max-w-md mx-auto px-4 py-3 sm:py-3.5 flex items-center justify-between gap-3">
           {/* Left: Total Tagihan */}
           <div className="flex flex-col shrink-0 justify-center">

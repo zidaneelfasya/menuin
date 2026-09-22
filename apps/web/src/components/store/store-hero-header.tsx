@@ -4,9 +4,9 @@ import * as React from 'react';
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Search, Share2, ArrowLeft, ChevronRight } from 'lucide-react';
-import { toast } from 'sonner';
+import { ArrowLeft } from 'lucide-react';
 import { OutletDetailModal } from './outlet-detail-modal';
+import { StoreHamburgerMenu } from './store-hamburger-menu';
 
 export interface StoreHeroHeaderProps {
   tenant: {
@@ -48,62 +48,40 @@ export function StoreHeroHeader({
     return null;
   }
 
-  const handleShare = async (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    if (typeof window !== 'undefined') {
-      try {
-        if (navigator.share) {
-          await navigator.share({
-            title: tenant.name,
-            text: tenant.storeDescription || `Pesan menu lezat di ${tenant.name}`,
-            url: window.location.href,
-          });
-        } else {
-          await navigator.clipboard.writeText(window.location.href);
-          toast.success('Link toko berhasil disalin ke clipboard!');
-        }
-      } catch {
-        try {
-          await navigator.clipboard.writeText(window.location.href);
-          toast.success('Link toko berhasil disalin ke clipboard!');
-        } catch {
-          // ignore
-        }
-      }
-    }
-  };
-
   return (
     <div className="w-full max-w-full overflow-x-clip">
-      {/* 1. Hero Banner Area (Clickable to view full outlet photo) */}
-      <div
-        onClick={() => setIsOutletDetailOpen(true)}
-        className="w-full h-36 sm:h-44 md:h-52 relative overflow-hidden bg-slate-900 cursor-pointer group"
-      >
-        {tenant.storeBannerUrl ? (
-          <img
-            src={tenant.storeBannerUrl}
-            alt={tenant.name}
-            className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500"
-          />
-        ) : (
-          <div
-            className="w-full h-full relative flex items-center justify-center opacity-90"
-            style={{
-              background: `linear-gradient(135deg, color-mix(in srgb, var(--catalog-primary, #f43f5e) 85%, #0f172a), #0f172a)`,
-            }}
-          >
-            <div className="absolute inset-0 bg-[radial-gradient(#ffffff15_1px,transparent_1px)] [background-size:16px_16px]" />
-          </div>
-        )}
+      {/* 1. Hero Banner Area */}
+      <div className="w-full h-36 sm:h-44 md:h-52 relative bg-slate-900">
+        {/* Banner Image Container (Clickable to view full outlet photo) */}
+        <div
+          onClick={() => setIsOutletDetailOpen(true)}
+          className="absolute inset-0 w-full h-full overflow-hidden cursor-pointer group"
+        >
+          {tenant.storeBannerUrl ? (
+            <img
+              src={tenant.storeBannerUrl}
+              alt={tenant.name}
+              className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500"
+            />
+          ) : (
+            <div
+              className="w-full h-full relative flex items-center justify-center opacity-90"
+              style={{
+                background: `linear-gradient(135deg, color-mix(in srgb, var(--catalog-primary, #f43f5e) 85%, #0f172a), #0f172a)`,
+              }}
+            >
+              <div className="absolute inset-0 bg-[radial-gradient(#ffffff15_1px,transparent_1px)] [background-size:16px_16px]" />
+            </div>
+          )}
 
-        {/* Top Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-transparent to-black/35" />
+          {/* Top Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-transparent to-black/35" />
+        </div>
 
         {/* Floating Top Action Bar over Banner */}
         <div
           onClick={(e) => e.stopPropagation()}
-          className="absolute top-2.5 left-2.5 right-2.5 sm:top-3 sm:left-3 sm:right-3 flex items-center justify-between z-20 pointer-events-auto"
+          className="absolute top-2.5 left-2.5 right-2.5 sm:top-3 sm:left-3 sm:right-3 flex items-center justify-between z-30 pointer-events-auto"
         >
           {/* Left: Back / Home Link */}
           <Link
@@ -114,26 +92,13 @@ export function StoreHeroHeader({
             <ArrowLeft className="w-4 h-4 stroke-[2.2]" />
           </Link>
 
-          {/* Right: Cek Pesanan + Share Button */}
-          <div className="flex items-center gap-1.5">
-            <Link
-              href={statusLink}
-              className="bg-black/40 hover:bg-black/60 text-white backdrop-blur-md text-xs font-medium px-3 py-1.5 rounded-full border border-white/20 transition-all shadow-xs flex items-center gap-1.5 active:scale-95 cursor-pointer"
-            >
-              <Search className="w-3.5 h-3.5 stroke-[2.2]" />
-              <span>Cek Pesanan</span>
-            </Link>
-
-            <button
-              type="button"
-              onClick={handleShare}
-              className="w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-md flex items-center justify-center border border-white/20 shadow-xs transition-all active:scale-95 cursor-pointer"
-              aria-label="Bagikan toko"
-              title="Bagikan tautan outlet"
-            >
-              <Share2 className="w-3.5 h-3.5 stroke-[2.2]" />
-            </button>
-          </div>
+          {/* Right: Modern Hamburger Menu with Animation & Rich Options */}
+          <StoreHamburgerMenu
+            tenant={tenant}
+            tableNumber={tableNumber}
+            statusLink={statusLink}
+            onOpenOutletDetail={() => setIsOutletDetailOpen(true)}
+          />
         </div>
       </div>
 
@@ -185,16 +150,13 @@ export function StoreHeroHeader({
                 </span>
               </div>
             )}
-
-            {/* Subtle Affordance Hint: Detail Outlet */}
-           
           </div>
         </div>
       </div>
 
       {/* Outlet Detail Modal */}
       <OutletDetailModal
-        isOpen={(false)}
+        isOpen={isOutletDetailOpen}
         onClose={() => setIsOutletDetailOpen(false)}
         tenant={tenant}
         totalSold={totalSold}
