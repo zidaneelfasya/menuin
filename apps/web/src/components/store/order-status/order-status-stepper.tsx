@@ -62,7 +62,7 @@ export function OrderStatusStepper({
               {/* Connecting Line between steps */}
               {idx > 0 && (
                 <div
-                  className="flex-1 h-0.5 mx-1 sm:mx-1.5 bg-gray-200 relative overflow-hidden rounded-full"
+                  className="flex-1 h-0.5 mx-0.5 sm:mx-1.5 bg-gray-200 relative overflow-hidden rounded-full"
                   aria-hidden="true"
                 >
                   <motion.div
@@ -122,7 +122,7 @@ export function OrderStatusStepper({
 
                 {/* Step Label */}
                 <span
-                  className={`mt-2 text-[10.5px] sm:text-[11px] tracking-tight transition-colors whitespace-nowrap text-center ${
+                  className={`mt-1.5 sm:mt-2 text-[9.5px] sm:text-[11px] tracking-tight transition-colors whitespace-nowrap text-center ${
                     isCancelledOrRejected
                       ? "text-gray-400 font-normal"
                       : isCurrent || isPast

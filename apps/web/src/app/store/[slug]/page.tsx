@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
-import { categories, products, tenants, productModifierGroups, modifierGroups, modifiers } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { categories, products, tenants, productModifierGroups, modifierGroups, transactionItems } from "@/lib/db/schema";
+import { eq, and, sql } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { CatalogProductList } from "./catalog-product-list";
 import { connection } from "next/server";
@@ -41,6 +41,21 @@ export default async function StorePage({
       eq(products.isAvailableOnline, true)
     ));
 
+  // Fetch sales aggregation from transactionItems
+  const salesData = await db
+    .select({
+      productId: transactionItems.productId,
+      totalSold: sql<number>`COALESCE(SUM(${transactionItems.quantity}), 0)::int`,
+    })
+    .from(transactionItems)
+    .where(eq(transactionItems.tenantId, tenant.id))
+    .groupBy(transactionItems.productId);
+
+  const salesMap = new Map<string, number>();
+  salesData.forEach((s) => {
+    salesMap.set(s.productId, Number(s.totalSold));
+  });
+
   // Fetch product modifiers mapping
   const productMods = await db
     .select({
@@ -54,8 +69,9 @@ export default async function StorePage({
   const productsWithMods = productsList.map(p => {
     return {
       ...p,
-      modifierGroupIds: productMods.filter(pm => pm.productId === p.id).map(pm => pm.modifierGroupId)
-    }
+      modifierGroupIds: productMods.filter(pm => pm.productId === p.id).map(pm => pm.modifierGroupId),
+      totalSold: salesMap.get(p.id) || 0,
+    };
   });
 
   // Get all modifier groups for this tenant
@@ -87,6 +103,15 @@ export default async function StorePage({
     }
   });
 
+  // Best Seller: Products with highest sales count (max 5)
+  const bestSellerProducts = productsWithMods
+    .filter((p) => (p.totalSold || 0) > 0)
+    .sort((a, b) => (b.totalSold || 0) - (a.totalSold || 0))
+    .slice(0, 5);
+
+  // Rekomendasi Outlet: Products explicitly toggled as featured
+  const recommendedProducts = productsWithMods.filter((p) => p.isFeatured);
+
   return (
     <div className="space-y-4">
       {tableNumber && (
@@ -102,7 +127,9 @@ export default async function StorePage({
         productsByCategory={productsByCategory} 
         categories={cats} 
         tenantSlug={tenant.slug!} 
-        featuredProducts={productsWithMods.filter(p => p.isFeatured)}
+        bestSellerProducts={bestSellerProducts}
+        recommendedProducts={recommendedProducts}
+        featuredProducts={recommendedProducts}
         modifierGroups={tenantModGroups}
       />
       <ActiveOrderBanner tenantSlug={tenant.slug!} />

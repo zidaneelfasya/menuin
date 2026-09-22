@@ -290,36 +290,30 @@ export function CustomizationModal({
 
             return (
               <div key={group.id} className="space-y-2.5 pb-5 border-b border-gray-100 last:border-b-0">
-                {/* Group Header & Required Badge */}
-                <div className="flex items-center justify-between gap-2">
-                  <div>
-                    <h4 className="font-bold text-sm sm:text-base text-gray-900 tracking-tight">
-                      {group.name}
-                    </h4>
-                  </div>
-                  <span
-                    className={`text-[11px] font-semibold px-2 py-0.5 rounded-full transition-colors ${
+                {/* Group Header */}
+                <div>
+                  <h4 className="font-bold text-sm sm:text-base text-gray-900 tracking-tight">
+                    {group.name}
+                  </h4>
+                  <p
+                    className={`text-xs mt-0.5 font-medium transition-colors ${
                       group.isRequired
                         ? isGroupSatisfied
-                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
-                          : "bg-amber-50 text-amber-700 border border-amber-200/60"
-                        : currentGroupTotalQty >= group.maxSelections
-                        ? "bg-amber-100 text-amber-800 border border-amber-300/80"
-                        : "bg-gray-100 text-gray-500"
+                          ? "text-gray-900"
+                          : "text-amber-600"
+                        : currentGroupTotalQty > 0
+                        ? "text-gray-900"
+                        : "text-gray-500"
                     }`}
                   >
                     {group.isRequired
-                      ? isGroupSatisfied
-                        ? "Terpenuhi"
-                        : group.minSelections > 1
-                        ? `Wajib (Pilih ${group.minSelections})`
-                        : "Wajib pilih"
-                      : currentGroupTotalQty >= group.maxSelections
-                      ? `Maksimal (${group.maxSelections}/${group.maxSelections})`
-                      : group.maxSelections > 1
-                      ? `Opsional (Max ${group.maxSelections})`
-                      : "Opsional"}
-                  </span>
+                      ? group.maxSelections === 1
+                        ? "Must be selected max. 1"
+                        : `Must be selected min. ${group.minSelections || 1}, max. ${group.maxSelections}`
+                      : group.maxSelections === 1
+                      ? "Opsional (Pilih maks. 1)"
+                      : `Opsional (Pilih maks. ${group.maxSelections})`}
+                  </p>
                 </div>
 
                 {/* Max Limit Inline Warning Banner */}
@@ -535,28 +529,28 @@ export function CustomizationModal({
           ) : null}
 
           <div className="flex items-center justify-between gap-3">
-            {/* Quantity Stepper with >= 44px Touch Targets */}
-            <div className="flex items-center gap-1.5 shrink-0 bg-gray-50 p-1 rounded-xl border border-gray-200/80">
+            {/* Quantity Stepper with Touch Targets */}
+            <div className="flex items-center gap-1 shrink-0 bg-gray-50 p-1 rounded-xl border border-gray-200/80">
               <button
                 type="button"
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
                 disabled={quantity <= 1 || unavailableRequiredGroups.length > 0}
-                className="w-11 h-11 rounded-lg bg-white border border-gray-200 shadow-2xs flex items-center justify-center text-gray-700 hover:bg-gray-50 active:scale-95 transition-all disabled:opacity-35 disabled:cursor-not-allowed"
+                className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg bg-white border border-gray-200 shadow-2xs flex items-center justify-center text-gray-700 hover:bg-gray-50 active:scale-95 transition-all disabled:opacity-35 disabled:cursor-not-allowed"
                 aria-label="Kurangi jumlah pesanan"
               >
-                <Minus className="w-4 h-4 stroke-[2.5]" />
+                <Minus className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
               </button>
-              <span className="min-w-[28px] text-center font-black text-base text-gray-900 font-mono">
+              <span className="min-w-[22px] sm:min-w-[28px] text-center font-black text-sm sm:text-base text-gray-900 font-mono">
                 {quantity}
               </span>
               <button
                 type="button"
                 onClick={() => setQuantity(quantity + 1)}
                 disabled={unavailableRequiredGroups.length > 0}
-                className="w-11 h-11 rounded-lg bg-white border border-gray-200 shadow-2xs flex items-center justify-center text-gray-700 hover:bg-gray-50 active:scale-95 transition-all disabled:opacity-35 disabled:cursor-not-allowed"
+                className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg bg-white border border-gray-200 shadow-2xs flex items-center justify-center text-gray-700 hover:bg-gray-50 active:scale-95 transition-all disabled:opacity-35 disabled:cursor-not-allowed"
                 aria-label="Tambah jumlah pesanan"
               >
-                <Plus className="w-4 h-4 stroke-[2.5]" />
+                <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
               </button>
             </div>
 
@@ -565,23 +559,27 @@ export function CustomizationModal({
               type="button"
               disabled={!isValid}
               onClick={handleAddToCart}
-              className="flex-1 h-12 sm:h-13 rounded-xl font-bold text-sm sm:text-base text-white shadow-xs transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-95 active:scale-[0.99]"
+              className="flex-1 h-11 sm:h-12 px-3 sm:px-4 rounded-xl font-bold text-xs sm:text-sm text-white shadow-xs transition-all flex items-center justify-between gap-2 disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-95 active:scale-[0.99] cursor-pointer"
               style={{
                 backgroundColor: isValid
                   ? "var(--outlet-primary, #0E59F9)"
                   : "#9ca3af",
               }}
             >
-              <span>
-                {unavailableRequiredGroups.length > 0
-                  ? "Bahan Utama Habis"
-                  : "Tambah ke Keranjang"}
+              <span className="truncate">
+                {unavailableRequiredGroups.length > 0 ? (
+                  "Bahan Habis"
+                ) : (
+                  <>
+                    <span>Tambah</span>
+                    <span className="hidden sm:inline"> ke Keranjang</span>
+                  </>
+                )}
               </span>
               {isValid && (
-                <>
-                  <span className="opacity-60">&bull;</span>
-                  <span>{formatCurrency(grandTotal)}</span>
-                </>
+                <span className="shrink-0 font-extrabold whitespace-nowrap pl-2 border-l border-white/25">
+                  {formatCurrency(grandTotal)}
+                </span>
               )}
             </button>
           </div>
