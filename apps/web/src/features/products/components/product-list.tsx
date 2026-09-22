@@ -162,11 +162,11 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
     if (result.success) {
       toast.success(
         targetValue
-          ? `${selectedCount} item berhasil dijadikan Best Seller.`
-          : `${selectedCount} item dinonaktifkan dari Best Seller.`
+          ? `${selectedCount} item berhasil dijadikan Rekomendasi Outlet.`
+          : `${selectedCount} item dinonaktifkan dari Rekomendasi Outlet.`
       );
     } else {
-      toast.error(result.error || 'Gagal mengubah status Best Seller');
+      toast.error(result.error || 'Gagal mengubah status Rekomendasi');
       setProductsList(initialData);
     }
   };
@@ -257,12 +257,12 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
 
     const result = await toggleProductBestSeller(product.id, newValue);
     if (!result.success) {
-      toast.error(result.error || 'Gagal mengubah status Best Seller');
+      toast.error(result.error || 'Gagal mengubah status Rekomendasi');
       setProductsList((prev) =>
         prev.map((p) => (p.id === product.id ? { ...p, isFeatured: currentValue } : p))
       );
     } else {
-      toast.success(newValue ? `${product.name} dijadikan Best Seller.` : `${product.name} dihapus dari Best Seller.`);
+      toast.success(newValue ? `${product.name} dijadikan Rekomendasi Outlet.` : `${product.name} dihapus dari Rekomendasi Outlet.`);
     }
   };
 
@@ -483,7 +483,7 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
     },
     {
       accessorKey: 'isFeatured',
-      header: 'Best Seller',
+      header: 'Rekomendasi',
       cell: ({ row }) => {
         const product = row.original;
         const isFeatured = !!product.isFeatured;
@@ -500,7 +500,7 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
                   ? "text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/30" 
                   : "text-slate-300 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800"
               )}
-              title={isFeatured ? 'Unggulan (Klik untuk batalkan)' : 'Jadikan Best Seller'}
+              title={isFeatured ? 'Rekomendasi Outlet (Klik untuk batalkan)' : 'Jadikan Rekomendasi Outlet'}
             >
               <Star className={cn("h-4 w-4", isFeatured && "fill-amber-400 text-amber-500")} />
             </button>
@@ -1275,12 +1275,12 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
         {allAreFeatured ? (
           <>
             <StarOff className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-            <span>Nonaktifkan Best Seller {selectedCount > 0 ? `(${selectedCount})` : ''}</span>
+            <span>Nonaktifkan Rekomendasi {selectedCount > 0 ? `(${selectedCount})` : ''}</span>
           </>
         ) : (
           <>
             <Star className={cn("w-3.5 h-3.5 text-amber-500", selectedCount > 0 && "fill-amber-400")} />
-            <span>Jadikan Best Seller {selectedCount > 0 ? `(${selectedCount})` : ''}</span>
+            <span>Jadikan Rekomendasi {selectedCount > 0 ? `(${selectedCount})` : ''}</span>
           </>
         )}
       </Button>
@@ -1444,7 +1444,7 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
                     </h2>
                     {detailProduct.isFeatured && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/50">
-                        <Star className="w-3 h-3 fill-amber-400 text-amber-500" /> Best Seller
+                        <Star className="w-3 h-3 fill-amber-400 text-amber-500" /> Rekomendasi
                       </span>
                     )}
                   </div>

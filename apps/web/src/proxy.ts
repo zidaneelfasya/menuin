@@ -3,10 +3,9 @@ import { updateSession } from './lib/supabase/middleware';
 
 export async function proxy(request: NextRequest) {
   const url = request.nextUrl.clone();
-  const hostname = request.headers.get('host') || '';
-
-  const currentHost = hostname.split(':')[0]; // remove port
-  const isLocalhost = currentHost.endsWith('localhost');
+  const rawHost = request.headers.get('x-forwarded-host')?.split(',')[0].trim() || request.headers.get('host') || request.nextUrl.hostname || '';
+  const currentHost = rawHost.split(':')[0].toLowerCase(); // remove port and normalize to lowercase
+  const isLocalhost = currentHost.endsWith('localhost') || currentHost === '127.0.0.1';
   const baseDomain = isLocalhost ? 'localhost' : 'menuin.id';
 
   let subdomain = null;

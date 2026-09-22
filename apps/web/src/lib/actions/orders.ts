@@ -273,8 +273,12 @@ export async function getPublicOrderByNumber(orderNumber: string, tenantSlug: st
     .select({
       id: transactionItems.id,
       quantity: transactionItems.quantity,
+      price: transactionItems.price,
       productName: products.name,
+      imageUrl: products.imageUrl,
       subtotal: transactionItems.subtotal,
+      modifiers: transactionItems.modifiers,
+      notes: transactionItems.notes,
       isCompleted: transactionItems.isCompleted
     })
     .from(transactionItems)

@@ -147,18 +147,36 @@ export function ProductDetailModal({
           <button
             type="button"
             onClick={handlePrimaryAction}
-            className="w-full h-12 sm:h-13 rounded-xl font-bold text-sm sm:text-base text-white shadow-xs transition-all flex items-center justify-center gap-2 hover:opacity-95 active:scale-[0.99]"
+            className="w-full h-auto min-h-[3.25rem] py-3 px-4 rounded-xl font-bold text-white shadow-xs transition-all flex items-center justify-between gap-3 hover:opacity-95 active:scale-[0.99] cursor-pointer"
             style={{ backgroundColor: "var(--outlet-primary, #0E59F9)" }}
           >
             {hasModifiers ? (
               <>
-                <SlidersHorizontal className="w-4 h-4 stroke-[2.5]" />
-                <span>Pilih Varian &amp; Kustomisasi &bull; {formattedPrice}</span>
+                <div className="flex items-center gap-2 min-w-0 text-left">
+                  <SlidersHorizontal className="w-4 h-4 stroke-[2.5] shrink-0 opacity-90" />
+                  <span className="text-xs sm:text-sm font-bold tracking-tight truncate">
+                    Pilih Varian
+                  </span>
+                </div>
+                <div className="shrink-0 pl-2.5 border-l border-white/25 flex items-center">
+                  <span className="text-xs sm:text-sm font-extrabold tracking-tight whitespace-nowrap">
+                    {formattedPrice}
+                  </span>
+                </div>
               </>
             ) : (
               <>
-                <Plus className="w-4 h-4 stroke-[2.5]" />
-                <span>Tambah ke Pesanan &bull; {formattedPrice}</span>
+                <div className="flex items-center gap-2 min-w-0 text-left">
+                  <Plus className="w-4 h-4 stroke-[2.5] shrink-0 opacity-90" />
+                  <span className="text-xs sm:text-sm font-bold tracking-tight truncate">
+                    Tambah Pesanan
+                  </span>
+                </div>
+                <div className="shrink-0 pl-2.5 border-l border-white/25 flex items-center">
+                  <span className="text-xs sm:text-sm font-extrabold tracking-tight whitespace-nowrap">
+                    {formattedPrice}
+                  </span>
+                </div>
               </>
             )}
           </button>
