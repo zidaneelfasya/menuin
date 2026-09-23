@@ -60,7 +60,7 @@ export function AnnualRecapTable({ recap, bestMonthName, year }: AnnualRecapTabl
               <th className="py-3 px-4 text-right">Status</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 text-gray-700">
+          <tbody className="divide-y divide-gray-100 text-gray-700 font-financial tabular-nums">
             {recap.map((row) => (
               <tr 
                 key={row.monthIndex} 

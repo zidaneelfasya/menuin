@@ -141,7 +141,7 @@ export function StartShiftModal({
                       value={formattedDisplayAmount}
                       onChange={handleAmountChange}
                       autoFocus
-                      className="pl-11 font-mono text-lg font-bold h-11"
+                      className="pl-11 font-financial text-lg font-bold h-11 tabular-nums"
                     />
                   </div>
                 </div>
@@ -156,7 +156,7 @@ export function StartShiftModal({
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="text-xs h-7 px-2.5 font-mono"
+                        className="text-xs h-7 px-2.5 font-financial tabular-nums"
                         onClick={() => setAmountValue(denom)}
                       >
                         {denom === 0 ? 'Rp 0 (Tanpa Modal)' : formatCurrency(denom)}
@@ -166,12 +166,12 @@ export function StartShiftModal({
                 </div>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-3 font-financial tabular-nums">
                 <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
                   {BILL_VALUES.map((bill) => (
                     <div key={bill.value} className="flex items-center justify-between gap-3 text-xs bg-muted/40 p-2 rounded-lg border">
-                      <span className="font-semibold font-mono w-24">{bill.label}</span>
-                      <span className="text-muted-foreground">×</span>
+                      <span className="font-semibold w-24">{bill.label}</span>
+                      <span className="text-muted-foreground font-sans">×</span>
                       <Input
                         type="number"
                         min="0"
@@ -181,9 +181,9 @@ export function StartShiftModal({
                           const qty = parseInt(e.target.value, 10) || 0;
                           setBillCounts(prev => ({ ...prev, [bill.value]: qty }));
                         }}
-                        className="w-20 h-7 text-right font-mono text-xs"
+                        className="w-20 h-7 text-right font-bold text-xs"
                       />
-                      <span className="font-mono text-muted-foreground w-24 text-right font-medium">
+                      <span className="text-muted-foreground w-24 text-right font-medium">
                         {formatCurrency((billCounts[bill.value] || 0) * bill.value)}
                       </span>
                     </div>
@@ -191,23 +191,23 @@ export function StartShiftModal({
 
                   {/* Coins input */}
                   <div className="flex items-center justify-between gap-3 text-xs bg-muted/40 p-2 rounded-lg border">
-                    <span className="font-semibold w-24 flex items-center gap-1">
+                    <span className="font-semibold w-24 flex items-center gap-1 font-sans">
                       <Coins className="w-3.5 h-3.5 text-amber-600" /> Koin / Lainnya
                     </span>
-                    <span className="text-muted-foreground">Rp</span>
+                    <span className="text-muted-foreground font-sans">Rp</span>
                     <Input
                       type="text"
                       placeholder="0"
                       value={coinAmount}
                       onChange={(e) => setCoinAmount(e.target.value.replace(/\D/g, ''))}
-                      className="w-36 h-7 text-right font-mono text-xs"
+                      className="w-36 h-7 text-right font-bold text-xs"
                     />
                   </div>
                 </div>
 
-                <div className="bg-primary/10 border border-primary/20 p-3 rounded-xl flex justify-between items-center">
-                  <span className="text-xs font-bold text-foreground">Total Modal Dihitung:</span>
-                  <span className="text-base font-bold font-mono text-primary">
+                <div className="bg-primary/10 border border-primary/20 p-3 rounded-xl flex justify-between items-center font-financial tabular-nums">
+                  <span className="text-xs font-bold text-foreground font-sans">Total Modal Dihitung:</span>
+                  <span className="text-base font-bold text-primary">
                     {formatCurrency(calculatorTotal)}
                   </span>
                 </div>

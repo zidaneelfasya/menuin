@@ -7,12 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Loader2, ArrowLeft, AlertCircle } from 'lucide-react';
+import { IconLoader2, IconArrowLeft, IconAlertCircle } from '@tabler/icons-react';
 
-import Link from 'next/link';
+import { usePageTransition } from '@/components/providers/page-transition-provider';
 
 export function CreateTenantForm() {
   const router = useRouter();
+  const { navigateWithTransition } = usePageTransition();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -30,7 +31,7 @@ export function CreateTenantForm() {
         setError(result.error);
         setLoading(false);
       } else {
-        router.push('/select-tenant');
+        navigateWithTransition('/select-tenant');
       }
     } catch (err: any) {
       setError('An unexpected error occurred. Please try again.');
@@ -44,7 +45,7 @@ export function CreateTenantForm() {
         <CardContent className="pt-6 space-y-4">
           {error && (
             <div className="bg-destructive/15 text-destructive flex items-center p-3 rounded-md text-sm">
-              <AlertCircle className="h-4 w-4 mr-2" />
+              <IconAlertCircle className="h-4 w-4 mr-2" />
               <p>{error}</p>
             </div>
           )}
@@ -65,18 +66,22 @@ export function CreateTenantForm() {
           <Button type="submit" className="w-full h-12 text-lg" disabled={loading}>
             {loading ? (
               <>
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                <IconLoader2 className="mr-2 h-5 w-5 animate-spin" />
                 Creating...
               </>
             ) : (
               'Create Restaurant'
             )}
           </Button>
-          <Button variant="ghost" className="w-full" asChild disabled={loading}>
-            <Link href="/select-tenant">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Cancel and go back
-            </Link>
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-full cursor-pointer"
+            onClick={() => navigateWithTransition('/select-tenant')}
+            disabled={loading}
+          >
+            <IconArrowLeft className="h-4 w-4 mr-2" />
+            Cancel and go back
           </Button>
         </CardFooter>
       </form>

@@ -19,7 +19,7 @@ import {
   Sparkles,
   Barcode as BarcodeIcon,
   Tag,
-  DollarSign,
+  Banknote,
   TrendingUp,
   AlertCircle,
   Info,
@@ -917,7 +917,7 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
           {/* Card 3: Harga & Keuntungan */}
           <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-5 shadow-xs space-y-4">
             <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800/80">
-              <DollarSign className="w-4 h-4 text-emerald-600" />
+              <Banknote className="w-4 h-4 text-emerald-600" />
               <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Harga & Profitabilitas</h3>
             </div>
 

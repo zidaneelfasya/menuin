@@ -110,19 +110,19 @@ export function ShoppingCart() {
       </div>
 
       {/* Summary */}
-      <div className="p-4 border-t bg-muted/10 space-y-3">
+      <div className="p-4 border-t bg-muted/10 space-y-3 font-financial tabular-nums">
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Subtotal</span>
+          <span className="text-muted-foreground font-sans">Subtotal</span>
           <span className="font-medium">{formatCurrency(subtotal)}</span>
         </div>
         {discount > 0 && (
           <div className="flex justify-between text-sm text-destructive">
-            <span>Diskon</span>
+            <span className="font-sans">Diskon</span>
             <span>-{formatCurrency(discount)}</span>
           </div>
         )}
         <div className="pt-3 border-t flex justify-between items-center">
-          <span className="font-bold text-lg">Total</span>
+          <span className="font-bold text-lg font-sans">Total</span>
           <span className="font-bold text-2xl text-primary">{formatCurrency(total)}</span>
         </div>
 

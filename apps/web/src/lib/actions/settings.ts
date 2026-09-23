@@ -112,6 +112,8 @@ export async function updateStoreGeneralSettings(formData: FormData) {
     const name = formData.get('name') as string;
     const storeDescription = formData.get('storeDescription') as string;
     const storeLogoUrl = formData.get('storeLogoUrl') as string | null;
+    const storeBannerUrl = formData.get('storeBannerUrl') as string | null;
+    const slug = formData.get('slug') as string | null;
     const primaryColor = (formData.get('primaryColor') as string) || '#2563EB';
 
     if (!name || name.trim() === '') {
@@ -119,13 +121,22 @@ export async function updateStoreGeneralSettings(formData: FormData) {
     }
 
     const updatePayload: any = {
-      name,
-      storeDescription,
+      name: name.trim(),
+      storeDescription: storeDescription ? storeDescription.trim() : null,
       primaryColor,
       updatedAt: new Date(),
     };
     if (storeLogoUrl !== undefined) {
       updatePayload.storeLogoUrl = storeLogoUrl ? storeLogoUrl.trim() : null;
+    }
+    if (storeBannerUrl !== undefined) {
+      updatePayload.storeBannerUrl = storeBannerUrl ? storeBannerUrl.trim() : null;
+    }
+    if (slug !== undefined && slug !== null) {
+      const sanitizedSlug = slug.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+      if (sanitizedSlug) {
+        updatePayload.slug = sanitizedSlug;
+      }
     }
 
     await db.update(tenants)
@@ -133,6 +144,7 @@ export async function updateStoreGeneralSettings(formData: FormData) {
       .where(eq(tenants.id, user.tenantId));
 
     if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
+    revalidatePath('/store/[slug]', 'layout');
     return { success: true };
   } catch (error) {
     console.error('Error updating store settings:', error);

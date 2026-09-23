@@ -29,12 +29,11 @@ const montserrat = Montserrat({
   display: "swap",
 });
 
-// Neo-grotesque khusus landing page (headline & angka spesifikasi).
-// Aplikasi (dashboard/kasir) tetap memakai Poppins.
+// Inter khusus angka keuangan & metrik tabular serta display landing page
 const inter = Inter({
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700", "800"],
   subsets: ["latin"],
-  variable: "--font-display",
+  variable: "--font-inter",
   display: "swap",
 });
 

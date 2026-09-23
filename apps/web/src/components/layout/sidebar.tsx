@@ -3,56 +3,53 @@
 import * as React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 import { 
-  LayoutDashboard, 
-  ShoppingCart, 
-  Package, 
-  Tags, 
-  Archive, 
-  History,
-  BarChart3, 
-  Wallet, 
-  Percent, 
-  UserCircle, 
-  Settings,
-  ShoppingBag,
-  LogOut,
-  ChevronLeft,
-  ChevronRight,
-  Store,
-  ChefHat,
-  SlidersHorizontal,
-  ArrowRightLeft,
-  Smartphone
-} from 'lucide-react';
-import { motion } from 'framer-motion';
+  IconLayoutDashboard, 
+  IconShoppingCart, 
+  IconPackage, 
+  IconTags, 
+  IconArchive, 
+  IconHistory, 
+  IconChartBar, 
+  IconWallet, 
+  IconPercentage, 
+  IconUserCircle, 
+  IconSettings, 
+  IconShoppingBag, 
+  IconLogout, 
+  IconChevronLeft, 
+  IconChevronRight, 
+  IconBuildingStore, 
+  IconChefHat, 
+  IconAdjustmentsHorizontal, 
+  IconArrowsExchange
+} from '@tabler/icons-react';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
-import { UserProfile, signOutAction } from '@/lib/actions/auth';
+import { motion } from 'framer-motion';
+import { UserProfile } from '@/lib/actions/auth';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { useRealtimeOrder } from '@/components/providers/realtime-order-provider';
+import { usePageTransition } from '../providers/page-transition-provider';
 
 const getNavItems = (outletKey: string) => [
-  { name: 'Dashboard', href: `/outlet/${outletKey}/dashboard`, icon: LayoutDashboard, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Kasir (POS)', href: `/outlet/${outletKey}/pos`, icon: ShoppingCart, roles: ['OWNER', 'MANAGER', 'CASHIER'] },
-  { name: 'Pesanan Masuk', href: `/outlet/${outletKey}/orders`, icon: ChefHat, roles: ['OWNER', 'MANAGER', 'CASHIER'] },
-  { name: 'Katalog Menu', href: `/outlet/${outletKey}/katalog`, icon: Store, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Daftar Menu', href: `/outlet/${outletKey}/items`, icon: Package, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Kategori', href: `/outlet/${outletKey}/categories`, icon: Tags, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Topping & Varian', href: `/outlet/${outletKey}/modifiers`, icon: SlidersHorizontal, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Stok Bahan', href: `/outlet/${outletKey}/inventory`, icon: Archive, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Shift Kasir', href: `/outlet/${outletKey}/shifts`, icon: Wallet, roles: ['OWNER', 'MANAGER', 'CASHIER'] },
-  { name: 'Riwayat Transaksi', href: `/outlet/${outletKey}/transactions`, icon: History, roles: ['OWNER', 'MANAGER', 'CASHIER'] },
-  { name: 'Laporan Penjualan', href: `/outlet/${outletKey}/reports`, icon: BarChart3, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Diskon & Promo', href: `/outlet/${outletKey}/promotions`, icon: Percent, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Tim & Karyawan', href: `/outlet/${outletKey}/team`, icon: UserCircle, roles: ['OWNER'] },
-  { name: 'Perangkat Kasir', href: `/outlet/${outletKey}/settings/devices`, icon: Smartphone, roles: ['OWNER', 'MANAGER'] },
-  { name: 'Pengaturan Toko', href: `/outlet/${outletKey}/settings`, icon: Settings, roles: ['OWNER', 'MANAGER'] },
+  { name: 'Dashboard', href: `/outlet/${outletKey}/dashboard`, icon: IconLayoutDashboard, roles: ['OWNER', 'MANAGER'] },
+  { name: 'Kasir (POS)', href: `/outlet/${outletKey}/pos`, icon: IconShoppingCart, roles: ['OWNER', 'MANAGER', 'CASHIER'] },
+  { name: 'Pesanan Masuk', href: `/outlet/${outletKey}/orders`, icon: IconChefHat, roles: ['OWNER', 'MANAGER', 'CASHIER'] },
+  { name: 'Katalog Menu', href: `/outlet/${outletKey}/katalog`, icon: IconBuildingStore, roles: ['OWNER', 'MANAGER'] },
+  { name: 'Daftar Menu', href: `/outlet/${outletKey}/items`, icon: IconPackage, roles: ['OWNER', 'MANAGER'] },
+  { name: 'Kategori', href: `/outlet/${outletKey}/categories`, icon: IconTags, roles: ['OWNER', 'MANAGER'] },
+  { name: 'Topping & Varian', href: `/outlet/${outletKey}/modifiers`, icon: IconAdjustmentsHorizontal, roles: ['OWNER', 'MANAGER'] },
+  { name: 'Stok Bahan', href: `/outlet/${outletKey}/inventory`, icon: IconArchive, roles: ['OWNER', 'MANAGER'] },
+  { name: 'Shift Kasir', href: `/outlet/${outletKey}/shifts`, icon: IconWallet, roles: ['OWNER', 'MANAGER', 'CASHIER'] },
+  { name: 'Riwayat Transaksi', href: `/outlet/${outletKey}/transactions`, icon: IconHistory, roles: ['OWNER', 'MANAGER', 'CASHIER'] },
+  { name: 'Laporan Penjualan', href: `/outlet/${outletKey}/reports`, icon: IconChartBar, roles: ['OWNER', 'MANAGER'] },
+  { name: 'Diskon & Promo', href: `/outlet/${outletKey}/promotions`, icon: IconPercentage, roles: ['OWNER', 'MANAGER'] },
+  { name: 'Tim & Karyawan', href: `/outlet/${outletKey}/team`, icon: IconUserCircle, roles: ['OWNER'] },
+  { name: 'Pengaturan', href: `/outlet/${outletKey}/settings`, icon: IconSettings, roles: ['OWNER', 'MANAGER', 'CASHIER'] },
 ];
-
-import { usePageTransition } from '../providers/page-transition-provider';
 
 function SidebarContent({ collapsed, setCollapsed, user }: { collapsed: boolean; setCollapsed?: (val: boolean) => void; user: UserProfile }) {
   const pathname = usePathname();
@@ -65,6 +62,9 @@ function SidebarContent({ collapsed, setCollapsed, user }: { collapsed: boolean;
     await supabase.auth.signOut();
     router.push("/");
   };
+
+  const outletKey = user.outletKey || 'unknown';
+  const navItems = getNavItems(outletKey).filter(item => !item.roles || item.roles.includes(user.role as any));
 
   return (
     <>
@@ -83,18 +83,19 @@ function SidebarContent({ collapsed, setCollapsed, user }: { collapsed: boolean;
         {setCollapsed && (
           <button 
             onClick={() => setCollapsed(!collapsed)}
-            className="absolute -right-3 top-5 bg-card border rounded-full p-1 text-muted-foreground hover:text-foreground shadow-sm hidden md:block"
+            className="absolute -right-3 top-5 bg-card border rounded-full p-1 text-muted-foreground hover:text-foreground shadow-sm hidden md:block cursor-pointer"
           >
-            {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+            {collapsed ? <IconChevronRight size={14} /> : <IconChevronLeft size={14} />}
           </button>
         )}
       </div>
 
       {/* Navigation */}
-      <div className="flex-1 overflow-y-auto py-6 px-3 scrollbar-hide">
-        <nav className="space-y-1.5">
-          {getNavItems(user.outletKey || 'unknown').filter(item => !item.roles || item.roles.includes(user.role as any)).map((item) => {
-            const isActive = pathname.startsWith(item.href);
+      <div className="flex-1 overflow-y-auto py-5 px-3 scrollbar-hide space-y-4">
+        {/* Main Nav Items */}
+        <nav className="space-y-1">
+          {navItems.map((item) => {
+            const isActive = pathname === item.href || (item.href !== `/outlet/${outletKey}/dashboard` && pathname.startsWith(item.href));
             return (
               <Link 
                 key={item.name} 
@@ -106,9 +107,9 @@ function SidebarContent({ collapsed, setCollapsed, user }: { collapsed: boolean;
               >
                 <div
                   className={cn(
-                    'flex items-center px-3 py-2.5 rounded-xl transition-all duration-200 group relative',
+                    'flex items-center px-3 py-2.5 rounded-xl transition-all duration-200 group relative cursor-pointer',
                     isActive 
-                      ? 'bg-primary/10 text-primary font-medium' 
+                      ? 'bg-primary/10 text-primary font-semibold' 
                       : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground font-medium'
                   )}
                   title={collapsed ? item.name : undefined}
@@ -147,21 +148,21 @@ function SidebarContent({ collapsed, setCollapsed, user }: { collapsed: boolean;
             </div>
           )}
           <div className={cn('flex items-center gap-1 mt-2', collapsed && 'flex-col')}>
-            <Link href="/select-tenant" passHref>
-              <button 
-                className={cn('text-muted-foreground hover:text-primary transition-colors h-9 w-9 flex items-center justify-center', collapsed && 'bg-muted rounded-full')}
-                title="Ganti Toko / Cabang"
-              >
-                <ArrowRightLeft size={collapsed ? 18 : 20} />
-              </button>
-            </Link>
+            <button 
+              type="button"
+              onClick={() => navigateWithTransition('/select-tenant')}
+              className={cn('text-muted-foreground hover:text-primary transition-colors h-9 w-9 flex items-center justify-center cursor-pointer', collapsed && 'bg-muted rounded-full')}
+              title="Ganti Toko / Cabang"
+            >
+              <IconArrowsExchange size={collapsed ? 18 : 20} />
+            </button>
             <ThemeSwitcher />
             <button 
               onClick={handleLogout}
-              className={cn('text-muted-foreground hover:text-destructive transition-colors h-9 w-9 flex items-center justify-center', collapsed && 'bg-muted rounded-full')}
+              className={cn('text-muted-foreground hover:text-destructive transition-colors h-9 w-9 flex items-center justify-center cursor-pointer', collapsed && 'bg-muted rounded-full')}
               title="Keluar"
             >
-              <LogOut size={collapsed ? 18 : 20} />
+              <IconLogout size={collapsed ? 18 : 20} />
             </button>
           </div>
         </div>

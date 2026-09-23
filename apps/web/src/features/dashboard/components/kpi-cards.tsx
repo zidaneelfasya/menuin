@@ -7,11 +7,12 @@ import {
   TrendingUp, 
   TrendingDown, 
   Minus,
-  DollarSign, 
   ShoppingBag, 
   Receipt, 
   Percent,
-  BadgeDollarSign
+  Banknote, 
+  Wallet,
+  RotateCcw
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -62,11 +63,11 @@ export function KpiCards({ metrics, periodType }: KpiCardsProps) {
               Gross Sales
             </span>
             <div className="p-2 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-lg">
-              <BadgeDollarSign className="w-4 h-4" />
+              <Banknote className="w-4 h-4" />
             </div>
           </div>
           <div className="space-y-1">
-            <div className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+            <div className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 font-financial tabular-nums">
               {formatCurrency(metrics.grossSales)}
             </div>
             <div className="flex items-center gap-2 pt-1">
@@ -88,14 +89,14 @@ export function KpiCards({ metrics, periodType }: KpiCardsProps) {
               Net Sales
             </span>
             <div className="p-2 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-lg">
-              <DollarSign className="w-4 h-4" />
+              <Wallet className="w-4 h-4" />
             </div>
           </div>
           <div className="space-y-1">
-            <div className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+            <div className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 font-financial tabular-nums">
               {formatCurrency(metrics.netSales)}
             </div>
-            <div className="flex items-center gap-2 pt-1">
+            <div className="flex items-center gap-2 pt-1 font-financial">
               {renderGrowthBadge(metrics.netSalesGrowth)}
               <span className="text-xs text-muted-foreground">{comparisonText}</span>
             </div>
@@ -118,10 +119,10 @@ export function KpiCards({ metrics, periodType }: KpiCardsProps) {
             </div>
           </div>
           <div className="space-y-1">
-            <div className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+            <div className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 font-financial tabular-nums">
               {metrics.totalTransactions.toLocaleString('id-ID')}
             </div>
-            <div className="flex items-center gap-2 pt-1">
+            <div className="flex items-center gap-2 pt-1 font-financial">
               {renderGrowthBadge(metrics.transactionsGrowth)}
               <span className="text-xs text-muted-foreground">{comparisonText}</span>
             </div>
@@ -144,10 +145,10 @@ export function KpiCards({ metrics, periodType }: KpiCardsProps) {
             </div>
           </div>
           <div className="space-y-1">
-            <div className="text-2xl font-bold tracking-tight text-teal-600 dark:text-teal-400">
+            <div className="text-2xl font-bold tracking-tight text-teal-600 dark:text-teal-400 font-financial tabular-nums">
               {formatCurrency(metrics.grossProfit)}
             </div>
-            <div className="flex items-center gap-2 pt-1">
+            <div className="flex items-center gap-2 pt-1 font-financial">
               {renderGrowthBadge(metrics.grossProfitGrowth)}
               <span className="text-xs text-muted-foreground">{comparisonText}</span>
             </div>
@@ -170,10 +171,10 @@ export function KpiCards({ metrics, periodType }: KpiCardsProps) {
             </div>
           </div>
           <div className="space-y-1">
-            <div className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+            <div className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 font-financial tabular-nums">
               {formatCurrency(metrics.averageOrderValue)}
             </div>
-            <div className="flex items-center gap-2 pt-1">
+            <div className="flex items-center gap-2 pt-1 font-financial">
               {renderGrowthBadge(metrics.aovGrowth)}
               <span className="text-xs text-muted-foreground">{comparisonText}</span>
             </div>
@@ -196,10 +197,10 @@ export function KpiCards({ metrics, periodType }: KpiCardsProps) {
             </div>
           </div>
           <div className="space-y-1">
-            <div className="text-2xl font-bold tracking-tight text-purple-600 dark:text-purple-400">
+            <div className="text-2xl font-bold tracking-tight text-purple-600 dark:text-purple-400 font-financial tabular-nums">
               {metrics.grossMargin}%
             </div>
-            <div className="flex items-center gap-2 pt-1">
+            <div className="flex items-center gap-2 pt-1 font-financial">
               {renderGrowthBadge(metrics.grossMarginGrowth, '% poin')}
               <span className="text-xs text-muted-foreground">{comparisonText}</span>
             </div>

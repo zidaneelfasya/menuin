@@ -316,7 +316,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
         const isCanceled = row.original.status === 'CANCELLED' || row.original.paymentStatus === 'CANCELED';
         
         return (
-          <div className="font-semibold font-mono text-xs">
+          <div className="font-semibold font-financial tabular-nums text-xs">
             <span className={isCanceled ? 'line-through text-slate-400' : 'text-slate-900 dark:text-slate-100'}>
               {formatCurrency(total)}
             </span>
