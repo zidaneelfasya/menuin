@@ -102,7 +102,7 @@ function formatElapsed(dateInput: Date | string): string {
   }
 }
 
-export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", receiptSettings }: KanbanBoardProps) {
+export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", receiptSettings }: KanbanBoardProps) {
   const [orders, setOrders] = useState<Order[]>(initialOrders);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [orderToPrepare, setOrderToPrepare] = useState<Order | null>(null);
@@ -590,7 +590,7 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
                   <div>
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-mono text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700 tracking-wider">
+                        <span className="font-sans text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700 tracking-wider">
                           {order.orderNumber || "#-"}
                         </span>
                         
@@ -928,11 +928,11 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
                   {orderToPrepare.items.map((item, idx) => (
                     <div key={idx} className="flex justify-between items-center text-xs py-1 border-b border-dashed border-slate-200 dark:border-slate-800 last:border-0">
                       <span className="text-slate-800 dark:text-slate-200">
-                        <strong className="text-blue-600 font-mono mr-1.5">{item.quantity}x</strong>
+                        <strong className="text-blue-600 font-sans mr-1.5">{item.quantity}x</strong>
                         {item.productName}
                         {item.notes && <span className="block text-[10px] text-slate-400 italic">({item.notes})</span>}
                       </span>
-                      <span className="text-slate-500 text-[11px] font-mono">{formatCurrency(Number(item.subtotal))}</span>
+                      <span className="text-slate-500 text-[11px] font-sans">{formatCurrency(Number(item.subtotal))}</span>
                     </div>
                   ))}
                 </div>
@@ -952,7 +952,7 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
                     disabled={isPrinting || isUpdatingStatus}
                     className="h-10 text-xs font-medium border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 text-slate-700 dark:text-slate-300 gap-1.5 disabled:opacity-50"
                   >
-                    <ChefHat className="w-3.5 h-3.5 text-amber-600" />
+                    
                     Tiket Dapur
                   </Button>
                   <Button
@@ -962,7 +962,7 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
                     disabled={isPrinting || isUpdatingStatus}
                     className="h-10 text-xs font-medium border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 text-slate-700 dark:text-slate-300 gap-1.5 disabled:opacity-50"
                   >
-                    <ReceiptText className="w-3.5 h-3.5 text-blue-600" />
+                    
                     Struk Pelanggan
                   </Button>
                 </div>
@@ -973,8 +973,8 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
                   disabled={isPrinting || isUpdatingStatus}
                   className="w-full h-9 text-xs border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 text-slate-700 dark:text-slate-300 gap-1.5 disabled:opacity-50"
                 >
-                  <Printer className="w-3.5 h-3.5 text-slate-600" />
-                  Cetak Keduanya (Struk & Tiket Dapur)
+                  
+                  Cetak Keduanya
                 </Button>
               </div>
 
@@ -1001,8 +1001,8 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
                     </>
                   ) : (
                     <>
-                      <ChefHat className="w-3.5 h-3.5" />
-                      <span>Mulai Penyiapan (Masuk Dapur)</span>
+                      
+                      <span>Proses Pesanan</span>
                     </>
                   )}
                 </Button>
@@ -1023,7 +1023,7 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
           <DialogHeader className="border-b pb-3 border-slate-100 dark:border-slate-800">
             <DialogTitle className="flex items-center gap-2 text-base">
               <span>Detail Pesanan</span>
-              <span className="font-mono text-blue-600">{selectedOrder?.orderNumber || ""}</span>
+              <span className="font-sans text-blue-600">{selectedOrder?.orderNumber || ""}</span>
             </DialogTitle>
             <DialogDescription className="text-xs">
               Waktu: {selectedOrder ? formatDate(selectedOrder.createdAt) : ""}
@@ -1094,10 +1094,10 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
                             isUpdatingStatus ? "cursor-not-allowed" : "cursor-pointer"
                           } ${item.isCompleted ? "text-muted-foreground line-through" : "text-foreground font-medium"}`}
                         >
-                          <span className="font-bold font-mono mr-1">{item.quantity}x</span> {item.productName}
+                          <span className="font-bold font- mr-1">{item.quantity}x</span> {item.productName}
                         </label>
                       </div>
-                      <span className="font-mono text-muted-foreground">{formatCurrency(Number(item.subtotal))}</span>
+                      <span className="font-sans text-muted-foreground">{formatCurrency(Number(item.subtotal))}</span>
                     </div>
                   ))}
                 </div>
@@ -1115,7 +1115,7 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
                     onClick={() => handlePrintReceipt(selectedOrder, 'customer')}
                     className="flex-1 h-8 text-xs gap-1 border-slate-200 text-slate-700 dark:text-slate-300 hover:bg-white disabled:opacity-50"
                   >
-                    <ReceiptText className="w-3 h-3 text-blue-600" />
+                    
                     Struk Pelanggan
                   </Button>
                   <Button
@@ -1126,7 +1126,7 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
                     onClick={() => handlePrintReceipt(selectedOrder, 'kitchen')}
                     className="flex-1 h-8 text-xs gap-1 border-slate-200 text-slate-700 dark:text-slate-300 hover:bg-white disabled:opacity-50"
                   >
-                    <ChefHat className="w-3 h-3 text-amber-600" />
+                    
                     Tiket Dapur
                   </Button>
                 </div>
@@ -1136,7 +1136,7 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
               <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-3">
                 <div className="flex justify-between items-center text-sm font-bold">
                   <span>Total Tagihan</span>
-                  <span className="font-mono text-blue-600 text-base">
+                  <span className="font-sans text-blue-600 text-base">
                     {formatCurrency(Number(selectedOrder.grandTotal))}
                   </span>
                 </div>
@@ -1258,7 +1258,7 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
                     className="flex items-center justify-between p-1.5 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-[11px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
+                      <span className="font-sans text-[11px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
                         {o.orderNumber || "#-"}
                       </span>
                       <span className="text-slate-700 dark:text-slate-300 font-medium truncate max-w-[160px]">

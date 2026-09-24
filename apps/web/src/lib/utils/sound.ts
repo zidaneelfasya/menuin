@@ -83,3 +83,36 @@ export function playScanErrorBeep(): void {
     // Fail silently
   }
 }
+
+/**
+ * Play a notice/warning beep (e.g. scanned order has already been paid and received).
+ */
+export function playScanWarningBeep(): void {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = "sine";
+    // Dual alert chime: 880 Hz (A5) then 1175 Hz (D6)
+    osc.frequency.setValueAtTime(880, now);
+    osc.frequency.setValueAtTime(1175, now + 0.1);
+
+    gain.gain.setValueAtTime(0.01, now);
+    gain.gain.linearRampToValueAtTime(0.18, now + 0.02);
+    gain.gain.setValueAtTime(0.18, now + 0.1);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.28);
+  } catch {
+    // Fail silently
+  }
+}
+
