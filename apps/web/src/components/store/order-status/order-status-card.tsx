@@ -137,6 +137,7 @@ export interface OrderStatusCardProps {
   status: OrderStatusType;
   orderNumber: string;
   primaryColor?: string;
+  variant?: "unboxed" | "card";
   className?: string;
 }
 
@@ -144,30 +145,80 @@ export function OrderStatusCard({
   status,
   orderNumber,
   primaryColor,
+  variant = "unboxed",
   className = "",
 }: OrderStatusCardProps) {
   const config = ORDER_STATUS_CONFIGS[status] || ORDER_STATUS_CONFIGS.AWAITING_PAYMENT;
 
-  const dynamicThemeStyle = primaryColor
-    ? ({ "--outlet-primary": primaryColor } as React.CSSProperties)
-    : undefined;
+  const dynamicThemeStyle = {
+    "--outlet-primary": primaryColor || "var(--catalog-primary, #0E59F9)",
+    "--catalog-primary": primaryColor || "var(--catalog-primary, #0E59F9)",
+  } as React.CSSProperties;
 
+  // Unboxed presentation: no card border, no card shadow, visual sits directly on page background
+  if (variant === "unboxed") {
+    return (
+      <div style={dynamicThemeStyle} className={`w-full flex flex-col items-center select-none ${className}`}>
+        {/* 1. Unboxed Vector Illustration Stage */}
+        <div className="w-full h-56 sm:h-64 relative flex items-center justify-center my-2">
+          <OrderStatusVisual
+            status={status}
+            orderNumber={orderNumber}
+            primaryColor={primaryColor}
+            className="w-full h-full"
+          />
+        </div>
+
+        {/* 2. Status Title & Description */}
+        <motion.div
+          key={`text-${status}`}
+          initial={{ opacity: 0, y: 3 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          className="max-w-sm mx-auto mb-3 px-1 text-center"
+        >
+          <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight leading-snug">
+            {config.title}
+          </h2>
+          <p className="text-xs sm:text-sm text-gray-500 font-normal leading-relaxed mt-1 max-w-xs mx-auto">
+            {config.description}
+          </p>
+        </motion.div>
+
+        {/* 3. Progress Tracker (Stepper) */}
+        <div className="w-full pt-2 max-w-sm mx-auto">
+          <OrderStatusStepper
+            currentStep={config.step}
+            isCompleted={config.isCompleted}
+            isFailed={config.isFailed}
+            statusType={status}
+            primaryColor={primaryColor}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Boxed Card presentation (fallback/alternative)
   return (
     <div
       style={dynamicThemeStyle}
       className={`bg-white rounded-3xl shadow-xs border border-gray-150/80 flex flex-col relative overflow-hidden transition-all ${className}`}
     >
-      {/* 1. Full-bleed 1:1 animation area closing/covering the entire width of the card */}
-      <div className="w-full aspect-square relative overflow-hidden bg-gray-50/60">
-        {/* 1:1 Rive animation stretching full width of the card */}
-        <div className="absolute inset-0 w-full h-full">
-          <OrderStatusVisual status={status} orderNumber={orderNumber} className="w-full h-full" />
+      {/* 1. Full-bleed 1:1 animation area */}
+      <div className="w-full aspect-square relative overflow-hidden bg-gray-50/60 flex items-center justify-center">
+        <div className="absolute inset-0 w-full h-full flex items-center justify-center">
+          <OrderStatusVisual
+            status={status}
+            orderNumber={orderNumber}
+            primaryColor={primaryColor}
+            className="w-full h-full"
+          />
         </div>
       </div>
 
       {/* 2. Content below the full-width animation */}
       <div className="w-full p-5 sm:p-6 flex flex-col items-center text-center">
-        {/* Status title & description */}
         <motion.div
           key={`text-${status}`}
           initial={{ opacity: 0, y: 3 }}
@@ -175,7 +226,7 @@ export function OrderStatusCard({
           transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
           className="max-w-sm mx-auto mb-5 px-1 text-center"
         >
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight leading-snug">
+          <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight leading-snug">
             {config.title}
           </h2>
           <p className="text-xs sm:text-sm text-gray-500 font-normal leading-relaxed mt-1.5 min-h-[36px] flex items-center justify-center">
@@ -183,7 +234,6 @@ export function OrderStatusCard({
           </p>
         </motion.div>
 
-        {/* 3. Progress tracker at the bottom with subtle divider */}
         <div className="w-full pt-5 border-t border-gray-100">
           <OrderStatusStepper
             currentStep={config.step}
