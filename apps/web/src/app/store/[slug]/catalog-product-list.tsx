@@ -459,7 +459,7 @@ export function CatalogProductList({
               <button
                 type="button"
                 onClick={(e) => handleAddButtonClick(e, product)}
-                className="w-full h-8 sm:h-9 rounded-full border-2 border-catalog-primary text-catalog-primary hover:bg-catalog-primary hover:text-white font-bold text-xs flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-2xs"
+                className="w-full h-8 sm:h-9 rounded-full border  border-catalog-primary text-catalog-primary hover:bg-catalog-primary hover:text-white font-bold text-xs flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-2xs"
               >
                 Add
               </button>
