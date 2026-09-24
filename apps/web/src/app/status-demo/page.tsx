@@ -101,7 +101,7 @@ const BRAND_THEMES = [
 export default function StatusDemoPage() {
   const [activeTab, setActiveTab] = useState<"simulator" | "gallery">("simulator");
   const [currentStatus, setCurrentStatus] = useState<OrderStatusType>("PROCESSING");
-  const [orderNumber, setOrderNumber] = useState("#A-0824");
+  const [orderNumber, setOrderNumber] = useState("MG7B4K9X2M");
   const [themeColor, setThemeColor] = useState("#0E59F9");
 
   return (
@@ -115,13 +115,13 @@ export default function StatusDemoPage() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-sm sm:text-base font-bold text-gray-900">Demo Animasi Status Rive</h1>
+                <h1 className="text-sm sm:text-base font-semibold text-gray-900">Demo Visual Status Pesanan</h1>
                 <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  Rasio 1:1
+                  Vektor 2D Dinamis
                 </span>
               </div>
               <p className="text-xs text-gray-500 hidden sm:block">
-                Preview interaktif status storefront Menuin menggunakan format Rive (.riv)
+                Preview interaktif status storefront Menuin dengan warna aksen dinamis mengikuti tema tenant
               </p>
             </div>
           </div>
@@ -375,74 +375,116 @@ export default function StatusDemoPage() {
                 </div>
 
                 {/* Mobile Viewport Body */}
-                <div className="p-4 sm:p-5 bg-gray-50/70 space-y-4">
-                  {/* 1. Storefront Order Summary Card */}
-                  <div className="bg-white p-4 rounded-2xl border border-gray-150 shadow-xs flex items-center justify-between">
+                <div className="p-4 bg-white space-y-4">
+                  {/* 1. Order Type Pill */}
+                  <div className="px-3 py-2 rounded-xl border border-pink-200/60 bg-pink-50/30 flex items-center justify-between text-xs">
+                    <span className="text-gray-500 font-medium">Order Type</span>
+                    <span className="flex items-center gap-1.5 font-semibold text-gray-900">
+                      <span>Dine-In (Meja 04)</span>
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 fill-emerald-100 shrink-0" />
+                    </span>
+                  </div>
+
+                  {/* 2. Date & Order Number */}
+                  <div className="flex items-start justify-between text-xs px-0.5">
                     <div>
-                      <div className="flex items-center gap-1 mb-0.5">
-                        <p className="text-[11px] text-gray-400 font-semibold uppercase tracking-wider">
-                          Nomor Pesanan
-                        </p>
-                        <OrderIllustrationDisclaimer />
-                      </div>
-                      <p className="text-lg font-black text-gray-900 font-mono tracking-wider">{orderNumber}</p>
+                      <span className="text-[11px] text-gray-400 block mb-0.5">Date</span>
+                      <span className="font-semibold text-gray-800 text-xs">24 Sep 2026, 09:41</span>
                     </div>
                     <div className="text-right">
-                      <p className="text-[11px] text-gray-400 font-semibold uppercase tracking-wider mb-0.5">
-                        Total
-                      </p>
-                      <p className="text-base font-extrabold tracking-tight" style={{ color: themeColor }}>
-                        Rp 48.000
-                      </p>
+                      <span className="text-[11px] text-gray-400 block mb-0.5">Order Number</span>
+                      <span className="font-mono font-semibold text-xs text-gray-900">{orderNumber}</span>
                     </div>
                   </div>
 
-                  {/* 2. Main Order Status Card (Live Rive) */}
-                  <OrderStatusCard
-                    status={currentStatus}
-                    orderNumber={orderNumber}
-                    primaryColor={themeColor}
-                  />
+                  {/* 3. Center Stage: Large Status Pesanan SVG */}
+                  <div className="pt-2 pb-1 flex flex-col items-center select-none text-center">
+                    <OrderStatusCard
+                      status={currentStatus}
+                      orderNumber={orderNumber}
+                      primaryColor={themeColor}
+                      variant="unboxed"
+                    />
 
-                  {/* 3. Subtle Live Kitchen Connection Pill */}
-                  {currentStatus !== "COMPLETED" &&
-                    currentStatus !== "CANCELLED" &&
-                    currentStatus !== "REJECTED" && (
-                      <div className="flex justify-center">
-                        <div className="inline-flex items-center gap-2 text-xs font-medium text-gray-600 bg-white/95 px-3.5 py-1.5 rounded-full border border-gray-200/80 shadow-2xs select-none">
-                          <span className="relative flex h-2 w-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                          </span>
-                          <span>Terhubung langsung dengan dapur (live)</span>
+                    {/* Subtle Live Kitchen Connection Pill */}
+                    {currentStatus !== "COMPLETED" &&
+                      currentStatus !== "CANCELLED" &&
+                      currentStatus !== "REJECTED" && (
+                        <div className="flex justify-center pt-2">
+                          <div className="inline-flex items-center gap-2 text-[11px] font-medium text-gray-600 bg-gray-50/90 px-3.5 py-1.5 rounded-full border border-gray-200/80 shadow-2xs select-none">
+                            <span className="relative flex h-2 w-2">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                            </span>
+                            <span>Terhubung langsung dengan dapur (live)</span>
+                          </div>
+                        </div>
+                      )}
+
+                    {/* Notice Box */}
+                    {currentStatus === "AWAITING_PAYMENT" && (
+                      <div className="mt-4 w-full bg-amber-50/90 border border-amber-200/90 text-amber-900 p-3 rounded-xl text-xs flex items-start gap-2 text-left leading-relaxed">
+                        <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                        <div>
+                          Silakan menuju kasir untuk melakukan pembayaran sebesar <strong className="font-semibold text-gray-900">Rp 48.000</strong>.
                         </div>
                       </div>
                     )}
+                  </div>
 
-                  {/* 4. Order Details (Detail Item) */}
-                  <div className="bg-white p-4 rounded-2xl shadow-xs border border-gray-150 text-left">
-                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2.5">
-                      Detail Item
-                    </h3>
-                    <div className="divide-y divide-gray-100 text-xs">
-                      <div className="py-2 first:pt-0 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">
-                            1x
-                          </span>
-                          <span className="font-medium text-gray-800">Butter Croissant</span>
+                  {/* Divider */}
+                  <div className="border-t border-gray-150 my-2" />
+
+                  {/* 4. Ordered Items */}
+                  <div className="space-y-2.5 text-left">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wider">
+                        Ordered Items
+                      </h3>
+                      <span className="text-[11px] text-gray-400">2 item</span>
+                    </div>
+                    <div className="space-y-2 text-xs">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-start gap-2">
+                          <span className="font-semibold text-gray-900 shrink-0">1x</span>
+                          <div>
+                            <span className="font-semibold text-gray-900 block">Butter Croissant</span>
+                            <span className="text-[11px] text-gray-500">Extra Butter (+Rp 3.000)</span>
+                          </div>
                         </div>
-                        <span className="font-semibold text-gray-600">Rp 28.000</span>
+                        <span className="font-semibold text-gray-900 whitespace-nowrap">Rp 28.000</span>
                       </div>
-                      <div className="py-2 last:pb-0 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">
-                            1x
-                          </span>
-                          <span className="font-medium text-gray-800">Iced Caffe Latte</span>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-start gap-2">
+                          <span className="font-semibold text-gray-900 shrink-0">1x</span>
+                          <div>
+                            <span className="font-semibold text-gray-900 block">Iced Caffe Latte</span>
+                            <span className="text-[11px] text-gray-500">Less Sugar (50%)</span>
+                          </div>
                         </div>
-                        <span className="font-semibold text-gray-600">Rp 20.000</span>
+                        <span className="font-semibold text-gray-900 whitespace-nowrap">Rp 20.000</span>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="border-t border-gray-150 my-2" />
+
+                  {/* 5. Subtotal Breakdown */}
+                  <div className="space-y-1.5 text-xs text-left">
+                    <div className="flex justify-between text-gray-500">
+                      <span>Subtotal (2 menu)</span>
+                      <span className="font-semibold text-gray-800">Rp 48.000</span>
+                    </div>
+                    <div className="flex justify-between text-gray-500">
+                      <span>Pajak Resto (PB1)</span>
+                      <span className="font-semibold text-gray-800">Rp 0</span>
+                    </div>
+                    <div className="border-t border-dashed border-gray-200 pt-2 flex justify-between items-baseline font-semibold text-sm text-gray-900">
+                      <span>Total Tagihan</span>
+                      <span className="text-base font-semibold" style={{ color: themeColor }}>
+                        Rp 48.000
+                      </span>
                     </div>
                   </div>
                 </div>

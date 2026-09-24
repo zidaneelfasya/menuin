@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { products, categories, productModifierGroups, modifierGroups, modifiers, tenants, transactions, transactionItems, shifts } from '@/lib/db/schema';
 import { eq, desc, and, asc, sql } from 'drizzle-orm';
 import * as jwt from 'jsonwebtoken';
+import { generateOrderNumber } from '@/lib/utils/order-number';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'menuin-pos-secret-key-change-in-prod';
 
@@ -105,15 +106,6 @@ export async function GET(req: NextRequest) {
   }
 }
 
-function generateOrderNumber() {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let result = '#';
-  for (let i = 0; i < 6; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-}
-
 export async function POST(req: NextRequest) {
   try {
     const user = await verifyMobileAuth(req);
@@ -126,7 +118,13 @@ export async function POST(req: NextRequest) {
     const userId = user.id;
 
     const result = await db.transaction(async (tx) => {
-      const orderNumber = generateOrderNumber();
+      const [currentTenant] = await tx
+        .select({ name: tenants.name, orderPrefix: tenants.orderPrefix })
+        .from(tenants)
+        .where(eq(tenants.id, tenantId))
+        .limit(1);
+
+      const orderNumber = generateOrderNumber(currentTenant);
 
       // Find active shift
       const activeShifts = await tx

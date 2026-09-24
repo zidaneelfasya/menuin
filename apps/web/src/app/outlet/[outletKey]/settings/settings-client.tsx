@@ -40,6 +40,7 @@ import {
   updateKitchenTicketSettings
 } from '@/lib/actions/settings';
 import { PosSettingsForm } from './pos-settings-form';
+import { OrderPrefixPicker } from '@/components/shared/order-prefix-picker';
 
 export function SettingsClient({ 
   tenant, 
@@ -76,6 +77,7 @@ export function SettingsClient({
   const [storeName, setStoreName] = React.useState(tenant?.name || '');
   const [storeDescription, setStoreDescription] = React.useState(tenant?.storeDescription || '');
   const [primaryColor, setPrimaryColor] = React.useState(tenant?.primaryColor || '#2563EB');
+  const [orderPrefix, setOrderPrefix] = React.useState(tenant?.orderPrefix || '');
 
   const [midtransEnvironment, setMidtransEnvironment] = React.useState(tenant?.midtransEnvironment || 'sandbox');
   const [midtransServerKey, setMidtransServerKey] = React.useState(tenant?.midtransServerKey || '');
@@ -108,7 +110,8 @@ export function SettingsClient({
   const hasStoreChanges = 
     storeName !== (tenant?.name || '') ||
     storeDescription !== (tenant?.storeDescription || '') ||
-    primaryColor !== (tenant?.primaryColor || '#2563EB');
+    primaryColor !== (tenant?.primaryColor || '#2563EB') ||
+    orderPrefix !== (tenant?.orderPrefix || '');
 
   const hasTaxChanges = 
     taxName !== (tenant?.taxName || 'Pajak (PB1)') ||
@@ -251,6 +254,7 @@ export function SettingsClient({
     fd.append('name', storeName);
     fd.append('storeDescription', storeDescription);
     fd.append('primaryColor', primaryColor);
+    fd.append('orderPrefix', orderPrefix);
 
     const res = await updateStoreGeneralSettings(fd);
     setIsSavingStore(false);
@@ -440,6 +444,12 @@ export function SettingsClient({
                       className="bg-slate-50/50"
                     />
                   </div>
+
+                  <OrderPrefixPicker
+                    value={orderPrefix}
+                    onChange={setOrderPrefix}
+                    outletName={storeName}
+                  />
 
                   <div className="flex justify-end pt-4 border-t">
                     <Button disabled={isSavingStore || !hasStoreChanges} type="submit" size="lg" className="min-w-[140px] shadow-sm">

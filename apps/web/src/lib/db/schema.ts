@@ -36,6 +36,7 @@ export const tenants = pgTable('tenants', {
   primaryColor: text('primary_color').default('#2563EB'), // Default blue
   
   // Ordering settings
+  orderPrefix: text('order_prefix'),
   dineInEnabled: boolean('dine_in_enabled').default(true).notNull(),
   takeAwayEnabled: boolean('take_away_enabled').default(true).notNull(),
   deliveryEnabled: boolean('delivery_enabled').default(false).notNull(),

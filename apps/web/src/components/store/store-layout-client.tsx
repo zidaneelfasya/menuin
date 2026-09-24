@@ -14,7 +14,7 @@ export function StoreLayoutClient({
   children,
 }: StoreLayoutClientProps) {
   const pathname = usePathname();
-  const isCleanLayout = pathname?.includes('/checkout') || pathname?.includes('/payment');
+  const isCleanLayout = pathname?.includes('/checkout') || pathname?.includes('/payment') || pathname?.includes('/status');
 
   if (isCleanLayout) {
     return (

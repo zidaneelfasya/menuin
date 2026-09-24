@@ -97,19 +97,26 @@ export async function updateCatalogOrdering(formData: FormData) {
   
   const orderProcessType = formData.get("orderProcessType") as string || "MANUAL";
   const onlinePaymentEnabled = formData.get("onlinePaymentEnabled") === "true" || formData.get("onlinePaymentEnabled") === "on";
+  const orderPrefixRaw = formData.get("orderPrefix") as string | null;
 
   try {
+    const updatePayload: Record<string, any> = {
+      dineInEnabled,
+      takeAwayEnabled,
+      deliveryEnabled,
+      customerNameRequired,
+      customerPhoneRequired,
+      tableNumberRequired,
+      orderProcessType,
+      onlinePaymentEnabled,
+    };
+
+    if (orderPrefixRaw !== null) {
+      updatePayload.orderPrefix = orderPrefixRaw ? orderPrefixRaw.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : null;
+    }
+
     await db.update(tenants)
-      .set({ 
-        dineInEnabled,
-        takeAwayEnabled,
-        deliveryEnabled,
-        customerNameRequired,
-        customerPhoneRequired,
-        tableNumberRequired,
-        orderProcessType,
-        onlinePaymentEnabled
-      })
+      .set(updatePayload)
       .where(eq(tenants.id, user.tenantId));
     
     if (user?.outletKey) revalidatePath(`/outlet/${user.outletKey}`, "layout");
