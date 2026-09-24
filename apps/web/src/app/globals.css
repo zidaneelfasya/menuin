@@ -1,0 +1,190 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 98%;
+    --foreground: 221 39% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 221 39% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 221 39% 11%;
+    --primary: 221 95% 52%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 221 80% 90%;
+    --secondary-foreground: 221 95% 20%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 221 80% 90%;
+    --accent-foreground: 221 95% 20%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 93%;
+    --input: 0 0% 93%;
+    --ring: 221 95% 52%;
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+    --chart-1: 3 76% 55%;
+    --chart-2: 16 100% 60%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 142 71% 45%;
+    --chart-5: 221 39% 11%;
+    --radius: 0.75rem;
+  }
+  .dark {
+    --background: 0 0% 98%;
+    --foreground: 221 39% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 221 39% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 221 39% 11%;
+    --primary: 221 95% 52%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 221 80% 90%;
+    --secondary-foreground: 221 95% 20%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 221 80% 90%;
+    --accent-foreground: 221 95% 20%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 93%;
+    --input: 0 0% 93%;
+    --ring: 221 95% 52%;
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+    --chart-1: 3 76% 55%;
+    --chart-2: 16 100% 60%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 142 71% 45%;
+    --chart-5: 221 39% 11%;
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    max-width: 100%;
+    overflow-x: clip;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-family: var(--font-poppins), sans-serif;
+    max-width: 100%;
+    overflow-x: clip;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-poppins), sans-serif;
+  }
+}
+
+/* ---------------------------------------------------------------
+   Landing page tokens.
+   Namespace terpisah dari token produk supaya perubahan di sini
+   tidak pernah merembet ke dashboard / kasir.
+   --------------------------------------------------------------- */
+@layer base {
+  :root {
+    --landing-ink: #0a0a0a;
+    --landing-ink-soft: #52525b;
+    --landing-ink-muted: #71717a;
+    --landing-surface: #ffffff;
+    --landing-surface-alt: #fafafa;
+    --landing-hairline: rgba(0, 0, 0, 0.08);
+    --landing-accent: #0e59f9;
+    --landing-accent-ink: #0c4cd6;
+    /* Dua level shadow. Tidak ada level ketiga. */
+    --landing-lift: 0 1px 2px rgba(15, 23, 42, 0.04);
+    --landing-lift-lg: 0 18px 40px -24px rgba(15, 23, 42, 0.28);
+  }
+}
+
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.landing-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 700ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.landing-reveal[data-visible="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+@keyframes laserScan {
+  0% {
+    top: 5%;
+    opacity: 0.8;
+  }
+  50% {
+    top: 85%;
+    opacity: 1;
+  }
+  100% {
+    top: 5%;
+    opacity: 0.8;
+  }
+}
+
+@keyframes printPaper {
+  0% {
+    transform: translateY(-80%);
+    opacity: 0.2;
+  }
+  60% {
+    transform: translateY(0%);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0%);
+    opacity: 1;
+  }
+}
+
+.animate-laser-scan {
+  animation: laserScan 2s ease-in-out infinite;
+}
+
+.animate-print-paper {
+  animation: printPaper 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Hide scrollbar globally across Chrome, Safari, Edge and Opera */
+::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  display: none;
+  width: 0px;
+  height: 0px;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.scrollbar-hide,
+* {
+  -ms-overflow-style: none;  /* IE and Edge */
+}
+
