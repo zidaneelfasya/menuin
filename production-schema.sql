@@ -2,7 +2,7 @@
 -- MENUIN PRODUCTION DATABASE SCHEMA (SOURCE OF TRUTH)
 -- Dialect: PostgreSQL (Supabase / Vanilla PostgreSQL 15+)
 --
--- File: schema.sql
+-- File: production-schema.sql
 -- Description:
 --   Skema database lengkap dan mutakhir untuk seluruh ekosistem Menuin
 --   (Storefront QR, POS Kasir Web/Mobile, Dapur Kitchen Screen, dan Superadmin).

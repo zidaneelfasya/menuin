@@ -50,6 +50,13 @@
       "when": 1788762885209,
       "tag": "0006_heavy_maginty",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790220195406,
+      "tag": "0007_amusing_power_man",
+      "breakpoints": true
     }
   ]
 }

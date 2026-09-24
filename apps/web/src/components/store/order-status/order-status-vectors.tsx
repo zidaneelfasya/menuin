@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 
 interface VectorProps {
   primaryColor?: string;
@@ -187,6 +187,7 @@ export function PesananDiterimaVector({ primaryColor, className = "" }: VectorPr
  */
 export function ProcessingVector({ primaryColor, className = "" }: VectorProps) {
   const accent = getAccentColor(primaryColor);
+  const shouldReduceMotion = useReducedMotion();
 
   return (
     <svg
@@ -196,25 +197,83 @@ export function ProcessingVector({ primaryColor, className = "" }: VectorProps) 
       className={`w-full h-auto select-none ${className}`}
       aria-label="Sedang Disiapkan"
     >
-      {/* Pan Handle (Hitam) */}
-      <path
-        d="M19.3948 92.9474L105.45 77.5776L110.61 106.468L24.5547 121.838C16.5769 123.263 8.95442 117.95 7.52954 109.973C6.10466 101.995 11.4169 94.3723 19.3948 92.9474Z"
-        stroke="#111827"
-        strokeWidth="8"
-      />
-      <path
-        d="M26.335 91.4632L19.0968 92.99C11.1674 94.6627 6.09483 102.447 7.76737 110.376C9.43993 118.306 17.2243 123.378 25.1538 121.706L32.392 120.179C40.3216 118.506 45.394 110.722 43.7214 102.793C42.075 94.987 34.5065 89.95 26.7068 91.3898L26.335 91.4632Z"
-        stroke="#111827"
-        strokeWidth="8"
-      />
+      {/* Pan Group (Gagang & Wajan): Animasi rotasi searah jarum jam (rotasi -9° matematis), geser kanan-kiri kecil 6x, kembali 0°, repeat */}
+      <motion.g
+        style={{
+          transformBox: "fill-box",
+          transformOrigin: "45% 60%",
+        }}
+        animate={
+          shouldReduceMotion
+            ? { rotate: 0, x: 0 }
+            : {
+                rotate: [0, 9, 9, 0, 0],
+                x: [
+                  0,
+                  0,
+                  3, -3, // geser 1
+                  3, -3, // geser 2
+                  3, -3, // geser 3
+                  3, -3, // geser 4
+                  3, -3, // geser 5
+                  3, -3, // geser 6
+                  0,
+                  0,
+                  0,
+                ],
+              }
+        }
+        transition={
+          shouldReduceMotion
+            ? undefined
+            : {
+                rotate: {
+                  duration: 3.2,
+                  times: [0, 0.125, 0.5, 0.625, 1],
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                },
+                x: {
+                  duration: 3.2,
+                  times: [
+                    0,
+                    0.125,
+                    0.156, 0.187,
+                    0.218, 0.25,
+                    0.281, 0.312,
+                    0.343, 0.375,
+                    0.406, 0.437,
+                    0.468, 0.5,
+                    0.53,
+                    0.625,
+                    1,
+                  ],
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                },
+              }
+        }
+      >
+        {/* Pan Handle (Hitam) */}
+        <path
+          d="M19.3948 92.9474L105.45 77.5776L110.61 106.468L24.5547 121.838C16.5769 123.263 8.95442 117.95 7.52954 109.973C6.10466 101.995 11.4169 94.3723 19.3948 92.9474Z"
+          stroke="#111827"
+          strokeWidth="8"
+        />
+        <path
+          d="M26.335 91.4632L19.0968 92.99C11.1674 94.6627 6.09483 102.447 7.76737 110.376C9.43993 118.306 17.2243 123.378 25.1538 121.706L32.392 120.179C40.3216 118.506 45.394 110.722 43.7214 102.793C42.075 94.987 34.5065 89.95 26.7068 91.3898L26.335 91.4632Z"
+          stroke="#111827"
+          strokeWidth="8"
+        />
 
-      {/* Pan Body / Wok (Putih dengan outline hitam) */}
-      <path
-        d="M212.149 54.1043C213.368 53.9021 214.477 54.8422 214.477 56.0775L214.477 83.0653C214.477 92.6956 207.613 100.959 198.147 102.726L126.094 116.176C116.17 118.028 106.422 112.194 103.364 102.574L94.8851 75.8997C94.5162 74.7389 95.2618 73.521 96.4632 73.3211L212.149 54.1043Z"
-        fill="white"
-        stroke="#111827"
-        strokeWidth="8"
-      />
+        {/* Pan Body / Wok (Putih dengan outline hitam) */}
+        <path
+          d="M212.149 54.1043C213.368 53.9021 214.477 54.8422 214.477 56.0775L214.477 83.0653C214.477 92.6956 207.613 100.959 198.147 102.726L126.094 116.176C116.17 118.028 106.422 112.194 103.364 102.574L94.8851 75.8997C94.5162 74.7389 95.2618 73.521 96.4632 73.3211L212.149 54.1043Z"
+          fill="white"
+          stroke="#111827"
+          strokeWidth="8"
+        />
+      </motion.g>
 
       {/* Dynamic Asap 1 (Smoke trail 1 -> catalog primary, smooth upward drift, NO opacity pulse) */}
       <motion.path

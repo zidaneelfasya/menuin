@@ -112,16 +112,20 @@ export async function updateStoreGeneralSettings(formData: FormData) {
     const name = formData.get('name') as string;
     const storeDescription = formData.get('storeDescription') as string;
     const primaryColor = (formData.get('primaryColor') as string) || '#2563EB';
+    const orderPrefixRaw = formData.get('orderPrefix') as string;
 
     if (!name || name.trim() === '') {
       return { success: false, error: 'Nama toko tidak boleh kosong' };
     }
+
+    const orderPrefix = orderPrefixRaw ? orderPrefixRaw.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : null;
 
     await db.update(tenants)
       .set({
         name,
         storeDescription,
         primaryColor,
+        orderPrefix: orderPrefix || null,
         updatedAt: new Date(),
       })
       .where(eq(tenants.id, user.tenantId));

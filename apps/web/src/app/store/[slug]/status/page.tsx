@@ -98,10 +98,7 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
     if (!isSilent) setIsLoading(true);
     setError("");
 
-    let formattedOrderNum = orderNum.trim().toUpperCase();
-    if (!formattedOrderNum.startsWith("#")) {
-      formattedOrderNum = "#" + formattedOrderNum;
-    }
+    const formattedOrderNum = orderNum.trim().toUpperCase();
 
     try {
       // Auto-verify with Midtrans if coming back from payment or status code in URL
@@ -350,7 +347,7 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
                   <button
                     type="button"
                     onClick={handleCopyOrderNumber}
-                    className="inline-flex items-center gap-1 font-mono font-semibold text-xs sm:text-sm text-gray-900 hover:text-catalog-primary transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1 font-sans font-semibold text-xs sm:text-sm text-gray-900 hover:text-catalog-primary transition-colors cursor-pointer"
                     title="Klik untuk menyalin"
                   >
                     {isCopied ? (
@@ -377,20 +374,7 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
                     />
 
                     {/* Subtle Live Kitchen Connection Indicator */}
-                    {effectiveStatus !== "COMPLETED" &&
-                      effectiveStatus !== "CANCELLED" &&
-                      effectiveStatus !== "REJECTED" && (
-                        <div className="flex justify-center pt-2">
-                          <div className="inline-flex items-center gap-2 text-[11px] sm:text-xs font-medium text-gray-600 bg-gray-50/90 px-3.5 py-1.5 rounded-full border border-gray-200/80 shadow-2xs select-none">
-                            <span className="relative flex h-2 w-2">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                            </span>
-                            <span>Terhubung langsung dengan dapur (live)</span>
-                          </div>
-                        </div>
-                      )}
-
+                    
                     {/* Pending Payment Notice Banner (Matching Screenshot 3 Notice Box) */}
                     {order.paymentStatus === "PENDING" && order.paymentMethod === "CASH" && (
                       <div className="mt-4 w-full bg-amber-50/90 border border-amber-200/90 text-amber-900 p-3 sm:p-3.5 rounded-xl text-xs sm:text-sm flex items-start gap-2.5 text-left leading-relaxed">

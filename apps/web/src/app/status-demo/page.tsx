@@ -101,7 +101,7 @@ const BRAND_THEMES = [
 export default function StatusDemoPage() {
   const [activeTab, setActiveTab] = useState<"simulator" | "gallery">("simulator");
   const [currentStatus, setCurrentStatus] = useState<OrderStatusType>("PROCESSING");
-  const [orderNumber, setOrderNumber] = useState("#A-0824");
+  const [orderNumber, setOrderNumber] = useState("MG7B4K9X2M");
   const [themeColor, setThemeColor] = useState("#0E59F9");
 
   return (

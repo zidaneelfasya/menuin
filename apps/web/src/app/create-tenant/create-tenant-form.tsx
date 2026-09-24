@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Loader2, ArrowLeft, AlertCircle } from 'lucide-react';
+import { OrderPrefixPicker } from '@/components/shared/order-prefix-picker';
 
 import Link from 'next/link';
 
@@ -15,6 +16,8 @@ export function CreateTenantForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [restaurantName, setRestaurantName] = useState('');
+  const [orderPrefix, setOrderPrefix] = useState('');
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -22,6 +25,7 @@ export function CreateTenantForm() {
     setError('');
 
     const formData = new FormData(event.currentTarget);
+    formData.append('orderPrefix', orderPrefix);
     
     try {
       const result = await createTenantAction(formData);
@@ -54,12 +58,21 @@ export function CreateTenantForm() {
             <Input
               id="restaurantName"
               name="restaurantName"
+              value={restaurantName}
+              onChange={(e) => setRestaurantName(e.target.value)}
               placeholder="e.g., Kopi Kenangan"
               required
               disabled={loading}
               className="h-12"
             />
           </div>
+
+          <OrderPrefixPicker
+            value={orderPrefix}
+            onChange={setOrderPrefix}
+            outletName={restaurantName}
+            disabled={loading}
+          />
         </CardContent>
         <CardFooter className="flex flex-col space-y-4 pb-6">
           <Button type="submit" className="w-full h-12 text-lg" disabled={loading}>
