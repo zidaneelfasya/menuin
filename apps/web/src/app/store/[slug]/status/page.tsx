@@ -18,6 +18,7 @@ import {
   Check,
   AlertTriangle,
   AlertCircle,
+  QrCode,
 } from "lucide-react";
 import Link from "next/link";
 import { formatCurrency } from "@/lib/utils/format";
@@ -25,6 +26,7 @@ import Script from "next/script";
 import { OrderStatusCard, resolveOrderStatus } from "@/components/store/order-status/order-status-card";
 import { OrderStatusDemoSwitcher } from "@/components/store/order-status/order-status-demo-switcher";
 import { OrderStatusType } from "@/components/store/order-status/order-status-visual";
+import { OrderQrModal } from "@/components/store/order-status/order-qr-modal";
 
 declare global {
   interface Window {
@@ -93,6 +95,7 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
   const [error, setError] = useState("");
   const [previewStatus, setPreviewStatus] = useState<OrderStatusType | null>(null);
   const [isCopied, setIsCopied] = useState(false);
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
 
   const fetchOrder = useCallback(async (orderNum: string, isSilent = false) => {
     if (!isSilent) setIsLoading(true);
@@ -377,14 +380,45 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
                     
                     {/* Pending Payment Notice Banner (Matching Screenshot 3 Notice Box) */}
                     {order.paymentStatus === "PENDING" && order.paymentMethod === "CASH" && (
-                      <div className="mt-4 w-full bg-amber-50/90 border border-amber-200/90 text-amber-900 p-3 sm:p-3.5 rounded-xl text-xs sm:text-sm flex items-start gap-2.5 text-left leading-relaxed">
-                        <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                        <div>
-                          Silakan menuju kasir untuk melakukan pembayaran tunai sebesar{" "}
-                          <strong className="font-semibold text-gray-900">
-                            {formatCurrency(Number(order.grandTotal))}
-                          </strong>.
+                      <div className="mt-4 w-full bg-amber-50/90 border border-amber-200/90 text-amber-900 p-3 sm:p-3.5 rounded-xl text-xs sm:text-sm flex flex-col gap-2.5 text-left leading-relaxed">
+                        <div className="flex items-start gap-2.5">
+                          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                          <div>
+                            Silakan menuju kasir untuk melakukan pembayaran tunai sebesar{" "}
+                            <strong className="font-semibold text-gray-900">
+                              {formatCurrency(Number(order.grandTotal))}
+                            </strong>.
+                          </div>
                         </div>
+
+                        {/* Modern Action Button: Tampilkan QR Pembayaran */}
+                        <button
+                          type="button"
+                          onClick={() => setIsQrModalOpen(true)}
+                          className="w-full mt-0.5 py-2.5 px-3 rounded-xl bg-white border border-amber-300/80 hover:bg-amber-100/40 text-amber-950 font-semibold text-xs flex items-center justify-between transition-all shadow-2xs hover:shadow-xs active:scale-[0.99] cursor-pointer"
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center">
+                              <QrCode className="w-3.5 h-3.5" />
+                            </div>
+                            <span className="font-semibold text-gray-900">Tampilkan QR Pesanan</span>
+                          </div>
+                          <span className="text-[11px] font-semibold text-amber-700 flex items-center gap-1">
+                            Buka QR &rarr;
+                          </span>
+                        </button>
+
+                        {/* QR Code Popup Modal */}
+                        <OrderQrModal
+                          isOpen={isQrModalOpen}
+                          onClose={() => setIsQrModalOpen(false)}
+                          orderNumber={order.orderNumber}
+                          grandTotal={Number(order.grandTotal)}
+                          customerName={order.customerName}
+                          tableNumber={order.tableNumber}
+                          orderType={order.orderType}
+                          primaryColor={outletPrimaryColor}
+                        />
                       </div>
                     )}
 

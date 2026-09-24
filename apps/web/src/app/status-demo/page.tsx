@@ -17,8 +17,10 @@ import {
   ShoppingBag,
   ArrowRight,
   Info,
-  Palette
+  Palette,
+  QrCode
 } from "lucide-react";
+import { OrderQrModal } from "@/components/store/order-status/order-qr-modal";
 
 interface AnimationMeta {
   status: OrderStatusType;
@@ -103,6 +105,7 @@ export default function StatusDemoPage() {
   const [currentStatus, setCurrentStatus] = useState<OrderStatusType>("PROCESSING");
   const [orderNumber, setOrderNumber] = useState("MG7B4K9X2M");
   const [themeColor, setThemeColor] = useState("#0E59F9");
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 flex flex-col selection:bg-blue-100 selection:text-blue-900">
@@ -423,11 +426,42 @@ export default function StatusDemoPage() {
 
                     {/* Notice Box */}
                     {currentStatus === "AWAITING_PAYMENT" && (
-                      <div className="mt-4 w-full bg-amber-50/90 border border-amber-200/90 text-amber-900 p-3 rounded-xl text-xs flex items-start gap-2 text-left leading-relaxed">
-                        <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                        <div>
-                          Silakan menuju kasir untuk melakukan pembayaran sebesar <strong className="font-semibold text-gray-900">Rp 48.000</strong>.
+                      <div className="mt-4 w-full bg-amber-50/90 border border-amber-200/90 text-amber-900 p-3 sm:p-3.5 rounded-xl text-xs flex flex-col gap-2.5 text-left leading-relaxed">
+                        <div className="flex items-start gap-2">
+                          <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                          <div>
+                            Silakan menuju kasir untuk melakukan pembayaran sebesar <strong className="font-semibold text-gray-900">Rp 48.000</strong>.
+                          </div>
                         </div>
+
+                        {/* Modern Action Button: Tampilkan QR Pembayaran */}
+                        <button
+                          type="button"
+                          onClick={() => setIsQrModalOpen(true)}
+                          className="w-full mt-0.5 py-2.5 px-3 rounded-xl bg-white border border-amber-300/80 hover:bg-amber-100/40 text-amber-950 font-semibold text-xs flex items-center justify-between transition-all shadow-2xs hover:shadow-xs active:scale-[0.99] cursor-pointer"
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center">
+                              <QrCode className="w-3.5 h-3.5" />
+                            </div>
+                            <span className="font-semibold text-gray-900">Tampilkan QR Pesanan</span>
+                          </div>
+                          <span className="text-[11px] font-semibold text-amber-700 flex items-center gap-1">
+                            Buka QR &rarr;
+                          </span>
+                        </button>
+
+                        {/* QR Code Popup Modal */}
+                        <OrderQrModal
+                          isOpen={isQrModalOpen}
+                          onClose={() => setIsQrModalOpen(false)}
+                          orderNumber={orderNumber}
+                          grandTotal={48000}
+                          customerName="Zidane (Simulasi)"
+                          tableNumber="04"
+                          orderType="DINE_IN"
+                          primaryColor={themeColor}
+                        />
                       </div>
                     )}
                   </div>

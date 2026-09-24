@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useState, useEffect, useMemo } from "react";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
-import { updateOrderStatus, updateOrderItemStatus, syncOrderPaymentStatus, bulkUpdateOrderStatus, getActiveOrders } from "@/lib/actions/orders";
+import { updateOrderStatus, updateOrderItemStatus, syncOrderPaymentStatus, bulkUpdateOrderStatus, getActiveOrders, getOrderByNumberForOutlet } from "@/lib/actions/orders";
 import { toast } from "sonner";
 import { 
   Clock, 
@@ -23,7 +23,8 @@ import {
   ReceiptText,
   RefreshCw,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Camera
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -33,6 +34,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ReceiptPrinter, ReceiptData, TenantReceiptSettings } from "@/features/pos/components/receipt-printer";
+import { useBarcodeScanner } from "@/hooks/use-barcode-scanner";
+import { OrderCameraScannerDialog } from "./order-camera-scanner-dialog";
+import { playScanSuccessBeep, playScanErrorBeep } from "@/lib/utils/sound";
 
 type OrderItem = {
   id: string;
@@ -131,8 +135,90 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
     orders: [],
   });
   const [isBulkUpdating, setIsBulkUpdating] = useState(false);
+  const [isCameraScannerOpen, setIsCameraScannerOpen] = useState(false);
+  const [isSearchingScannedOrder, setIsSearchingScannedOrder] = useState(false);
+  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+  const isUpdatingStatus = Boolean(updatingOrderId);
 
   const router = useRouter();
+
+  // Helper to extract clean order number from raw text or full URL
+  const parseOrderNumber = (text: string): string => {
+    const clean = text.trim();
+    try {
+      if (clean.includes("order=")) {
+        const url = clean.startsWith("http")
+          ? new URL(clean)
+          : new URL(`http://dummy.com${clean.startsWith("/") ? "" : "/"}${clean}`);
+        const orderParam = url.searchParams.get("order");
+        if (orderParam) return orderParam.replace(/^#/, "").trim();
+      }
+    } catch {
+      // fallback if not a valid URL
+    }
+    return clean.replace(/^#/, "").trim();
+  };
+
+  // Handler for scans from both hardware barcode scanner and camera
+  const handleScanCode = async (rawCode: string) => {
+    const orderNum = parseOrderNumber(rawCode);
+    if (!orderNum) return;
+
+    // 1. Search in current memory state first
+    const cleanTarget = orderNum.toUpperCase();
+    const existingOrder = orders.find(
+      (o) =>
+        (o.orderNumber && o.orderNumber.replace(/^#/, "").toUpperCase() === cleanTarget) ||
+        o.id === rawCode
+    );
+
+    if (existingOrder) {
+      playScanSuccessBeep();
+      setSelectedOrder(existingOrder);
+      setIsDialogOpen(true);
+      toast.success(`Pesanan #${existingOrder.orderNumber?.replace(/^#/, "") || ""} ditemukan`);
+      return;
+    }
+
+    // 2. Fallback to server action if not yet in state
+    setIsSearchingScannedOrder(true);
+    try {
+      const res = await getOrderByNumberForOutlet(orderNum);
+      if (res) {
+        playScanSuccessBeep();
+        const loadedOrder = {
+          ...res,
+          createdAt: new Date(res.createdAt),
+        } as Order;
+        setOrders((prev) => {
+          if (!prev.some((o) => o.id === loadedOrder.id)) {
+            return [loadedOrder, ...prev];
+          }
+          return prev;
+        });
+        setSelectedOrder(loadedOrder);
+        setIsDialogOpen(true);
+        toast.success(`Pesanan #${loadedOrder.orderNumber?.replace(/^#/, "") || ""} ditemukan`);
+      } else {
+        playScanErrorBeep();
+        toast.error(`Pesanan #${orderNum} tidak ditemukan`);
+      }
+    } catch (err: any) {
+      playScanErrorBeep();
+      toast.error("Gagal memproses scanner pesanan");
+    } finally {
+      setIsSearchingScannedOrder(false);
+    }
+  };
+
+  // Hardware barcode scanner listener (seamless background scanning)
+  useBarcodeScanner({
+    onScan: (code) => {
+      setSearchQuery("");
+      handleScanCode(code);
+    },
+    minLength: 3,
+  });
 
   // Update local state when props change
   useEffect(() => {
@@ -222,6 +308,9 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
   };
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
+    if (updatingOrderId) return;
+    setUpdatingOrderId(orderId);
+
     // Optimistic UI update
     setOrders(prev => {
       if (!["PENDING", "NEW", "PROCESSING", "READY"].includes(newStatus)) {
@@ -236,18 +325,26 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
       });
     });
 
-    const res = await updateOrderStatus(orderId, newStatus);
-    if (res.error) {
-      toast.error(res.error);
-      router.refresh();
-    } else {
-      toast.success("Status pesanan diperbarui");
-      if (selectedOrder && selectedOrder.id === orderId) {
-        setIsDialogOpen(false);
+    try {
+      const res = await updateOrderStatus(orderId, newStatus);
+      if (res.error) {
+        toast.error(res.error);
+        router.refresh();
+      } else {
+        toast.success("Status pesanan diperbarui");
+        if (selectedOrder && selectedOrder.id === orderId) {
+          setIsDialogOpen(false);
+          setSelectedOrder(null);
+        }
+        if (orderToPrepare && orderToPrepare.id === orderId) {
+          setIsPrepareModalOpen(false);
+          setOrderToPrepare(null);
+        }
       }
-      if (orderToPrepare && orderToPrepare.id === orderId) {
-        setIsPrepareModalOpen(false);
-      }
+    } catch (err: any) {
+      toast.error(err?.message || "Gagal memperbarui status pesanan");
+    } finally {
+      setUpdatingOrderId(null);
     }
   };
 
@@ -379,6 +476,8 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
   };
 
   const handleToggleItem = async (orderId: string, itemId: string, isCompleted: boolean) => {
+    if (isUpdatingStatus) return;
+
     // Optimistic UI update
     setOrders(prev => prev.map(o => {
       if (o.id !== orderId) return o;
@@ -611,6 +710,7 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
 
                       <Button 
                         size="sm"
+                        disabled={isUpdatingStatus && updatingOrderId === order.id}
                         onClick={(e) => { 
                           e.stopPropagation(); 
                           if (status === "NEW") {
@@ -620,10 +720,19 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
                             handleStatusChange(order.id, nextStatus); 
                           }
                         }}
-                        className={`h-7 text-xs font-medium gap-1 px-3 rounded-lg shadow-2xs transition-transform active:scale-95 ${accentColor.button}`}
+                        className={`h-7 text-xs font-medium gap-1 px-3 rounded-lg shadow-2xs transition-transform active:scale-95 ${accentColor.button} disabled:opacity-60 cursor-pointer`}
                       >
-                        <span>{actionText}</span>
-                        {status === "READY" ? <Check className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                        {updatingOrderId === order.id ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin mr-0.5" />
+                            <span>Proses...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>{actionText}</span>
+                            {status === "READY" ? <Check className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                          </>
+                        )}
                       </Button>
                     </div>
                   </div>
@@ -647,14 +756,27 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
 
       {/* Search & Filter Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
-        <div className="relative w-full sm:max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/70" />
-          <Input 
-            placeholder="Cari meja, no order, nama..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 h-9 text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg"
-          />
+        <div className="flex items-center gap-2 w-full sm:max-w-md">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/70" />
+            <Input 
+              placeholder="Cari meja, no order, nama..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 h-9 text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg"
+            />
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setIsCameraScannerOpen(true)}
+            className="h-9 px-3 gap-1.5 text-xs font-semibold border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-xs shrink-0 cursor-pointer"
+            title="Pindai QR pesanan pelanggan menggunakan kamera"
+          >
+            <Camera className="w-3.5 h-3.5 text-blue-600" />
+            <span>Scan QR</span>
+          </Button>
         </div>
 
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
@@ -771,7 +893,12 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
       </div>
 
       {/* Preparation & Print Receipt Modal (Before starting kitchen preparation) */}
-      <Dialog open={isPrepareModalOpen} onOpenChange={setIsPrepareModalOpen}>
+      <Dialog 
+        open={isPrepareModalOpen} 
+        onOpenChange={(open) => {
+          if (!isUpdatingStatus) setIsPrepareModalOpen(open);
+        }}
+      >
         <DialogContent className="sm:max-w-md bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
           <DialogHeader className="border-b pb-3 border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-2">
@@ -822,8 +949,8 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
                     type="button"
                     variant="outline"
                     onClick={() => handlePrintReceipt(orderToPrepare, 'kitchen')}
-                    disabled={isPrinting}
-                    className="h-10 text-xs font-medium border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 text-slate-700 dark:text-slate-300 gap-1.5"
+                    disabled={isPrinting || isUpdatingStatus}
+                    className="h-10 text-xs font-medium border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 text-slate-700 dark:text-slate-300 gap-1.5 disabled:opacity-50"
                   >
                     <ChefHat className="w-3.5 h-3.5 text-amber-600" />
                     Tiket Dapur
@@ -832,8 +959,8 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
                     type="button"
                     variant="outline"
                     onClick={() => handlePrintReceipt(orderToPrepare, 'customer')}
-                    disabled={isPrinting}
-                    className="h-10 text-xs font-medium border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 text-slate-700 dark:text-slate-300 gap-1.5"
+                    disabled={isPrinting || isUpdatingStatus}
+                    className="h-10 text-xs font-medium border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 text-slate-700 dark:text-slate-300 gap-1.5 disabled:opacity-50"
                   >
                     <ReceiptText className="w-3.5 h-3.5 text-blue-600" />
                     Struk Pelanggan
@@ -843,8 +970,8 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
                   type="button"
                   variant="outline"
                   onClick={() => handlePrintReceipt(orderToPrepare, 'all')}
-                  disabled={isPrinting}
-                  className="w-full h-9 text-xs border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 text-slate-700 dark:text-slate-300 gap-1.5"
+                  disabled={isPrinting || isUpdatingStatus}
+                  className="w-full h-9 text-xs border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 text-slate-700 dark:text-slate-300 gap-1.5 disabled:opacity-50"
                 >
                   <Printer className="w-3.5 h-3.5 text-slate-600" />
                   Cetak Keduanya (Struk & Tiket Dapur)
@@ -855,18 +982,29 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
                 <Button 
                   type="button" 
                   variant="outline" 
+                  disabled={isUpdatingStatus}
                   onClick={() => setIsPrepareModalOpen(false)}
-                  className="h-10 text-xs"
+                  className="h-10 text-xs disabled:opacity-50 cursor-pointer"
                 >
                   Batal
                 </Button>
                 <Button 
                   type="button"
+                  disabled={isUpdatingStatus}
                   onClick={() => handleStatusChange(orderToPrepare.id, 'PROCESSING')}
-                  className="h-10 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white gap-1.5 shadow-sm"
+                  className="h-10 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white gap-1.5 shadow-sm disabled:opacity-75 cursor-pointer"
                 >
-                  <ChefHat className="w-3.5 h-3.5" />
-                  Mulai Penyiapan (Masuk Dapur)
+                  {isUpdatingStatus ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Memproses...</span>
+                    </>
+                  ) : (
+                    <>
+                      <ChefHat className="w-3.5 h-3.5" />
+                      <span>Mulai Penyiapan (Masuk Dapur)</span>
+                    </>
+                  )}
                 </Button>
               </div>
             </div>
@@ -875,7 +1013,12 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
       </Dialog>
 
       {/* Order Detail Modal */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog 
+        open={isDialogOpen} 
+        onOpenChange={(open) => {
+          if (!isUpdatingStatus) setIsDialogOpen(open);
+        }}
+      >
         <DialogContent className="sm:max-w-md bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
           <DialogHeader className="border-b pb-3 border-slate-100 dark:border-slate-800">
             <DialogTitle className="flex items-center gap-2 text-base">
@@ -932,19 +1075,24 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
                   {selectedOrder.items.map((item) => (
                     <div 
                       key={item.id} 
-                      className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors text-xs"
-                      onClick={() => handleToggleItem(selectedOrder.id, item.id, !item.isCompleted)}
+                      className={`flex items-center justify-between p-2 rounded-lg transition-colors text-xs ${
+                        isUpdatingStatus ? "opacity-60 cursor-not-allowed" : "hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer"
+                      }`}
+                      onClick={() => !isUpdatingStatus && handleToggleItem(selectedOrder.id, item.id, !item.isCompleted)}
                     >
-                      <div className="flex items-center gap-2.5 flex-1 cursor-pointer">
+                      <div className="flex items-center gap-2.5 flex-1">
                         <Checkbox 
                           id={`modal-item-${item.id}`} 
                           checked={item.isCompleted} 
-                          onCheckedChange={(checked) => handleToggleItem(selectedOrder.id, item.id, checked as boolean)}
-                          className="w-4 h-4"
+                          disabled={isUpdatingStatus}
+                          onCheckedChange={(checked) => !isUpdatingStatus && handleToggleItem(selectedOrder.id, item.id, checked as boolean)}
+                          className="w-4 h-4 disabled:opacity-50"
                         />
                         <label 
                           htmlFor={`modal-item-${item.id}`}
-                          className={`cursor-pointer leading-tight ${item.isCompleted ? "text-muted-foreground line-through" : "text-foreground font-medium"}`}
+                          className={`leading-tight ${
+                            isUpdatingStatus ? "cursor-not-allowed" : "cursor-pointer"
+                          } ${item.isCompleted ? "text-muted-foreground line-through" : "text-foreground font-medium"}`}
                         >
                           <span className="font-bold font-mono mr-1">{item.quantity}x</span> {item.productName}
                         </label>
@@ -963,8 +1111,9 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
                     type="button"
                     size="sm"
                     variant="outline"
+                    disabled={isPrinting || isUpdatingStatus}
                     onClick={() => handlePrintReceipt(selectedOrder, 'customer')}
-                    className="flex-1 h-8 text-xs gap-1 border-slate-200 text-slate-700 dark:text-slate-300 hover:bg-white"
+                    className="flex-1 h-8 text-xs gap-1 border-slate-200 text-slate-700 dark:text-slate-300 hover:bg-white disabled:opacity-50"
                   >
                     <ReceiptText className="w-3 h-3 text-blue-600" />
                     Struk Pelanggan
@@ -973,8 +1122,9 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
                     type="button"
                     size="sm"
                     variant="outline"
+                    disabled={isPrinting || isUpdatingStatus}
                     onClick={() => handlePrintReceipt(selectedOrder, 'kitchen')}
-                    className="flex-1 h-8 text-xs gap-1 border-slate-200 text-slate-700 dark:text-slate-300 hover:bg-white"
+                    className="flex-1 h-8 text-xs gap-1 border-slate-200 text-slate-700 dark:text-slate-300 hover:bg-white disabled:opacity-50"
                   >
                     <ChefHat className="w-3 h-3 text-amber-600" />
                     Tiket Dapur
@@ -997,8 +1147,8 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
                       type="button"
                       variant="outline"
                       onClick={() => handleCheckMidtransPayment(selectedOrder)}
-                      disabled={syncingOrderId === selectedOrder.id}
-                      className="w-full h-9 text-xs border-blue-200 text-blue-700 bg-blue-50/50 hover:bg-blue-100/60 font-semibold gap-1.5"
+                      disabled={isUpdatingStatus || syncingOrderId === selectedOrder.id}
+                      className="w-full h-9 text-xs border-blue-200 text-blue-700 bg-blue-50/50 hover:bg-blue-100/60 font-semibold gap-1.5 disabled:opacity-50"
                     >
                       {syncingOrderId === selectedOrder.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
                       Periksa Status Pembayaran Midtrans
@@ -1016,22 +1166,33 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
                       const next = status === "PENDING" ? "NEW" : status === "PROCESSING" ? "READY" : "COMPLETED";
                       handleStatusChange(selectedOrder.id, next);
                     }}
-                    className="w-full h-10 font-semibold gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                    disabled={isUpdatingStatus}
+                    className="w-full h-10 font-semibold gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-sm disabled:opacity-75 cursor-pointer"
                   >
-                    <CheckCircle2 className="w-4 h-4" /> 
-                    {selectedOrder.status === "PENDING" ? "Konfirmasi Pembayaran" : 
-                     selectedOrder.status === "NEW" ? "Mulai Siapkan Pesanan" :
-                     selectedOrder.status === "PROCESSING" ? "Tandai Siap Disajikan" : "Selesaikan Pesanan"}
+                    {isUpdatingStatus ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Memproses...</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-4 h-4" /> 
+                        {selectedOrder.status === "PENDING" ? "Konfirmasi Pembayaran" : 
+                         selectedOrder.status === "NEW" ? "Mulai Siapkan Pesanan" :
+                         selectedOrder.status === "PROCESSING" ? "Tandai Siap Disajikan" : "Selesaikan Pesanan"}
+                      </>
+                    )}
                   </Button>
 
                   <Button
                     variant="ghost"
+                    disabled={isUpdatingStatus}
                     onClick={() => {
                       if (confirm("Apakah Anda yakin ingin membatalkan pesanan ini?")) {
                         handleStatusChange(selectedOrder.id, "FAILED");
                       }
                     }}
-                    className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 text-xs h-9"
+                    className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 text-xs h-9 disabled:opacity-50 cursor-pointer"
                   >
                     <XCircle className="w-3.5 h-3.5 mr-1" />
                     Batalkan Pesanan
@@ -1144,6 +1305,13 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Camera Scanner Viewfinder Dialog */}
+      <OrderCameraScannerDialog
+        isOpen={isCameraScannerOpen}
+        onClose={() => setIsCameraScannerOpen(false)}
+        onScan={handleScanCode}
+      />
     </div>
   );
 }
