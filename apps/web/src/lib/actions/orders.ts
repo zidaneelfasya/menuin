@@ -309,6 +309,51 @@ export async function getPublicOrderByNumber(orderNumber: string, tenantSlug: st
   };
 }
 
+export async function getOrderByNumberForOutlet(orderNumber: string) {
+  const user = await getCurrentUser();
+  if (!user || !user.tenantId) throw new Error("Unauthorized");
+
+  const cleanOrderNumber = orderNumber.replace(/^#/, '').trim().toUpperCase();
+  const hashOrderNumber = '#' + cleanOrderNumber;
+
+  const txs = await db.select().from(transactions).where(
+    and(
+      eq(transactions.tenantId, user.tenantId),
+      or(
+        eq(transactions.orderNumber, cleanOrderNumber),
+        eq(transactions.orderNumber, hashOrderNumber),
+        eq(transactions.orderNumber, orderNumber),
+        eq(transactions.id, orderNumber)
+      )
+    )
+  ).limit(1);
+
+  if (txs.length === 0) return null;
+  const tx = txs[0];
+
+  const items = await db
+    .select({
+      id: transactionItems.id,
+      transactionId: transactionItems.transactionId,
+      productId: transactionItems.productId,
+      quantity: transactionItems.quantity,
+      price: transactionItems.price,
+      productName: products.name,
+      subtotal: transactionItems.subtotal,
+      modifiers: transactionItems.modifiers,
+      notes: transactionItems.notes,
+      isCompleted: transactionItems.isCompleted
+    })
+    .from(transactionItems)
+    .innerJoin(products, eq(transactionItems.productId, products.id))
+    .where(eq(transactionItems.transactionId, tx.id));
+
+  return {
+    ...tx,
+    items
+  };
+}
+
 export async function getActiveOrderStatus(orderNumber: string, tenantSlug: string) {
   try {
     const cleanOrderNumber = orderNumber.replace(/^#/, '').trim().toUpperCase();
@@ -364,3 +409,4 @@ export async function getActiveOrderStatus(orderNumber: string, tenantSlug: stri
     return { isActive: false, status: null, orderNumber };
   }
 }
+
