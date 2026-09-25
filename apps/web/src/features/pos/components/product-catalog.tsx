@@ -255,11 +255,24 @@ export function ProductCatalog({
           <Input 
             ref={searchInputRef}
             placeholder="Cari produk atau scan barcode..." 
-            className="pl-9 bg-card border-border rounded-xl h-11 text-sm"
+            className="pl-9 pr-9 bg-card border-border rounded-xl h-11 text-sm"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={handleSearchKeyDown}
           />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery('');
+                searchInputRef.current?.focus();
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+              title="Hapus pencarian"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
         <Button
           variant="outline"
@@ -273,53 +286,54 @@ export function ProductCatalog({
         </Button>
       </div>
 
-      {/* Categories with Best Seller Option */}
-      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-        <button
-          onClick={() => setActiveCategory('Semua')}
-          className={cn(
-            "px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors border",
-            activeCategory === 'Semua' 
-              ? "bg-primary text-primary-foreground border-primary shadow-sm" 
-              : "bg-card text-muted-foreground border-border hover:bg-muted"
-          )}
-        >
-          Semua
-        </button>
-
-        {hasBestSellers && (
+      {/* Categories with Best Seller Option & Gradient Fade Mask */}
+      <div className="relative flex items-center">
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide w-full [mask-image:linear-gradient(to_right,white_90%,transparent_100%)] sm:[mask-image:none]">
           <button
-            onClick={() => setActiveCategory('Best Seller')}
+            onClick={() => setActiveCategory('Semua')}
             className={cn(
-              "px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-colors border flex items-center gap-1.5",
-              activeCategory === 'Best Seller' 
-                ? "bg-primary text-primary-foreground border-primary shadow-sm" 
+              "px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors border",
+              activeCategory === 'Semua' 
+                ? "bg-primary text-primary-foreground border-primary shadow-xs font-semibold" 
                 : "bg-card text-muted-foreground border-border hover:bg-muted"
             )}
           >
-            
-            Best Seller
+            Semua
           </button>
-        )}
 
-        {categories.map(category => {
-          const CategoryIcon = category.icon ? getCategoryIcon(category.icon) : null;
-          return (
+          {hasBestSellers && (
             <button
-              key={category.id}
-              onClick={() => setActiveCategory(category.name)}
+              onClick={() => setActiveCategory('Best Seller')}
               className={cn(
-                "px-3.5 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors border flex items-center gap-1.5",
-                activeCategory === category.name 
-                  ? "bg-primary text-primary-foreground border-primary shadow-sm font-semibold" 
+                "px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-colors border flex items-center gap-1.5",
+                activeCategory === 'Best Seller' 
+                  ? "bg-primary text-primary-foreground border-primary shadow-xs" 
                   : "bg-card text-muted-foreground border-border hover:bg-muted"
               )}
             >
-              {CategoryIcon && <CategoryIcon className="w-4 h-4 shrink-0" />}
-              <span>{category.name}</span>
+              Best Seller
             </button>
-          );
-        })}
+          )}
+
+          {categories.map(category => {
+            const CategoryIcon = category.icon ? getCategoryIcon(category.icon) : null;
+            return (
+              <button
+                key={category.id}
+                onClick={() => setActiveCategory(category.name)}
+                className={cn(
+                  "px-3.5 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors border flex items-center gap-1.5",
+                  activeCategory === category.name 
+                    ? "bg-primary text-primary-foreground border-primary shadow-xs font-semibold" 
+                    : "bg-card text-muted-foreground border-border hover:bg-muted"
+                )}
+              >
+                {CategoryIcon && <CategoryIcon className="w-4 h-4 shrink-0" />}
+                <span>{category.name}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Product Grid */}
@@ -356,14 +370,14 @@ export function ProductCatalog({
               >
                 {!isActive ? (
                   <div className="absolute inset-0 bg-slate-950/70 z-20 flex flex-col items-center justify-center p-2 text-center backdrop-blur-[1px]">
-                    <span className="text-white text-[11px] font-bold tracking-wider uppercase bg-rose-600/95 px-2.5 py-1 rounded-md shadow-xs">
+                    <span className="text-white text-[11px] font-semibold tracking-wider uppercase bg-rose-600/95 px-2.5 py-1 rounded-md shadow-xs">
                       TIDAK TERSEDIA
                     </span>
                     <span className="text-[10px] text-slate-300 mt-1 font-medium">Menu Dinonaktifkan</span>
                   </div>
                 ) : isOutOfStock ? (
                   <div className="absolute inset-0 bg-slate-950/60 z-20 flex flex-col items-center justify-center p-2 text-center backdrop-blur-[1px]">
-                    <span className="text-white text-[11px] font-bold tracking-wider uppercase bg-amber-600/95 px-2.5 py-1 rounded-md shadow-xs">
+                    <span className="text-white text-[11px] font-semibold tracking-wider uppercase bg-amber-600/95 px-2.5 py-1 rounded-md shadow-xs">
                       STOK HABIS
                     </span>
                   </div>
@@ -371,7 +385,6 @@ export function ProductCatalog({
 
                 {product.isFeatured && (
                   <div className="absolute top-2 left-2 z-10 bg-amber-500/95 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full shadow-md flex items-center gap-1 backdrop-blur-sm">
-                    
                     BEST SELLER
                   </div>
                 )}
@@ -390,12 +403,12 @@ export function ProductCatalog({
                           e.currentTarget.nextElementSibling?.classList.add('flex');
                         }}
                       />
-                      <div className="hidden w-full h-full items-center justify-center text-muted-foreground bg-primary/5 text-4xl font-bold text-primary/20">
+                      <div className="hidden w-full h-full items-center justify-center text-muted-foreground bg-primary/5 text-4xl font-semibold text-primary/20">
                         {product.name.charAt(0)}
                       </div>
                     </>
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-primary/5 text-4xl font-bold text-primary/20">
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-primary/5 text-4xl font-semibold text-primary/20">
                       {product.name.charAt(0)}
                     </div>
                   )}
@@ -416,16 +429,39 @@ export function ProductCatalog({
             );
           })}
           {filteredProducts.length === 0 && (
-            <div className="col-span-full py-12 text-center text-muted-foreground">
-              Tidak ada produk yang ditemukan.
+            <div className="col-span-full py-16 text-center text-muted-foreground flex flex-col items-center justify-center">
+              <Package className="w-10 h-10 mb-2.5 opacity-30 text-muted-foreground" />
+              <p className="text-sm font-semibold text-foreground">Tidak ada produk ditemukan</p>
+              <p className="text-xs text-muted-foreground mt-1">Coba kata kunci lain atau ubah kategori pilihan</p>
+              {(searchQuery || activeCategory !== 'Semua') && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setActiveCategory('Semua');
+                  }}
+                  className="mt-3 text-xs rounded-xl"
+                >
+                  Tampilkan Semua Produk
+                </Button>
+              )}
             </div>
           )}
         </div>
         
-        {/* Infinite Scroll Target */}
+        {/* Infinite Scroll Skeleton Placeholders */}
         {visibleCount < filteredProducts.length && (
-          <div ref={observerTarget} className="mt-6 flex justify-center py-6">
-            <div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin"></div>
+          <div ref={observerTarget} className="mt-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 py-2">
+            {Array.from({ length: 4 }).map((_, idx) => (
+              <div key={idx} className="bg-card border border-border/60 rounded-2xl h-44 animate-pulse p-3 flex flex-col justify-between">
+                <div className="w-full h-24 bg-muted/60 rounded-xl"></div>
+                <div className="space-y-1.5 mt-2">
+                  <div className="h-3.5 w-3/4 bg-muted/60 rounded"></div>
+                  <div className="h-3 w-1/2 bg-muted/60 rounded"></div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -445,7 +481,7 @@ export function ProductCatalog({
       <Dialog open={isAvailabilityModalOpen} onOpenChange={setIsAvailabilityModalOpen}>
         <DialogContent className="max-w-lg p-0 overflow-hidden rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl">
           <DialogHeader className="p-5 pb-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50">
-            <DialogTitle className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+            <DialogTitle className="text-lg font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
               <Power className="w-5 h-5 text-emerald-600" />
               Kelola Ketersediaan Menu Kasir
             </DialogTitle>
@@ -475,7 +511,7 @@ export function ProductCatalog({
                   className="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900/60 transition-colors"
                 >
                   <div className="flex items-center gap-3 min-w-0 pr-3">
-                    <div className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-xs text-primary shrink-0 overflow-hidden">
+                    <div className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-semibold text-xs text-primary shrink-0 overflow-hidden">
                       {p.imageUrl ? (
                         <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" />
                       ) : (
