@@ -33,7 +33,7 @@ import { ScrollReveal } from "@/components/landing/scroll-reveal";
 /** Bingkai jendela browser untuk tangkapan layar dashboard. */
 function BrowserShot({ src, alt, w, h, url }: { src: string; alt: string; w: number; h: number; url: string }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-black/[0.08] bg-white shadow-[var(--landing-lift-lg)]">
+    <div className="overflow-hidden rounded-2xl border border-black/[0.08] bg-white shadow-[0_30px_60px_-30px_rgba(15,23,42,0.4)]">
       <div className="flex items-center gap-3 border-b border-black/[0.06] bg-[#fafafa] px-3.5 py-2.5">
         <span className="flex gap-1.5" aria-hidden="true">
           <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
@@ -59,7 +59,7 @@ function ShiftPanel() {
   ];
 
   return (
-    <div className="rounded-[20px] border border-black/[0.08] bg-white p-6 shadow-[var(--landing-lift-lg)]">
+    <div className="rounded-[20px] border border-black/[0.08] bg-white p-6 shadow-[0_30px_60px_-30px_rgba(15,23,42,0.4)]">
       <div className="flex items-baseline justify-between">
         <span className="text-[13px] font-semibold text-[#0a0a0a]">Tutup shift · Sarah Rahma</span>
         <span className="text-[12px] tabular-nums text-[#71717a]">15.02</span>
@@ -92,7 +92,7 @@ function StockPanel() {
     { name: "Thai Tea", stock: 0, min: 10, cost: "Rp 6.000", price: "Rp 20.000" },
   ];
   return (
-    <div className="overflow-hidden rounded-[20px] border border-black/[0.08] bg-white shadow-[var(--landing-lift-lg)]">
+    <div className="overflow-hidden rounded-[20px] border border-black/[0.08] bg-white shadow-[0_30px_60px_-30px_rgba(15,23,42,0.4)]">
       <div className="flex items-center justify-between border-b border-black/[0.06] px-5 py-3.5">
         <span className="text-[13px] font-semibold text-[#0a0a0a]">Stok produk</span>
         <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-[11.5px] font-medium text-amber-700">2 perlu diisi ulang</span>
@@ -134,7 +134,7 @@ function PromoPanel() {
     { code: "GAJIAN", name: "Promo akhir bulan", value: "15%", rule: "Berlaku 25–31 Okt", active: false },
   ];
   return (
-    <div className="rounded-[20px] border border-black/[0.08] bg-white p-5 shadow-[var(--landing-lift-lg)]">
+    <div className="rounded-[20px] border border-black/[0.08] bg-white p-5 shadow-[0_30px_60px_-30px_rgba(15,23,42,0.4)]">
       <div className="flex items-center justify-between">
         <span className="text-[13px] font-semibold text-[#0a0a0a]">Diskon & Promo</span>
         <span className="text-[12px] text-[#71717a]">Kasir & katalog online</span>
@@ -168,7 +168,7 @@ function TeamPanel() {
     { name: "Sarah", role: "Kasir", access: [1, 1, 0, 0, 0] },
   ];
   return (
-    <div className="overflow-hidden rounded-[20px] border border-black/[0.08] bg-white shadow-[var(--landing-lift-lg)]">
+    <div className="overflow-hidden rounded-[20px] border border-black/[0.08] bg-white shadow-[0_30px_60px_-30px_rgba(15,23,42,0.4)]">
       <div className="flex items-center justify-between border-b border-black/[0.06] px-5 py-3.5">
         <span className="text-[13px] font-semibold text-[#0a0a0a]">Tim & Karyawan</span>
         <span className="text-[12px] text-[#71717a]">3 anggota</span>
@@ -221,7 +221,7 @@ function OutletPanel() {
   ];
 
   return (
-    <div className="rounded-[20px] border border-black/[0.08] bg-white p-6 shadow-[var(--landing-lift-lg)]">
+    <div className="rounded-[20px] border border-black/[0.08] bg-white p-6 shadow-[0_30px_60px_-30px_rgba(15,23,42,0.4)]">
       <div className="flex items-baseline justify-between">
         <span className="text-[13px] font-semibold text-[#0a0a0a]">Pilih outlet</span>
         <span className="text-[12px] text-[#71717a]">Hari ini</span>
@@ -496,7 +496,7 @@ export default function FeatureShowcase() {
           {/* Kanan: panggung sticky, visual berganti mengikuti fitur aktif */}
           <div className="hidden lg:col-span-7 lg:block">
             <div className="sticky top-[64px] flex h-[calc(100vh-64px)] flex-col justify-center py-8">
-              <div className="relative rounded-[32px] bg-white p-10 shadow-[0_24px_60px_-28px_rgba(15,23,42,0.22)] ring-1 ring-black/[0.04]">
+              <div className="relative">
                 {/* Navigasi kecil */}
                 <div className="mb-8 flex flex-wrap gap-1.5">
                   {features.map((f, i) => (
