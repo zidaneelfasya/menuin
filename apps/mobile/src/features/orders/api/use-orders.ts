@@ -221,5 +221,65 @@ export function useToggleOrderItemStatus() {
   });
 }
 
+export async function searchOrderByNumber(query: string): Promise<OrderDto | null> {
+  try {
+    const clean = query.trim().replace(/^#/, '');
+    if (!clean) return null;
+    const response = (await fetchWithAuth(
+      `/api/mobile/v1/orders?q=${encodeURIComponent(clean)}`
+    )) as OrdersResponse;
+    if (response?.success && Array.isArray(response?.data) && response.data.length > 0) {
+      return response.data[0];
+    }
+    return null;
+  } catch (error) {
+    console.error('searchOrderByNumber error:', error);
+    return null;
+  }
+}
+
+export function useSyncOrderPayment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (orderId: string) => {
+      const response = await fetchWithAuth(
+        `/api/mobile/v1/orders/${orderId}/sync-payment`,
+        {
+          method: 'POST',
+        }
+      );
+      return response as {
+        success?: boolean;
+        paymentStatus?: string;
+        status?: string;
+        isPaid?: boolean;
+        error?: string;
+        message?: string;
+      };
+    },
+    onSuccess: (data, orderId) => {
+      if (data?.success && data?.paymentStatus) {
+        queryClient.setQueryData(['orders'], (old: any) => {
+          if (!old || !old.data) return old;
+          return {
+            ...old,
+            data: old.data.map((order: OrderDto) =>
+              order.id === orderId
+                ? {
+                    ...order,
+                    paymentStatus: data.paymentStatus || order.paymentStatus,
+                    status: data.status || order.status,
+                  }
+                : order
+            ),
+          };
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+    },
+  });
+}
+
 
 

@@ -20,11 +20,15 @@ import {
   useUpdateOrderStatus,
   useBulkUpdateOrderStatus,
   useToggleOrderItemStatus,
+  useSyncOrderPayment,
+  searchOrderByNumber,
   OrderDto,
   OrderItemDto,
 } from './api/use-orders';
 import { formatCurrency, formatDate } from '@menuin/utils';
 import { useQueryClient } from '@tanstack/react-query';
+import { OrderQrScannerModal } from './order-qr-scanner-modal';
+import { OrderQrModal } from './order-qr-modal';
 
 import {
   Search,
@@ -45,6 +49,12 @@ import {
   ChevronRight,
   Printer,
   Receipt,
+  Camera,
+  QrCode,
+  ShieldCheck,
+  AlertTriangle,
+  Info,
+  Filter,
 } from 'lucide-react-native';
 
 export type StatusKey = 'PENDING' | 'NEW' | 'PROCESSING' | 'READY';
@@ -68,8 +78,8 @@ export const STATUS_CONFIGS: Record<StatusKey, StatusConfig> = {
     title: 'Menunggu Bayar',
     nextStatus: 'NEW',
     nextStatusTitle: 'Pesanan Baru',
-    actionLabel: 'Konfirmasi',
-    dotColor: '#f59e0b', // amber-500
+    actionLabel: 'Konfirmasi Bayar',
+    dotColor: '#94a3b8', // gray
     badgeBg: '#f1f5f9', // slate-100
     badgeText: '#1e293b', // slate-800
     btnBg: '#1e293b', // slate-800
@@ -140,7 +150,10 @@ interface OrderCardItemProps {
   onStartPrepare: (order: OrderDto) => void;
   onUpdateStatus: (orderId: string, status: string) => void;
   onToggleItem: (itemId: string, currentCompleted: boolean) => void;
+  onCheckMidtrans: (orderId: string) => void;
+  onShowQr: (order: OrderDto) => void;
   isUpdating: boolean;
+  isCheckingMidtrans: boolean;
 }
 
 const OrderCardItem = React.memo(function OrderCardItem({
@@ -149,11 +162,15 @@ const OrderCardItem = React.memo(function OrderCardItem({
   onStartPrepare,
   onUpdateStatus,
   onToggleItem,
+  onCheckMidtrans,
+  onShowQr,
   isUpdating,
+  isCheckingMidtrans,
 }: OrderCardItemProps) {
   const isTakeaway = order.orderType === 'TAKE_AWAY' || order.orderType === 'TAKEAWAY';
   const isOnline = order.orderType === 'ONLINE' || order.orderType === 'DELIVERY';
   const isPaid = order.paymentStatus === 'PAID';
+  const isPendingOnline = order.status === 'PENDING' && (isOnline || order.paymentMethod === 'ONLINE');
   const itemsList = Array.isArray(order.items) ? order.items : [];
   const completedItemsCount = itemsList.filter((i) => i.isCompleted).length;
   const totalItemsCount = itemsList.length;
@@ -161,16 +178,17 @@ const OrderCardItem = React.memo(function OrderCardItem({
 
   return (
     <View className="bg-white rounded-2xl p-3.5 mb-3 border border-slate-200/90 shadow-2xs">
-      {/* Clickable Card Header: Order Number, Payment Status, Elapsed Time & Service Info */}
+      {/* Clickable Card Header: Order Number, Payment Status, QR Code View Button & Elapsed Time */}
       <TouchableOpacity
         activeOpacity={0.7}
         onPress={() => onSelect(order)}
       >
         <View className="flex-row items-center justify-between pb-2 mb-2 border-b border-slate-100">
-          <View className="flex-row items-center gap-1.5">
-            <Text className="font-mono text-xs font-black text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+          <View className="flex-row items-center gap-1.5 flex-wrap flex-1 mr-2">
+            <Text className="font-mono text-xs font-semibold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
               #{order.orderNumber || order.id.slice(0, 5)}
             </Text>
+            
             <View
               className={`flex-row items-center px-2 py-0.5 rounded-full ${
                 isPaid ? 'bg-emerald-50 border border-emerald-200' : 'bg-amber-50 border border-amber-200'
@@ -180,13 +198,26 @@ const OrderCardItem = React.memo(function OrderCardItem({
                 className={`w-1.5 h-1.5 rounded-full mr-1 ${isPaid ? 'bg-emerald-500' : 'bg-amber-500'}`}
               />
               <Text
-                className={`text-[10px] font-bold ${
+                className={`text-[10px] font-semibold ${
                   isPaid ? 'text-emerald-700' : 'text-amber-700'
                 }`}
               >
                 {isPaid ? 'Lunas' : 'Belum Bayar'}
               </Text>
             </View>
+
+            {/* Quick Button to Display Customer QR Modal */}
+            <TouchableOpacity
+              onPress={(e) => {
+                onShowQr(order);
+              }}
+              activeOpacity={0.75}
+              className="px-2 py-0.5 rounded-md bg-blue-50 border border-blue-200 flex-row items-center gap-1"
+              accessibilityLabel="Tampilkan QR code pesanan"
+            >
+              <QrCode size={11} color="#2563eb" />
+              <Text className="text-[10px] font-semibold text-blue-700">QR</Text>
+            </TouchableOpacity>
           </View>
 
           <View className="flex-row items-center gap-1">
@@ -213,14 +244,14 @@ const OrderCardItem = React.memo(function OrderCardItem({
                 <UtensilsCrossed size={13} color="#475569" />
               </View>
             )}
-            <Text className="text-xs font-bold text-slate-800" numberOfLines={1}>
+            <Text className="text-xs font-semibold text-slate-800" numberOfLines={1}>
               {order.tableNumber
                 ? `Meja ${order.tableNumber}`
                 : isTakeaway
                 ? 'Bawa Pulang (Takeaway)'
                 : isOnline
                 ? 'Pesanan Online'
-                : 'Dine In'}
+                : 'Makan di Tempat'}
             </Text>
           </View>
 
@@ -238,7 +269,7 @@ const OrderCardItem = React.memo(function OrderCardItem({
       {/* Items Checklist Box */}
       <View className="bg-slate-50/90 rounded-xl p-2.5 border border-slate-100/90 mb-3">
         <View className="flex-row justify-between items-center mb-1.5 pb-1 border-b border-slate-200/50">
-          <Text className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+          <Text className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
             Item Menu
           </Text>
           <Text className="text-[10px] font-semibold text-slate-500">
@@ -254,25 +285,26 @@ const OrderCardItem = React.memo(function OrderCardItem({
               onPress={() => onToggleItem(item.id, item.isCompleted)}
               className="flex-row items-start gap-2 py-0.5"
             >
+              {/* Modern Square Checkbox (UI Guidelines Rule 4.3) */}
               <View
-                className={`w-4 h-4 mt-0.5 rounded items-center justify-center ${
+                className={`w-4 h-4 mt-0.5 rounded-md items-center justify-center transition-all ${
                   item.isCompleted
                     ? 'bg-emerald-600 border border-emerald-600'
                     : 'border border-slate-300 bg-white'
                 }`}
               >
-                {item.isCompleted && <Check size={10} color="#ffffff" strokeWidth={3} />}
+                {item.isCompleted && <Check size={10} color="#ffffff" strokeWidth={2.5} />}
               </View>
               <View className="flex-1">
                 <Text
                   className={`text-xs ${
                     item.isCompleted
-                      ? 'line-through text-slate-400 font-medium'
+                      ? 'line-through text-slate-400 font-normal'
                       : 'text-slate-800 font-semibold'
                   }`}
                   numberOfLines={1}
                 >
-                  <Text className="font-mono font-bold text-slate-900">{item.quantity}x</Text>{' '}
+                  <Text className="font-mono font-semibold text-slate-900">{item.quantity}x</Text>{' '}
                   {item.productName}
                 </Text>
                 {Array.isArray(item.modifiers) && item.modifiers.length > 0 && (
@@ -297,16 +329,33 @@ const OrderCardItem = React.memo(function OrderCardItem({
         </View>
       </View>
 
-      {/* Card Footer: Total Price & Stage Action Button */}
+      {/* Card Footer: Total Price, Cek Midtrans (if pending online like Web), & Stage Action Button */}
       <View className="flex-row items-center justify-between pt-1 border-t border-slate-100">
         <TouchableOpacity activeOpacity={0.7} onPress={() => onSelect(order)}>
           <Text className="text-[10px] text-slate-400 font-medium">Total Pesanan</Text>
-          <Text className="text-xs font-black text-slate-900 font-mono">
+          <Text className="text-xs font-semibold text-slate-900 font-mono">
             {formatCurrency(Number(order.grandTotal))}
           </Text>
         </TouchableOpacity>
 
         <View className="flex-row items-center gap-1.5">
+          {/* Quick "Cek Midtrans" Button on Pending Online Cards (Matching Web Kanban) */}
+          {isPendingOnline && (
+            <TouchableOpacity
+              onPress={() => onCheckMidtrans(order.id)}
+              disabled={isCheckingMidtrans}
+              activeOpacity={0.75}
+              className="px-2.5 py-1.5 rounded-lg border border-blue-200 bg-blue-50/80 flex-row items-center gap-1 active:bg-blue-100"
+            >
+              {isCheckingMidtrans ? (
+                <ActivityIndicator size="small" color="#2563eb" />
+              ) : (
+                <RefreshCw size={11} color="#2563eb" />
+              )}
+              <Text className="text-[11px] font-semibold text-blue-700">Cek Midtrans</Text>
+            </TouchableOpacity>
+          )}
+
           <TouchableOpacity
             onPress={() => {
               if (order.status === 'NEW') {
@@ -325,7 +374,7 @@ const OrderCardItem = React.memo(function OrderCardItem({
             ) : (
               <ChevronRight size={12} color={config.btnText} />
             )}
-            <Text style={{ color: config.btnText }} className="text-xs font-bold">
+            <Text style={{ color: config.btnText }} className="text-xs font-semibold">
               {config.actionLabel}
             </Text>
           </TouchableOpacity>
@@ -354,12 +403,12 @@ const OrderCardItem = React.memo(function OrderCardItem({
   );
 });
 
-
 export function OrdersScreen() {
   const { data: queryResult, isLoading, error, refetch, isRefetching } = useOrdersData();
   const updateStatusMutation = useUpdateOrderStatus();
   const bulkUpdateMutation = useBulkUpdateOrderStatus();
   const toggleItemMutation = useToggleOrderItemStatus();
+  const syncPaymentMutation = useSyncOrderPayment();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
@@ -370,7 +419,16 @@ export function OrdersScreen() {
   // Search & Filters state
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<'ALL' | 'DINE_IN' | 'TAKEAWAY' | 'ONLINE'>('ALL');
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [activeStage, setActiveStage] = useState<StatusKey>('NEW');
+
+  // Scanner state
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [isSearchingScannedOrder, setIsSearchingScannedOrder] = useState(false);
+  const [checkingMidtransOrderId, setCheckingMidtransOrderId] = useState<string | null>(null);
+
+  // QR Modal State (to show customer QR modal with paid watermark prevention)
+  const [qrModalOrder, setQrModalOrder] = useState<OrderDto | null>(null);
 
   // Modal states
   const [selectedOrder, setSelectedOrder] = useState<OrderDto | null>(null);
@@ -380,6 +438,51 @@ export function OrdersScreen() {
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isPullRefreshing, setIsPullRefreshing] = useState(false);
+
+  // In-app floating toast banner state
+  const [toastData, setToastData] = useState<{
+    type: 'info' | 'success' | 'warning' | 'error';
+    title: string;
+    message: string;
+  } | null>(null);
+  const toastAnim = useRef(new Animated.Value(-120)).current;
+  const toastTimerRef = useRef<any>(null);
+
+  const hideToast = useCallback(() => {
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+      toastTimerRef.current = null;
+    }
+    Animated.timing(toastAnim, {
+      toValue: -120,
+      duration: 220,
+      easing: Easing.in(Easing.cubic),
+      useNativeDriver: true,
+    }).start(() => {
+      setToastData(null);
+    });
+  }, [toastAnim]);
+
+  const showToast = useCallback(
+    (data: { type: 'info' | 'success' | 'warning' | 'error'; title: string; message: string }) => {
+      if (toastTimerRef.current) {
+        clearTimeout(toastTimerRef.current);
+      }
+      setToastData(data);
+      toastAnim.setValue(-120);
+      Animated.spring(toastAnim, {
+        toValue: 0,
+        tension: 80,
+        friction: 10,
+        useNativeDriver: true,
+      }).start();
+
+      toastTimerRef.current = setTimeout(() => {
+        hideToast();
+      }, 4000);
+    },
+    [toastAnim, hideToast]
+  );
 
   // Rotation animation for manual refresh button
   const spinAnim = useRef(new Animated.Value(0)).current;
@@ -403,8 +506,27 @@ export function OrdersScreen() {
     return queryResult?.data || [];
   }, [queryResult]);
 
+  // Helper to extract clean order number from raw text or full URL
+  const parseOrderNumber = useCallback((text: string): string => {
+    const clean = text.trim();
+    try {
+      if (clean.includes('order=')) {
+        const url = clean.startsWith('http')
+          ? new URL(clean)
+          : new URL(`http://dummy.com${clean.startsWith('/') ? '' : '/'}${clean}`);
+        const orderParam = url.searchParams.get('order');
+        if (orderParam) return orderParam.replace(/^#/, '').trim();
+      }
+    } catch {
+      // fallback
+    }
+    return clean.replace(/^#/, '').trim();
+  }, []);
+
   // Filter orders by order type and search query
   const filteredOrders = useMemo(() => {
+    const parsedSearch = parseOrderNumber(searchQuery).toLowerCase();
+
     return allOrders.filter((order) => {
       // Filter by order type
       if (typeFilter === 'DINE_IN') {
@@ -416,15 +538,20 @@ export function OrdersScreen() {
       }
 
       // Filter by search query
-      if (!searchQuery.trim()) return true;
-      const q = searchQuery.toLowerCase();
+      if (!parsedSearch) return true;
+      const orderNum = (order.orderNumber || '').replace(/^#/, '').toLowerCase();
+      const customerName = (order.customerName || '').toLowerCase();
+      const tableNumber = (order.tableNumber || '').toLowerCase();
+      const orderId = order.id.toLowerCase();
+
       return (
-        order.orderNumber?.toLowerCase().includes(q) ||
-        order.customerName?.toLowerCase().includes(q) ||
-        (order.tableNumber && `meja ${order.tableNumber}`.toLowerCase().includes(q))
+        orderNum.includes(parsedSearch) ||
+        customerName.includes(parsedSearch) ||
+        `meja ${tableNumber}`.includes(parsedSearch) ||
+        orderId.includes(parsedSearch)
       );
     });
-  }, [allOrders, typeFilter, searchQuery]);
+  }, [allOrders, typeFilter, searchQuery, parseOrderNumber]);
 
   // Counts for the 4 Kanban stages (PENDING, NEW, PROCESSING, READY)
   const stageCounts = useMemo(() => {
@@ -441,6 +568,95 @@ export function OrdersScreen() {
     });
     return counts;
   }, [filteredOrders]);
+
+  /**
+   * QR Scan Handler dengan Pencegahan Scan Ulang:
+   * Sesuai logic web: Jika pesanan sudah dibayar (paymentStatus === 'PAID')
+   * atau statusnya sudah bukan PENDING (sudah NEW, PROCESSING, READY, COMPLETED),
+   * sistem memberikan peringatan jelas bahwa pesanan ini SUDAH DIBAYAR & DITERIMA
+   * dan mencegah konfirmasi pembayaran ganda di kasir!
+   */
+  const handleScanCode = async (rawCode: string) => {
+    const orderNum = parseOrderNumber(rawCode);
+    if (!orderNum) return;
+
+    const cleanTarget = orderNum.toUpperCase();
+
+    // 1. Cari di local state terlebih dahulu
+    let targetOrder = allOrders.find(
+      (o) =>
+        (o.orderNumber && o.orderNumber.replace(/^#/, '').toUpperCase() === cleanTarget) ||
+        o.id === rawCode ||
+        o.id.toUpperCase() === cleanTarget
+    );
+
+    // 2. Jika belum ada di memory state, query server backend via lookup API
+    if (!targetOrder) {
+      setIsSearchingScannedOrder(true);
+      try {
+        const loaded = await searchOrderByNumber(orderNum);
+        if (loaded) {
+          targetOrder = loaded;
+          queryClient.setQueryData(['orders'], (old: any) => {
+            if (!old || !old.data) return { success: true, data: [loaded] };
+            if (old.data.some((o: OrderDto) => o.id === loaded.id)) {
+              return old;
+            }
+            return {
+              ...old,
+              data: [loaded, ...old.data],
+            };
+          });
+        }
+      } catch {
+        // fail silently to not crash
+      } finally {
+        setIsSearchingScannedOrder(false);
+      }
+    }
+
+    if (!targetOrder) {
+      showToast({
+        type: 'error',
+        title: 'Tidak Ditemukan',
+        message: `Pesanan #${orderNum} tidak terdaftar di sistem outlet.`,
+      });
+      return;
+    }
+
+    // 3. PENCEGAHAN SCAN ULANG (LOGIKA PERSIS SEPERTI DI WEB)
+    const isAlreadyPaid =
+      (targetOrder.paymentStatus || '').toUpperCase() === 'PAID' ||
+      (targetOrder.status && (targetOrder.status || '').toUpperCase() !== 'PENDING');
+
+    setIsScannerOpen(false);
+
+    if (isAlreadyPaid) {
+      // TIDAK BUKA MODAL DETAIL!
+      // TIDAK BERPINDAH TAB PADA HP!
+      const statusTitle =
+        STATUS_CONFIGS[targetOrder.status as StatusKey]?.title || targetOrder.status;
+
+      showToast({
+        type: 'warning',
+        title: 'Pesanan Sudah Lunas',
+        message: `Pesanan #${targetOrder.orderNumber?.replace(/^#/, '') || targetOrder.id.slice(0, 5)} sudah lunas & berstatus "${statusTitle}". Detail tidak dibuka untuk mencegah duplikasi pembayaran.`,
+      });
+      return;
+    }
+
+    // 4. HANYA JIKA STATUS PENDING (MENUNGGU PEMBAYARAN KASIR):
+    // Pada HP otomatis diarahkan ke tab Menunggu Bayar & modal pembayaran terbuka
+    if (!isTablet) {
+      setActiveStage('PENDING');
+    }
+    setSelectedOrder(targetOrder);
+    showToast({
+      type: 'success',
+      title: 'Pesanan Siap Dibayar',
+      message: `Pesanan #${targetOrder.orderNumber?.replace(/^#/, '') || targetOrder.id.slice(0, 5)} siap dikonfirmasi pembayarannya di kasir.`,
+    });
+  };
 
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
@@ -481,6 +697,36 @@ export function OrdersScreen() {
     );
   };
 
+  // Check Midtrans payment status
+  const handleCheckMidtransPayment = (orderId: string) => {
+    setCheckingMidtransOrderId(orderId);
+    syncPaymentMutation.mutate(orderId, {
+      onSuccess: (res) => {
+        setCheckingMidtransOrderId(null);
+        if (res?.isPaid) {
+          Alert.alert(
+            'Pembayaran Berhasil',
+            'Pembayaran Midtrans telah berhasil diverifikasi dan pesanan otomatis masuk antrean dapur.'
+          );
+          if (selectedOrder && selectedOrder.id === orderId) {
+            setSelectedOrder((prev) =>
+              prev ? { ...prev, paymentStatus: 'PAID', status: res.status || 'NEW' } : null
+            );
+          }
+        } else {
+          Alert.alert(
+            'Belum Dibayar',
+            res?.error || res?.message || 'Pembayaran belum diselesaikan oleh pelanggan di Midtrans.'
+          );
+        }
+      },
+      onError: (err: any) => {
+        setCheckingMidtransOrderId(null);
+        Alert.alert('Gagal', err?.message || 'Gagal memeriksa status pembayaran Midtrans.');
+      },
+    });
+  };
+
   const handleToggleItem = (itemId: string, currentCompleted: boolean) => {
     const updateCache = (old: any) => {
       if (!old || !old.data) return old;
@@ -495,7 +741,7 @@ export function OrdersScreen() {
       };
     };
 
-    // Optimistic cache update for query key
+    // Optimistic cache update
     queryClient.setQueryData(['orders'], updateCache);
 
     toggleItemMutation.mutate(
@@ -524,6 +770,10 @@ export function OrdersScreen() {
   const handleToggleItemCallback = useCallback((itemId: string, currentCompleted: boolean) => {
     handleToggleItem(itemId, currentCompleted);
   }, [toggleItemMutation, queryClient]);
+
+  const handleShowQrCallback = useCallback((order: OrderDto) => {
+    setQrModalOrder(order);
+  }, []);
 
   const handleStartPrepareClick = (order: OrderDto) => {
     setOrderToPrepare(order);
@@ -573,17 +823,17 @@ export function OrdersScreen() {
           isTabletColumn ? 'w-80 mr-3.5' : 'flex-1'
         } bg-slate-50/70 rounded-2xl border border-slate-200/80 overflow-hidden`}
       >
-        {/* Column Header (Always visible in tablet column, or phone active column) */}
+        {/* Column Header */}
         <View className="bg-white px-3.5 py-2.5 border-b border-slate-200 flex-row items-center justify-between">
           <View className="flex-row items-center gap-2">
-            <View style={{ backgroundColor: config.dotColor }} className="w-2.5 h-2.5 rounded-full" />
-            <Text className="text-xs font-bold text-slate-900 tracking-tight">{config.title}</Text>
+            
+            <Text className="text-xs font-semibold text-slate-900 tracking-tight">{config.title}</Text>
             <View className="px-1.5 py-0.2 rounded-full bg-slate-100">
-              <Text className="text-[10px] font-bold text-slate-600">{stageOrders.length}</Text>
+              <Text className="text-[10px] font-semibold text-slate-600">{stageOrders.length}</Text>
             </View>
           </View>
 
-          {/* Tombol Selesai Semua (Icon Centang Saja) */}
+          {/* Selesai Semua (Centang Icon) */}
           <TouchableOpacity
             onPress={() => {
               if (stageOrders.length > 0) {
@@ -641,7 +891,10 @@ export function OrdersScreen() {
                 onStartPrepare={handleStartPrepare}
                 onUpdateStatus={handleUpdateStatusCallback}
                 onToggleItem={handleToggleItemCallback}
+                onCheckMidtrans={handleCheckMidtransPayment}
+                onShowQr={handleShowQrCallback}
                 isUpdating={updateStatusMutation.isPending}
+                isCheckingMidtrans={checkingMidtransOrderId === order.id}
               />
             ))
           )}
@@ -654,7 +907,7 @@ export function OrdersScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-slate-50">
         <ActivityIndicator size="large" color="#2563eb" />
-        <Text className="mt-3 text-slate-500 font-medium text-xs">Memuat pesanan dapur...</Text>
+        <Text className="mt-3 text-slate-500 font-semibold text-xs">Memuat pesanan masuk...</Text>
       </View>
     );
   }
@@ -670,124 +923,158 @@ export function OrdersScreen() {
           onPress={() => refetch()}
           className="mt-4 px-5 py-2.5 bg-blue-600 rounded-xl active:opacity-90"
         >
-          <Text className="text-white font-bold text-xs">Coba Lagi</Text>
+          <Text className="text-white font-semibold text-xs">Coba Lagi</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-slate-100/70">
-      {/* 1. TOP CONTROL BAR: SEARCH & TYPE FILTERS & REFRESH */}
-      <View className="bg-white border-b border-slate-200 px-3.5 pt-3 pb-3">
-        {/* Search Input Box */}
-        <View className="flex-row items-center bg-slate-100 rounded-xl px-3 py-1.5 border border-slate-200">
-          <Search size={15} color="#64748b" />
-          <TextInput
-            placeholder="Cari meja, no order, nama..."
-            placeholderTextColor="#94a3b8"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            className="flex-1 text-xs text-slate-800 ml-2 py-0.5 font-medium"
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')} className="p-1">
-              <X size={14} color="#94a3b8" />
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Filter Pills & Manual Refresh Button */}
-        <View className="flex-row items-center justify-between mt-2.5">
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-1 mr-2">
-            <View className="flex-row items-center gap-1.5">
-              <TouchableOpacity
-                onPress={() => setTypeFilter('ALL')}
-                activeOpacity={0.8}
-                className={`px-3 py-1.5 rounded-lg border ${
-                  typeFilter === 'ALL'
-                    ? 'bg-blue-600 border-blue-600'
-                    : 'bg-white border-slate-200'
-                }`}
-              >
-                <Text
-                  className={`text-[11px] font-semibold ${
-                    typeFilter === 'ALL' ? 'text-white' : 'text-slate-600'
-                  }`}
-                >
-                  Semua
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => setTypeFilter('DINE_IN')}
-                activeOpacity={0.8}
-                className={`px-3 py-1.5 rounded-lg border ${
-                  typeFilter === 'DINE_IN'
-                    ? 'bg-blue-600 border-blue-600'
-                    : 'bg-white border-slate-200'
-                }`}
-              >
-                <Text
-                  className={`text-[11px] font-semibold ${
-                    typeFilter === 'DINE_IN' ? 'text-white' : 'text-slate-600'
-                  }`}
-                >
-                  Dine In
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => setTypeFilter('TAKEAWAY')}
-                activeOpacity={0.8}
-                className={`px-3 py-1.5 rounded-lg border ${
-                  typeFilter === 'TAKEAWAY'
-                    ? 'bg-blue-600 border-blue-600'
-                    : 'bg-white border-slate-200'
-                }`}
-              >
-                <Text
-                  className={`text-[11px] font-semibold ${
-                    typeFilter === 'TAKEAWAY' ? 'text-white' : 'text-slate-600'
-                  }`}
-                >
-                  Bawa Pulang
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => setTypeFilter('ONLINE')}
-                activeOpacity={0.8}
-                className={`px-3 py-1.5 rounded-lg border ${
-                  typeFilter === 'ONLINE'
-                    ? 'bg-blue-600 border-blue-600'
-                    : 'bg-white border-slate-200'
-                }`}
-              >
-                <Text
-                  className={`text-[11px] font-semibold ${
-                    typeFilter === 'ONLINE' ? 'text-white' : 'text-slate-600'
-                  }`}
-                >
-                  Online
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
-
-          {/* Refresh Button to the right of filter options */}
-          <View className="flex-row items-center pl-1 border-l border-slate-200">
-            <TouchableOpacity
-              onPress={handleManualRefresh}
-              disabled={isRefreshing || isRefetching}
-              className="flex-row items-center gap-1 bg-white border border-slate-200 px-2.5 py-1.5 rounded-lg shadow-2xs active:opacity-75"
+    <View className="flex-1 bg-slate-100/70 relative">
+      {/* Floating Animated Toast Banner (Sonner-like Native Experience) */}
+      {toastData && (
+        <Animated.View
+          style={{
+            transform: [{ translateY: toastAnim }],
+            top: Math.max(insets.top, 10),
+          }}
+          className="absolute left-3.5 right-3.5 z-50 shadow-lg"
+        >
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={hideToast}
+            className={`p-3 rounded-2xl flex-row items-start gap-2.5 border shadow-sm ${
+              toastData.type === 'success'
+                ? 'bg-emerald-50 border-emerald-300'
+                : toastData.type === 'warning'
+                ? 'bg-amber-50 border-amber-300'
+                : toastData.type === 'error'
+                ? 'bg-red-50 border-red-300'
+                : 'bg-blue-50 border-blue-300'
+            }`}
+          >
+            <View
+              className={`w-7 h-7 rounded-xl items-center justify-center mt-0.5 ${
+                toastData.type === 'success'
+                  ? 'bg-emerald-100'
+                  : toastData.type === 'warning'
+                  ? 'bg-amber-100'
+                  : toastData.type === 'error'
+                  ? 'bg-red-100'
+                  : 'bg-blue-100'
+              }`}
             >
-              <Animated.View style={{ transform: [{ rotate: spinInterpolate }] }}>
-                <RefreshCw size={13} color="#2563eb" />
-              </Animated.View>
-              <Text className="text-[11px] font-bold text-slate-700">Refresh</Text>
+              {toastData.type === 'success' ? (
+                <CheckCircle2 size={16} color="#047857" />
+              ) : toastData.type === 'warning' ? (
+                <AlertTriangle size={16} color="#b45309" />
+              ) : toastData.type === 'error' ? (
+                <XCircle size={16} color="#b91c1c" />
+              ) : (
+                <Info size={16} color="#1d4ed8" />
+              )}
+            </View>
+
+            <View className="flex-1 pr-1">
+              <Text
+                className={`text-xs font-semibold ${
+                  toastData.type === 'success'
+                    ? 'text-emerald-950'
+                    : toastData.type === 'warning'
+                    ? 'text-amber-950'
+                    : toastData.type === 'error'
+                    ? 'text-red-950'
+                    : 'text-blue-950'
+                }`}
+              >
+                {toastData.title}
+              </Text>
+              <Text
+                className={`text-[11px] font-normal leading-relaxed mt-0.5 ${
+                  toastData.type === 'success'
+                    ? 'text-emerald-800'
+                    : toastData.type === 'warning'
+                    ? 'text-amber-800'
+                    : toastData.type === 'error'
+                    ? 'text-red-800'
+                    : 'text-blue-800'
+                }`}
+              >
+                {toastData.message}
+              </Text>
+            </View>
+
+            <TouchableOpacity onPress={hideToast} className="p-1 opacity-60">
+              <X size={14} color="#64748b" />
             </TouchableOpacity>
+          </TouchableOpacity>
+        </Animated.View>
+      )}
+
+      {/* 1. TOP CONTROL BAR: FILTER (LEFT) + SEARCH (CENTER) + SCAN QR & REFRESH (RIGHT) */}
+      <View className="bg-white border-b border-slate-200 px-3.5 py-2.5">
+        <View className="flex-row items-center gap-2">
+          {/* Tombol Filter di Ujung Kiri (Hanya Icon Tanpa Teks) */}
+          <TouchableOpacity
+            onPress={() => setIsFilterModalOpen(true)}
+            activeOpacity={0.75}
+            accessibilityLabel="Filter jenis pesanan"
+            className={`w-9 h-9 rounded-xl border items-center justify-center relative ${
+              typeFilter !== 'ALL'
+                ? 'bg-blue-50 border-blue-500'
+                : 'bg-white border-slate-200 active:bg-slate-50'
+            }`}
+          >
+            <Filter size={15} color={typeFilter !== 'ALL' ? '#2563eb' : '#64748b'} />
+            {typeFilter !== 'ALL' && (
+              <View className="absolute top-1 right-1 w-2 h-2 rounded-full bg-blue-600" />
+            )}
+          </TouchableOpacity>
+
+          {/* Search Bar Berada di Tengah Antara Filter dan Scan QR */}
+          <View className="flex-1 h-9 flex-row items-center bg-slate-100 rounded-xl px-3 border border-slate-200">
+            <Search size={15} color="#64748b" />
+            <TextInput
+              placeholder="Cari meja, no order, nama..."
+              placeholderTextColor="#94a3b8"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              className="flex-1 text-xs text-slate-800 ml-2 py-0 font-medium"
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery('')} className="p-1">
+                <X size={14} color="#94a3b8" />
+              </TouchableOpacity>
+            )}
           </View>
+
+          {/* Tombol Scan QR: Di samping Refresh, Mobile HP hanya Icon, Tablet Icon + Teks */}
+          <TouchableOpacity
+            onPress={() => setIsScannerOpen(true)}
+            activeOpacity={0.75}
+            accessibilityLabel="Pindai QR pesanan pelanggan"
+            className={`h-9 rounded-xl border border-slate-200 bg-white items-center justify-center active:bg-blue-50 ${
+              isTablet ? 'flex-row gap-1.5 px-3' : 'w-9'
+            }`}
+          >
+            <Camera size={15} color="#2563eb" />
+            {isTablet && (
+              <Text className="text-xs font-semibold text-blue-700">Scan QR</Text>
+            )}
+          </TouchableOpacity>
+
+          {/* Tombol Refresh Manual (di samping Scan QR) */}
+          <TouchableOpacity
+            onPress={handleManualRefresh}
+            disabled={isRefreshing || isRefetching}
+            activeOpacity={0.75}
+            accessibilityLabel="Muat ulang daftar pesanan"
+            className="w-9 h-9 rounded-xl border border-slate-200 bg-white items-center justify-center active:bg-slate-50"
+          >
+            <Animated.View style={{ transform: [{ rotate: spinInterpolate }] }}>
+              <RefreshCw size={14} color="#2563eb" />
+            </Animated.View>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -822,12 +1109,9 @@ export function OrdersScreen() {
                       isActive ? 'border-blue-600' : 'border-transparent'
                     }`}
                   >
-                    <View
-                      style={{ backgroundColor: config.dotColor }}
-                      className="w-2 h-2 rounded-full"
-                    />
+                    
                     <Text
-                      className={`text-xs font-bold ${
+                      className={`text-xs font-semibold ${
                         isActive ? 'text-blue-600' : 'text-slate-500'
                       }`}
                     >
@@ -843,7 +1127,7 @@ export function OrdersScreen() {
                       }`}
                     >
                       <Text
-                        className={`text-[10px] font-bold ${
+                        className={`text-[10px] font-semibold ${
                           stageKey === 'PENDING' && count > 0
                             ? 'text-amber-800'
                             : isActive
@@ -860,7 +1144,7 @@ export function OrdersScreen() {
             </ScrollView>
           </View>
 
-          {/* Pending Orders Notification Banner (Smartphone only, when not on PENDING tab) */}
+          {/* Pending Orders Notification Banner */}
           {activeStage !== 'PENDING' && stageCounts.PENDING > 0 && (
             <TouchableOpacity
               activeOpacity={0.85}
@@ -870,7 +1154,7 @@ export function OrdersScreen() {
               <View className="flex-row items-center gap-2 flex-1 mr-2">
                 <View className="w-2.5 h-2.5 rounded-full bg-amber-500" />
                 <View className="flex-1">
-                  <Text className="text-xs font-bold text-amber-900 leading-tight">
+                  <Text className="text-xs font-semibold text-amber-900 leading-tight">
                     Ada {stageCounts.PENDING} pesanan menunggu pembayaran / konfirmasi
                   </Text>
                   <Text className="text-[10px] text-amber-700">
@@ -879,7 +1163,7 @@ export function OrdersScreen() {
                 </View>
               </View>
               <View className="bg-amber-600 px-2.5 py-1.5 rounded-lg flex-row items-center gap-1">
-                <Text className="text-[11px] font-bold text-white">Lihat & Proses</Text>
+                <Text className="text-[11px] font-semibold text-white">Lihat & Proses</Text>
                 <ChevronRight size={12} color="#ffffff" />
               </View>
             </TouchableOpacity>
@@ -912,7 +1196,7 @@ export function OrdersScreen() {
                     <ChefHat size={22} color="#2563eb" />
                   </View>
                   <View>
-                    <Text className="text-base font-black text-slate-900">Mulai Penyiapan</Text>
+                    <Text className="text-base font-semibold text-slate-900">Mulai Penyiapan</Text>
                     <Text className="text-xs text-slate-500 font-medium">Tiket dapur & struk pelanggan</Text>
                   </View>
                 </View>
@@ -931,14 +1215,14 @@ export function OrdersScreen() {
               <View className="py-3.5 space-y-3">
                 <View className="flex-row justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
                   <View>
-                    <Text className="text-[10px] font-bold text-slate-400 uppercase">Nomor Order</Text>
-                    <Text className="font-mono text-sm font-black text-slate-900">
+                    <Text className="text-[10px] font-semibold text-slate-400 uppercase">Nomor Order</Text>
+                    <Text className="font-mono text-sm font-semibold text-slate-900">
                       #{orderToPrepare?.orderNumber || orderToPrepare?.id?.slice(0, 5) || ''}
                     </Text>
                   </View>
                   <View className="items-end">
-                    <Text className="text-[10px] font-bold text-slate-400 uppercase">Layanan</Text>
-                    <Text className="text-xs font-bold text-slate-800">
+                    <Text className="text-[10px] font-semibold text-slate-400 uppercase">Layanan</Text>
+                    <Text className="text-xs font-semibold text-slate-800">
                       {orderToPrepare?.tableNumber
                         ? `Meja ${orderToPrepare.tableNumber}`
                         : (orderToPrepare?.orderType || '').replace('_', ' ')}
@@ -948,7 +1232,7 @@ export function OrdersScreen() {
 
                 {/* Items Preview */}
                 <View className="bg-slate-50/80 rounded-xl p-3 border border-slate-100 max-h-36">
-                  <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                  <Text className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
                     Daftar Menu ({orderToPrepare?.items?.length || 0})
                   </Text>
                   <ScrollView nestedScrollEnabled className="max-h-28">
@@ -958,10 +1242,10 @@ export function OrdersScreen() {
                         className="flex-row justify-between items-center py-1 border-b border-dashed border-slate-200 last:border-0"
                       >
                         <Text className="text-xs text-slate-800 flex-1 mr-2" numberOfLines={1}>
-                          <Text className="font-bold text-blue-600 font-mono">{item.quantity}x </Text>
+                          <Text className="font-semibold text-blue-600 font-mono">{item.quantity}x </Text>
                           {item.productName}
                         </Text>
-                        <Text className="text-[11px] font-mono text-slate-600">
+                        <Text className="text-[11px] font-mono text-slate-600 font-semibold">
                           {formatCurrency(Number(item.subtotal))}
                         </Text>
                       </View>
@@ -972,7 +1256,7 @@ export function OrdersScreen() {
                 {/* Cetak Dokumen Fisik Quick Actions */}
                 <View className="space-y-2 pt-1">
                   <View className="flex-row justify-between items-center">
-                    <Text className="text-xs font-bold text-slate-800">Cetak Dokumen Fisik</Text>
+                    <Text className="text-xs font-semibold text-slate-800">Cetak Dokumen Fisik</Text>
                     <Text className="text-[10px] text-slate-400 font-medium">Opsional</Text>
                   </View>
 
@@ -987,7 +1271,7 @@ export function OrdersScreen() {
                       className="flex-1 py-2.5 px-2 bg-slate-50 border border-slate-200 rounded-xl flex-row items-center justify-center gap-1.5 active:bg-blue-50"
                     >
                       <ChefHat size={14} color="#d97706" />
-                      <Text className="text-xs font-bold text-slate-700">Tiket Dapur</Text>
+                      <Text className="text-xs font-semibold text-slate-700">Tiket Dapur</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -1000,24 +1284,9 @@ export function OrdersScreen() {
                       className="flex-1 py-2.5 px-2 bg-slate-50 border border-slate-200 rounded-xl flex-row items-center justify-center gap-1.5 active:bg-blue-50"
                     >
                       <Receipt size={14} color="#2563eb" />
-                      <Text className="text-xs font-bold text-slate-700">Struk Pelanggan</Text>
+                      <Text className="text-xs font-semibold text-slate-700">Struk Pelanggan</Text>
                     </TouchableOpacity>
                   </View>
-
-                  <TouchableOpacity
-                    onPress={() =>
-                      Alert.alert(
-                        'Cetak Dokumen',
-                        `Mencetak tiket dapur & struk pelanggan untuk pesanan #${orderToPrepare?.orderNumber || ''}...`
-                      )
-                    }
-                    className="w-full py-2 bg-slate-50 border border-slate-200 rounded-xl flex-row items-center justify-center gap-1.5 active:bg-blue-50"
-                  >
-                    <Printer size={14} color="#475569" />
-                    <Text className="text-xs font-bold text-slate-700">
-                      Cetak Keduanya (Struk & Tiket Dapur)
-                    </Text>
-                  </TouchableOpacity>
                 </View>
               </View>
 
@@ -1030,7 +1299,7 @@ export function OrdersScreen() {
                   }}
                   className="flex-1 py-2.5 rounded-xl border border-slate-200 items-center justify-center active:bg-slate-50"
                 >
-                  <Text className="text-xs font-bold text-slate-600">Batal</Text>
+                  <Text className="text-xs font-semibold text-slate-600">Batal</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => {
@@ -1042,7 +1311,7 @@ export function OrdersScreen() {
                   className="flex-1 py-2.5 rounded-xl bg-blue-600 items-center justify-center flex-row gap-1.5 shadow-sm active:bg-blue-700"
                 >
                   <ChefHat size={14} color="#fff" />
-                  <Text className="text-xs font-bold text-white">Mulai Penyiapan</Text>
+                  <Text className="text-xs font-semibold text-white">Mulai Penyiapan</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -1065,7 +1334,7 @@ export function OrdersScreen() {
                   <CheckCheck size={20} color="#059669" />
                 </View>
                 <View className="flex-1">
-                  <Text className="text-sm font-bold text-slate-900">Lanjutkan Semua Pesanan?</Text>
+                  <Text className="text-sm font-semibold text-slate-900">Lanjutkan Semua Pesanan?</Text>
                   <Text className="text-[11px] text-slate-500 font-medium">
                     {STATUS_CONFIGS[bulkTargetStage]?.title} → {STATUS_CONFIGS[bulkTargetStage]?.nextStatusTitle}
                   </Text>
@@ -1074,16 +1343,16 @@ export function OrdersScreen() {
 
               <View className="py-3.5 space-y-3">
                 <Text className="text-xs text-slate-600 leading-relaxed">
-                  Apakah Anda yakin untuk menyelesaikan semua pesanan pada status{' '}
-                  <Text className="font-bold text-slate-900">
+                  Apakah Anda yakin untuk melanjutkan semua pesanan pada status{' '}
+                  <Text className="font-semibold text-slate-900">
                     "{STATUS_CONFIGS[bulkTargetStage]?.title}"
                   </Text>{' '}
                   sebanyak{' '}
-                  <Text className="font-bold text-emerald-600">
+                  <Text className="font-semibold text-emerald-600">
                     {filteredOrders.filter((o) => o.status === bulkTargetStage).length} pesanan
                   </Text>{' '}
-                  dan lanjut ke status tahap selanjutnya (
-                  <Text className="font-bold text-blue-600">
+                  ke status berikutnya (
+                  <Text className="font-semibold text-blue-600">
                     "{STATUS_CONFIGS[bulkTargetStage]?.nextStatusTitle}"
                   </Text>
                   )?
@@ -1091,7 +1360,7 @@ export function OrdersScreen() {
 
                 {/* List of Affected Orders */}
                 <View className="bg-slate-50 rounded-xl p-2.5 border border-slate-200 max-h-40">
-                  <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                  <Text className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
                     Daftar Pesanan ({filteredOrders.filter((o) => o.status === bulkTargetStage).length})
                   </Text>
                   <ScrollView nestedScrollEnabled className="max-h-32">
@@ -1103,14 +1372,14 @@ export function OrdersScreen() {
                           className="flex-row justify-between items-center py-1 border-b border-slate-100 last:border-0"
                         >
                           <View className="flex-row items-center gap-1.5">
-                            <Text className="font-mono text-[10px] font-bold text-slate-800 bg-slate-200 px-1.5 py-0.5 rounded">
+                            <Text className="font-mono text-[10px] font-semibold text-slate-800 bg-slate-200 px-1.5 py-0.5 rounded">
                               {o.orderNumber || `#${o.id.slice(0, 5)}`}
                             </Text>
                             <Text className="text-[11px] text-slate-700 font-medium max-w-[120px]" numberOfLines={1}>
                               {o.customerName || (o.tableNumber ? `Meja ${o.tableNumber}` : 'Pesanan')}
                             </Text>
                           </View>
-                          <Text className="text-[10px] font-bold text-slate-600">
+                          <Text className="text-[10px] font-semibold text-slate-600">
                             {formatCurrency(Number(o.grandTotal))}
                           </Text>
                         </View>
@@ -1126,7 +1395,7 @@ export function OrdersScreen() {
                   disabled={bulkUpdateMutation.isPending}
                   className="flex-1 py-2.5 rounded-xl border border-slate-200 items-center justify-center active:bg-slate-50"
                 >
-                  <Text className="text-xs font-bold text-slate-600">Batal</Text>
+                  <Text className="text-xs font-semibold text-slate-600">Batal</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={handleConfirmBulkAdvance}
@@ -1138,7 +1407,7 @@ export function OrdersScreen() {
                   ) : (
                     <>
                       <CheckCheck size={14} color="#fff" />
-                      <Text className="text-xs font-bold text-white">
+                      <Text className="text-xs font-semibold text-white">
                         Ya, Lanjutkan ({filteredOrders.filter((o) => o.status === bulkTargetStage).length})
                       </Text>
                     </>
@@ -1163,7 +1432,7 @@ export function OrdersScreen() {
             onPress={() => setSelectedOrder(null)}
           >
             <Pressable
-              className="bg-white rounded-t-3xl max-h-[88%] p-5 border-t border-slate-100"
+              className="bg-white rounded-t-3xl max-h-[92%] p-5 border-t border-slate-100"
               onPress={(e) => e.stopPropagation()}
             >
               {/* Sheet Handle */}
@@ -1171,47 +1440,162 @@ export function OrdersScreen() {
                 <View className="w-10 h-1 rounded-full bg-slate-300" />
               </View>
 
+              {/* Header with Order Number & Payment Status */}
               <View className="flex-row items-center justify-between pb-3 border-b border-slate-100">
                 <View>
-                  <Text className="text-base font-black text-slate-900">
-                    Pesanan #{selectedOrder?.orderNumber || selectedOrder?.id?.slice(0, 5) || ''}
-                  </Text>
+                  <View className="flex-row items-center gap-1.5">
+                    <Text className="text-base font-semibold text-slate-900">
+                      Pesanan #{selectedOrder?.orderNumber || selectedOrder?.id?.slice(0, 5) || ''}
+                    </Text>
+                    <View
+                      className={`px-2 py-0.5 rounded-full ${
+                        selectedOrder?.paymentStatus === 'PAID'
+                          ? 'bg-emerald-50 border border-emerald-200'
+                          : 'bg-amber-50 border border-amber-200'
+                      }`}
+                    >
+                      <Text
+                        className={`text-[10px] font-semibold ${
+                          selectedOrder?.paymentStatus === 'PAID'
+                            ? 'text-emerald-700'
+                            : 'text-amber-700'
+                        }`}
+                      >
+                        {selectedOrder?.paymentStatus === 'PAID' ? 'LUNAS' : 'BELUM LUNAS'}
+                      </Text>
+                    </View>
+                  </View>
                   <Text className="text-xs text-slate-500 font-medium">
                     {selectedOrder?.createdAt ? formatDate(selectedOrder.createdAt) : ''}
                   </Text>
                 </View>
-                <TouchableOpacity
-                  onPress={() => setSelectedOrder(null)}
-                  className="w-8 h-8 rounded-full bg-slate-100 items-center justify-center"
-                >
-                  <X size={16} color="#64748b" />
-                </TouchableOpacity>
+
+                <View className="flex-row items-center gap-1.5">
+                  {/* Button to Show Customer QR Modal */}
+                  <TouchableOpacity
+                    onPress={() => setQrModalOrder(selectedOrder)}
+                    className="w-8 h-8 rounded-full bg-blue-50 border border-blue-200 items-center justify-center"
+                    accessibilityLabel="Tampilkan QR code pesanan ini"
+                  >
+                    <QrCode size={15} color="#2563eb" />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => setSelectedOrder(null)}
+                    className="w-8 h-8 rounded-full bg-slate-100 items-center justify-center"
+                  >
+                    <X size={16} color="#64748b" />
+                  </TouchableOpacity>
+                </View>
               </View>
 
               <ScrollView className="py-3" showsVerticalScrollIndicator={false}>
-                {/* Order Meta Card */}
-                <View className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 mb-4 flex-row justify-between">
-                  <View>
-                    <Text className="text-[10px] font-bold text-slate-400 uppercase">Tipe Pesanan</Text>
-                    <Text className="text-xs font-bold text-slate-800 mt-0.5">
-                      {selectedOrder?.tableNumber
-                        ? `Meja ${selectedOrder.tableNumber}`
-                        : (selectedOrder?.orderType || '').replace('_', ' ')}
-                    </Text>
-                  </View>
-                  {selectedOrder?.customerName && (
-                    <View className="items-end">
-                      <Text className="text-[10px] font-bold text-slate-400 uppercase">Pelanggan</Text>
-                      <Text className="text-xs font-bold text-slate-800 mt-0.5">
-                        {selectedOrder.customerName}
+                {/* Banner Status Pembayaran (Pencegahan Pembayaran Ulang) */}
+                {selectedOrder?.paymentStatus === 'PAID' ? (
+                  <View className="bg-emerald-50 border border-emerald-200 p-3 rounded-2xl mb-3 flex-row items-center gap-2.5">
+                    <View className="w-8 h-8 rounded-xl bg-emerald-100 items-center justify-center">
+                      <ShieldCheck size={18} color="#059669" />
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-xs font-semibold text-emerald-900">
+                        Pembayaran Sudah Lunas & Diverifikasi
+                      </Text>
+                      <Text className="text-[11px] text-emerald-700">
+                        Status saat ini: {STATUS_CONFIGS[selectedOrder.status as StatusKey]?.title || selectedOrder.status}
                       </Text>
                     </View>
-                  )}
+                  </View>
+                ) : (
+                  <View className="bg-amber-50 border border-amber-200 p-3 rounded-2xl mb-3 flex-row items-center gap-2.5">
+                    <View className="w-8 h-8 rounded-xl bg-amber-100 items-center justify-center">
+                      <AlertTriangle size={18} color="#d97706" />
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-xs font-semibold text-amber-900">
+                        Menunggu Pembayaran Kasir
+                      </Text>
+                      <Text className="text-[11px] text-amber-700">
+                        Tunjukkan QR ke kasir atau konfirmasi pembayaran di bawah.
+                      </Text>
+                    </View>
+                  </View>
+                )}
+
+                {/* Order Meta Card */}
+                <View className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 mb-3 grid">
+                  <View className="flex-row justify-between mb-2 pb-2 border-b border-slate-200/50">
+                    <View>
+                      <Text className="text-[10px] font-semibold text-slate-400 uppercase">Tipe Pesanan</Text>
+                      <Text className="text-xs font-semibold text-slate-800 mt-0.5">
+                        {selectedOrder?.tableNumber
+                          ? `Meja ${selectedOrder.tableNumber}`
+                          : (selectedOrder?.orderType || '').replace('_', ' ')}
+                      </Text>
+                    </View>
+                    {selectedOrder?.customerName && (
+                      <View className="items-end">
+                        <Text className="text-[10px] font-semibold text-slate-400 uppercase">Pelanggan</Text>
+                        <Text className="text-xs font-semibold text-slate-800 mt-0.5">
+                          {selectedOrder.customerName}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  <View className="flex-row justify-between">
+                    <View>
+                      <Text className="text-[10px] font-semibold text-slate-400 uppercase">Metode Bayar</Text>
+                      <Text className="text-xs font-semibold text-slate-800 mt-0.5">
+                        {selectedOrder?.paymentMethod || 'CASH / KASIR'}
+                      </Text>
+                    </View>
+                    <View className="items-end">
+                      <Text className="text-[10px] font-semibold text-slate-400 uppercase">Status Bayar</Text>
+                      <Text
+                        className={`text-xs font-semibold mt-0.5 ${
+                          selectedOrder?.paymentStatus === 'PAID'
+                            ? 'text-emerald-600'
+                            : 'text-amber-600'
+                        }`}
+                      >
+                        {selectedOrder?.paymentStatus === 'PAID' ? 'Lunas' : 'Menunggu Bayar'}
+                      </Text>
+                    </View>
+                  </View>
                 </View>
 
+                {/* Online Midtrans Payment Sync Button (Matching Web Kanban) */}
+                {selectedOrder.status === 'PENDING' &&
+                  (selectedOrder.orderType === 'ONLINE' ||
+                    selectedOrder.paymentMethod === 'ONLINE' ||
+                    selectedOrder.paymentStatus !== 'PAID') && (
+                    <TouchableOpacity
+                      onPress={() => handleCheckMidtransPayment(selectedOrder.id)}
+                      disabled={syncPaymentMutation.isPending}
+                      activeOpacity={0.8}
+                      className="w-full py-2.5 px-3 mb-3 rounded-xl bg-blue-50 border border-blue-200 flex-row items-center justify-center gap-1.5 active:bg-blue-100"
+                    >
+                      {syncPaymentMutation.isPending ? (
+                        <ActivityIndicator size="small" color="#2563eb" />
+                      ) : (
+                        <RefreshCw size={13} color="#2563eb" />
+                      )}
+                      <Text className="text-xs font-semibold text-blue-700">
+                        {syncPaymentMutation.isPending
+                          ? 'Memeriksa Midtrans...'
+                          : 'Periksa Status Pembayaran Midtrans'}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+
                 {/* Items List */}
-                <View className="mb-4">
-                  <Text className="text-xs font-bold text-slate-900 mb-2">Daftar Item Menu</Text>
+                <View className="mb-3">
+                  <View className="flex-row items-center justify-between mb-2">
+                    <Text className="text-xs font-semibold text-slate-900">Daftar Item Menu</Text>
+                    <Text className="text-[11px] text-slate-400 font-semibold">
+                      {selectedOrder?.items?.filter((i) => i.isCompleted).length} dari{' '}
+                      {selectedOrder?.items?.length || 0} siap
+                    </Text>
+                  </View>
                   <View className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
                     {selectedOrder?.items?.map((item) => (
                       <TouchableOpacity
@@ -1222,28 +1606,31 @@ export function OrdersScreen() {
                           item.isCompleted ? 'bg-emerald-50/20' : 'bg-white'
                         }`}
                       >
+                        {/* Modern Square Checkbox (UI Guidelines Rule 4.3) */}
                         <View
-                          className={`w-5 h-5 rounded mr-3 items-center justify-center ${
-                            item.isCompleted ? 'bg-emerald-600' : 'border border-slate-300 bg-white'
+                          className={`w-5 h-5 rounded-lg mr-3 items-center justify-center ${
+                            item.isCompleted
+                              ? 'bg-emerald-600 border border-emerald-600'
+                              : 'border border-slate-300 bg-white'
                           }`}
                         >
-                          {item.isCompleted && <Check size={12} color="#fff" strokeWidth={3} />}
+                          {item.isCompleted && <Check size={12} color="#fff" strokeWidth={2.5} />}
                         </View>
                         <View className="flex-1">
                           <Text
                             className={`text-xs ${
                               item.isCompleted
-                                ? 'line-through text-slate-400 font-medium'
-                                : 'font-bold text-slate-800'
+                                ? 'line-through text-slate-400 font-normal'
+                                : 'font-semibold text-slate-800'
                             }`}
                           >
-                            <Text className="font-mono font-black text-slate-900">
+                            <Text className="font-mono font-semibold text-slate-900">
                               {item.quantity}x
                             </Text>{' '}
                             {item.productName}
                           </Text>
                           {Array.isArray(item.modifiers) && item.modifiers.length > 0 && (
-                            <Text className="text-[10px] text-slate-500 font-medium mt-0.5">
+                            <Text className="text-[10px] text-slate-500 font-normal mt-0.5">
                               + {item.modifiers.map((m: any) => m.name || m.optionName).filter(Boolean).join(', ')}
                             </Text>
                           )}
@@ -1253,7 +1640,7 @@ export function OrdersScreen() {
                             </Text>
                           )}
                         </View>
-                        <Text className="text-xs font-mono font-bold text-slate-700">
+                        <Text className="text-xs font-mono font-semibold text-slate-700">
                           {formatCurrency(Number(item.subtotal))}
                         </Text>
                       </TouchableOpacity>
@@ -1261,10 +1648,36 @@ export function OrdersScreen() {
                   </View>
                 </View>
 
+                {/* Print Physical Receipt Quick Buttons (Matching Web) */}
+                <View className="p-3 bg-slate-50 rounded-2xl border border-slate-200 mb-3 space-y-2">
+                  <Text className="text-[11px] font-semibold text-slate-700">Cetak Dokumen:</Text>
+                  <View className="flex-row gap-2">
+                    <TouchableOpacity
+                      onPress={() =>
+                        Alert.alert('Cetak Struk', `Mencetak struk pelanggan #${selectedOrder?.orderNumber || ''}...`)
+                      }
+                      className="flex-1 py-2 rounded-xl bg-white border border-slate-200 flex-row items-center justify-center gap-1.5 active:bg-slate-100"
+                    >
+                      <Receipt size={13} color="#2563eb" />
+                      <Text className="text-xs font-semibold text-slate-700">Struk Pelanggan</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() =>
+                        Alert.alert('Cetak Dapur', `Mencetak tiket dapur #${selectedOrder?.orderNumber || ''}...`)
+                      }
+                      className="flex-1 py-2 rounded-xl bg-white border border-slate-200 flex-row items-center justify-center gap-1.5 active:bg-slate-100"
+                    >
+                      <ChefHat size={13} color="#d97706" />
+                      <Text className="text-xs font-semibold text-slate-700">Tiket Dapur</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
                 {/* Total Summary */}
-                <View className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 mb-4 flex-row justify-between items-center">
-                  <Text className="text-xs font-bold text-slate-600">Total Pembayaran</Text>
-                  <Text className="text-sm font-black text-slate-900 font-mono">
+                <View className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 mb-3 flex-row justify-between items-center">
+                  <Text className="text-xs font-semibold text-slate-600">Total Pembayaran</Text>
+                  <Text className="text-sm font-semibold text-slate-900 font-mono">
                     {formatCurrency(Number(selectedOrder?.grandTotal || 0))}
                   </Text>
                 </View>
@@ -1289,8 +1702,10 @@ export function OrdersScreen() {
                       className="w-full py-3 rounded-xl bg-blue-600 items-center justify-center flex-row gap-2 shadow-sm active:bg-blue-700"
                     >
                       <CheckCircle2 size={16} color="#fff" />
-                      <Text className="text-xs font-bold text-white">
-                        {selectedOrder.status === 'NEW'
+                      <Text className="text-xs font-semibold text-white">
+                        {selectedOrder.status === 'PENDING'
+                          ? 'Konfirmasi Pembayaran Kasir'
+                          : selectedOrder.status === 'NEW'
                           ? 'Mulai Penyiapan (Dapur)'
                           : STATUS_CONFIGS[selectedOrder.status as StatusKey]?.actionLabel || 'Proses'}
                       </Text>
@@ -1311,9 +1726,9 @@ export function OrdersScreen() {
                             },
                           ]);
                         }}
-                        className="w-full py-2.5 rounded-xl border border-red-200 items-center justify-center active:bg-red-50"
+                        className="w-full py-2.5 rounded-xl border border-red-200 items-center justify-center active:bg-red-50 mt-1"
                       >
-                        <Text className="text-xs font-bold text-red-600">Batalkan Pesanan</Text>
+                        <Text className="text-xs font-semibold text-red-600">Batalkan Pesanan</Text>
                       </TouchableOpacity>
                     )}
                   </View>
@@ -1323,6 +1738,179 @@ export function OrdersScreen() {
           </Pressable>
         </Modal>
       )}
+
+      {/* 6. MODAL KAMERA SCANNER QR PESANAN */}
+      <OrderQrScannerModal
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        onScan={handleScanCode}
+        isSearching={isSearchingScannedOrder}
+      />
+
+      {/* 7. MODAL QR PESANAN PELANGGAN (DENGAN WATERMARK PENCEGAHAN SCAN ULANG JIKA SUDAH LUNAS) */}
+      {!!qrModalOrder && (
+        <OrderQrModal
+          isOpen={!!qrModalOrder}
+          onClose={() => setQrModalOrder(null)}
+          orderNumber={qrModalOrder.orderNumber || `#${qrModalOrder.id.slice(0, 5)}`}
+          grandTotal={Number(qrModalOrder.grandTotal)}
+          customerName={qrModalOrder.customerName}
+          tableNumber={qrModalOrder.tableNumber}
+          orderType={qrModalOrder.orderType}
+          paymentStatus={qrModalOrder.paymentStatus}
+          status={qrModalOrder.status}
+        />
+      )}
+
+      {/* 8. MODAL FILTER TIPE PESANAN */}
+      <Modal
+        visible={isFilterModalOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsFilterModalOpen(false)}
+      >
+        <Pressable
+          className={`flex-1 bg-black/40 ${
+            isTablet ? 'justify-center items-center p-4' : 'justify-end'
+          }`}
+          onPress={() => setIsFilterModalOpen(false)}
+        >
+          <Pressable
+            style={{
+              paddingBottom: isTablet ? undefined : Math.max(insets.bottom, 20),
+            }}
+            className={`bg-white border border-slate-100 shadow-xl ${
+              isTablet
+                ? 'w-full max-w-sm rounded-2xl p-5'
+                : 'w-full rounded-t-3xl p-5'
+            }`}
+            onPress={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <View className="flex-row items-center justify-between pb-3.5 border-b border-slate-100">
+              <View className="flex-row items-center gap-2.5">
+                <View className="w-8 h-8 rounded-lg bg-blue-50 items-center justify-center">
+                  <Filter size={16} color="#2563eb" />
+                </View>
+                <View>
+                  <Text className="text-sm font-semibold text-slate-900">Filter Tipe Pesanan</Text>
+                  <Text className="text-[11px] text-slate-500 font-medium">
+                    Pilih tipe pesanan yang ingin ditampilkan
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                onPress={() => setIsFilterModalOpen(false)}
+                className="w-7 h-7 rounded-full bg-slate-100 items-center justify-center"
+              >
+                <X size={14} color="#64748b" />
+              </TouchableOpacity>
+            </View>
+
+            {/* List Pilihan Filter */}
+            <View className="py-2.5">
+              {[
+                {
+                  key: 'ALL' as const,
+                  label: 'Semua',
+                  desc: 'Tampilkan semua jenis pesanan',
+                  Icon: UtensilsCrossed,
+                },
+                {
+                  key: 'DINE_IN' as const,
+                  label: 'Dine In',
+                  desc: 'Pesanan makan di tempat',
+                  Icon: UtensilsCrossed,
+                },
+                {
+                  key: 'TAKEAWAY' as const,
+                  label: 'Bawa Pulang',
+                  desc: 'Pesanan take away / dibungkus',
+                  Icon: ShoppingBag,
+                },
+                {
+                  key: 'ONLINE' as const,
+                  label: 'Online',
+                  desc: 'Pesanan online / delivery',
+                  Icon: Store,
+                },
+              ].map((item) => {
+                const isSelected = typeFilter === item.key;
+                return (
+                  <TouchableOpacity
+                    key={item.key}
+                    activeOpacity={0.7}
+                    onPress={() => {
+                      if (isSelected && item.key !== 'ALL') {
+                        setTypeFilter('ALL');
+                      } else {
+                        setTypeFilter(item.key);
+                      }
+                      setIsFilterModalOpen(false);
+                    }}
+                    className={`flex-row items-center justify-between p-3 rounded-xl border mb-2 ${
+                      isSelected
+                        ? 'bg-blue-50/70 border-blue-300'
+                        : 'bg-white border-slate-100 active:bg-slate-50'
+                    }`}
+                  >
+                    <View className="flex-row items-center gap-3 flex-1 mr-2">
+                      <View
+                        className={`w-8 h-8 rounded-lg items-center justify-center ${
+                          isSelected ? 'bg-blue-600' : 'bg-slate-100'
+                        }`}
+                      >
+                        <item.Icon
+                          size={15}
+                          color={isSelected ? '#ffffff' : '#64748b'}
+                        />
+                      </View>
+                      <View className="flex-1">
+                        <Text
+                          className={`text-xs font-semibold ${
+                            isSelected ? 'text-blue-900' : 'text-slate-800'
+                          }`}
+                        >
+                          {item.label}
+                        </Text>
+                        <Text className="text-[10px] text-slate-500">
+                          {item.desc}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Checkbox indicator */}
+                    <View
+                      className={`w-5 h-5 rounded-lg border-2 items-center justify-center ${
+                        isSelected
+                          ? 'border-blue-600 bg-blue-600'
+                          : 'border-slate-300 bg-white'
+                      }`}
+                    >
+                      {isSelected && <Check size={12} color="#ffffff" strokeWidth={3} />}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {/* Reset Button (hanya jika sedang aktif filter spesifik) */}
+            {typeFilter !== 'ALL' && (
+              <TouchableOpacity
+                onPress={() => {
+                  setTypeFilter('ALL');
+                  setIsFilterModalOpen(false);
+                }}
+                className="mt-1 py-2.5 rounded-xl bg-slate-100 items-center justify-center active:bg-slate-200"
+              >
+                <Text className="text-xs font-semibold text-slate-700">
+                  Reset ke Semua Pesanan
+                </Text>
+              </TouchableOpacity>
+            )}
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }

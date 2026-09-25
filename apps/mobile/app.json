@@ -32,6 +32,12 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Izinkan Menuin mengakses kamera untuk memindai QR pesanan pelanggan."
+        }
       ]
     ],
     "experiments": {
