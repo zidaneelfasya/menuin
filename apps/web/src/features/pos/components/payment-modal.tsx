@@ -19,7 +19,8 @@ import {
   Check, 
   UtensilsCrossed, 
   ShoppingBag, 
-  Bike 
+  Bike,
+  X
 } from 'lucide-react';
 import { useCartStore } from '../stores/use-cart-store';
 import { cn } from '@/lib/utils';
@@ -189,36 +190,50 @@ export function PaymentModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !isProcessing && !open && onClose()}>
-      <DialogContent className="max-w-[460px] p-0 overflow-hidden rounded-2xl bg-white dark:bg-slate-950 border border-border/80 shadow-xl">
+      <DialogContent showCloseButton={false} className="max-w-[460px] p-0 overflow-hidden rounded-2xl bg-white dark:bg-slate-950 border border-border/80 shadow-xl">
         <DialogHeader className="p-4 pb-3 border-b bg-slate-50/70 dark:bg-slate-900/50">
-          <div className="flex items-center justify-between">
-            <div>
-              <DialogTitle className="text-base font-semibold text-foreground">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <DialogTitle className="text-base font-semibold text-foreground truncate">
                 Pembayaran Kasir
               </DialogTitle>
               <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground">
-                <span className="font-medium text-slate-700 dark:text-slate-300">{orderTypeLabel}</span>
+                <span className="font-medium text-slate-700 dark:text-slate-300 shrink-0">{orderTypeLabel}</span>
                 {tableNumber && (
                   <>
-                    <span>•</span>
-                    <span>Meja {tableNumber}</span>
+                    <span className="shrink-0">•</span>
+                    <span className="shrink-0 font-medium">Meja {tableNumber}</span>
                   </>
                 )}
                 {customerName && (
                   <>
-                    <span>•</span>
-                    <span className="truncate max-w-[120px]">{customerName}</span>
+                    <span className="shrink-0">•</span>
+                    <span className="truncate">{customerName}</span>
                   </>
                 )}
               </div>
             </div>
             
-            {/* Grand Total Badge */}
-            <div className="text-right">
-              <span className="text-[10px] text-muted-foreground block font-medium">Total Tagihan</span>
-              <span className="text-lg font-semibold text-blue-600 dark:text-blue-400">
-                {formatCurrency(grandTotal)}
-              </span>
+            <div className="flex items-center gap-3 shrink-0">
+              {/* Grand Total Badge */}
+              <div className="text-right">
+                <span className="text-[10px] text-muted-foreground block font-medium leading-none mb-0.5">Total Tagihan</span>
+                <span className="text-lg font-semibold text-blue-600 dark:text-blue-400 leading-tight">
+                  {formatCurrency(grandTotal)}
+                </span>
+              </div>
+
+              {/* High-visibility Close Button */}
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isProcessing}
+                className="w-7 h-7 rounded-full bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-all flex items-center justify-center cursor-pointer shadow-2xs active:scale-95 disabled:opacity-50"
+                aria-label="Tutup"
+                title="Tutup"
+              >
+                <X className="w-4 h-4 stroke-[2.5]" />
+              </button>
             </div>
           </div>
         </DialogHeader>
