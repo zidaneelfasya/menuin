@@ -42,7 +42,7 @@ const faqData: FAQItem[] = [
   {
     question: 'Bagaimana hak akses kasir, manajer, dan pemilik dipisahkan?',
     answer:
-      'Setiap pengguna diberi peran: kasir, manajer outlet, atau superadmin. Data keuangan dan pengaturan sensitif hanya terbuka untuk peran yang berhak, dan pembatalan struk memerlukan PIN manajer.',
+      'Setiap anggota tim diberi peran: Owner, Manajer, Kasir, atau Staf. Data keuangan dan pengaturan sensitif hanya terbuka untuk peran yang berhak, dan setiap pembatalan transaksi wajib disertai alasan sehingga tetap bisa ditelusuri.',
   },
   {
     question: 'Bisakah berhenti berlangganan kapan saja?',
@@ -67,7 +67,7 @@ export default function FaqEditorial() {
           
           {/* Left Column: Clean White & Black Editorial Heading with Blue Accent */}
           <div className="lg:col-span-4 pr-0 lg:pr-6">
-            <h2 className="text-3xl sm:text-4xl lg:text-[40px] font-black tracking-tight text-slate-900 leading-[1.1]">
+            <h2 className="text-[clamp(30px,4.2vw,48px)] font-semibold tracking-[-0.04em] text-[#0a0a0a] leading-[1.05]">
               Tanya jawab.
             </h2>
             <p className="text-slate-500 text-sm sm:text-[15px] mt-4 leading-relaxed max-w-sm">
@@ -89,13 +89,13 @@ export default function FaqEditorial() {
                     className="w-full py-4 sm:py-5 flex items-center justify-between text-left group cursor-pointer"
                     aria-expanded={isOpen}
                   >
-                    <span className="text-[15px] sm:text-[16.5px] font-bold text-slate-900 group-hover:text-[#0E59F9] transition-colors pr-6 leading-snug">
+                    <span className="text-[15px] sm:text-[16.5px] font-medium tracking-[-0.01em] text-[#0a0a0a] group-hover:text-[#0E59F9] transition-colors pr-6 leading-snug">
                       {faq.question}
                     </span>
 
                     <div className="flex items-center gap-2 shrink-0">
                       {/* Subtle Open Badge on Desktop Hover */}
-                      <span className="hidden sm:inline-block text-[10px] font-bold uppercase tracking-wider text-slate-400 group-hover:text-[#0E59F9] opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="hidden sm:inline-block text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400 group-hover:text-[#0E59F9] opacity-0 group-hover:opacity-100 transition-opacity">
                         {isOpen ? "TUTUP" : "BUKA"}
                       </span>
                       

@@ -3,23 +3,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  ArrowRight,
-  QrCode,
-  CreditCard,
-  Monitor,
-  Printer,
-  ShieldCheck,
-  RefreshCw,
-  Layers,
-  Building2,
-  Laptop,
-  Tv,
-} from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import SmoothScroll from "@/components/landing/smooth-scroll";
-import EcosystemGallery from "@/components/landing/ecosystem-gallery";
-import KeyFacts from "@/components/landing/key-facts";
+import AboutSection from "@/components/landing/about-section";
+import OrderJourney from "@/components/landing/order-journey";
 import ComparisonScroll from "@/components/landing/comparison-scroll";
+import FeatureShowcase from "@/components/landing/feature-showcase";
 import SpecBento from "@/components/landing/spec-bento";
 import { HeroIntro } from "@/components/landing/scroll-reveal";
 import FaqEditorial from "@/components/ui/faq-editorial";
@@ -77,74 +66,6 @@ function FadeIn({
 // TODO(sales): ganti dengan nomor WhatsApp tim yang sebenarnya sebelum rilis.
 const CONTACT_WHATSAPP =
   "https://wa.me/628123456789?text=Halo%20Menuin%2C%20saya%20ingin%20berdiskusi%20soal%20paket%20Enterprise";
-
-const pillars = [
-  {
-    index: "01",
-    eyebrow: "QR Self-Order",
-    title: "Scan. Pilih rasa. Bayar dari meja.",
-    body: "Tamu membuka katalog di browser bawaan ponsel — tanpa unduh aplikasi, tanpa daftar akun. Pilih varian susu, tingkat gula, catatan khusus, lalu bayar lewat QRIS dinamis yang terverifikasi otomatis.",
-    specs: [
-      { k: "Tanpa instalasi", v: "Terbuka di Safari & Chrome mobile" },
-      { k: "Modifier", v: "Varian, topping, catatan per item" },
-      { k: "Pembayaran", v: "QRIS dinamis via Midtrans, atau bayar di kasir" },
-    ],
-    icon: QrCode,
-    visual: { kind: "image", src: "/img/landing/katalog-iphone.webp", alt: "Katalog menu Menuin di layar ponsel", w: 900, h: 1019, narrow: true },
-  },
-  {
-    index: "02",
-    eyebrow: "Kasir Cloud POS",
-    title: "Cepat di kasir. Tenang di pembukuan.",
-    body: "Dirancang untuk antrean jam sibuk: cari produk, pilih, selesai. PB1, service charge, dan potongan komisi aplikasi online food dihitung otomatis supaya laba bersih tidak meleset.",
-    specs: [
-      { k: "Printer", v: "Bluetooth & LAN, kertas 58 mm dan 80 mm" },
-      { k: "Perhitungan", v: "PB1 10%, service charge, komisi ojol" },
-      { k: "Pembayaran", v: "Tunai, debit, kartu, QRIS, transfer" },
-    ],
-    icon: Monitor,
-    visual: { kind: "image", src: "/img/landing/pos-ipad.webp", alt: "Kasir POS Menuin di layar tablet", w: 1800, h: 1382, narrow: false },
-  },
-  {
-    index: "03",
-    eyebrow: "Kitchen Display",
-    title: "Dapur lebih cepat. Tiket tanpa kertas.",
-    body: "Tiket dari meja dan dari kasir muncul di layar dapur seketika, dengan penanda lama tunggu dan status yang bergerak dari Diterima sampai Selesai. Tidak ada lagi nota basah atau pesanan terlewat.",
-    specs: [
-      { k: "Prioritas", v: "Kode warna otomatis berdasarkan lama tunggu" },
-      { k: "Stasiun", v: "Filter terpisah untuk bar dan dapur utama" },
-      { k: "Notifikasi", v: "Peringatan audio saat tiket baru masuk" },
-    ],
-    icon: Tv,
-    visual: { kind: "kds" },
-  },
-  {
-    index: "04",
-    eyebrow: "Audit Kas Shift",
-    title: "Tutup shift jam berapa pun, kas tetap terlacak.",
-    body: "Kasir wajib mencatat modal awal sebelum register bisa dipakai, setiap kas keluar tercatat, dan saat tutup shift uang fisik dihitung dulu sebelum sistem menampilkan totalnya.",
-    specs: [
-      { k: "Starting float", v: "Wajib diisi sebelum transaksi pertama" },
-      { k: "Blind cash count", v: "Kasir menghitung tanpa melihat total sistem" },
-      { k: "Void", v: "Pembatalan struk butuh PIN manajer" },
-    ],
-    icon: ShieldCheck,
-    visual: { kind: "shift" },
-  },
-  {
-    index: "05",
-    eyebrow: "Multi-Outlet",
-    title: "Satu cabang atau dua puluh, satu tempat kendali.",
-    body: "Laporan penjualan terkonsolidasi, menu terpusat, dan hak akses yang dipisah per peran. Data tiap cabang terisolasi lewat tenant ID sendiri di PostgreSQL.",
-    specs: [
-      { k: "Laporan", v: "Laba kotor, HPP/COGS, menu terlaris" },
-      { k: "Akses", v: "Superadmin, manajer outlet, kasir" },
-      { k: "Ekspor", v: "Excel dan PDF, sekali klik" },
-    ],
-    icon: Building2,
-    visual: { kind: "image", src: "/img/landing/dashboard-macbook.webp", alt: "Kasir Menuin berjalan di browser laptop", w: 1800, h: 1145, narrow: false },
-  },
-];
 
 // Hanya mitra pembayaran & teknologi yang benar-benar terintegrasi.
 // Logo lembaga pemerintah sengaja tidak ditampilkan di sini — lihat
@@ -204,293 +125,6 @@ function HeroPhoto() {
   );
 }
 
-/**
- * Layar dapur. Dibuat gelap karena KDS sungguhan memang dipasang gelap
- * supaya tiket terbaca dari seberang dapur.
- */
-function KdsPanel() {
-  const tickets = [
-    {
-      table: "Meja 12",
-      status: "Disiapkan",
-      wait: "02:14",
-      tone: "accent",
-      items: [
-        { qty: 2, name: "Es Kopi Gula Aren", note: "Less ice, less sugar" },
-        { qty: 1, name: "Butter Croissant", note: "" },
-      ],
-    },
-    {
-      table: "Meja 04",
-      status: "Diterima",
-      wait: "00:38",
-      tone: "neutral",
-      items: [
-        { qty: 1, name: "Kopi Susu Panas", note: "Tanpa gula" },
-        { qty: 2, name: "Kastengel Keju", note: "" },
-      ],
-    },
-    {
-      table: "Takeaway 118",
-      status: "Siap",
-      wait: "05:02",
-      tone: "done",
-      items: [
-        { qty: 1, name: "New York Cheesecake", note: "Kotak terpisah" },
-        { qty: 3, name: "Butter Croissant", note: "" },
-      ],
-    },
-  ];
-
-  return (
-    <div className="overflow-hidden rounded-[20px] bg-[#0b0b0c] text-white shadow-[var(--landing-lift-lg)]">
-      <div className="flex items-center justify-between border-b border-white/10 px-5 py-3.5">
-        <div className="flex items-center gap-2.5">
-          <span className="text-[13px] font-semibold">Layar Dapur</span>
-          <span className="text-[12px] text-white/45">Stasiun Utama</span>
-        </div>
-        <div className="flex items-center gap-2 font-display text-[12px] tabular-nums text-white/45">
-          <span className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
-          <span>3 tiket aktif</span>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-px bg-white/10 sm:grid-cols-3">
-        {tickets.map((t) => (
-          <div key={t.table} className="flex min-h-[172px] flex-col bg-[#0b0b0c] p-4">
-            <div className="flex items-baseline justify-between">
-              <span className="text-[13px] font-semibold">{t.table}</span>
-              <span className="font-display text-[12px] tabular-nums text-white/45">{t.wait}</span>
-            </div>
-
-            <span
-              className={`mt-2 inline-flex w-fit items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                t.tone === "accent"
-                  ? "bg-[#0E59F9]/20 text-[#7aa8ff]"
-                  : t.tone === "done"
-                    ? "bg-emerald-400/15 text-emerald-300"
-                    : "bg-white/10 text-white/70"
-              }`}
-            >
-              {t.status}
-            </span>
-
-            <ul className="mt-3 space-y-2 text-[12px] leading-snug">
-              {t.items.map((item) => (
-                <li key={item.name} className="flex gap-2">
-                  <span className="font-display tabular-nums text-white/90">{item.qty}×</span>
-                  <span className="min-w-0">
-                    <span className="block truncate">{item.name}</span>
-                    {item.note && <span className="block text-[11px] text-white/45">{item.note}</span>}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/** Ringkasan tutup shift — angka yang dilihat kasir saat menghitung laci. */
-function ShiftPanel() {
-  const rows = [
-    { k: "Modal awal laci", v: "Rp 200.000" },
-    { k: "Penjualan tunai", v: "+Rp 1.425.000" },
-    { k: "Kas keluar (petty cash)", v: "−Rp 25.000" },
-  ];
-
-  return (
-    <div className="rounded-[20px] border border-black/[0.08] bg-white p-6 shadow-[var(--landing-lift)]">
-      <div className="flex items-baseline justify-between">
-        <span className="text-[13px] font-semibold text-[#0a0a0a]">Tutup shift · Sarah Rahma</span>
-        <span className="font-display text-[12px] tabular-nums text-[#71717a]">15.02</span>
-      </div>
-
-      <dl className="mt-5">
-        {rows.map((r) => (
-          <div key={r.k} className="flex justify-between border-t border-black/[0.06] py-2.5">
-            <dt className="text-[13px] text-[#52525b]">{r.k}</dt>
-            <dd className="font-display text-[13px] tabular-nums text-[#0a0a0a]">{r.v}</dd>
-          </div>
-        ))}
-        <div className="flex justify-between border-t border-black/[0.06] py-2.5">
-          <dt className="text-[13px] text-[#52525b]">Kas seharusnya</dt>
-          <dd className="font-display text-[13px] tabular-nums text-[#0a0a0a]">Rp 1.600.000</dd>
-        </div>
-        <div className="flex justify-between border-t border-black/[0.06] py-2.5">
-          <dt className="text-[13px] text-[#52525b]">Uang fisik dihitung</dt>
-          <dd className="font-display text-[13px] tabular-nums text-[#0a0a0a]">Rp 1.600.000</dd>
-        </div>
-      </dl>
-
-      <div className="mt-4 flex items-center justify-between rounded-xl bg-emerald-50 px-4 py-3">
-        <span className="text-[13px] font-medium text-emerald-900">Selisih</span>
-        <span className="font-display text-[15px] font-semibold tabular-nums text-emerald-700">
-          Rp 0
-        </span>
-      </div>
-    </div>
-  );
-}
-
-type PillarVisualSpec =
-  | { kind: "image"; src: string; alt: string; w: number; h: number; narrow: boolean }
-  | { kind: "kds" }
-  | { kind: "shift" };
-
-function PillarVisual({ visual }: { visual: PillarVisualSpec }) {
-  if (visual.kind === "kds") return <KdsPanel />;
-  if (visual.kind === "shift") return <ShiftPanel />;
-
-  return (
-    <Image
-      src={visual.src}
-      alt={visual.alt}
-      width={visual.w}
-      height={visual.h}
-      loading="lazy"
-      sizes="(max-width: 768px) 100vw, 540px"
-      className={`h-auto w-full ${visual.narrow ? "mx-auto max-w-[280px]" : ""}`}
-    />
-  );
-}
-
-
-const testimonialsData = [
-  {
-    name: 'Budi Santoso',
-    role: 'Founder, Sunset Coffee Bar',
-    avatar: 'https://i.pravatar.cc/150?u=budi',
-    rating: 5.0,
-    text: 'Long register lines disappeared immediately. Guests order and pay right from their tables. The POS register runs remarkably fast!',
-    sentiment: 'Highly Satisfied'
-  },
-  {
-    name: 'Siti Aminah',
-    role: 'General Manager, Raya Resto Chain',
-    avatar: 'https://i.pravatar.cc/150?u=siti',
-    rating: 4.8,
-    text: 'Stock management is outstanding. We get automated low-inventory alerts before ingredients run out. It keeps our daily operations spotless.',
-    sentiment: 'Highly Satisfied'
-  },
-  {
-    name: 'Andi Wijaya',
-    role: 'Owner, Burger Bros',
-    avatar: 'https://i.pravatar.cc/150?u=andi',
-    rating: 5.0,
-    text: 'Instant QRIS checkout processes seamlessly with zero latency. Sales reports provide granular insights into our best-selling items.',
-    sentiment: 'Top Recommended'
-  },
-  {
-    name: 'Dewi Lestari',
-    role: 'Proprietor, Artisan Bakery Cafe',
-    avatar: 'https://i.pravatar.cc/150?u=dewi',
-    rating: 4.9,
-    text: 'The interface is sleek and very intuitive for our kitchen crew. Table orders sync directly to the kitchen display with zero error.',
-    sentiment: 'Highly Satisfied'
-  },
-  {
-    name: 'Reza Rahadian',
-    role: 'Co-Founder, Brew & Roast Co.',
-    avatar: 'https://i.pravatar.cc/150?u=reza',
-    rating: 5.0,
-    text: 'Exceptional uptime even during peak weekend rushes. It has been the most reliable tech investment for our hospitality business.',
-    sentiment: 'Top Recommended'
-  },
-  {
-    name: 'Ayu Pratama',
-    role: 'Multi-Unit Operator, Gourmet Bites',
-    avatar: 'https://i.pravatar.cc/150?u=ayu',
-    rating: 4.7,
-    text: 'Opening a new branch takes only minutes to configure. Multi-outlet reports give me complete financial visibility from anywhere.',
-  }
-];
-
-const shiftedTestimonialsData = [
-  ...testimonialsData.slice(3),
-  ...testimonialsData.slice(0, 3)
-];
-
-function SkeletonCard() {
-  return (
-    <div className="w-[300px] shrink-0 h-[120px] testimonial-wrapper pointer-events-none select-none">
-      <div className="w-full h-full bg-slate-50/90 rounded-[24px] p-4 border border-slate-200/60 flex flex-col shadow-xs opacity-60 grayscale testimonial-inner origin-center will-change-transform transform-gpu">
-
-        {/* Header Row */}
-        <div className="flex justify-between items-start mb-2">
-          <div className="flex gap-2 items-center flex-1 min-w-0 mr-2">
-            <div className="w-8 h-8 rounded-full bg-slate-200 shrink-0" />
-            <div className="flex flex-col gap-1 min-w-0 flex-1">
-              <div className="w-20 max-w-full h-2.5 bg-slate-200 rounded" />
-              <div className="w-16 max-w-full h-2 bg-slate-100 rounded" />
-            </div>
-          </div>
-          <div className="flex flex-col items-end gap-1 shrink-0">
-            <div className="w-14 h-2 bg-slate-200 rounded" />
-            <div className="w-16 h-4 bg-slate-100 rounded-full" />
-          </div>
-        </div>
-
-        {/* Text Body */}
-        <div className="flex flex-col gap-1 mt-auto mb-1">
-          <div className="w-full h-2 bg-slate-200 rounded" />
-          <div className="w-[85%] h-2 bg-slate-100 rounded" />
-        </div>
-
-      </div>
-    </div>
-  );
-}
-
-function RealCard({ data }: { data: any }) {
-  return (
-    <div className="w-[300px] shrink-0 h-[120px] testimonial-wrapper">
-      <div className="w-full h-full bg-white rounded-[24px] p-4 border border-slate-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.04)] flex flex-col testimonial-inner origin-center will-change-transform transform-gpu">
-
-        {/* Header Row */}
-        <div className="flex justify-between items-start mb-2">
-          <div className="flex gap-2 items-center flex-1 min-w-0 mr-2">
-            <img
-              src={data.avatar}
-              alt={data.name}
-              loading="lazy"
-              decoding="async"
-              className="w-8 h-8 rounded-full object-cover shadow-xs shrink-0"
-            />
-            <div className="flex flex-col min-w-0 flex-1">
-              <span className="text-[12px] font-bold text-[#111] leading-tight truncate block">{data.name.toLowerCase()}</span>
-              <span className="text-[10px] text-[#888] truncate block">{data.role.toLowerCase()}</span>
-            </div>
-          </div>
-
-          <div className="flex flex-col items-end gap-0.5 shrink-0">
-            <div className="flex items-center gap-0.5">
-              {[...Array(5)].map((_, i) => (
-                <span key={i} className={`text-[9px] ${i < Math.floor(data.rating) ? 'text-amber-400' : 'text-gray-300'}`}>★</span>
-              ))}
-              <span className="text-[10px] font-bold text-[#111] ml-1">{data.rating}</span>
-            </div>
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-[#E8F8F0] text-[#139E60] text-[8px] font-black tracking-wide uppercase border border-[#D0EBE0]">
-              {data.sentiment}
-            </span>
-          </div>
-        </div>
-
-        {/* Text Body */}
-        <p className="text-[11px] text-[#666] leading-relaxed line-clamp-2 mt-auto mb-1">
-          "{data.text}"
-        </p>
-
-      </div>
-    </div>
-  );
-}
-
-// --- UNIFIED HIGH-FIDELITY POS WORKSPACE SHOWCASE ---
-
-
 export default function LandingPage({
   isLoggedIn = false,
   userName = "",
@@ -499,181 +133,11 @@ export default function LandingPage({
   userName?: string;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [activeFaq, setActiveFaq] = useState<number | null>(null);
   const { navigateWithTransition } = usePageTransition();
-  const marqueeContainerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    let animationFrameId: number | null = null;
-    let startTime = performance.now();
-    let cache: any = null;
-    let isVisible = false;
-
-    const buildCache = () => {
-      if (!marqueeContainerRef.current) return null;
-
-      const contentsList = Array.from(marqueeContainerRef.current.querySelectorAll('.marquee-content')) as HTMLElement[];
-      const oldTransforms = contentsList.map(c => c.style.transform);
-      contentsList.forEach(c => c.style.transform = 'none');
-
-      const containerRect = marqueeContainerRef.current.getBoundingClientRect();
-      const containerWidth = containerRect.width;
-      const containerCenter = containerRect.left + containerRect.width / 2;
-      const halfContainerWidth = containerWidth / 2 || 1;
-
-      const tracks = Array.from(marqueeContainerRef.current.querySelectorAll('.row-top, .row-middle, .row-bottom')).map(track => {
-        const isMiddle = track.classList.contains('row-middle');
-        const isBottom = track.classList.contains('row-bottom');
-        let delay = 0;
-        if (isMiddle) delay = -12;
-
-        const contents = Array.from(track.querySelectorAll('.marquee-content')).map(content => {
-          const contentEl = content as HTMLElement;
-          const contentRect = contentEl.getBoundingClientRect();
-          const contentWidth = contentRect.width;
-
-          const wrappers = Array.from(content.querySelectorAll('.testimonial-wrapper')).map(wrapper => {
-            const el = wrapper as HTMLElement;
-            const inner = el.querySelector('.testimonial-inner') as HTMLElement;
-            const isTopRow = el.closest('.row-top') !== null;
-            const isBottomRow = el.closest('.row-bottom') !== null;
-
-            const rect = el.getBoundingClientRect();
-            const initialCenter = rect.left + rect.width / 2;
-
-            return { inner, initialCenter, isTopRow, isBottomRow };
-          });
-
-          return { content: contentEl, contentWidth, wrappers };
-        });
-
-        return { delay, contents };
-      });
-
-      contentsList.forEach((c, i) => c.style.transform = oldTransforms[i]);
-
-      return { containerWidth, containerCenter, halfContainerWidth, tracks };
-    };
-
-    // Logic untuk membuat animasi testimonial lengkung & sangat halus
-    const updateCards = (time: number) => {
-      if (!isVisible) {
-        animationFrameId = null;
-        return;
-      }
-
-      if (!cache) {
-        cache = buildCache();
-        if (!cache) {
-          animationFrameId = requestAnimationFrame(updateCards);
-          return;
-        }
-      }
-
-      if (!marqueeContainerRef.current) return;
-      const { containerCenter, halfContainerWidth, tracks } = cache;
-      const duration = 22; // Durasi gliding lebih halus dan stabil
-      const elapsed = (time - startTime) / 1000;
-
-      for (let i = 0; i < tracks.length; i++) {
-        const trackInfo = tracks[i];
-        const totalElapsed = elapsed - trackInfo.delay;
-        let progress = (totalElapsed % duration) / duration;
-        if (progress < 0) progress += 1;
-
-        const translateXPercent = -100 + (progress * 100);
-
-        for (let j = 0; j < trackInfo.contents.length; j++) {
-          const contentInfo = trackInfo.contents[j];
-          if (!contentInfo.content || !contentInfo.content.isConnected) continue;
-          const translateXPixels = (translateXPercent / 100) * contentInfo.contentWidth;
-
-          contentInfo.content.style.transform = `translate3d(${translateXPercent.toFixed(3)}%, 0, 0)`;
-
-          for (let k = 0; k < contentInfo.wrappers.length; k++) {
-            const wrapperInfo = contentInfo.wrappers[k];
-            if (!wrapperInfo.inner || !wrapperInfo.inner.isConnected) continue;
-
-            const currentCenter = wrapperInfo.initialCenter + translateXPixels;
-            const distanceFromCenter = (currentCenter - containerCenter) / halfContainerWidth;
-
-            // Skip offscreen elements to avoid unnecessary transform calculations
-            if (distanceFromCenter < -2.2 || distanceFromCenter > 2.2) {
-              continue;
-            }
-
-            const clampedDistance = Math.max(-1.5, Math.min(1.5, distanceFromCenter));
-            const curveIntensity = clampedDistance * clampedDistance;
-
-            const maxOffset = 170;
-            const maxRotation = 14;
-
-            let translateY = 0;
-            let rotateZ = 0;
-
-            if (wrapperInfo.isTopRow) {
-              translateY = -curveIntensity * maxOffset;
-              rotateZ = -clampedDistance * maxRotation;
-            } else if (wrapperInfo.isBottomRow) {
-              translateY = curveIntensity * maxOffset;
-              rotateZ = clampedDistance * maxRotation;
-            }
-
-            wrapperInfo.inner.style.transform = `translate3d(0, ${translateY.toFixed(1)}px, 0) rotate(${rotateZ.toFixed(2)}deg)`;
-          }
-        }
-      }
-
-      animationFrameId = requestAnimationFrame(updateCards);
-    };
-
-    cache = buildCache();
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const [entry] = entries;
-        isVisible = entry.isIntersecting;
-        if (isVisible) {
-          if (!animationFrameId) {
-            startTime = performance.now();
-            animationFrameId = requestAnimationFrame(updateCards);
-          }
-        } else {
-          if (animationFrameId) {
-            cancelAnimationFrame(animationFrameId);
-            animationFrameId = null;
-          }
-        }
-      },
-      { rootMargin: '200px 0px' }
-    );
-
-    if (marqueeContainerRef.current) {
-      observer.observe(marqueeContainerRef.current);
-    }
-
-    let resizeTimer: ReturnType<typeof setTimeout>;
-    const handleResize = () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => {
-        cache = buildCache();
-      }, 150);
-    };
-
-    window.addEventListener('resize', handleResize, { passive: true });
-
-    return () => {
-      if (animationFrameId) cancelAnimationFrame(animationFrameId);
-      observer.disconnect();
-      window.removeEventListener('resize', handleResize);
-      clearTimeout(resizeTimer);
-    };
-  }, []);
-
   const userInitial = (userName || "U").trim().charAt(0).toUpperCase();
 
   return (
-    <div className="min-h-screen bg-white text-[#111] font-sans antialiased selection:bg-[#0E59F9] selection:text-white">
+    <div className="landing-root min-h-screen bg-white text-[#111] antialiased selection:bg-[#0E59F9] selection:text-white">
       <SmoothScroll />
 
       {/* NAVBAR */}
@@ -684,8 +148,9 @@ export default function LandingPage({
           </Link>
 
           <nav className="hidden md:flex items-center gap-8 text-[14px] font-medium text-slate-600">
-            <a href="#ekosistem" className="hover:text-[#0a0a0a] transition-colors">Produk</a>
-            <a href="#pilar" className="hover:text-[#0a0a0a] transition-colors">Fitur</a>
+            <a href="#tentang" className="hover:text-[#0a0a0a] transition-colors">Tentang</a>
+            <a href="#alur" className="hover:text-[#0a0a0a] transition-colors">Cara kerja</a>
+            <a href="#fitur" className="hover:text-[#0a0a0a] transition-colors">Fitur</a>
             <a href="#pricing" className="hover:text-[#0a0a0a] transition-colors">Harga</a>
             <a href="#faq" className="hover:text-[#0a0a0a] transition-colors">Tanya jawab</a>
           </nav>
@@ -734,8 +199,9 @@ export default function LandingPage({
         {mobileOpen && (
           <div className="md:hidden absolute top-[72px] left-0 w-full bg-white border-b border-black/[0.06] px-6 py-6 space-y-5">
             <nav className="flex flex-col gap-4 text-[15px] font-medium text-slate-700">
-              <a href="#ekosistem" onClick={() => setMobileOpen(false)}>Produk</a>
-              <a href="#pilar" onClick={() => setMobileOpen(false)}>Fitur</a>
+              <a href="#tentang" onClick={() => setMobileOpen(false)}>Tentang</a>
+              <a href="#alur" onClick={() => setMobileOpen(false)}>Cara kerja</a>
+              <a href="#fitur" onClick={() => setMobileOpen(false)}>Fitur</a>
               <a href="#pricing" onClick={() => setMobileOpen(false)}>Harga</a>
               <a href="#faq" onClick={() => setMobileOpen(false)}>Tanya jawab</a>
             </nav>
@@ -807,7 +273,7 @@ export default function LandingPage({
                 {isLoggedIn ? "Buka dashboard" : "Mulai uji coba 14 hari"}
               </a>
               <a
-                href="#ekosistem"
+                href="#alur"
                 className="inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-full border border-black/[0.08] px-6 text-[15px] font-medium text-[#0a0a0a] transition-colors hover:bg-[#fafafa] sm:w-auto"
               >
                 Lihat cara kerjanya
@@ -831,9 +297,6 @@ export default function LandingPage({
         </HeroIntro>
       </section>
 
-      {/* ANGKA KUNCI */}
-      <KeyFacts />
-
       {/* MITRA PEMBAYARAN */}
       <section className="border-y border-black/[0.06] bg-[#fafafa] px-6 py-8" aria-label="Mitra pembayaran">
         <div className="mx-auto max-w-[1280px] text-center">
@@ -855,315 +318,38 @@ export default function LandingPage({
         </div>
       </section>
 
-      {/* EKOSISTEM — galeri horizontal ber-pin (GSAP) */}
-      <EcosystemGallery />
+      {/* TENTANG — siapa Menuin dan untuk siapa, dengan angka kunci */}
+      <AboutSection />
+
+      {/* ALUR PESANAN — dari scan QR sampai transaksi tercatat */}
+      <OrderJourney />
 
       <ComparisonScroll />
 
-      {/* PILAR PRODUK */}
-      <section className="px-6 py-24 md:py-32" id="pilar">
-        <div className="mx-auto max-w-[1280px]">
-          <FadeIn>
-            <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#71717a]">
-              Yang dikerjakan Menuin
-            </p>
-          </FadeIn>
-
-          <div className="mt-10 divide-y divide-black/[0.08] border-y border-black/[0.08]">
-            {pillars.map((pillar, i) => {
-              const Icon = pillar.icon;
-              // Sisi visual berganti kiri–kanan supaya lima pilar tidak
-              // terbaca sebagai satu dinding teks.
-              const visualFirst = i % 2 === 1;
-
-              return (
-                <FadeIn key={pillar.index} delay={i * 0.04}>
-                  <article className="grid grid-cols-1 items-center gap-8 py-14 md:grid-cols-12 md:gap-12 md:py-20">
-                    <div
-                      className={`md:col-span-6 ${visualFirst ? "md:order-2" : ""}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="font-display text-[13px] tabular-nums text-[#a1a1aa]">
-                          {pillar.index}
-                        </span>
-                        <Icon className="h-4 w-4 text-[#0E59F9]" strokeWidth={1.5} />
-                        <span className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#71717a]">
-                          {pillar.eyebrow}
-                        </span>
-                      </div>
-
-                      <h3 className="mt-5 max-w-[16ch] font-display text-[clamp(26px,3.2vw,38px)] font-semibold leading-[1.08] tracking-[-0.035em] text-[#0a0a0a] text-balance">
-                        {pillar.title}
-                      </h3>
-
-                      <p className="mt-5 max-w-[52ch] text-[15.5px] leading-relaxed text-[#52525b]">
-                        {pillar.body}
-                      </p>
-
-                      <dl className="mt-7">
-                        {pillar.specs.map((spec) => (
-                          <div
-                            key={spec.k}
-                            className="grid grid-cols-1 gap-1 border-t border-black/[0.06] py-3 sm:grid-cols-12 sm:gap-4"
-                          >
-                            <dt className="text-[13px] text-[#71717a] sm:col-span-4">{spec.k}</dt>
-                            <dd className="text-[14px] text-[#0a0a0a] sm:col-span-8">{spec.v}</dd>
-                          </div>
-                        ))}
-                      </dl>
-                    </div>
-
-                    <div className={`md:col-span-6 ${visualFirst ? "md:order-1" : ""}`}>
-                      <PillarVisual visual={pillar.visual as PillarVisualSpec} />
-                    </div>
-                  </article>
-                </FadeIn>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+      {/* FITUR UNGGULAN */}
+      <FeatureShowcase />
 
       <SpecBento />
 
-      {/* WRAPPER FOR TESTIMONIAL & PRICING */}
+      {/* WRAPPER FOR PRICING */}
       <div className="relative overflow-hidden bg-[#FAFAFA]">
 
         {/* BACKGROUND DIVIDER SVG */}
         <div className="absolute top-[88px] left-1/2 -translate-x-1/2 w-[1922px] pointer-events-none z-20 flex justify-center">
           <img src="/divider/divider.svg" alt="Divider Background" className="w-full h-auto" />
         </div>
-
-        {/* TESTIMONIALS REVEAL */}
-        <section
-          ref={marqueeContainerRef}
-          id="testimonials"
-          className="relative pt-10 md:pt-14 pb-24 md:pb-32 z-10"
-        >
-          {/* HEADER */}
-          <div className="relative z-[60] mx-auto mb-6 max-w-[1200px] px-6 text-center md:mb-8">
-            <h2 className="text-[clamp(44px,7.2vw,78px)] font-extrabold leading-[0.96] tracking-[-0.04em] text-[#111]">
-              What they said <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#0E59F9] via-[#2563EB] to-[#0941B8]">
-                about us.
-              </span>
-            </h2>
-          </div>
-
-          {/* TESTIMONIAL CANVAS */}
-          <div className="relative h-[760px] w-full">
-
-            {/* ========================================= */}
-            {/* TESTIMONIAL MARQUEE */}
-            {/* ========================================= */}
-
-            {/* TOP ROW */}
-            <div className="row-top absolute left-0 top-[170px] z-10 w-full">
-              <div className="relative flex h-[120px] w-full">
-
-                {/* SKELETON */}
-                <div className="absolute inset-0 z-10 flex">
-                  <div className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5">
-                    {[...testimonialsData, ...testimonialsData].map((t, i) => (
-                      <SkeletonCard key={`skel1-t-${i}`} />
-                    ))}
-                  </div>
-
-                  <div
-                    className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5"
-                    aria-hidden="true"
-                  >
-                    {[...testimonialsData, ...testimonialsData].map((t, i) => (
-                      <SkeletonCard key={`skel2-t-${i}`} />
-                    ))}
-                  </div>
-                </div>
-
-                {/* REAL TESTIMONIAL */}
-                <div
-                  className="absolute inset-0 z-20 flex"
-                  style={{
-                    clipPath: "inset(-200px 0 -200px 50%)",
-                  }}
-                >
-                  <div className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5">
-                    {[...testimonialsData, ...testimonialsData].map((t, i) => (
-                      <RealCard
-                        key={`real1-t-${i}`}
-                        data={t}
-                      />
-                    ))}
-                  </div>
-
-                  <div
-                    className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5"
-                    aria-hidden="true"
-                  >
-                    {[...testimonialsData, ...testimonialsData].map((t, i) => (
-                      <RealCard
-                        key={`real2-t-${i}`}
-                        data={t}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* MIDDLE ROW */}
-            <div className="row-middle absolute left-0 top-[315px] z-10 w-full">
-              <div className="relative flex h-[120px] w-full">
-
-                {/* SKELETON */}
-                <div className="absolute inset-0 z-10 flex">
-                  <div className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5">
-                    {[...testimonialsData, ...testimonialsData].reverse().map((t, i) => (
-                      <SkeletonCard key={`skel1-m-${i}`} />
-                    ))}
-                  </div>
-
-                  <div
-                    className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5"
-                    aria-hidden="true"
-                  >
-                    {[...testimonialsData, ...testimonialsData].reverse().map((t, i) => (
-                      <SkeletonCard key={`skel2-m-${i}`} />
-                    ))}
-                  </div>
-                </div>
-
-                {/* REAL */}
-                <div
-                  className="absolute inset-0 z-20 flex"
-                  style={{
-                    clipPath: "inset(-200px 0 -200px 50%)",
-                  }}
-                >
-                  <div className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5">
-                    {[...testimonialsData, ...testimonialsData].reverse().map((t, i) => (
-                      <RealCard
-                        key={`real1-m-${i}`}
-                        data={t}
-                      />
-                    ))}
-                  </div>
-
-                  <div
-                    className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5"
-                    aria-hidden="true"
-                  >
-                    {[...testimonialsData, ...testimonialsData].reverse().map((t, i) => (
-                      <RealCard
-                        key={`real2-m-${i}`}
-                        data={t}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* BOTTOM ROW */}
-            <div className="row-bottom absolute left-0 top-[460px] z-10 w-full">
-              <div className="relative flex h-[120px] w-full">
-
-                {/* SKELETON */}
-                <div className="absolute inset-0 z-10 flex">
-                  <div className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5">
-                    {[...shiftedTestimonialsData, ...shiftedTestimonialsData].map((t, i) => (
-                      <SkeletonCard key={`skel1-b-${i}`} />
-                    ))}
-                  </div>
-
-                  <div
-                    className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5"
-                    aria-hidden="true"
-                  >
-                    {[...shiftedTestimonialsData, ...shiftedTestimonialsData].map((t, i) => (
-                      <SkeletonCard key={`skel2-b-${i}`} />
-                    ))}
-                  </div>
-                </div>
-
-                {/* REAL */}
-                <div
-                  className="absolute inset-0 z-20 flex"
-                  style={{
-                    clipPath: "inset(-200px 0 -200px 50%)",
-                  }}
-                >
-                  <div className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5">
-                    {[...shiftedTestimonialsData, ...shiftedTestimonialsData].map((t, i) => (
-                      <RealCard
-                        key={`real1-b-${i}`}
-                        data={t}
-                      />
-                    ))}
-                  </div>
-
-                  <div
-                    className="marquee-content flex min-w-full shrink-0 items-center gap-5 pr-5"
-                    aria-hidden="true"
-                  >
-                    {[...shiftedTestimonialsData, ...shiftedTestimonialsData].map((t, i) => (
-                      <RealCard
-                        key={`real2-b-${i}`}
-                        data={t}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* ========================================= */}
-            {/* EDGE FADE */}
-            {/* ========================================= */}
-
-            <div
-              className="
-        pointer-events-none
-        absolute
-        inset-y-0
-        left-0
-        z-[55]
-        w-[18%]
-        bg-gradient-to-r
-        from-[#FAFAFA]
-        via-[#FAFAFA]/80
-        to-transparent
-      "
-            />
-
-            <div
-              className="
-        pointer-events-none
-        absolute
-        inset-y-0
-        right-0
-        z-[55]
-        w-[18%]
-        bg-gradient-to-l
-        from-[#FAFAFA]
-        via-[#FAFAFA]/80
-        to-transparent
-      "
-            />
-          </div>
-        </section>
-
         {/* PRICING (Side-by-Side Editorial Layout inside wrapper with SVG Background) */}
-        <section className="relative z-30 pt-36 md:pt-52 pb-28 md:pb-36 px-6 sm:px-10 lg:px-14 mt-16 md:mt-24" id="pricing">
+        <section className="relative z-30 pt-36 md:pt-52 pb-28 md:pb-36 px-6 sm:px-10 lg:px-14" id="pricing">
           <div className="mx-auto max-w-[1240px] relative z-10">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start">
 
               {/* Column 1: Left Editorial Typographic Header */}
               <FadeIn className="lg:col-span-4 pr-0 lg:pr-4 pt-3">
                 <div className="space-y-1">
-                  <h2 className="text-[clamp(32px,3.8vw,46px)] font-black leading-[1.08] tracking-[-0.04em] text-slate-900">
+                  <h2 className="text-[clamp(32px,3.8vw,46px)] font-semibold leading-[1.05] tracking-[-0.04em] text-slate-900">
                     Langganan bulanan,
                   </h2>
-                  <h2 className="text-[clamp(32px,3.8vw,46px)] font-black leading-[1.08] tracking-[-0.04em] text-[#0E59F9]">
+                  <h2 className="text-[clamp(32px,3.8vw,46px)] font-semibold leading-[1.05] tracking-[-0.04em] text-[#0E59F9]">
                     tanpa kontrak tahunan.
                   </h2>
                 </div>
@@ -1185,11 +371,11 @@ export default function LandingPage({
                 <FadeIn delay={0.1}>
                   <div className="flex flex-col justify-between p-7 sm:p-8 rounded-[32px] bg-white border border-slate-200/80 shadow-[0_4px_24px_rgba(0,0,0,0.04)] hover:shadow-xl transition-all h-full">
                     <div>
-                      <h3 className="text-xl font-bold text-slate-900">
+                      <h3 className="text-xl font-semibold tracking-[-0.02em] text-slate-900">
                         Pro
                       </h3>
                       <div className="flex items-baseline gap-1 mt-2 mb-6">
-                        <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+                        <span className="text-3xl sm:text-4xl font-semibold text-slate-900 tracking-[-0.035em] tabular-nums">
                           Rp 199.000
                         </span>
                         <span className="text-xs sm:text-sm font-semibold text-slate-400">
@@ -1202,8 +388,8 @@ export default function LandingPage({
                           "Kasir cloud dan cetak struk termal",
                           "QR meja tanpa batas jumlah pesanan",
                           "QRIS dinamis terverifikasi otomatis",
-                          "Layar dapur (KDS) tanpa kertas",
-                          "Hak akses kasir, manajer, dan superadmin",
+                          "Papan pesanan dan tiket dapur otomatis",
+                          "Hak akses Owner, Manajer, Kasir, dan Staf",
                           "Stok berjalan dan peringatan stok menipis",
                           "Laporan penjualan, shift, dan laba",
                           "Printer kasir Bluetooth dan LAN (58/80 mm)",
@@ -1224,7 +410,7 @@ export default function LandingPage({
                         <div className="w-8 h-8 rounded-full bg-[#0E59F9] text-white flex items-center justify-center text-xs font-bold shadow-md shadow-blue-500/20 group-hover:scale-105 transition-all">
                           <ArrowRight className="w-3.5 h-3.5" />
                         </div>
-                        <span className="text-xs sm:text-[13px] font-bold text-slate-900 group-hover:text-[#0E59F9] transition-colors">
+                        <span className="text-xs sm:text-[13px] font-semibold text-slate-900 group-hover:text-[#0E59F9] transition-colors">
                           Mulai sekarang
                         </span>
                       </a>
@@ -1236,11 +422,11 @@ export default function LandingPage({
                 <FadeIn delay={0.2}>
                   <div className="flex flex-col justify-between p-7 sm:p-8 rounded-[32px] bg-white border border-slate-200/80 shadow-[0_4px_24px_rgba(0,0,0,0.04)] hover:shadow-xl transition-all h-full">
                     <div>
-                      <h3 className="text-xl font-bold text-slate-900">
+                      <h3 className="text-xl font-semibold tracking-[-0.02em] text-slate-900">
                         Enterprise
                       </h3>
                       <div className="flex items-baseline gap-1 mt-2 mb-6">
-                        <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+                        <span className="text-3xl sm:text-4xl font-semibold text-slate-900 tracking-[-0.035em] tabular-nums">
                           Hubungi kami
                         </span>
                       </div>
@@ -1274,7 +460,7 @@ export default function LandingPage({
                         <div className="w-8 h-8 rounded-full bg-[#0E59F9] text-white flex items-center justify-center text-xs font-bold shadow-md shadow-blue-500/20 group-hover:scale-105 transition-all">
                           <ArrowRight className="w-3.5 h-3.5" />
                         </div>
-                        <span className="text-xs sm:text-[13px] font-bold text-slate-900 group-hover:text-[#0E59F9] transition-colors">
+                        <span className="text-xs sm:text-[13px] font-semibold text-slate-900 group-hover:text-[#0E59F9] transition-colors">
                           Mulai sekarang
                         </span>
                       </a>
@@ -1286,39 +472,6 @@ export default function LandingPage({
             </div>
           </div>
 
-          {/* ========================================= */}
-          {/* EDGE FADE FOR PRICING                     */}
-          {/* ========================================= */}
-          <div
-            className="
-            hidden md:block
-            pointer-events-none
-            absolute
-            inset-y-0
-            left-0
-            z-[40]
-            w-[18%]
-            bg-gradient-to-r
-            from-[#FAFAFA]
-            via-[#FAFAFA]/80
-            to-transparent
-          "
-          />
-          <div
-            className="
-            hidden md:block
-            pointer-events-none
-            absolute
-            inset-y-0
-            right-0
-            z-[40]
-            w-[18%]
-            bg-gradient-to-l
-            from-[#FAFAFA]
-            via-[#FAFAFA]/80
-            to-transparent
-          "
-          />
         </section>
       </div>
 
