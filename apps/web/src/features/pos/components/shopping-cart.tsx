@@ -5,9 +5,13 @@ import { Trash2, Plus, Minus, CreditCard, ShieldCheck } from 'lucide-react';
 import { useCartStore } from '../stores/use-cart-store';
 import { formatCurrency } from '@/lib/utils/format';
 
-export function ShoppingCart() {
+interface ShoppingCartProps {
+  posSettings?: any;
+}
+
+export function ShoppingCart({ posSettings }: ShoppingCartProps) {
   const [mounted, setMounted] = React.useState(false);
-  const { items, removeItem, updateQuantity, clearCart, getSubtotal, getTaxAmount, getTotal, discount } = useCartStore();
+  const { items, removeItem, updateQuantity, clearCart, getSubtotal, discount } = useCartStore();
 
   React.useEffect(() => {
     setMounted(true);
@@ -27,8 +31,27 @@ export function ShoppingCart() {
   }
 
   const subtotal = getSubtotal();
-  const tax = getTaxAmount();
-  const total = getTotal();
+  const taxRate = parseFloat(posSettings?.posTaxRate || '0');
+  const serviceRate = parseFloat(posSettings?.serviceChargeRate || '0');
+  const taxName = posSettings?.taxName || 'Pajak (PB1)';
+  const serviceName = posSettings?.serviceChargeName || 'Biaya Layanan';
+
+  const taxableSubtotal = Math.max(0, subtotal - discount);
+  const serviceChargeAmount = serviceRate > 0 ? (taxableSubtotal * serviceRate) / 100 : 0;
+  const taxAmount = taxRate > 0 ? (taxableSubtotal * taxRate) / 100 : 0;
+  const total = taxableSubtotal + serviceChargeAmount + taxAmount;
+
+  const handleMinus = (itemId: string, currentQty: number) => {
+    if (currentQty <= 1) {
+      removeItem(itemId);
+    } else {
+      updateQuantity(itemId, currentQty - 1);
+    }
+  };
+
+  const handlePlus = (itemId: string, currentQty: number) => {
+    updateQuantity(itemId, currentQty + 1);
+  };
 
   return (
     <div className="flex flex-col h-full bg-card border rounded-2xl shadow-sm">
@@ -43,7 +66,7 @@ export function ShoppingCart() {
         {items.length > 0 && (
           <button 
             onClick={clearCart}
-            className="text-xs text-destructive hover:bg-destructive/10 px-2 py-1 rounded-md transition-colors flex items-center"
+            className="text-xs text-destructive hover:bg-destructive/10 px-2 py-1 rounded-md transition-colors flex items-center cursor-pointer"
           >
             <Trash2 size={14} className="mr-1" />
             Kosongkan
@@ -77,28 +100,32 @@ export function ShoppingCart() {
                     "{item.notes}"
                   </p>
                 )}
-                <div className="flex items-center mt-1.5 space-x-2">
-                  <div className="flex items-center bg-background border rounded-lg overflow-hidden">
-                    <button 
-                      onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                      className="px-2 py-1 hover:bg-muted text-muted-foreground"
-                    >
-                      <Minus size={12} />
-                    </button>
-                    <span className="text-xs font-medium px-2 min-w-[20px] text-center">{item.quantity}</span>
-                    <button 
-                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                      className="px-2 py-1 hover:bg-muted text-muted-foreground"
-                    >
-                      <Plus size={12} />
-                    </button>
-                  </div>
+                <div className="flex items-center gap-2 mt-2">
+                  <button 
+                    type="button"
+                    onClick={() => handleMinus(item.id, item.quantity)}
+                    className="w-7 h-7 sm:w-7.5 sm:h-7.5 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex items-center justify-center shadow-2xs active:scale-90 cursor-pointer"
+                    aria-label="Kurangi kuantitas"
+                  >
+                    <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
+                  </button>
+                  <span className="text-sm font-semibold min-w-5 sm:min-w-6 text-center text-foreground select-none">
+                    {item.quantity}
+                  </span>
+                  <button 
+                    type="button"
+                    onClick={() => handlePlus(item.id, item.quantity)}
+                    className="w-7 h-7 sm:w-7.5 sm:h-7.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition-all flex items-center justify-center active:scale-90 cursor-pointer"
+                    aria-label="Tambah kuantitas"
+                  >
+                    <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                  </button>
                 </div>
               </div>
               <div className="flex flex-col items-end justify-between">
                 <button 
                   onClick={() => removeItem(item.id)}
-                  className="text-muted-foreground hover:text-destructive transition-colors p-1"
+                  className="text-muted-foreground hover:text-destructive transition-colors p-1 cursor-pointer"
                 >
                   <Trash2 size={14} />
                 </button>
@@ -110,23 +137,39 @@ export function ShoppingCart() {
       </div>
 
       {/* Summary */}
-      <div className="p-4 border-t bg-muted/10 space-y-3">
-        <div className="flex justify-between text-sm">
+      <div className="p-4 border-t bg-muted/10 space-y-2.5">
+        <div className="flex justify-between text-xs sm:text-sm">
           <span className="text-muted-foreground">Subtotal</span>
-          <span className="font-medium">{formatCurrency(subtotal)}</span>
+          <span className="font-medium text-foreground">{formatCurrency(subtotal)}</span>
         </div>
+
         {discount > 0 && (
-          <div className="flex justify-between text-sm text-destructive">
-            <span>Diskon</span>
+          <div className="flex justify-between text-xs sm:text-sm text-rose-600 dark:text-rose-400">
+            <span>Potongan / Diskon</span>
             <span>-{formatCurrency(discount)}</span>
           </div>
         )}
-        <div className="pt-3 border-t flex justify-between items-center">
-          <span className="font-bold text-lg">Total</span>
-          <span className="font-bold text-2xl text-primary">{formatCurrency(total)}</span>
+
+        {serviceRate > 0 && (
+          <div className="flex justify-between text-xs sm:text-sm">
+            <span className="text-muted-foreground">{serviceName} ({serviceRate}%)</span>
+            <span className="font-medium text-foreground">+{formatCurrency(serviceChargeAmount)}</span>
+          </div>
+        )}
+
+        {taxRate > 0 && (
+          <div className="flex justify-between text-xs sm:text-sm">
+            <span className="text-muted-foreground">{taxName} ({taxRate}%)</span>
+            <span className="font-medium text-foreground">+{formatCurrency(taxAmount)}</span>
+          </div>
+        )}
+
+        <div className="pt-2.5 border-t border-border flex justify-between items-center">
+          <span className="font-semibold text-base text-foreground">Total</span>
+          <span className="font-bold text-xl text-primary">{formatCurrency(total)}</span>
         </div>
 
-        <div className="flex justify-center items-center mt-3 text-xs text-success bg-success/10 py-1.5 rounded-lg">
+        <div className="flex justify-center items-center mt-2 text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 py-1.5 rounded-lg border border-emerald-100 dark:border-emerald-900/40">
           <ShieldCheck size={14} className="mr-1.5" />
           Semua transaksi aman
         </div>

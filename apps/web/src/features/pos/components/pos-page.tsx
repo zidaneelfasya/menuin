@@ -48,7 +48,7 @@ export function POSPage({
   const [printMode, setPrintMode] = React.useState<'all' | 'customer' | 'kitchen'>('all');
   const [currentShift, setCurrentShift] = React.useState(activeShift);
   
-  const { items, clearCart, getTotal } = useCartStore();
+  const { items, clearCart, getTotal, getSubtotal } = useCartStore();
 
   React.useEffect(() => {
     setMounted(true);
@@ -175,7 +175,14 @@ export function POSPage({
   }, [items, isPaymentModalOpen, isSuccessModalOpen]);
 
   const totalItems = mounted ? items.reduce((sum, item) => sum + item.quantity, 0) : 0;
-  const cartTotal = mounted ? getTotal() : 0;
+  const cartSubtotal = mounted ? getSubtotal() : 0;
+  const discount = mounted ? useCartStore.getState().discount : 0;
+  const taxRate = parseFloat(posSettings?.posTaxRate || '0');
+  const serviceRate = parseFloat(posSettings?.serviceChargeRate || '0');
+  const taxableSubtotal = Math.max(0, cartSubtotal - discount);
+  const serviceChargeAmount = serviceRate > 0 ? (taxableSubtotal * serviceRate) / 100 : 0;
+  const taxAmount = taxRate > 0 ? (taxableSubtotal * taxRate) / 100 : 0;
+  const cartGrandTotal = taxableSubtotal + serviceChargeAmount + taxAmount;
 
   return (
     <>
@@ -186,17 +193,17 @@ export function POSPage({
 
         <div className="hidden lg:block w-[300px] xl:w-[350px] 2xl:w-[400px] h-full flex-shrink-0 ml-4 lg:ml-6 relative">
         <div className="h-full pb-[140px]">
-          <ShoppingCart />
+          <ShoppingCart posSettings={posSettings} />
         </div>
         <div className="absolute bottom-0 left-0 right-0 bg-background border-t p-4 pt-4 z-10">
           <div className="flex justify-between text-lg font-bold mb-4">
             <span>Total:</span>
-            <span>{formatCurrency(cartTotal)}</span>
+            <span className="text-primary font-bold">{formatCurrency(cartGrandTotal)}</span>
           </div>
           <button 
             onClick={handleCheckoutClick}
             disabled={totalItems === 0 || isProcessing}
-            className="w-full h-14 bg-primary text-primary-foreground rounded-xl font-bold shadow-md hover:opacity-90 transition-opacity disabled:opacity-50"
+            className="w-full h-14 bg-primary text-primary-foreground rounded-xl font-bold shadow-md hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer"
           >
             Bayar Sekarang (F4)
           </button>
@@ -218,19 +225,23 @@ export function POSPage({
                 </div>
                 <span className="ml-3">Lihat Keranjang</span>
               </div>
-              <span className="text-lg">{formatCurrency(cartTotal)}</span>
+              <span className="text-lg font-bold">{formatCurrency(cartGrandTotal)}</span>
             </button>
           </DrawerTrigger>
           <DrawerContent className="h-[85vh] p-0 flex flex-col">
             <DrawerTitle className="sr-only">Keranjang Belanja</DrawerTitle>
             <div className="flex-1 overflow-hidden">
-              <ShoppingCart />
+              <ShoppingCart posSettings={posSettings} />
             </div>
             <div className="p-4 border-t bg-background mt-auto">
+              <div className="flex justify-between text-base font-bold mb-3">
+                <span>Total:</span>
+                <span className="text-primary">{formatCurrency(cartGrandTotal)}</span>
+              </div>
               <button 
                 onClick={handleCheckoutClick}
                 disabled={totalItems === 0 || isProcessing}
-                className="w-full h-14 bg-primary text-primary-foreground rounded-xl font-bold shadow-md disabled:opacity-50"
+                className="w-full h-14 bg-primary text-primary-foreground rounded-xl font-bold shadow-md disabled:opacity-50 cursor-pointer"
               >
                 Bayar Sekarang
               </button>
@@ -243,7 +254,7 @@ export function POSPage({
       <PaymentModal 
         isOpen={isPaymentModalOpen}
         onClose={() => setIsPaymentModalOpen(false)}
-        subtotalAmount={cartTotal}
+        subtotalAmount={cartSubtotal}
         onConfirm={handleConfirmPayment}
         posSettings={posSettings}
       />

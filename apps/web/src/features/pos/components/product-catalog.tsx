@@ -13,10 +13,12 @@ import { toggleProductActiveStatus } from '@/lib/actions/products';
 import { useBarcodeScanner } from '@/hooks/use-barcode-scanner';
 import { toast } from 'sonner';
 import { CustomizationModal } from '@/components/shared/customization-modal';
+import { getCategoryIcon } from '@/features/categories/lib/category-icons';
 
 type Category = {
   id: string;
   name: string;
+  icon?: string | null;
 };
 
 type Product = {
@@ -49,6 +51,16 @@ export function ProductCatalog({
   const [searchQuery, setSearchQuery] = React.useState('');
   const [visibleCount, setVisibleCount] = React.useState(40);
   const addItem = useCartStore((state) => state.addItem);
+  const cartItems = useCartStore((state) => state.items);
+
+  const cartCounts = React.useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const item of cartItems) {
+      map[item.productId] = (map[item.productId] || 0) + item.quantity;
+    }
+    return map;
+  }, [cartItems]);
+
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const observerTarget = React.useRef<HTMLDivElement>(null);
   
@@ -285,25 +297,29 @@ export function ProductCatalog({
                 : "bg-card text-muted-foreground border-border hover:bg-muted"
             )}
           >
-            <Star className="w-3.5 h-3.5 fill-current text-amber-400" />
+            
             Best Seller
           </button>
         )}
 
-        {categories.map(category => (
-          <button
-            key={category.id}
-            onClick={() => setActiveCategory(category.name)}
-            className={cn(
-              "px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors border",
-              activeCategory === category.name 
-                ? "bg-primary text-primary-foreground border-primary shadow-sm" 
-                : "bg-card text-muted-foreground border-border hover:bg-muted"
-            )}
-          >
-            {category.name}
-          </button>
-        ))}
+        {categories.map(category => {
+          const CategoryIcon = category.icon ? getCategoryIcon(category.icon) : null;
+          return (
+            <button
+              key={category.id}
+              onClick={() => setActiveCategory(category.name)}
+              className={cn(
+                "px-3.5 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors border flex items-center gap-1.5",
+                activeCategory === category.name 
+                  ? "bg-primary text-primary-foreground border-primary shadow-sm font-semibold" 
+                  : "bg-card text-muted-foreground border-border hover:bg-muted"
+              )}
+            >
+              {CategoryIcon && <CategoryIcon className="w-4 h-4 shrink-0" />}
+              <span>{category.name}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Product Grid */}
@@ -313,6 +329,8 @@ export function ProductCatalog({
             const isActive = product.isActive !== false;
             const isOutOfStock = product.trackStock !== false && product.stock <= 0;
             const isAvailable = isActive && !isOutOfStock;
+            const cartQuantity = cartCounts[product.id] || 0;
+            const isInCart = cartQuantity > 0;
 
             return (
               <div 
@@ -320,7 +338,9 @@ export function ProductCatalog({
                 className={cn(
                   "bg-card border rounded-2xl overflow-hidden transition-all flex flex-col relative select-none",
                   isAvailable 
-                    ? "cursor-pointer group hover:shadow-md hover:border-primary/50 active:scale-[0.98]" 
+                    ? isInCart
+                      ? "cursor-pointer group border-blue-600 dark:border-blue-500 ring-2 ring-blue-600/20 dark:ring-blue-500/20 shadow-xs active:scale-[0.98]"
+                      : "cursor-pointer group hover:shadow-md hover:border-primary/50 active:scale-[0.98]" 
                     : "opacity-40 grayscale-[30%] bg-slate-100 dark:bg-slate-900/60 border-dashed border-slate-300 dark:border-slate-800 cursor-not-allowed pointer-events-none"
                 )}
                 onClick={() => {
@@ -350,8 +370,8 @@ export function ProductCatalog({
                 ) : null}
 
                 {product.isFeatured && (
-                  <div className="absolute top-2 left-2 z-10 bg-amber-500/95 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-md flex items-center gap-1 backdrop-blur-sm">
-                    <Star className="w-3 h-3 fill-current" />
+                  <div className="absolute top-2 left-2 z-10 bg-amber-500/95 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full shadow-md flex items-center gap-1 backdrop-blur-sm">
+                    
                     BEST SELLER
                   </div>
                 )}
@@ -382,15 +402,13 @@ export function ProductCatalog({
                 </div>
                 <div className="p-3 flex flex-col flex-1">
                   <h3 className="font-semibold text-sm line-clamp-2 leading-tight mb-1">{product.name}</h3>
-                  <div className="text-xs text-muted-foreground mb-2">
-                    {product.trackStock === false ? 'Stok: Tanpa Batas' : `Stok: ${product.stock}`}
-                  </div>
-                  <div className="mt-auto flex items-center justify-between">
-                    <span className="text-primary font-bold text-sm">{formatCurrency(parseFloat(product.price))}</span>
-                    {isAvailable && (
-                      <button className="h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors">
-                        <Plus size={14} />
-                      </button>
+                  
+                  <div className="mt-auto flex items-center justify-between gap-1 pt-0.5">
+                    <span className="text-primary font-semibold text-sm">{formatCurrency(parseFloat(product.price))}</span>
+                    {isInCart && (
+                      <span className="flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full bg-blue-600 text-white text-[11px] font-semibold shadow-xs select-none">
+                        {cartQuantity}
+                      </span>
                     )}
                   </div>
                 </div>
