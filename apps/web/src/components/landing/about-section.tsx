@@ -1,18 +1,16 @@
 import React from "react";
-import KeyFacts from "@/components/landing/key-facts";
 import { ScrollReveal } from "@/components/landing/scroll-reveal";
 
 /**
  * Tentang Menuin — menjawab "ini apa dan untuk siapa" sebelum pengunjung
- * masuk ke alur dan fitur. Angka kunci ditaruh di sini sebagai bukti
- * dari pernyataan di atasnya, bukan berdiri sendiri di bawah hero.
+ * masuk ke alur dan fitur.
  */
 
 const audiences = ["Coffee shop", "Restoran dine-in", "Bakery & kafe", "Usaha multi-cabang"];
 
 export default function AboutSection() {
   return (
-    <section id="tentang" className="pt-24 md:pt-32">
+    <section id="tentang" className="py-24 md:py-32">
       <div className="mx-auto max-w-[1280px] px-6">
         <ScrollReveal className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-14">
           <div className="lg:col-span-6">
@@ -52,8 +50,6 @@ export default function AboutSection() {
           </div>
         </ScrollReveal>
       </div>
-
-      <KeyFacts />
     </section>
   );
 }
