@@ -3,24 +3,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  ArrowRight,
-  QrCode,
-  CreditCard,
-  Monitor,
-  Printer,
-  ShieldCheck,
-  RefreshCw,
-  Layers,
-  Building2,
-  Laptop,
-  Tv,
-} from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import SmoothScroll from "@/components/landing/smooth-scroll";
-import EcosystemGallery from "@/components/landing/ecosystem-gallery";
-import KeyFacts from "@/components/landing/key-facts";
+import AboutSection from "@/components/landing/about-section";
+import OrderJourney from "@/components/landing/order-journey";
 import ComparisonScroll from "@/components/landing/comparison-scroll";
-import SpecBento from "@/components/landing/spec-bento";
+import FeatureShowcase from "@/components/landing/feature-showcase";
+import SecuritySection from "@/components/landing/security-section";
 import { HeroIntro } from "@/components/landing/scroll-reveal";
 import FaqEditorial from "@/components/ui/faq-editorial";
 import FooterReadyToBegin from "@/components/ui/footer-ready-to-begin";
@@ -78,88 +67,6 @@ function FadeIn({
 const CONTACT_WHATSAPP =
   "https://wa.me/628123456789?text=Halo%20Menuin%2C%20saya%20ingin%20berdiskusi%20soal%20paket%20Enterprise";
 
-const pillars = [
-  {
-    index: "01",
-    eyebrow: "QR Self-Order",
-    title: "Scan. Pilih rasa. Bayar dari meja.",
-    body: "Tamu membuka katalog di browser bawaan ponsel — tanpa unduh aplikasi, tanpa daftar akun. Pilih varian susu, tingkat gula, catatan khusus, lalu bayar lewat QRIS dinamis yang terverifikasi otomatis.",
-    specs: [
-      { k: "Tanpa instalasi", v: "Terbuka di Safari & Chrome mobile" },
-      { k: "Modifier", v: "Varian, topping, catatan per item" },
-      { k: "Pembayaran", v: "QRIS dinamis via Midtrans, atau bayar di kasir" },
-    ],
-    icon: QrCode,
-    visual: { kind: "image", src: "/img/landing/katalog-iphone.webp", alt: "Katalog menu Menuin di layar ponsel", w: 900, h: 1019, narrow: true },
-  },
-  {
-    index: "02",
-    eyebrow: "Kasir Cloud POS",
-    title: "Cepat di kasir. Tenang di pembukuan.",
-    body: "Dirancang untuk antrean jam sibuk: cari produk, pilih, selesai. PB1, service charge, dan potongan komisi aplikasi online food dihitung otomatis supaya laba bersih tidak meleset.",
-    specs: [
-      { k: "Printer", v: "Bluetooth & LAN, kertas 58 mm dan 80 mm" },
-      { k: "Perhitungan", v: "PB1 10%, service charge, komisi ojol" },
-      { k: "Pembayaran", v: "Tunai, debit, kartu, QRIS, transfer" },
-    ],
-    icon: Monitor,
-    visual: { kind: "image", src: "/img/landing/pos-ipad.webp", alt: "Kasir POS Menuin di layar tablet", w: 1800, h: 1382, narrow: false },
-  },
-  {
-    index: "03",
-    eyebrow: "Kitchen Display",
-    title: "Dapur lebih cepat. Tiket tanpa kertas.",
-    body: "Tiket dari meja dan dari kasir muncul di layar dapur seketika, dengan penanda lama tunggu dan status yang bergerak dari Diterima sampai Selesai. Tidak ada lagi nota basah atau pesanan terlewat.",
-    specs: [
-      { k: "Prioritas", v: "Kode warna otomatis berdasarkan lama tunggu" },
-      { k: "Stasiun", v: "Filter terpisah untuk bar dan dapur utama" },
-      { k: "Notifikasi", v: "Peringatan audio saat tiket baru masuk" },
-    ],
-    icon: Tv,
-    visual: { kind: "kds" },
-  },
-  {
-    index: "04",
-    eyebrow: "Audit Kas Shift",
-    title: "Tutup shift jam berapa pun, kas tetap terlacak.",
-    body: "Kasir wajib mencatat modal awal sebelum register bisa dipakai, setiap kas keluar tercatat, dan saat tutup shift uang fisik dihitung dulu sebelum sistem menampilkan totalnya.",
-    specs: [
-      { k: "Starting float", v: "Wajib diisi sebelum transaksi pertama" },
-      { k: "Blind cash count", v: "Kasir menghitung tanpa melihat total sistem" },
-      { k: "Void", v: "Pembatalan struk butuh PIN manajer" },
-    ],
-    icon: ShieldCheck,
-    visual: { kind: "shift" },
-  },
-  {
-    index: "05",
-    eyebrow: "Multi-Outlet",
-    title: "Satu cabang atau dua puluh, satu tempat kendali.",
-    body: "Laporan penjualan terkonsolidasi, menu terpusat, dan hak akses yang dipisah per peran. Data tiap cabang terisolasi lewat tenant ID sendiri di PostgreSQL.",
-    specs: [
-      { k: "Laporan", v: "Laba kotor, HPP/COGS, menu terlaris" },
-      { k: "Akses", v: "Superadmin, manajer outlet, kasir" },
-      { k: "Ekspor", v: "Excel dan PDF, sekali klik" },
-    ],
-    icon: Building2,
-    visual: { kind: "image", src: "/img/landing/dashboard-macbook.webp", alt: "Kasir Menuin berjalan di browser laptop", w: 1800, h: 1145, narrow: false },
-  },
-];
-
-// Hanya mitra pembayaran & teknologi yang benar-benar terintegrasi.
-// Logo lembaga pemerintah sengaja tidak ditampilkan di sini — lihat
-// docs/landing-revamp/IMPLEMENTATION-PLAN.md §8 R1.
-// Semua di-host lokal; tidak ada lagi hotlink ke Wikimedia.
-// `midtrans-ink.svg` adalah salinan wordmark Midtrans yang fill putihnya
-// ditukar ke abu tinta — berkas aslinya dibuat untuk latar gelap.
-// Tinggi dipakai untuk menyamakan bobot optis, bukan tinggi kotaknya.
-const logos = [
-  { name: "Midtrans", src: "/img/brand_logo/midtrans-ink.svg", h: 18 },
-  { name: "QRIS", src: "/img/brand_logo/qris.svg", h: 22 },
-  { name: "BCA", src: "/img/brand_logo/bca.svg", h: 20 },
-  { name: "Bank Mandiri", src: "/img/brand_logo/mandiri.svg", h: 18 },
-  { name: "BNI", src: "/img/brand_logo/bni.svg", h: 22 },
-];
 
 /**
  * Visual hero: foto kasir Menuin dipakai di gerai sungguhan.
@@ -203,160 +110,6 @@ function HeroPhoto() {
     </figure>
   );
 }
-
-/**
- * Layar dapur. Dibuat gelap karena KDS sungguhan memang dipasang gelap
- * supaya tiket terbaca dari seberang dapur.
- */
-function KdsPanel() {
-  const tickets = [
-    {
-      table: "Meja 12",
-      status: "Disiapkan",
-      wait: "02:14",
-      tone: "accent",
-      items: [
-        { qty: 2, name: "Es Kopi Gula Aren", note: "Less ice, less sugar" },
-        { qty: 1, name: "Butter Croissant", note: "" },
-      ],
-    },
-    {
-      table: "Meja 04",
-      status: "Diterima",
-      wait: "00:38",
-      tone: "neutral",
-      items: [
-        { qty: 1, name: "Kopi Susu Panas", note: "Tanpa gula" },
-        { qty: 2, name: "Kastengel Keju", note: "" },
-      ],
-    },
-    {
-      table: "Takeaway 118",
-      status: "Siap",
-      wait: "05:02",
-      tone: "done",
-      items: [
-        { qty: 1, name: "New York Cheesecake", note: "Kotak terpisah" },
-        { qty: 3, name: "Butter Croissant", note: "" },
-      ],
-    },
-  ];
-
-  return (
-    <div className="overflow-hidden rounded-[20px] bg-[#0b0b0c] text-white shadow-[var(--landing-lift-lg)]">
-      <div className="flex items-center justify-between border-b border-white/10 px-5 py-3.5">
-        <div className="flex items-center gap-2.5">
-          <span className="text-[13px] font-semibold">Layar Dapur</span>
-          <span className="text-[12px] text-white/45">Stasiun Utama</span>
-        </div>
-        <div className="flex items-center gap-2 font-display text-[12px] tabular-nums text-white/45">
-          <span className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
-          <span>3 tiket aktif</span>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-px bg-white/10 sm:grid-cols-3">
-        {tickets.map((t) => (
-          <div key={t.table} className="flex min-h-[172px] flex-col bg-[#0b0b0c] p-4">
-            <div className="flex items-baseline justify-between">
-              <span className="text-[13px] font-semibold">{t.table}</span>
-              <span className="font-display text-[12px] tabular-nums text-white/45">{t.wait}</span>
-            </div>
-
-            <span
-              className={`mt-2 inline-flex w-fit items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                t.tone === "accent"
-                  ? "bg-[#0E59F9]/20 text-[#7aa8ff]"
-                  : t.tone === "done"
-                    ? "bg-emerald-400/15 text-emerald-300"
-                    : "bg-white/10 text-white/70"
-              }`}
-            >
-              {t.status}
-            </span>
-
-            <ul className="mt-3 space-y-2 text-[12px] leading-snug">
-              {t.items.map((item) => (
-                <li key={item.name} className="flex gap-2">
-                  <span className="font-display tabular-nums text-white/90">{item.qty}×</span>
-                  <span className="min-w-0">
-                    <span className="block truncate">{item.name}</span>
-                    {item.note && <span className="block text-[11px] text-white/45">{item.note}</span>}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/** Ringkasan tutup shift — angka yang dilihat kasir saat menghitung laci. */
-function ShiftPanel() {
-  const rows = [
-    { k: "Modal awal laci", v: "Rp 200.000" },
-    { k: "Penjualan tunai", v: "+Rp 1.425.000" },
-    { k: "Kas keluar (petty cash)", v: "−Rp 25.000" },
-  ];
-
-  return (
-    <div className="rounded-[20px] border border-black/[0.08] bg-white p-6 shadow-[var(--landing-lift)]">
-      <div className="flex items-baseline justify-between">
-        <span className="text-[13px] font-semibold text-[#0a0a0a]">Tutup shift · Sarah Rahma</span>
-        <span className="font-display text-[12px] tabular-nums text-[#71717a]">15.02</span>
-      </div>
-
-      <dl className="mt-5">
-        {rows.map((r) => (
-          <div key={r.k} className="flex justify-between border-t border-black/[0.06] py-2.5">
-            <dt className="text-[13px] text-[#52525b]">{r.k}</dt>
-            <dd className="font-display text-[13px] tabular-nums text-[#0a0a0a]">{r.v}</dd>
-          </div>
-        ))}
-        <div className="flex justify-between border-t border-black/[0.06] py-2.5">
-          <dt className="text-[13px] text-[#52525b]">Kas seharusnya</dt>
-          <dd className="font-display text-[13px] tabular-nums text-[#0a0a0a]">Rp 1.600.000</dd>
-        </div>
-        <div className="flex justify-between border-t border-black/[0.06] py-2.5">
-          <dt className="text-[13px] text-[#52525b]">Uang fisik dihitung</dt>
-          <dd className="font-display text-[13px] tabular-nums text-[#0a0a0a]">Rp 1.600.000</dd>
-        </div>
-      </dl>
-
-      <div className="mt-4 flex items-center justify-between rounded-xl bg-emerald-50 px-4 py-3">
-        <span className="text-[13px] font-medium text-emerald-900">Selisih</span>
-        <span className="font-display text-[15px] font-semibold tabular-nums text-emerald-700">
-          Rp 0
-        </span>
-      </div>
-    </div>
-  );
-}
-
-type PillarVisualSpec =
-  | { kind: "image"; src: string; alt: string; w: number; h: number; narrow: boolean }
-  | { kind: "kds" }
-  | { kind: "shift" };
-
-function PillarVisual({ visual }: { visual: PillarVisualSpec }) {
-  if (visual.kind === "kds") return <KdsPanel />;
-  if (visual.kind === "shift") return <ShiftPanel />;
-
-  return (
-    <Image
-      src={visual.src}
-      alt={visual.alt}
-      width={visual.w}
-      height={visual.h}
-      loading="lazy"
-      sizes="(max-width: 768px) 100vw, 540px"
-      className={`h-auto w-full ${visual.narrow ? "mx-auto max-w-[280px]" : ""}`}
-    />
-  );
-}
-
 
 const testimonialsData = [
   {
@@ -488,9 +241,6 @@ function RealCard({ data }: { data: any }) {
   );
 }
 
-// --- UNIFIED HIGH-FIDELITY POS WORKSPACE SHOWCASE ---
-
-
 export default function LandingPage({
   isLoggedIn = false,
   userName = "",
@@ -499,7 +249,6 @@ export default function LandingPage({
   userName?: string;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [activeFaq, setActiveFaq] = useState<number | null>(null);
   const { navigateWithTransition } = usePageTransition();
   const marqueeContainerRef = useRef<HTMLDivElement>(null);
 
@@ -673,7 +422,7 @@ export default function LandingPage({
   const userInitial = (userName || "U").trim().charAt(0).toUpperCase();
 
   return (
-    <div className="min-h-screen bg-white text-[#111] font-sans antialiased selection:bg-[#0E59F9] selection:text-white">
+    <div className="landing-root min-h-screen bg-white text-[#111] antialiased selection:bg-[#0E59F9] selection:text-white">
       <SmoothScroll />
 
       {/* NAVBAR */}
@@ -684,8 +433,9 @@ export default function LandingPage({
           </Link>
 
           <nav className="hidden md:flex items-center gap-8 text-[14px] font-medium text-slate-600">
-            <a href="#ekosistem" className="hover:text-[#0a0a0a] transition-colors">Produk</a>
-            <a href="#pilar" className="hover:text-[#0a0a0a] transition-colors">Fitur</a>
+            <a href="#tentang" className="hover:text-[#0a0a0a] transition-colors">Tentang</a>
+            <a href="#alur" className="hover:text-[#0a0a0a] transition-colors">Cara kerja</a>
+            <a href="#fitur" className="hover:text-[#0a0a0a] transition-colors">Fitur</a>
             <a href="#pricing" className="hover:text-[#0a0a0a] transition-colors">Harga</a>
             <a href="#faq" className="hover:text-[#0a0a0a] transition-colors">Tanya jawab</a>
           </nav>
@@ -734,8 +484,9 @@ export default function LandingPage({
         {mobileOpen && (
           <div className="md:hidden absolute top-[72px] left-0 w-full bg-white border-b border-black/[0.06] px-6 py-6 space-y-5">
             <nav className="flex flex-col gap-4 text-[15px] font-medium text-slate-700">
-              <a href="#ekosistem" onClick={() => setMobileOpen(false)}>Produk</a>
-              <a href="#pilar" onClick={() => setMobileOpen(false)}>Fitur</a>
+              <a href="#tentang" onClick={() => setMobileOpen(false)}>Tentang</a>
+              <a href="#alur" onClick={() => setMobileOpen(false)}>Cara kerja</a>
+              <a href="#fitur" onClick={() => setMobileOpen(false)}>Fitur</a>
               <a href="#pricing" onClick={() => setMobileOpen(false)}>Harga</a>
               <a href="#faq" onClick={() => setMobileOpen(false)}>Tanya jawab</a>
             </nav>
@@ -807,7 +558,7 @@ export default function LandingPage({
                 {isLoggedIn ? "Buka dashboard" : "Mulai uji coba 14 hari"}
               </a>
               <a
-                href="#ekosistem"
+                href="#alur"
                 className="inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-full border border-black/[0.08] px-6 text-[15px] font-medium text-[#0a0a0a] transition-colors hover:bg-[#fafafa] sm:w-auto"
               >
                 Lihat cara kerjanya
@@ -831,100 +582,20 @@ export default function LandingPage({
         </HeroIntro>
       </section>
 
-      {/* ANGKA KUNCI */}
-      <KeyFacts />
+      {/* TENTANG — siapa Menuin dan untuk siapa */}
+      <AboutSection />
 
-      {/* MITRA PEMBAYARAN */}
-      <section className="border-y border-black/[0.06] bg-[#fafafa] px-6 py-8" aria-label="Mitra pembayaran">
-        <div className="mx-auto max-w-[1280px] text-center">
-          <p className="text-[12px] uppercase tracking-[0.14em] text-[#a1a1aa]">
-            Pembayaran diproses lewat penyelenggara berizin
-          </p>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-10 gap-y-5">
-            {logos.map((logo) => (
-              <img
-                key={logo.name}
-                src={logo.src}
-                alt={logo.name}
-                loading="lazy"
-                style={{ height: logo.h }}
-                className="w-auto opacity-55 grayscale transition-opacity hover:opacity-100"
-              />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* EKOSISTEM — galeri horizontal ber-pin (GSAP) */}
-      <EcosystemGallery />
-
+      {/* SEBELUM & SESUDAH — masalah jam sibuk yang hilang */}
       <ComparisonScroll />
 
-      {/* PILAR PRODUK */}
-      <section className="px-6 py-24 md:py-32" id="pilar">
-        <div className="mx-auto max-w-[1280px]">
-          <FadeIn>
-            <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#71717a]">
-              Yang dikerjakan Menuin
-            </p>
-          </FadeIn>
+      {/* CARA KERJA — dari scan QR sampai transaksi tercatat */}
+      <OrderJourney />
 
-          <div className="mt-10 divide-y divide-black/[0.08] border-y border-black/[0.08]">
-            {pillars.map((pillar, i) => {
-              const Icon = pillar.icon;
-              // Sisi visual berganti kiri–kanan supaya lima pilar tidak
-              // terbaca sebagai satu dinding teks.
-              const visualFirst = i % 2 === 1;
+      {/* FITUR UNGGULAN — operasional di luar alur pesanan */}
+      <FeatureShowcase />
 
-              return (
-                <FadeIn key={pillar.index} delay={i * 0.04}>
-                  <article className="grid grid-cols-1 items-center gap-8 py-14 md:grid-cols-12 md:gap-12 md:py-20">
-                    <div
-                      className={`md:col-span-6 ${visualFirst ? "md:order-2" : ""}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="font-display text-[13px] tabular-nums text-[#a1a1aa]">
-                          {pillar.index}
-                        </span>
-                        <Icon className="h-4 w-4 text-[#0E59F9]" strokeWidth={1.5} />
-                        <span className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#71717a]">
-                          {pillar.eyebrow}
-                        </span>
-                      </div>
-
-                      <h3 className="mt-5 max-w-[16ch] font-display text-[clamp(26px,3.2vw,38px)] font-semibold leading-[1.08] tracking-[-0.035em] text-[#0a0a0a] text-balance">
-                        {pillar.title}
-                      </h3>
-
-                      <p className="mt-5 max-w-[52ch] text-[15.5px] leading-relaxed text-[#52525b]">
-                        {pillar.body}
-                      </p>
-
-                      <dl className="mt-7">
-                        {pillar.specs.map((spec) => (
-                          <div
-                            key={spec.k}
-                            className="grid grid-cols-1 gap-1 border-t border-black/[0.06] py-3 sm:grid-cols-12 sm:gap-4"
-                          >
-                            <dt className="text-[13px] text-[#71717a] sm:col-span-4">{spec.k}</dt>
-                            <dd className="text-[14px] text-[#0a0a0a] sm:col-span-8">{spec.v}</dd>
-                          </div>
-                        ))}
-                      </dl>
-                    </div>
-
-                    <div className={`md:col-span-6 ${visualFirst ? "md:order-1" : ""}`}>
-                      <PillarVisual visual={pillar.visual as PillarVisualSpec} />
-                    </div>
-                  </article>
-                </FadeIn>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      <SpecBento />
+      {/* KEAMANAN — keraguan terakhir sebelum harga */}
+      <SecuritySection />
 
       {/* WRAPPER FOR TESTIMONIAL & PRICING */}
       <div className="relative overflow-hidden bg-[#FAFAFA]">
@@ -933,7 +604,6 @@ export default function LandingPage({
         <div className="absolute top-[88px] left-1/2 -translate-x-1/2 w-[1922px] pointer-events-none z-20 flex justify-center">
           <img src="/divider/divider.svg" alt="Divider Background" className="w-full h-auto" />
         </div>
-
         {/* TESTIMONIALS REVEAL */}
         <section
           ref={marqueeContainerRef}
@@ -942,7 +612,7 @@ export default function LandingPage({
         >
           {/* HEADER */}
           <div className="relative z-[60] mx-auto mb-6 max-w-[1200px] px-6 text-center md:mb-8">
-            <h2 className="text-[clamp(44px,7.2vw,78px)] font-extrabold leading-[0.96] tracking-[-0.04em] text-[#111]">
+            <h2 className="text-[clamp(44px,7.2vw,78px)] font-semibold leading-[0.96] tracking-[-0.045em] text-[#111]">
               What they said <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#0E59F9] via-[#2563EB] to-[#0941B8]">
                 about us.
@@ -1160,10 +830,10 @@ export default function LandingPage({
               {/* Column 1: Left Editorial Typographic Header */}
               <FadeIn className="lg:col-span-4 pr-0 lg:pr-4 pt-3">
                 <div className="space-y-1">
-                  <h2 className="text-[clamp(32px,3.8vw,46px)] font-black leading-[1.08] tracking-[-0.04em] text-slate-900">
+                  <h2 className="text-[clamp(32px,3.8vw,46px)] font-semibold leading-[1.05] tracking-[-0.04em] text-slate-900">
                     Langganan bulanan,
                   </h2>
-                  <h2 className="text-[clamp(32px,3.8vw,46px)] font-black leading-[1.08] tracking-[-0.04em] text-[#0E59F9]">
+                  <h2 className="text-[clamp(32px,3.8vw,46px)] font-semibold leading-[1.05] tracking-[-0.04em] text-[#0E59F9]">
                     tanpa kontrak tahunan.
                   </h2>
                 </div>
@@ -1185,11 +855,11 @@ export default function LandingPage({
                 <FadeIn delay={0.1}>
                   <div className="flex flex-col justify-between p-7 sm:p-8 rounded-[32px] bg-white border border-slate-200/80 shadow-[0_4px_24px_rgba(0,0,0,0.04)] hover:shadow-xl transition-all h-full">
                     <div>
-                      <h3 className="text-xl font-bold text-slate-900">
+                      <h3 className="text-xl font-semibold tracking-[-0.02em] text-slate-900">
                         Pro
                       </h3>
                       <div className="flex items-baseline gap-1 mt-2 mb-6">
-                        <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+                        <span className="text-3xl sm:text-4xl font-semibold text-slate-900 tracking-[-0.035em] tabular-nums">
                           Rp 199.000
                         </span>
                         <span className="text-xs sm:text-sm font-semibold text-slate-400">
@@ -1202,8 +872,8 @@ export default function LandingPage({
                           "Kasir cloud dan cetak struk termal",
                           "QR meja tanpa batas jumlah pesanan",
                           "QRIS dinamis terverifikasi otomatis",
-                          "Layar dapur (KDS) tanpa kertas",
-                          "Hak akses kasir, manajer, dan superadmin",
+                          "Papan pesanan dan tiket dapur otomatis",
+                          "Hak akses Owner, Manajer, dan Kasir",
                           "Stok berjalan dan peringatan stok menipis",
                           "Laporan penjualan, shift, dan laba",
                           "Printer kasir Bluetooth dan LAN (58/80 mm)",
@@ -1224,7 +894,7 @@ export default function LandingPage({
                         <div className="w-8 h-8 rounded-full bg-[#0E59F9] text-white flex items-center justify-center text-xs font-bold shadow-md shadow-blue-500/20 group-hover:scale-105 transition-all">
                           <ArrowRight className="w-3.5 h-3.5" />
                         </div>
-                        <span className="text-xs sm:text-[13px] font-bold text-slate-900 group-hover:text-[#0E59F9] transition-colors">
+                        <span className="text-xs sm:text-[13px] font-semibold text-slate-900 group-hover:text-[#0E59F9] transition-colors">
                           Mulai sekarang
                         </span>
                       </a>
@@ -1236,11 +906,11 @@ export default function LandingPage({
                 <FadeIn delay={0.2}>
                   <div className="flex flex-col justify-between p-7 sm:p-8 rounded-[32px] bg-white border border-slate-200/80 shadow-[0_4px_24px_rgba(0,0,0,0.04)] hover:shadow-xl transition-all h-full">
                     <div>
-                      <h3 className="text-xl font-bold text-slate-900">
+                      <h3 className="text-xl font-semibold tracking-[-0.02em] text-slate-900">
                         Enterprise
                       </h3>
                       <div className="flex items-baseline gap-1 mt-2 mb-6">
-                        <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+                        <span className="text-3xl sm:text-4xl font-semibold text-slate-900 tracking-[-0.035em] tabular-nums">
                           Hubungi kami
                         </span>
                       </div>
@@ -1274,7 +944,7 @@ export default function LandingPage({
                         <div className="w-8 h-8 rounded-full bg-[#0E59F9] text-white flex items-center justify-center text-xs font-bold shadow-md shadow-blue-500/20 group-hover:scale-105 transition-all">
                           <ArrowRight className="w-3.5 h-3.5" />
                         </div>
-                        <span className="text-xs sm:text-[13px] font-bold text-slate-900 group-hover:text-[#0E59F9] transition-colors">
+                        <span className="text-xs sm:text-[13px] font-semibold text-slate-900 group-hover:text-[#0E59F9] transition-colors">
                           Mulai sekarang
                         </span>
                       </a>
@@ -1286,39 +956,6 @@ export default function LandingPage({
             </div>
           </div>
 
-          {/* ========================================= */}
-          {/* EDGE FADE FOR PRICING                     */}
-          {/* ========================================= */}
-          <div
-            className="
-            hidden md:block
-            pointer-events-none
-            absolute
-            inset-y-0
-            left-0
-            z-[40]
-            w-[18%]
-            bg-gradient-to-r
-            from-[#FAFAFA]
-            via-[#FAFAFA]/80
-            to-transparent
-          "
-          />
-          <div
-            className="
-            hidden md:block
-            pointer-events-none
-            absolute
-            inset-y-0
-            right-0
-            z-[40]
-            w-[18%]
-            bg-gradient-to-l
-            from-[#FAFAFA]
-            via-[#FAFAFA]/80
-            to-transparent
-          "
-          />
         </section>
       </div>
 

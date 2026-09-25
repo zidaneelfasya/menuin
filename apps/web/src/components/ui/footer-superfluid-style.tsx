@@ -26,8 +26,8 @@ export default function FooterSuperfluidStyle() {
           {/* Left Column: Heading + Underline Email Input */}
           <div className="lg:col-span-5 flex flex-col justify-between">
             <div>
-              <h3 className="text-2xl sm:text-3xl lg:text-[34px] font-black uppercase tracking-tight leading-[1.1] max-w-md">
-                UPGRADE YOUR BUSINESS WITH MENUIN
+              <h3 className="text-2xl sm:text-3xl lg:text-[34px] font-semibold tracking-[-0.035em] leading-[1.1] max-w-md">
+                Tetap kabari saya soal Menuin.
               </h3>
             </div>
 
@@ -38,68 +38,67 @@ export default function FooterSuperfluidStyle() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="YOUR EMAIL"
+                  placeholder="Email Anda"
                   required
-                  className="bg-transparent text-sm sm:text-base font-bold uppercase placeholder:text-white/60 focus:outline-none w-full tracking-wider text-white"
+                  className="bg-transparent text-sm sm:text-base font-medium placeholder:text-white/60 focus:outline-none w-full text-white"
                 />
                 <button
                   type="submit"
-                  className="text-xs font-black tracking-widest uppercase hover:text-white/80 active:scale-95 transition-all pl-3 shrink-0"
+                  className="text-sm font-semibold hover:text-white/80 active:scale-95 transition-all pl-3 shrink-0"
                 >
-                  OK
+                  Kirim
                 </button>
               </div>
 
-              <p className="text-[10.5px] font-bold tracking-wider uppercase mt-2.5 text-white/80">
+              <p className="text-[12px] mt-2.5 text-white/80">
                 {subscribed ? (
-                  <span className="text-emerald-300">✓ THANK YOU! WE WILL REACH OUT SHORTLY.</span>
+                  <span className="text-emerald-300">✓ Terima kasih, email Anda sudah kami catat.</span>
                 ) : (
-                  "FREE POS CONSULTATION & FEATURE UPDATES"
+                  "Kabar fitur baru dan tips operasional outlet, sesekali saja."
                 )}
               </p>
             </form>
           </div>
 
           {/* Right Column: 3 Nav Columns */}
-          <div className="lg:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-8 sm:gap-10 text-xs tracking-wider">
+          <div className="lg:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-8 sm:gap-10 text-[13px]">
             
-            {/* Column 1: HELP & FEATURES */}
+            {/* Kolom 1: Produk */}
             <div className="space-y-3">
-              <h4 className="font-black uppercase text-[11px] text-white/90 tracking-widest">
-                HELP & FEATURES
+              <h4 className="font-semibold uppercase text-[11px] text-white/90 tracking-[0.14em]">
+                Produk
               </h4>
-              <ul className="space-y-2 text-white/80 font-bold">
-                <li><a href="https://wa.me/628123456789" target="_blank" rel="noopener noreferrer" className="hover:text-white hover:underline transition-all">Contact Us</a></li>
-                <li><a href="#faq" className="hover:text-white hover:underline transition-all">FAQs</a></li>
-                <li><a href="#features" className="hover:text-white hover:underline transition-all">QR Table Ordering</a></li>
-                <li><a href="#features" className="hover:text-white hover:underline transition-all">POS Cashier System</a></li>
-                <li><a href="#features" className="hover:text-white hover:underline transition-all">Dynamic QRIS</a></li>
-                <li><a href="#features" className="hover:text-white hover:underline transition-all">Kitchen Display (KDS)</a></li>
+              <ul className="space-y-2 text-white/80">
+                <li><a href="#alur" className="hover:text-white hover:underline transition-all">Cara kerja</a></li>
+                <li><a href="#fitur" className="hover:text-white hover:underline transition-all">Kasir POS</a></li>
+                <li><a href="#fitur" className="hover:text-white hover:underline transition-all">Shift &amp; Kas</a></li>
+                <li><a href="#fitur" className="hover:text-white hover:underline transition-all">Stok &amp; HPP</a></li>
+                <li><a href="#fitur" className="hover:text-white hover:underline transition-all">Diskon &amp; Promo</a></li>
               </ul>
             </div>
 
-            {/* Column 2: LEGAL & INFO */}
+            {/* Kolom 2: Menuin */}
             <div className="space-y-3">
-              <h4 className="font-black uppercase text-[11px] text-white/90 tracking-widest">
-                LEGAL & INFO
+              <h4 className="font-semibold uppercase text-[11px] text-white/90 tracking-[0.14em]">
+                Menuin
               </h4>
-              <ul className="space-y-2 text-white/80 font-bold">
-                <li><a href="#pricing" className="hover:text-white hover:underline transition-all">Privacy Policy</a></li>
-                <li><a href="#pricing" className="hover:text-white hover:underline transition-all">Terms & Conditions</a></li>
-                <li><a href="#pricing" className="hover:text-white hover:underline transition-all">SSL Security</a></li>
-                <li><a href="#pricing" className="hover:text-white hover:underline transition-all">Pricing Plans</a></li>
-                <li><a href="#partner" className="hover:text-white hover:underline transition-all">Partner Program</a></li>
+              <ul className="space-y-2 text-white/80">
+                <li><a href="#tentang" className="hover:text-white hover:underline transition-all">Tentang</a></li>
+                <li><a href="#keamanan" className="hover:text-white hover:underline transition-all">Keamanan</a></li>
+                <li><a href="#pricing" className="hover:text-white hover:underline transition-all">Harga</a></li>
+                <li><a href="#faq" className="hover:text-white hover:underline transition-all">Tanya jawab</a></li>
+                <li><a href="https://wa.me/628123456789" target="_blank" rel="noopener noreferrer" className="hover:text-white hover:underline transition-all">Hubungi kami</a></li>
               </ul>
             </div>
 
-            {/* Column 3: FOLLOW US */}
+            {/* Kolom 3: Ikuti kami */}
             <div className="space-y-3 col-span-2 sm:col-span-1">
-              <h4 className="font-black uppercase text-[11px] text-white/90 tracking-widest">
-                FOLLOW US
+              <h4 className="font-semibold uppercase text-[11px] text-white/90 tracking-[0.14em]">
+                Ikuti kami
               </h4>
-              <ul className="space-y-2 text-white/80 font-bold">
+              <ul className="space-y-2 text-white/80">
                 <li><a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="hover:text-white hover:underline transition-all">Instagram</a></li>
-                <li><a href="https://wa.me/628123456789" target="_blank" rel="noopener noreferrer" className="hover:text-white hover:underline transition-all">WhatsApp Support</a></li>
+                <li><a href="https://wa.me/628123456789" target="_blank" rel="noopener noreferrer" className="hover:text-white hover:underline transition-all">WhatsApp</a></li>
                 <li><a href="https://tiktok.com" target="_blank" rel="noopener noreferrer" className="hover:text-white hover:underline transition-all">TikTok</a></li>
                 <li><a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="hover:text-white hover:underline transition-all">Facebook</a></li>
               </ul>
@@ -123,8 +122,8 @@ export default function FooterSuperfluidStyle() {
         </div>
 
         {/* Bottom Bar: Copyright Only */}
-        <div className="pt-8 border-t border-white/20 flex items-center justify-center text-center text-xs font-medium text-white/80 tracking-wide">
-          <p>&copy; 2026 Menuin. All rights reserved.</p>
+        <div className="pt-8 border-t border-white/20 flex items-center justify-center text-center text-xs text-white/80">
+          <p>&copy; 2026 Menuin. Hak cipta dilindungi.</p>
         </div>
       </div>
     </footer>

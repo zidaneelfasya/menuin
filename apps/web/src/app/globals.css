@@ -107,6 +107,15 @@
   }
 }
 
+/* Seluruh landing memakai font headline hero (Inter via --font-display).
+   Heading perlu disebut eksplisit karena aturan h1–h6 di atas memaksa
+   Poppins; dashboard dan kasir tidak memakai .landing-root sehingga
+   tetap Poppins. */
+.landing-root,
+.landing-root :is(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--font-display), -apple-system, "Segoe UI", sans-serif;
+}
+
 html.lenis,
 html.lenis body {
   height: auto;
