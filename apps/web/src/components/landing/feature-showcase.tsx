@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import {
   Monitor,
@@ -389,8 +389,33 @@ function FeatureVisual({ visual }: { visual: Visual }) {
 }
 
 export default function FeatureShowcase() {
-  const [activeId, setActiveId] = useState(features[0].id);
-  const active = features.find((f) => f.id === activeId) ?? features[0];
+  const [active, setActive] = useState(0);
+  const itemRefs = useRef<(HTMLElement | null)[]>([]);
+
+  // Fitur yang teksnya sedang melintasi tengah layar menjadi fitur aktif;
+  // panggung sticky di kanan menampilkan visualnya.
+  useEffect(() => {
+    const obs = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            const i = Number((e.target as HTMLElement).dataset.index);
+            setActive(i);
+          }
+        }
+      },
+      { rootMargin: "-45% 0px -45% 0px" }
+    );
+    itemRefs.current.forEach((el) => el && obs.observe(el));
+    return () => obs.disconnect();
+  }, []);
+
+  const goTo = (i: number) => {
+    const el = itemRefs.current[i];
+    if (!el) return;
+    const y = el.getBoundingClientRect().top + window.scrollY - window.innerHeight / 2 + el.offsetHeight / 2;
+    window.scrollTo({ top: y, behavior: "smooth" });
+  };
 
   return (
     <section id="fitur" className="px-6 py-24 md:py-32">
@@ -408,63 +433,118 @@ export default function FeatureShowcase() {
           </p>
         </ScrollReveal>
 
-        {/* Tab: pills yang bisa digeser di layar sempit */}
-        <div
-          role="tablist"
-          aria-label="Fitur unggulan"
-          className="-mx-6 mt-12 flex gap-2 overflow-x-auto px-6 pb-2 [-ms-overflow-style:none] [scrollbar-width:none] md:mx-0 md:flex-wrap md:px-0 [&::-webkit-scrollbar]:hidden"
-        >
-          {features.map((f) => {
-            const Icon = f.icon;
-            const selected = f.id === active.id;
-            return (
-              <button
-                key={f.id}
-                role="tab"
-                id={`tab-${f.id}`}
-                aria-selected={selected}
-                aria-controls={`panel-${f.id}`}
-                onClick={() => setActiveId(f.id)}
-                className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-full border px-4 text-[14px] font-medium transition-colors ${
-                  selected
-                    ? "border-[#0a0a0a] bg-[#0a0a0a] text-white"
-                    : "border-black/[0.08] text-[#52525b] hover:border-black/20 hover:text-[#0a0a0a]"
-                }`}
-              >
-                <Icon className="h-4 w-4" strokeWidth={1.6} />
-                {f.tab}
-              </button>
-            );
-          })}
-        </div>
-
-        <div
-          key={active.id}
-          role="tabpanel"
-          id={`panel-${active.id}`}
-          aria-labelledby={`tab-${active.id}`}
-          className="mt-8 grid grid-cols-1 items-center gap-10 rounded-[28px] border border-black/[0.06] bg-[#fafafa] p-6 animate-in fade-in duration-500 sm:p-10 lg:grid-cols-12 lg:gap-14 lg:p-14"
-        >
+        <div className="mt-14 grid grid-cols-1 gap-x-16 lg:mt-8 lg:grid-cols-12">
+          {/* Kiri: penjelasan tiap fitur, di-scroll */}
           <div className="lg:col-span-5">
-            <h3 className="max-w-[18ch] text-[clamp(24px,2.8vw,34px)] font-semibold leading-[1.1] tracking-[-0.035em] text-[#0a0a0a] text-balance">
-              {active.title}
-            </h3>
-            <p className="mt-5 max-w-[48ch] text-[15.5px] leading-relaxed text-[#52525b]">
-              {active.body}
-            </p>
-            <ul className="mt-7 space-y-3">
-              {active.points.map((p) => (
-                <li key={p} className="flex items-start gap-3 text-[14.5px] text-[#0a0a0a]">
-                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#0E59F9]/10">
-                    <Check className="h-3 w-3 text-[#0E59F9]" strokeWidth={2.5} />
-                  </span>
-                  {p}
-                </li>
-              ))}
-            </ul>
+            {features.map((f, i) => {
+              const Icon = f.icon;
+              const on = i === active;
+              return (
+                <article
+                  key={f.id}
+                  ref={(el) => {
+                    itemRefs.current[i] = el;
+                  }}
+                  data-index={i}
+                  className="border-t border-black/[0.08] py-12 first:border-t-0 lg:flex lg:min-h-[78vh] lg:items-center lg:border-t-0 lg:py-0"
+                >
+                  <div
+                    className={`transition-opacity duration-500 ${on ? "lg:opacity-100" : "lg:opacity-30"}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`flex h-10 w-10 items-center justify-center rounded-xl transition-colors duration-500 ${
+                          on ? "bg-[#0E59F9] text-white" : "bg-[#0E59F9]/[0.08] text-[#0E59F9]"
+                        }`}
+                      >
+                        <Icon className="h-5 w-5" strokeWidth={1.7} />
+                      </span>
+                      <span className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#0E59F9]">
+                        {f.tab}
+                      </span>
+                      <span className="ml-auto text-[12px] tabular-nums text-[#a1a1aa]">
+                        {String(i + 1).padStart(2, "0")} / {String(features.length).padStart(2, "0")}
+                      </span>
+                    </div>
+                    <h3 className="mt-5 max-w-[20ch] text-[clamp(24px,2.6vw,32px)] font-semibold leading-[1.12] tracking-[-0.035em] text-[#0a0a0a] text-balance">
+                      {f.title}
+                    </h3>
+                    <p className="mt-4 max-w-[48ch] text-[15.5px] leading-relaxed text-[#52525b]">
+                      {f.body}
+                    </p>
+                    <ul className="mt-6 space-y-3">
+                      {f.points.map((p) => (
+                        <li key={p} className="flex items-start gap-3 text-[14.5px] text-[#0a0a0a]">
+                          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#0E59F9]/10">
+                            <Check className="h-3 w-3 text-[#0E59F9]" strokeWidth={2.5} />
+                          </span>
+                          {p}
+                        </li>
+                      ))}
+                    </ul>
+
+                    {/* Layar sempit: visual ikut di bawah teksnya */}
+                    <div className="mt-8 rounded-[24px] bg-[#fafafa] p-4 ring-1 ring-black/[0.05] sm:p-6 lg:hidden">
+                      <FeatureVisual visual={f.visual} />
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
           </div>
-          <div className="lg:col-span-7">
-            <FeatureVisual visual={active.visual} />
+
+          {/* Kanan: panggung sticky, visual berganti mengikuti fitur aktif */}
+          <div className="hidden lg:col-span-7 lg:block">
+            <div className="sticky top-[64px] flex h-[calc(100vh-64px)] flex-col justify-center py-8">
+              <div className="relative rounded-[32px] bg-gradient-to-br from-[#f7f8fa] to-[#eef3ff] p-10 ring-1 ring-black/[0.05]">
+                {/* Navigasi kecil */}
+                <div className="mb-8 flex flex-wrap gap-1.5">
+                  {features.map((f, i) => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => goTo(i)}
+                      className={`rounded-full px-3 py-1.5 text-[12.5px] font-medium transition-colors ${
+                        i === active
+                          ? "bg-[#0a0a0a] text-white"
+                          : "text-[#71717a] hover:bg-black/[0.04] hover:text-[#0a0a0a]"
+                      }`}
+                    >
+                      {f.tab}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Semua visual ditumpuk di sel yang sama; hanya yang aktif terlihat */}
+                <div className="grid [&>*]:col-start-1 [&>*]:row-start-1">
+                  {features.map((f, i) => (
+                    <div
+                      key={f.id}
+                      aria-hidden={i !== active}
+                      className={`self-center transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                        i === active
+                          ? "translate-y-0 scale-100 opacity-100"
+                          : `pointer-events-none scale-[0.97] opacity-0 ${i < active ? "-translate-y-6" : "translate-y-6"}`
+                      }`}
+                    >
+                      <FeatureVisual visual={f.visual} />
+                    </div>
+                  ))}
+                </div>
+
+                {/* Progres */}
+                <div className="mt-8 flex gap-1.5" aria-hidden="true">
+                  {features.map((f, i) => (
+                    <span
+                      key={f.id}
+                      className={`h-1 flex-1 rounded-full transition-colors duration-500 ${
+                        i <= active ? "bg-[#0E59F9]" : "bg-black/[0.08]"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
