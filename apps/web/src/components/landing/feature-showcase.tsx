@@ -496,7 +496,7 @@ export default function FeatureShowcase() {
           {/* Kanan: panggung sticky, visual berganti mengikuti fitur aktif */}
           <div className="hidden lg:col-span-7 lg:block">
             <div className="sticky top-[64px] flex h-[calc(100vh-64px)] flex-col justify-center py-8">
-              <div className="relative">
+              <div className="relative rounded-[32px] bg-white p-10 shadow-[0_24px_60px_-28px_rgba(15,23,42,0.22)] ring-1 ring-black/[0.04]">
                 {/* Navigasi kecil */}
                 <div className="mb-8 flex flex-wrap gap-1.5">
                   {features.map((f, i) => (
