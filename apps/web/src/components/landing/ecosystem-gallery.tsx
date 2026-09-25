@@ -239,6 +239,22 @@ export default function EcosystemGallery() {
         // supaya panel terakhir tidak mepet tepi kanan.
         const distance = () => Math.max(0, track.scrollWidth - window.innerWidth + 48);
 
+        // Panel yang sedang melintasi tengah layar diberi bobot; yang lain
+        // mundur sedikit. Ini yang membuat track terasa sebagai sesuatu yang
+        // dijalankan scroll, bukan sekadar deretan yang digeser.
+        const panelEls = gsap.utils.toArray<HTMLElement>("[data-panel]", track);
+
+        function focusNearestPanel() {
+          const mid = window.innerWidth / 2;
+          for (const el of panelEls) {
+            const r = el.getBoundingClientRect();
+            const d = Math.abs(r.left + r.width / 2 - mid);
+            const t = gsap.utils.clamp(0, 1, d / (window.innerWidth * 0.7));
+            el.style.opacity = String(gsap.utils.interpolate(1, 0.55, t));
+            el.style.transform = `scale(${gsap.utils.interpolate(1, 0.97, t)})`;
+          }
+        }
+
         const tween = gsap.to(track, {
           x: () => -distance(),
           ease: "none",
@@ -256,26 +272,6 @@ export default function EcosystemGallery() {
             },
           },
         });
-
-        // Panel yang sedang melintasi tengah layar diberi bobot; yang lain
-        // mundur sedikit. Ini yang membuat track terasa sebagai sesuatu yang
-        // dijalankan scroll, bukan sekadar deretan yang digeser.
-        //
-        // Ditulis langsung ke style, bukan lewat quickSetter: nilainya bisa
-        // dibaca balik dari getComputedStyle sehingga efeknya benar-benar
-        // bisa diverifikasi, bukan diasumsikan.
-        const panelEls = gsap.utils.toArray<HTMLElement>("[data-panel]", track);
-
-        function focusNearestPanel() {
-          const mid = window.innerWidth / 2;
-          for (const el of panelEls) {
-            const r = el.getBoundingClientRect();
-            const d = Math.abs(r.left + r.width / 2 - mid);
-            const t = gsap.utils.clamp(0, 1, d / (window.innerWidth * 0.7));
-            el.style.opacity = String(gsap.utils.interpolate(1, 0.55, t));
-            el.style.transform = `scale(${gsap.utils.interpolate(1, 0.97, t)})`;
-          }
-        }
 
         focusNearestPanel();
 

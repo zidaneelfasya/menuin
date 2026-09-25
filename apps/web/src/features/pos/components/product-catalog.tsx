@@ -339,7 +339,7 @@ export function ProductCatalog({
                   "bg-card border rounded-2xl overflow-hidden transition-all flex flex-col relative select-none",
                   isAvailable 
                     ? isInCart
-                      ? "cursor-pointer group border-blue-600 dark:border-blue-500 ring-2 ring-blue-600/20 dark:ring-blue-500/20 shadow-xs active:scale-[0.98]"
+                      ? "cursor-pointer group border-blue-600 dark:border-blue-500 dark:ring-blue-500/20 shadow-xs active:scale-[0.98]"
                       : "cursor-pointer group hover:shadow-md hover:border-primary/50 active:scale-[0.98]" 
                     : "opacity-40 grayscale-[30%] bg-slate-100 dark:bg-slate-900/60 border-dashed border-slate-300 dark:border-slate-800 cursor-not-allowed pointer-events-none"
                 )}
