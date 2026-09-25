@@ -22,14 +22,23 @@ export type OutletOverviewData = {
 };
 
 export type PeriodMetrics = {
-  totalOmzet: number;
+  grossSales: number;
+  grossSalesGrowth: number;
+  netSales: number;
+  netSalesGrowth: number;
+  grossProfit: number;
+  grossProfitGrowth: number;
   totalTransactions: number;
+  transactionsGrowth: number;
   averageOrderValue: number;
+  aovGrowth: number;
+  grossMargin: number;
+  grossMarginGrowth: number;
+  // Backward compatibility aliases
+  totalOmzet: number;
   totalLaba: number;
   profitMargin: number;
   omzetGrowth: number;
-  transactionsGrowth: number;
-  aovGrowth: number;
   labaGrowth: number;
 };
 
@@ -292,10 +301,11 @@ export async function getDashboardDataForTenant(
       .where(and(eq(shifts.tenantId, tenantId), eq(shifts.status, 'ACTIVE')))
       .limit(1),
 
-      // Current Period Metrics (Transactions & Omzet)
+      // Current Period Metrics (Transactions, Gross Sales, Net Sales)
       db.select({
         totalTransactions: sql<number>`count(${transactions.id})::int`,
-        totalOmzet: sql<number>`COALESCE(sum(${transactions.grandTotal}), 0)::numeric`,
+        totalGrossSales: sql<number>`COALESCE(sum(${transactions.totalAmount}), 0)::numeric`,
+        totalNetSales: sql<number>`COALESCE(sum(${transactions.grandTotal}), 0)::numeric`,
       })
       .from(transactions)
       .where(dateFilter),
@@ -313,7 +323,8 @@ export async function getDashboardDataForTenant(
       // Previous Period Metrics
       db.select({
         totalTransactions: sql<number>`count(${transactions.id})::int`,
-        totalOmzet: sql<number>`COALESCE(sum(${transactions.grandTotal}), 0)::numeric`,
+        totalGrossSales: sql<number>`COALESCE(sum(${transactions.totalAmount}), 0)::numeric`,
+        totalNetSales: sql<number>`COALESCE(sum(${transactions.grandTotal}), 0)::numeric`,
       })
       .from(transactions)
       .where(prevDateFilter),
@@ -382,35 +393,49 @@ export async function getDashboardDataForTenant(
 
     // 4. Calculate KPI Metrics & Growth
     const curTx = metricsCurrentRes[0]?.totalTransactions || 0;
-    const curOmzet = Number(metricsCurrentRes[0]?.totalOmzet || 0);
+    const curGrossSales = Number(metricsCurrentRes[0]?.totalGrossSales || 0);
+    const curNetSales = Number(metricsCurrentRes[0]?.totalNetSales || 0);
     const curRevenue = Number(profitCurrentRes[0]?.totalRevenue || 0);
     const curCost = Number(profitCurrentRes[0]?.totalCost || 0);
-    const curLaba = curOmzet > 0 ? Math.max(0, curRevenue - curCost) : 0;
-    const curAov = curTx > 0 ? Math.round(curOmzet / curTx) : 0;
-    const curMargin = curOmzet > 0 ? Number(((curLaba / curOmzet) * 100).toFixed(1)) : 0;
+    const curGrossProfit = curNetSales > 0 ? Math.max(0, curRevenue - curCost) : 0;
+    const curAov = curTx > 0 ? Math.round(curNetSales / curTx) : 0;
+    const curGrossMargin = curNetSales > 0 ? Number(((curGrossProfit / curNetSales) * 100).toFixed(1)) : 0;
 
     const prevTx = metricsPrevRes[0]?.totalTransactions || 0;
-    const prevOmzet = Number(metricsPrevRes[0]?.totalOmzet || 0);
+    const prevGrossSales = Number(metricsPrevRes[0]?.totalGrossSales || 0);
+    const prevNetSales = Number(metricsPrevRes[0]?.totalNetSales || 0);
     const prevRevenue = Number(profitPrevRes[0]?.totalRevenue || 0);
     const prevCost = Number(profitPrevRes[0]?.totalCost || 0);
-    const prevLaba = prevOmzet > 0 ? Math.max(0, prevRevenue - prevCost) : 0;
-    const prevAov = prevTx > 0 ? Math.round(prevOmzet / prevTx) : 0;
+    const prevGrossProfit = prevNetSales > 0 ? Math.max(0, prevRevenue - prevCost) : 0;
+    const prevAov = prevTx > 0 ? Math.round(prevNetSales / prevTx) : 0;
+    const prevGrossMargin = prevNetSales > 0 ? Number(((prevGrossProfit / prevNetSales) * 100).toFixed(1)) : 0;
 
-    const omzetGrowth = prevOmzet > 0 ? Number((((curOmzet - prevOmzet) / prevOmzet) * 100).toFixed(1)) : (curOmzet > 0 ? 100 : 0);
+    const grossSalesGrowth = prevGrossSales > 0 ? Number((((curGrossSales - prevGrossSales) / prevGrossSales) * 100).toFixed(1)) : (curGrossSales > 0 ? 100 : 0);
+    const netSalesGrowth = prevNetSales > 0 ? Number((((curNetSales - prevNetSales) / prevNetSales) * 100).toFixed(1)) : (curNetSales > 0 ? 100 : 0);
     const txGrowth = prevTx > 0 ? Number((((curTx - prevTx) / prevTx) * 100).toFixed(1)) : (curTx > 0 ? 100 : 0);
     const aovGrowth = prevAov > 0 ? Number((((curAov - prevAov) / prevAov) * 100).toFixed(1)) : (curAov > 0 ? 100 : 0);
-    const labaGrowth = prevLaba > 0 ? Number((((curLaba - prevLaba) / prevLaba) * 100).toFixed(1)) : (curLaba > 0 ? 100 : 0);
+    const grossProfitGrowth = prevGrossProfit > 0 ? Number((((curGrossProfit - prevGrossProfit) / prevGrossProfit) * 100).toFixed(1)) : (curGrossProfit > 0 ? 100 : 0);
+    const grossMarginGrowth = prevGrossMargin > 0 ? Number((curGrossMargin - prevGrossMargin).toFixed(1)) : 0;
 
     const metrics: PeriodMetrics = {
-      totalOmzet: curOmzet,
+      grossSales: curGrossSales,
+      grossSalesGrowth,
+      netSales: curNetSales,
+      netSalesGrowth,
+      grossProfit: curGrossProfit,
+      grossProfitGrowth,
       totalTransactions: curTx,
-      averageOrderValue: curAov,
-      totalLaba: curLaba,
-      profitMargin: curMargin,
-      omzetGrowth,
       transactionsGrowth: txGrowth,
+      averageOrderValue: curAov,
       aovGrowth,
-      labaGrowth,
+      grossMargin: curGrossMargin,
+      grossMarginGrowth,
+      // Backward compatibility aliases
+      totalOmzet: curNetSales,
+      omzetGrowth: netSalesGrowth,
+      totalLaba: curGrossProfit,
+      labaGrowth: grossProfitGrowth,
+      profitMargin: curGrossMargin,
     };
 
     // 5. Build Sales Chart Data
@@ -711,18 +736,18 @@ export async function getDashboardDataForTenant(
     const insights: BusinessInsight[] = [];
 
     // Trend insight
-    if (curOmzet > 0) {
-      if (omzetGrowth > 0) {
+    if (curNetSales > 0) {
+      if (netSalesGrowth > 0) {
         insights.push({
           id: 'insight-trend',
           type: 'trend',
-          text: `Penjualan bertumbuh ${omzetGrowth}% dibandingkan periode sebelumnya, didukung oleh stabilitas volume transaksi.`,
+          text: `Penjualan bertumbuh ${netSalesGrowth}% dibandingkan periode sebelumnya, didukung oleh stabilitas volume transaksi.`,
         });
-      } else if (omzetGrowth < 0) {
+      } else if (netSalesGrowth < 0) {
         insights.push({
           id: 'insight-trend',
           type: 'trend',
-          text: `Penjualan terkoreksi ${Math.abs(omzetGrowth)}% dari periode sebelumnya. Periksa promosi dan ketersediaan menu favorit.`,
+          text: `Penjualan terkoreksi ${Math.abs(netSalesGrowth)}% dari periode sebelumnya. Periksa promosi dan ketersediaan menu favorit.`,
         });
       } else {
         insights.push({
@@ -777,11 +802,11 @@ export async function getDashboardDataForTenant(
     }
 
     // Profit margin insight
-    if (curMargin > 0) {
+    if (curGrossMargin > 0) {
       insights.push({
         id: 'insight-profit',
         type: 'profit',
-        text: `Margin laba kotor outlet berada di level ${curMargin}% dari total pendapatan kotor.`,
+        text: `Margin laba kotor outlet berada di level ${curGrossMargin}% dari total penjualan bersih.`,
       });
     }
 

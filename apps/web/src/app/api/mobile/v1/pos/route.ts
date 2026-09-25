@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { products, categories, productModifierGroups, modifierGroups, modifiers, tenants, transactions, transactionItems, shifts } from '@/lib/db/schema';
-import { eq, desc, and } from 'drizzle-orm';
+import { eq, desc, and, asc, sql } from 'drizzle-orm';
 import * as jwt from 'jsonwebtoken';
+import { generateOrderNumber } from '@/lib/utils/order-number';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'menuin-pos-secret-key-change-in-prod';
 
@@ -52,7 +53,8 @@ export async function GET(req: NextRequest) {
         .map(m => ({
           id: m.id,
           name: m.name,
-          price: Number(m.price)
+          price: Number(m.price),
+          isAvailable: m.isAvailable ?? true,
         }))
     }));
     
@@ -69,10 +71,15 @@ export async function GET(req: NextRequest) {
         barcode: products.barcode,
         isAvailableOnline: products.isAvailableOnline,
         isFeatured: products.isFeatured,
+        isActive: products.isActive,
       })
       .from(products)
       .where(eq(products.tenantId, tenantId))
-      .orderBy(desc(products.isFeatured), products.name);
+      .orderBy(
+        asc(sql`CASE WHEN ${products.isActive} = false THEN 1 ELSE 0 END`),
+        desc(products.isFeatured),
+        products.name
+      );
       
     // Fetch product modifiers
     const allProductModifiers = await db.select().from(productModifierGroups);
@@ -99,15 +106,6 @@ export async function GET(req: NextRequest) {
   }
 }
 
-function generateOrderNumber() {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let result = '#';
-  for (let i = 0; i < 6; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-}
-
 export async function POST(req: NextRequest) {
   try {
     const user = await verifyMobileAuth(req);
@@ -120,7 +118,13 @@ export async function POST(req: NextRequest) {
     const userId = user.id;
 
     const result = await db.transaction(async (tx) => {
-      const orderNumber = generateOrderNumber();
+      const [currentTenant] = await tx
+        .select({ name: tenants.name, orderPrefix: tenants.orderPrefix })
+        .from(tenants)
+        .where(eq(tenants.id, tenantId))
+        .limit(1);
+
+      const orderNumber = generateOrderNumber(currentTenant);
 
       // Find active shift
       const activeShifts = await tx
@@ -180,6 +184,47 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, transactionId: result });
   } catch (error) {
     console.error('Mobile POS API POST Error:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const user = await verifyMobileAuth(req);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const { productId, isActive, modifierId, isAvailable } = body;
+    const tenantId = user.tenantId;
+
+    // Handle Modifier Availability Update
+    if (modifierId && typeof isAvailable === 'boolean') {
+      await db
+        .update(modifiers)
+        .set({ isAvailable, updatedAt: new Date() })
+        .where(and(eq(modifiers.id, modifierId), eq(modifiers.tenantId, tenantId)));
+
+      return NextResponse.json({ success: true, modifierId, isAvailable });
+    }
+
+    // Handle Product Active Status Update
+    if (productId && typeof isActive === 'boolean') {
+      await db
+        .update(products)
+        .set({ isActive, updatedAt: new Date() })
+        .where(and(eq(products.id, productId), eq(products.tenantId, tenantId)));
+
+      return NextResponse.json({ success: true, productId, isActive });
+    }
+
+    return NextResponse.json(
+      { error: 'Invalid payload: Either (productId, isActive) or (modifierId, isAvailable) are required.' },
+      { status: 400 }
+    );
+  } catch (error) {
+    console.error('Mobile POS API PATCH Error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

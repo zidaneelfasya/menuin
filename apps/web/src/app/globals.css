@@ -33,24 +33,24 @@
     --radius: 0.75rem;
   }
   .dark {
-    --background: 221 39% 11%;
-    --foreground: 0 0% 98%;
-    --card: 221 39% 11%;
-    --card-foreground: 0 0% 98%;
-    --popover: 221 39% 11%;
-    --popover-foreground: 0 0% 98%;
+    --background: 0 0% 98%;
+    --foreground: 221 39% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 221 39% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 221 39% 11%;
     --primary: 221 95% 52%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 221 30% 25%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 215 16% 47%;
-    --muted-foreground: 220 14% 96%;
-    --accent: 221 30% 25%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 62.8% 30.6%;
+    --secondary: 221 80% 90%;
+    --secondary-foreground: 221 95% 20%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 221 80% 90%;
+    --accent-foreground: 221 95% 20%;
+    --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
+    --border: 0 0% 93%;
+    --input: 0 0% 93%;
     --ring: 221 95% 52%;
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
@@ -59,6 +59,7 @@
     --chart-3: 38 92% 50%;
     --chart-4: 142 71% 45%;
     --chart-5: 221 39% 11%;
+    --radius: 0.75rem;
   }
 }
 
@@ -66,9 +67,19 @@
   * {
     @apply border-border;
   }
+  html {
+    max-width: 100%;
+    overflow-x: clip;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
   body {
     @apply bg-background text-foreground font-sans;
     font-family: var(--font-poppins), sans-serif;
+    max-width: 100%;
+    overflow-x: clip;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-poppins), sans-serif;
@@ -170,5 +181,19 @@ html.lenis body {
 
 .animate-print-paper {
   animation: printPaper 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Hide scrollbar globally across Chrome, Safari, Edge and Opera */
+::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  display: none;
+  width: 0px;
+  height: 0px;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.scrollbar-hide,
+* {
+  -ms-overflow-style: none;  /* IE and Edge */
 }
 

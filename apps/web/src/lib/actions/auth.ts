@@ -250,3 +250,27 @@ export async function markTenantAsPaidAction(email: string) {
     return { error: error.message || 'Database error' };
   }
 }
+
+export async function resendVerificationEmailAction(email: string) {
+  if (!email || !email.includes('@')) {
+    return { error: 'Alamat email tidak valid' };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: email.trim(),
+    });
+
+    if (error) {
+      return { error: error.message };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('Failed to resend verification email:', err);
+    return { error: err.message || 'Gagal mengirim ulang email verifikasi' };
+  }
+}
+

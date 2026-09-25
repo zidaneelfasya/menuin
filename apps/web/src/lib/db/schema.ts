@@ -36,6 +36,7 @@ export const tenants = pgTable('tenants', {
   primaryColor: text('primary_color').default('#2563EB'), // Default blue
   
   // Ordering settings
+  orderPrefix: text('order_prefix'),
   dineInEnabled: boolean('dine_in_enabled').default(true).notNull(),
   takeAwayEnabled: boolean('take_away_enabled').default(true).notNull(),
   deliveryEnabled: boolean('delivery_enabled').default(false).notNull(),
@@ -262,6 +263,7 @@ export const products = pgTable('products', {
   description: text('description'),
   isAvailableOnline: boolean('is_available_online').default(true).notNull(),
   isFeatured: boolean('is_featured').default(false).notNull(),
+  isActive: boolean('is_active').default(true).notNull(),
   displayOrder: integer('display_order').default(0).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
@@ -417,6 +419,7 @@ export const modifiers = pgTable('modifiers', {
   groupId: uuid('group_id').notNull(),
   name: text('name').notNull(),
   price: decimal('price', { precision: 12, scale: 2 }).default('0').notNull(),
+  isAvailable: boolean('is_available').default(true).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => {

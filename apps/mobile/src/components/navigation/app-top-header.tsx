@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Store, ChevronDown, Unlink, User, ShieldCheck, X, Info, CheckCircle2 } from 'lucide-react-native';
+import { Store, Unlink, User, ShieldCheck, X, Info, CheckCircle2 } from 'lucide-react-native';
 import { useAuthStore } from '@/store/auth-store';
 import { useActiveShift } from '@/hooks/use-shifts';
 
@@ -76,22 +76,25 @@ export function AppTopHeader() {
     );
   };
 
+  const topPadding = Math.max(insets.top, Platform.OS === 'ios' ? 14 : 24) + (Platform.OS === 'ios' ? 8 : 12);
+  const bottomPadding = 10;
+
   return (
     <>
       <View
         style={{
-          paddingTop: Math.max(insets.top, Platform.OS === 'ios' ? 12 : 8),
-          paddingBottom: 8,
+          paddingTop: topPadding,
+          paddingBottom: bottomPadding,
           paddingLeft: Math.max(insets.left, 16),
           paddingRight: Math.max(insets.right, 16),
           position: 'relative',
         }}
-        className="bg-white border-b border-gray-200/90 shadow-2xs z-30"
+        className="bg-white border-b border-gray-200/90 shadow-2xs z-10"
       >
         {/* Hidden pre-warm for white logo so native memory cache is warm with zero pop-in */}
         <View pointerEvents="none" style={{ width: 0, height: 0, opacity: 0, position: 'absolute' }}>
           <Image
-            source={require('@/assets/images/menuin-putih.png')}
+            source={require('@/assets/images/menuin.png')}
             style={{ width: 1, height: 1 }}
           />
         </View>
@@ -102,8 +105,8 @@ export function AppTopHeader() {
           style={[
             StyleSheet.absoluteFill,
             {
-              paddingTop: Math.max(insets.top, Platform.OS === 'ios' ? 12 : 8),
-              paddingBottom: 8,
+              paddingTop: topPadding,
+              paddingBottom: bottomPadding,
               alignItems: 'center',
               justifyContent: 'center',
               zIndex: 1,
@@ -121,25 +124,25 @@ export function AppTopHeader() {
         </View>
 
         <View className="flex-row items-center justify-between z-10">
-          {/* SISI KIRI: NAMA OUTLET BESERTA LOGONYA (CLICKABLE POPOVER) */}
+          {/* SISI KIRI: NAMA OUTLET BESERTA LOGONYA (CLICKABLE, TANPA BORDER & TANPA CHEVRON) */}
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={() => setIsModalOpen(true)}
-            className="flex-row items-center py-1 px-2 rounded-xl bg-gray-50/80 border border-gray-200/70 active:bg-gray-100"
-            style={{ maxWidth: isTablet ? 260 : width * 0.38 }}
+            className="flex-row items-center py-1 px-1 active:opacity-75"
+            style={{ maxWidth: isTablet ? 280 : width * 0.38 }}
           >
             <View className="w-7 h-7 rounded-lg bg-[#014FFD] items-center justify-center mr-2 shadow-2xs">
               <Text className="text-white font-black text-xs">
                 {outletName.charAt(0).toUpperCase()}
               </Text>
             </View>
-            <View className="flex-1 mr-1">
+            <View className="flex-1">
               <Text className="text-xs font-black text-gray-900 leading-tight" numberOfLines={1}>
                 {outletName}
               </Text>
-              <View className="flex-row items-center">
+              <View className="flex-row items-center pt-0.5">
                 <View
-                  className={`w-1.5 h-1.5 rounded-full mr-1 ${
+                  className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
                     activeShift ? 'bg-emerald-500' : 'bg-amber-500'
                   }`}
                 />
@@ -148,7 +151,6 @@ export function AppTopHeader() {
                 </Text>
               </View>
             </View>
-            <ChevronDown size={13} color="#6b7280" />
           </TouchableOpacity>
 
           {/* SISI KANAN: NAMA PENGGUNA YANG LOGIN & ROLENYA */}
@@ -174,21 +176,46 @@ export function AppTopHeader() {
       {/* ============================================================ */}
       {/* MODAL PILIHAN OUTLET & KONEKSI PERANGKAT                    */}
       {/* ============================================================ */}
-      <Modal
-        visible={isModalOpen}
+      {isModalOpen && (
+        <Modal
+          visible={isModalOpen}
         transparent={true}
+        statusBarTranslucent={true}
+        navigationBarTranslucent={true}
         animationType="fade"
+        supportedOrientations={[
+          'portrait',
+          'portrait-upside-down',
+          'landscape',
+          'landscape-left',
+          'landscape-right',
+        ]}
         onRequestClose={() => setIsModalOpen(false)}
       >
-        <TouchableOpacity
-          activeOpacity={1}
-          onPress={() => setIsModalOpen(false)}
-          className="flex-1 bg-black/40 justify-center items-center p-4"
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              backgroundColor: 'rgba(0, 0, 0, 0.55)',
+              zIndex: 999999,
+              elevation: 999999,
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: 16,
+            },
+          ]}
         >
+          {/* Backdrop Click Outside to Dismiss */}
           <TouchableOpacity
             activeOpacity={1}
-            onPress={(e) => e.stopPropagation()}
-            className="bg-white rounded-3xl w-full max-w-sm p-5 shadow-xl border border-gray-100"
+            onPress={() => setIsModalOpen(false)}
+            style={StyleSheet.absoluteFill}
+          />
+
+          {/* Modal Dialog Card */}
+          <View
+            style={{ zIndex: 1000000, elevation: 1000000 }}
+            className="bg-white rounded-3xl w-full max-w-sm p-5 shadow-2xl border border-gray-100"
           >
             {/* Modal Header */}
             <View className="flex-row items-center justify-between pb-3 border-b border-gray-100 mb-4">
@@ -280,28 +307,54 @@ export function AppTopHeader() {
                 </View>
               </TouchableOpacity>
             </View>
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </Modal>
+          </View>
+        </View>
+        </Modal>
+      )}
 
       {/* ============================================================ */}
       {/* MODAL DETAIL PROFIL OUTLET                                   */}
       {/* ============================================================ */}
-      <Modal
-        visible={isProfileModalOpen}
+      {isProfileModalOpen && (
+        <Modal
+          visible={isProfileModalOpen}
         transparent={true}
+        statusBarTranslucent={true}
+        navigationBarTranslucent={true}
         animationType="fade"
+        supportedOrientations={[
+          'portrait',
+          'portrait-upside-down',
+          'landscape',
+          'landscape-left',
+          'landscape-right',
+        ]}
         onRequestClose={() => setIsProfileModalOpen(false)}
       >
-        <TouchableOpacity
-          activeOpacity={1}
-          onPress={() => setIsProfileModalOpen(false)}
-          className="flex-1 bg-black/40 justify-center items-center p-4"
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              backgroundColor: 'rgba(0, 0, 0, 0.55)',
+              zIndex: 999999,
+              elevation: 999999,
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: 16,
+            },
+          ]}
         >
+          {/* Backdrop Click Outside to Dismiss */}
           <TouchableOpacity
             activeOpacity={1}
-            onPress={(e) => e.stopPropagation()}
-            className="bg-white rounded-3xl w-full max-w-sm p-5 shadow-xl border border-gray-100"
+            onPress={() => setIsProfileModalOpen(false)}
+            style={StyleSheet.absoluteFill}
+          />
+
+          {/* Modal Dialog Card */}
+          <View
+            style={{ zIndex: 1000000, elevation: 1000000 }}
+            className="bg-white rounded-3xl w-full max-w-sm p-5 shadow-2xl border border-gray-100"
           >
             <View className="flex-row items-center justify-between pb-3 border-b border-gray-100 mb-4">
               <View className="flex-row items-center">
@@ -346,9 +399,10 @@ export function AppTopHeader() {
             >
               <Text className="text-white font-bold text-xs">Tutup</Text>
             </TouchableOpacity>
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </Modal>
+          </View>
+        </View>
+        </Modal>
+      )}
     </>
   );
 }

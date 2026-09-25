@@ -5,6 +5,7 @@ import { transactions, transactionItems, products, shifts, tenants, memberships 
 import { eq, desc, sql, and } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from './auth';
+import { generateOrderNumber } from '@/lib/utils/order-number';
 
 // We'll trust the checkout payload from the client to have this structure
 type CheckoutPayload = {
@@ -31,15 +32,6 @@ type CheckoutPayload = {
   }>;
 };
 
-function generateOrderNumber() {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let result = '#';
-  for (let i = 0; i < 6; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-}
-
 export async function createTransaction(payload: CheckoutPayload) {
   try {
     const user = await getCurrentUser();
@@ -50,7 +42,13 @@ export async function createTransaction(payload: CheckoutPayload) {
 
     // We run the transaction logic in a single DB transaction
     const result = await db.transaction(async (tx) => {
-      const orderNumber = generateOrderNumber();
+      const [currentTenant] = await tx
+        .select({ name: tenants.name, orderPrefix: tenants.orderPrefix })
+        .from(tenants)
+        .where(eq(tenants.id, tenantId))
+        .limit(1);
+
+      const orderNumber = generateOrderNumber(currentTenant);
 
       // Find active shift
       const activeShifts = await tx

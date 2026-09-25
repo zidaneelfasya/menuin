@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { transactions, transactionItems, products, tenants } from "@/lib/db/schema";
-import { eq, and, desc, inArray } from "drizzle-orm";
+import { eq, and, or, desc, inArray } from "drizzle-orm";
 import { getCurrentUser } from "./auth";
 import { revalidatePath } from "next/cache";
 
@@ -265,7 +265,19 @@ export async function getPublicOrderByNumber(orderNumber: string, tenantSlug: st
   if (tenantResult.length === 0) return null;
   const tenant = tenantResult[0];
 
-  const txs = await db.select().from(transactions).where(and(eq(transactions.orderNumber, orderNumber), eq(transactions.tenantId, tenant.id))).limit(1);
+  const cleanOrderNumber = orderNumber.replace(/^#/, '').trim().toUpperCase();
+  const hashOrderNumber = '#' + cleanOrderNumber;
+
+  const txs = await db.select().from(transactions).where(
+    and(
+      eq(transactions.tenantId, tenant.id),
+      or(
+        eq(transactions.orderNumber, cleanOrderNumber),
+        eq(transactions.orderNumber, hashOrderNumber),
+        eq(transactions.orderNumber, orderNumber)
+      )
+    )
+  ).limit(1);
   if (txs.length === 0) return null;
   const tx = txs[0];
 
@@ -273,8 +285,12 @@ export async function getPublicOrderByNumber(orderNumber: string, tenantSlug: st
     .select({
       id: transactionItems.id,
       quantity: transactionItems.quantity,
+      price: transactionItems.price,
       productName: products.name,
+      imageUrl: products.imageUrl,
       subtotal: transactionItems.subtotal,
+      modifiers: transactionItems.modifiers,
+      notes: transactionItems.notes,
       isCompleted: transactionItems.isCompleted
     })
     .from(transactionItems)
@@ -292,3 +308,105 @@ export async function getPublicOrderByNumber(orderNumber: string, tenantSlug: st
     }
   };
 }
+
+export async function getOrderByNumberForOutlet(orderNumber: string) {
+  const user = await getCurrentUser();
+  if (!user || !user.tenantId) throw new Error("Unauthorized");
+
+  const cleanOrderNumber = orderNumber.replace(/^#/, '').trim().toUpperCase();
+  const hashOrderNumber = '#' + cleanOrderNumber;
+
+  const txs = await db.select().from(transactions).where(
+    and(
+      eq(transactions.tenantId, user.tenantId),
+      or(
+        eq(transactions.orderNumber, cleanOrderNumber),
+        eq(transactions.orderNumber, hashOrderNumber),
+        eq(transactions.orderNumber, orderNumber),
+        eq(transactions.id, orderNumber)
+      )
+    )
+  ).limit(1);
+
+  if (txs.length === 0) return null;
+  const tx = txs[0];
+
+  const items = await db
+    .select({
+      id: transactionItems.id,
+      transactionId: transactionItems.transactionId,
+      productId: transactionItems.productId,
+      quantity: transactionItems.quantity,
+      price: transactionItems.price,
+      productName: products.name,
+      subtotal: transactionItems.subtotal,
+      modifiers: transactionItems.modifiers,
+      notes: transactionItems.notes,
+      isCompleted: transactionItems.isCompleted
+    })
+    .from(transactionItems)
+    .innerJoin(products, eq(transactionItems.productId, products.id))
+    .where(eq(transactionItems.transactionId, tx.id));
+
+  return {
+    ...tx,
+    items
+  };
+}
+
+export async function getActiveOrderStatus(orderNumber: string, tenantSlug: string) {
+  try {
+    const cleanOrderNumber = orderNumber.replace(/^#/, '').trim().toUpperCase();
+    const hashOrderNumber = '#' + cleanOrderNumber;
+
+    const tenantResult = await db.select({ id: tenants.id }).from(tenants).where(eq(tenants.slug, tenantSlug)).limit(1);
+    if (tenantResult.length === 0) return { isActive: false, status: null, orderNumber: cleanOrderNumber };
+    const tenant = tenantResult[0];
+
+    const txs = await db
+      .select({
+        id: transactions.id,
+        orderNumber: transactions.orderNumber,
+        status: transactions.status,
+        paymentStatus: transactions.paymentStatus,
+        paymentMethod: transactions.paymentMethod,
+        createdAt: transactions.createdAt,
+      })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.tenantId, tenant.id),
+          or(
+            eq(transactions.orderNumber, cleanOrderNumber),
+            eq(transactions.orderNumber, hashOrderNumber),
+            eq(transactions.orderNumber, orderNumber)
+          )
+        )
+      )
+      .limit(1);
+
+    if (txs.length === 0) return { isActive: false, status: null, orderNumber: cleanOrderNumber };
+    const tx = txs[0];
+
+    const terminalStatuses = ['COMPLETED', 'CANCELLED', 'CANCELED', 'REJECTED'];
+    const isTerminal = terminalStatuses.includes((tx.status || '').toUpperCase());
+    const isPaymentFailed = ['FAILED', 'DENIED', 'EXPIRED'].includes((tx.paymentStatus || '').toUpperCase());
+
+    // Check TTL: orders older than 24 hours are considered no longer active
+    const isTooOld = tx.createdAt && (Date.now() - new Date(tx.createdAt).getTime() > 24 * 60 * 60 * 1000);
+
+    const isActive = !isTerminal && !isPaymentFailed && !isTooOld;
+
+    return {
+      isActive,
+      status: tx.status,
+      paymentStatus: tx.paymentStatus,
+      paymentMethod: tx.paymentMethod,
+      orderNumber: tx.orderNumber || cleanOrderNumber,
+    };
+  } catch (error) {
+    console.error('Error fetching active order status:', error);
+    return { isActive: false, status: null, orderNumber };
+  }
+}
+

@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Save, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { OrderPrefixPicker } from "@/components/shared/order-prefix-picker";
 
 export function OrderingClient({ settings }: { settings: any }) {
   const [isSaving, setIsSaving] = useState(false);
@@ -20,6 +21,7 @@ export function OrderingClient({ settings }: { settings: any }) {
   const [tableNumberRequired, setTableNumberRequired] = useState(settings.tableNumberRequired ?? false);
   const [orderProcessType, setOrderProcessType] = useState(settings.orderProcessType || "MANUAL");
   const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(settings.onlinePaymentEnabled ?? false);
+  const [orderPrefix, setOrderPrefix] = useState(settings.orderPrefix || "");
 
   const hasChanges = 
     dineInEnabled !== (settings.dineInEnabled ?? true) ||
@@ -29,7 +31,8 @@ export function OrderingClient({ settings }: { settings: any }) {
     customerPhoneRequired !== (settings.customerPhoneRequired ?? false) ||
     tableNumberRequired !== (settings.tableNumberRequired ?? false) ||
     orderProcessType !== (settings.orderProcessType || "MANUAL") ||
-    onlinePaymentEnabled !== (settings.onlinePaymentEnabled ?? false);
+    onlinePaymentEnabled !== (settings.onlinePaymentEnabled ?? false) ||
+    orderPrefix !== (settings.orderPrefix || "");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,6 +47,7 @@ export function OrderingClient({ settings }: { settings: any }) {
     formData.append("tableNumberRequired", tableNumberRequired.toString());
     formData.append("orderProcessType", orderProcessType);
     formData.append("onlinePaymentEnabled", onlinePaymentEnabled.toString());
+    formData.append("orderPrefix", orderPrefix);
 
     const result = await updateCatalogOrdering(formData);
     
@@ -148,6 +152,22 @@ export function OrderingClient({ settings }: { settings: any }) {
               onCheckedChange={setOnlinePaymentEnabled} 
             />
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Format Kode Pesanan (Order Prefix)</CardTitle>
+          <CardDescription>
+            Tentukan karakter awalan unik untuk pesanan yang masuk ke outlet ini.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <OrderPrefixPicker
+            value={orderPrefix}
+            onChange={setOrderPrefix}
+            outletName={settings?.name || ""}
+          />
         </CardContent>
       </Card>
 

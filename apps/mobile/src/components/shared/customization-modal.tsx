@@ -6,7 +6,8 @@ import { formatCurrency } from '@menuin/utils';
 interface Modifier {
   id: string;
   name: string;
-  price: string;
+  price: string | number;
+  isAvailable?: boolean;
 }
 
 interface ModifierGroup {
@@ -49,6 +50,8 @@ export function CustomizationModal({ isOpen, onClose, product, modifierGroups, o
   if (!product) return null;
 
   const handleToggleModifier = (group: ModifierGroup, modifier: Modifier) => {
+    if (modifier.isAvailable === false) return;
+
     setSelectedModifiers(prev => {
       const currentSelected = prev[group.id] || [];
       const isAlreadySelected = currentSelected.some(m => m.id === modifier.id);
@@ -87,7 +90,14 @@ export function CustomizationModal({ isOpen, onClose, product, modifierGroups, o
 
   const grandTotal = (basePrice + extraPrice) * quantity;
 
-  const isValid = modifierGroups.every(group => {
+  // Check if any required group has all options out of stock
+  const unavailableRequiredGroup = modifierGroups.find(group => {
+    if (!group.isRequired) return false;
+    const availableModifiers = (group.modifiers || []).filter(m => m.isAvailable !== false);
+    return availableModifiers.length < (group.minSelections || 1);
+  });
+
+  const isValid = !unavailableRequiredGroup && modifierGroups.every(group => {
     const selected = selectedModifiers[group.id] || [];
     if (group.isRequired && selected.length < group.minSelections) {
       return false;
@@ -121,6 +131,15 @@ export function CustomizationModal({ isOpen, onClose, product, modifierGroups, o
           </View>
 
           <ScrollView className="flex-1 p-4">
+            {unavailableRequiredGroup && (
+              <View className="p-3.5 mb-4 rounded-2xl bg-amber-50 border border-amber-200">
+                <Text className="text-xs font-bold text-amber-900 mb-0.5">Bahan Utama Tidak Tersedia</Text>
+                <Text className="text-[11px] text-amber-700 leading-snug">
+                  Bahan untuk pilihan wajib ({unavailableRequiredGroup.name}) sedang habis. Menu ini sementara tidak dapat dipesan.
+                </Text>
+              </View>
+            )}
+
             {modifierGroups.map(group => (
               <View key={group.id} className="mb-6 border-b border-slate-100 pb-4">
                 <View className="mb-3">
@@ -132,22 +151,31 @@ export function CustomizationModal({ isOpen, onClose, product, modifierGroups, o
                 </View>
 
                 {group.modifiers?.map(mod => {
+                  const isAvailable = mod.isAvailable !== false;
                   const isSelected = (selectedModifiers[group.id] || []).some(m => m.id === mod.id);
                   return (
                     <TouchableOpacity 
                       key={mod.id} 
-                      className="flex-row items-center justify-between py-3"
+                      disabled={!isAvailable}
+                      className={`flex-row items-center justify-between py-3 ${!isAvailable ? 'opacity-40' : ''}`}
                       onPress={() => handleToggleModifier(group, mod)}
                     >
                       <View className="flex-row items-center flex-1">
                         {isSelected ? (
                           <CheckSquare size={22} color="#2563eb" />
                         ) : (
-                          <Square size={22} color="#cbd5e1" />
+                          <Square size={22} color={isAvailable ? '#cbd5e1' : '#e2e8f0'} />
                         )}
-                        <Text className="ml-3 text-slate-700 text-base">{mod.name}</Text>
+                        <Text className={`ml-3 text-base ${isAvailable ? 'text-slate-700' : 'text-slate-400 line-through'}`}>
+                          {mod.name}
+                        </Text>
+                        {!isAvailable && (
+                          <View className="ml-2 px-1.5 py-0.2 bg-rose-100 rounded border border-rose-200">
+                            <Text className="text-[10px] font-bold text-rose-700">Habis</Text>
+                          </View>
+                        )}
                       </View>
-                      <Text className="text-slate-500">
+                      <Text className={`text-sm ${isAvailable ? 'text-slate-500' : 'text-slate-400'}`}>
                         {Number(mod.price) > 0 ? `+${formatCurrency(Number(mod.price))}` : 'Gratis'}
                       </Text>
                     </TouchableOpacity>

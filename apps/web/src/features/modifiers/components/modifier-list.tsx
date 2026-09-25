@@ -15,7 +15,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { createModifierGroup, updateModifierGroup, deleteModifierGroup, createModifier, deleteModifier } from '@/lib/actions/modifiers';
+import { createModifierGroup, updateModifierGroup, deleteModifierGroup, createModifier, deleteModifier, toggleModifierAvailability } from '@/lib/actions/modifiers';
 import { ModifierGroupDto } from '@menuin/types';
 
 export function ModifierList({ initialData }: { initialData: ModifierGroupDto[] }) {
@@ -124,6 +124,27 @@ export function ModifierList({ initialData }: { initialData: ModifierGroupDto[] 
     }
   };
 
+  const handleToggleModifierAvailability = async (modId: string, currentAvailable: boolean) => {
+    const newAvailable = !currentAvailable;
+    // Optimistic update
+    setGroups(prev => prev.map(group => ({
+      ...group,
+      modifiers: group.modifiers?.map((m: any) => m.id === modId ? { ...m, isAvailable: newAvailable } : m) || []
+    })));
+
+    const res = await toggleModifierAvailability(modId, newAvailable);
+    if (!res.success) {
+      toast.error(res.error || 'Gagal mengubah status ketersediaan opsi');
+      // Revert
+      setGroups(prev => prev.map(group => ({
+        ...group,
+        modifiers: group.modifiers?.map((m: any) => m.id === modId ? { ...m, isAvailable: currentAvailable } : m) || []
+      })));
+    } else {
+      toast.success(newAvailable ? 'Bahan/opsi diaktifkan' : 'Bahan/opsi dinonaktifkan (Habis)');
+    }
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
@@ -151,15 +172,34 @@ export function ModifierList({ initialData }: { initialData: ModifierGroupDto[] 
             </CardHeader>
             <CardContent className="flex-1">
               <div className="space-y-2 mt-4">
-                {group.modifiers?.map((mod: any) => (
-                  <div key={mod.id} className="flex justify-between items-center border-b pb-2 text-sm">
-                    <span>{mod.name}</span>
-                    <div className="flex items-center gap-4">
-                      <span className="text-muted-foreground">+{Number(mod.price).toLocaleString('id-ID')}</span>
-                      <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500" onClick={() => handleDeleteModifier(mod.id)}><Trash className="h-3 w-3" /></Button>
+                {group.modifiers?.map((mod: any) => {
+                  const isAvailable = mod.isAvailable !== false;
+                  return (
+                    <div key={mod.id} className="flex justify-between items-center border-b pb-2 text-sm">
+                      <div className="flex items-center gap-2">
+                        <span className={!isAvailable ? "line-through text-muted-foreground" : "font-medium text-foreground"}>
+                          {mod.name}
+                        </span>
+                        {!isAvailable && (
+                          <span className="text-[10px] font-semibold bg-red-50 text-red-600 px-1.5 py-0.5 rounded border border-red-200">
+                            Habis
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-muted-foreground text-xs">+{Number(mod.price).toLocaleString('id-ID')}</span>
+                        <Switch
+                          checked={isAvailable}
+                          onCheckedChange={() => handleToggleModifierAvailability(mod.id, isAvailable)}
+                          aria-label={`Ketersediaan ${mod.name}`}
+                        />
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => handleDeleteModifier(mod.id)}>
+                          <Trash className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
                 {group.modifiers?.length === 0 && <p className="text-sm text-muted-foreground italic">Belum ada opsi</p>}
                 
                 <Button variant="outline" size="sm" className="w-full mt-4" onClick={() => openModifierModal(group)}>

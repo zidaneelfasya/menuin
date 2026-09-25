@@ -1,8 +1,8 @@
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useState, useMemo, useCallback } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Modal, Alert, useWindowDimensions, Pressable, StyleSheet } from 'react-native';
-import { ShoppingCart, X, AlertCircle, Plus, Minus } from 'lucide-react-native';
-import { usePosData, Product, ModifierGroup } from '@/hooks/use-pos-data';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Modal, Alert, useWindowDimensions, Pressable, StyleSheet, Switch, TextInput, Image, FlatList } from 'react-native';
+import { ShoppingCart, X, AlertCircle, Plus, Minus, SlidersHorizontal, Power, Package, Search } from 'lucide-react-native';
+import { usePosData, useUpdateProductActiveStatus, Product, ModifierGroup } from '@/hooks/use-pos-data';
 import { useCartStore, CartItemModifier } from '@/store/cart-store';
 import { useRouter } from 'expo-router';
 import { useActiveShift } from '@/hooks/use-shifts';
@@ -42,6 +42,12 @@ export default function PosScreen() {
 
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [quickManageProduct, setQuickManageProduct] = useState<Product | null>(null);
+  const [isAvailabilityModalOpen, setIsAvailabilityModalOpen] = useState(false);
+  const [availabilitySearch, setAvailabilitySearch] = useState('');
+  const [availabilityFilter, setAvailabilityFilter] = useState<'ALL' | 'INACTIVE'>('ALL');
+  const updateProductStatusMutation = useUpdateProductActiveStatus();
+
   // Mapping: groupId -> { [optionId]: quantity }
   const [modifierSelections, setModifierSelections] = useState<Record<string, Record<string, number>>>({});
   const [searchQuery, setSearchQuery] = useState('');
@@ -63,11 +69,17 @@ export default function PosScreen() {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Number(price));
   }, []);
 
+  const inactiveProductsCount = useMemo(() => {
+    return posData?.data.products?.filter(p => p.isActive === false).length || 0;
+  }, [posData]);
+
   const filteredProducts = useMemo(() => {
     if (!posData?.data.products) return [];
-    let products = posData.data.products;
+    let products = [...posData.data.products];
     
-    if (selectedCategory) {
+    if (selectedCategory === 'INACTIVE') {
+      products = products.filter(p => p.isActive === false);
+    } else if (selectedCategory) {
       products = products.filter(p => p.categoryId === selectedCategory);
     }
     
@@ -76,8 +88,42 @@ export default function PosScreen() {
       products = products.filter(p => p.name.toLowerCase().includes(q) || (p.barcode && p.barcode.includes(q)));
     }
     
-    return products;
+    // Sort available items first; unavailable items (isActive === false or stock <= 0) to the very bottom even if Best Seller
+    return products.sort((a, b) => {
+      const isAUnavailable = a.isActive === false || (a.stock !== null && a.stock <= 0);
+      const isBUnavailable = b.isActive === false || (b.stock !== null && b.stock <= 0);
+
+      // 1. Available products ALWAYS come before Unavailable products
+      if (isAUnavailable !== isBUnavailable) {
+        return isAUnavailable ? 1 : -1;
+      }
+
+      // 2. Best Sellers come first within their availability group
+      if (a.isFeatured !== b.isFeatured) {
+        return a.isFeatured ? -1 : 1;
+      }
+
+      // 3. Name alphabetical
+      return a.name.localeCompare(b.name);
+    });
   }, [posData, selectedCategory, searchQuery]);
+
+  const modalAvailabilityProducts = useMemo(() => {
+    if (!posData?.data.products) return [];
+    let list = posData.data.products;
+    if (availabilityFilter === 'INACTIVE') {
+      list = list.filter(p => p.isActive === false);
+    }
+    if (availabilitySearch.trim()) {
+      const q = availabilitySearch.toLowerCase();
+      list = list.filter(p => 
+        p.name.toLowerCase().includes(q) || 
+        (p.sku && p.sku.toLowerCase().includes(q)) || 
+        (p.barcode && p.barcode.includes(q))
+      );
+    }
+    return list;
+  }, [posData, availabilityFilter, availabilitySearch]);
 
   const handleProductPress = useCallback((product: Product) => {
     if (!activeShift) {
@@ -102,6 +148,21 @@ export default function PosScreen() {
       });
     }
   }, [activeShift, addItem, router]);
+
+  const handleProductLongPress = useCallback((product: Product) => {
+    setQuickManageProduct(product);
+  }, []);
+
+  const handleToggleProductStatus = useCallback((product: Product) => {
+    const currentVal = product.isActive !== false;
+    const nextVal = !currentVal;
+    
+    updateProductStatusMutation.mutate({
+      productId: product.id,
+      isActive: nextVal,
+    });
+    setQuickManageProduct(null);
+  }, [updateProductStatusMutation]);
 
   // Single choice: instant switch between boxes
   const handleSingleSelect = useCallback((groupId: string, optionId: string, isRequired: boolean) => {
@@ -300,13 +361,45 @@ export default function PosScreen() {
           </View>
         )}
 
-        {/* Search Bar */}
-        <View className="bg-white px-4 pt-3 pb-2 border-b border-gray-100">
-          <SearchInput
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholder="Cari produk atau scan barcode..."
-          />
+        {/* Search Bar & Shortcut Ketersediaan Menu */}
+        <View className="bg-white px-4 pt-3 pb-2 border-b border-gray-100 flex-row items-center gap-2">
+          <View className="flex-1">
+            <SearchInput
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Cari produk atau scan barcode..."
+            />
+          </View>
+
+          {/* Tombol Shortcut Ketersediaan Menu */}
+          <TouchableOpacity
+            onPress={() => setIsAvailabilityModalOpen(true)}
+            activeOpacity={0.75}
+            className={`h-10 px-3 rounded-xl border flex-row items-center justify-center ${
+              inactiveProductsCount > 0
+                ? 'bg-rose-50 border-rose-200 active:bg-rose-100'
+                : 'bg-gray-50 border-gray-200 active:bg-gray-100'
+            }`}
+          >
+            <SlidersHorizontal
+              size={14}
+              color={inactiveProductsCount > 0 ? '#e11d48' : '#4b5563'}
+            />
+            <Text
+              className={`text-xs font-bold ml-1.5 ${
+                inactiveProductsCount > 0 ? 'text-rose-700' : 'text-gray-700'
+              }`}
+            >
+              {isTablet ? 'Ketersediaan Menu' : 'Ketersediaan'}
+            </Text>
+            {inactiveProductsCount > 0 && (
+              <View className="ml-1.5 px-1.5 py-0.5 rounded-full bg-rose-600">
+                <Text className="text-[10px] font-black text-white">
+                  {inactiveProductsCount}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
         </View>
 
         {/* Category Pills */}
@@ -325,6 +418,28 @@ export default function PosScreen() {
             >
               <Text className={`text-xs font-bold ${!selectedCategory ? 'text-white' : 'text-gray-700'}`}>Semua</Text>
             </TouchableOpacity>
+
+            {/* Quick Pill Filter: Tidak Tersedia (jika ada item dinonaktifkan) */}
+            {inactiveProductsCount > 0 && (
+              <TouchableOpacity
+                activeOpacity={0.7}
+                className={`px-3 py-1.5 rounded-full mr-2 border flex-row items-center ${
+                  selectedCategory === 'INACTIVE'
+                    ? 'bg-rose-600 border-rose-600 shadow-xs'
+                    : 'bg-rose-50 border-rose-200 active:bg-rose-100'
+                }`}
+                onPress={() => setSelectedCategory(selectedCategory === 'INACTIVE' ? null : 'INACTIVE')}
+              >
+                <Power size={11} color={selectedCategory === 'INACTIVE' ? '#ffffff' : '#e11d48'} strokeWidth={2.4} />
+                <Text
+                  className={`text-xs font-bold ml-1.5 ${
+                    selectedCategory === 'INACTIVE' ? 'text-white' : 'text-rose-700'
+                  }`}
+                >
+                  Tidak Tersedia ({inactiveProductsCount})
+                </Text>
+              </TouchableOpacity>
+            )}
             {posData?.data.categories.map((cat) => {
               const isCatActive = selectedCategory === cat.id;
               return (
@@ -360,6 +475,7 @@ export default function PosScreen() {
                 product={product}
                 cardWidth={cardWidth}
                 onPress={handleProductPress}
+                onLongPress={handleProductLongPress}
                 formatPrice={formatPrice}
               />
             ))}
@@ -581,6 +697,334 @@ export default function PosScreen() {
                 className="w-full shadow-sm"
                 onPress={handleAddToCartWithModifiers}
               />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* QUICK AVAILABILITY ACTION SHEET / MODAL */}
+      <Modal
+        visible={Boolean(quickManageProduct)}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setQuickManageProduct(null)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}
+          onPress={() => setQuickManageProduct(null)}
+        >
+          <Pressable
+            style={{
+              backgroundColor: '#FFFFFF',
+              borderTopLeftRadius: 24,
+              borderTopRightRadius: 24,
+              padding: 24,
+              paddingBottom: Math.max(insets.bottom, 24),
+            }}
+            onPress={(e) => e.stopPropagation()}
+          >
+            {quickManageProduct && (
+              <View>
+                <View className="flex-row items-center justify-between mb-4">
+                  <View className="flex-1 pr-3">
+                    <Text className="text-base font-black text-gray-900 leading-tight">
+                      {quickManageProduct.name}
+                    </Text>
+                    <Text className="text-xs text-gray-500 font-medium mt-0.5">
+                      {formatPrice(quickManageProduct.price)} • SKU: {quickManageProduct.sku || '-'}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => setQuickManageProduct(null)}
+                    className="w-8 h-8 rounded-full bg-gray-100 items-center justify-center"
+                  >
+                    <X size={16} color="#6b7280" />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Status Indicator */}
+                <View className="p-3.5 rounded-xl border border-gray-100 bg-gray-50/70 mb-4 flex-row items-center justify-between">
+                  <View>
+                    <Text className="text-xs font-bold text-gray-800">Status Ketersediaan</Text>
+                    <Text className="text-[11px] text-gray-500">
+                      {quickManageProduct.isActive !== false ? 'Sedang Tersedia untuk dipesan' : 'Sedang Dimatikan (Tidak Tersedia)'}
+                    </Text>
+                  </View>
+                  <View className={`px-2.5 py-1 rounded-md ${quickManageProduct.isActive !== false ? 'bg-emerald-100' : 'bg-rose-100'}`}>
+                    <Text className={`text-[11px] font-bold ${quickManageProduct.isActive !== false ? 'text-emerald-800' : 'text-rose-800'}`}>
+                      {quickManageProduct.isActive !== false ? 'Tersedia' : 'Tidak Tersedia'}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Action Buttons */}
+                <View style={{ gap: 10 }}>
+                  <TouchableOpacity
+                    onPress={() => handleToggleProductStatus(quickManageProduct)}
+                    activeOpacity={0.8}
+                    className={`py-3.5 rounded-xl items-center justify-center shadow-xs flex-row ${
+                      quickManageProduct.isActive !== false
+                        ? 'bg-rose-600 active:bg-rose-700'
+                        : 'bg-emerald-600 active:bg-emerald-700'
+                    }`}
+                  >
+                    <Text className="text-white font-black text-sm">
+                      {quickManageProduct.isActive !== false
+                        ? 'Tandai Tidak Tersedia (Habis)'
+                        : 'Tandai Tersedia (Bisa Dipesan)'}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => setQuickManageProduct(null)}
+                    activeOpacity={0.7}
+                    className="py-3 rounded-xl items-center justify-center bg-gray-100 active:bg-gray-200"
+                  >
+                    <Text className="text-gray-700 font-bold text-xs">Tutup</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* QUICK AVAILABILITY FULL SHEET / MODAL WITH NATIVE FLATLIST SCROLLING */}
+      <Modal
+        visible={isAvailabilityModalOpen}
+        transparent
+        animationType="slide"
+        supportedOrientations={['portrait', 'portrait-upside-down', 'landscape', 'landscape-left', 'landscape-right']}
+        onRequestClose={() => setIsAvailabilityModalOpen(false)}
+      >
+        <View style={{ flex: 1, justifyContent: 'flex-end' }}>
+          {/* Backdrop Tap to Dismiss */}
+          <Pressable
+            style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0, 0, 0, 0.55)' }]}
+            onPress={() => setIsAvailabilityModalOpen(false)}
+          />
+
+          {/* Bottom Sheet Card Container */}
+          <View
+            style={{
+              backgroundColor: '#FFFFFF',
+              borderTopLeftRadius: 24,
+              borderTopRightRadius: 24,
+              height: isTablet ? Math.min(height * 0.78, 640) : Math.min(height * 0.85, 700),
+              maxHeight: '90%',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+            }}
+          >
+            {/* Header */}
+            <View className="px-5 pt-4 pb-3 border-b border-gray-100 flex-row items-center justify-between bg-white z-10">
+              <View className="flex-1 mr-3">
+                <View className="flex-row items-center gap-2">
+                  <Text className="text-lg font-black text-gray-900">
+                    Ketersediaan Menu
+                  </Text>
+                  {inactiveProductsCount > 0 && (
+                    <View className="bg-rose-100 px-2 py-0.5 rounded-md">
+                      <Text className="text-[11px] font-bold text-rose-700">
+                        {inactiveProductsCount} Dimatikan
+                      </Text>
+                    </View>
+                  )}
+                </View>
+                <Text className="text-xs text-gray-500 mt-0.5">
+                  Aktifkan atau matikan menu yang habis agar tidak dapat dipesan
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setIsAvailabilityModalOpen(false)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                className="w-8 h-8 rounded-full bg-gray-100 items-center justify-center active:bg-gray-200"
+              >
+                <X size={16} color="#4b5563" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Search & Filter Bar */}
+            <View className="px-5 py-3 border-b border-gray-100 bg-gray-50/80 z-10">
+              <View className="flex-row items-center bg-white border border-gray-200 rounded-xl px-3 py-2 mb-2.5 shadow-2xs">
+                <Search size={15} color="#9ca3af" className="mr-2" />
+                <TextInput
+                  value={availabilitySearch}
+                  onChangeText={setAvailabilitySearch}
+                  placeholder="Cari nama menu / SKU..."
+                  placeholderTextColor="#9ca3af"
+                  className="flex-1 text-xs text-gray-900 p-0"
+                />
+                {availabilitySearch ? (
+                  <TouchableOpacity onPress={() => setAvailabilitySearch('')}>
+                    <X size={14} color="#9ca3af" />
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+
+              {/* Segmented Filter Pills */}
+              <View className="flex-row items-center gap-2">
+                <TouchableOpacity
+                  onPress={() => setAvailabilityFilter('ALL')}
+                  activeOpacity={0.7}
+                  className={`px-3 py-1.5 rounded-lg border ${
+                    availabilityFilter === 'ALL'
+                      ? 'bg-blue-600 border-blue-600 shadow-2xs'
+                      : 'bg-white border-gray-200 active:bg-gray-50'
+                  }`}
+                >
+                  <Text
+                    className={`text-xs font-bold ${
+                      availabilityFilter === 'ALL' ? 'text-white' : 'text-gray-600'
+                    }`}
+                  >
+                    Semua ({posData?.data.products?.length || 0})
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => setAvailabilityFilter('INACTIVE')}
+                  activeOpacity={0.7}
+                  className={`px-3 py-1.5 rounded-lg border flex-row items-center ${
+                    availabilityFilter === 'INACTIVE'
+                      ? 'bg-rose-600 border-rose-600 shadow-2xs'
+                      : 'bg-white border-gray-200 active:bg-gray-50'
+                  }`}
+                >
+                  <Power
+                    size={11}
+                    color={availabilityFilter === 'INACTIVE' ? '#ffffff' : '#e11d48'}
+                    strokeWidth={2.4}
+                  />
+                  <Text
+                    className={`text-xs font-bold ml-1 ${
+                      availabilityFilter === 'INACTIVE' ? 'text-white' : 'text-rose-700'
+                    }`}
+                  >
+                    Tidak Tersedia ({inactiveProductsCount})
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* List of Products (Native FlatList with High Performance Scrolling) */}
+            <FlatList
+              data={modalAvailabilityProducts}
+              keyExtractor={(item) => item.id}
+              style={{ flex: 1 }}
+              contentContainerStyle={{
+                paddingHorizontal: 20,
+                paddingVertical: 6,
+                flexGrow: 1,
+              }}
+              showsVerticalScrollIndicator={true}
+              keyboardShouldPersistTaps="handled"
+              nestedScrollEnabled={true}
+              ListEmptyComponent={
+                <View className="py-16 items-center justify-center">
+                  <Package size={40} color="#cbd5e1" />
+                  <Text className="text-sm font-bold text-gray-600 mt-2">
+                    Tidak ada produk ditemukan
+                  </Text>
+                  <Text className="text-xs text-gray-400 text-center mt-1 px-8">
+                    {availabilityFilter === 'INACTIVE'
+                      ? 'Semua produk saat ini sedang aktif & dapat dipesan.'
+                      : 'Coba gunakan kata kunci pencarian yang lain.'}
+                  </Text>
+                </View>
+              }
+              renderItem={({ item, index }) => {
+                const isLast = index === modalAvailabilityProducts.length - 1;
+                const itemCat = posData?.data.categories.find((c) => c.id === item.categoryId);
+                const isItemActive = item.isActive !== false;
+
+                return (
+                  <View
+                    key={item.id}
+                    className={`py-3 flex-row items-center justify-between ${
+                      !isLast ? 'border-b border-gray-100' : ''
+                    }`}
+                  >
+                    <View className="flex-row items-center flex-1 mr-3">
+                      <View className="w-11 h-11 rounded-xl bg-gray-100 border border-gray-200/80 items-center justify-center mr-3 overflow-hidden">
+                        {item.imageUrl ? (
+                          <Image
+                            source={{ uri: item.imageUrl }}
+                            className="w-full h-full"
+                            resizeMode="cover"
+                          />
+                        ) : (
+                          <Package size={20} color="#94a3af" />
+                        )}
+                      </View>
+                      <View className="flex-1">
+                        <Text
+                          className="text-xs font-black text-gray-900 leading-snug"
+                          numberOfLines={1}
+                        >
+                          {item.name}
+                        </Text>
+                        <Text className="text-[10px] text-gray-500 font-medium mt-0.5">
+                          {itemCat?.name || 'Katalog'} • {formatPrice(item.price)}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Right Action: Status Pill + Interactive Switch */}
+                    <View className="flex-row items-center gap-2">
+                      <View
+                        className={`px-2 py-0.5 rounded-md ${
+                          isItemActive
+                            ? 'bg-emerald-50 border border-emerald-200'
+                            : 'bg-rose-50 border border-rose-200'
+                        }`}
+                      >
+                        <Text
+                          className={`text-[10px] font-bold ${
+                            isItemActive ? 'text-emerald-700' : 'text-rose-700'
+                          }`}
+                        >
+                          {isItemActive ? 'Tersedia' : 'Habis'}
+                        </Text>
+                      </View>
+
+                      <Switch
+                        value={isItemActive}
+                        onValueChange={(val) => {
+                          updateProductStatusMutation.mutate({
+                            productId: item.id,
+                            isActive: val,
+                          });
+                        }}
+                        trackColor={{ false: '#fecdd3', true: '#86efac' }}
+                        thumbColor={isItemActive ? '#16a34a' : '#e11d48'}
+                        ios_backgroundColor="#fecdd3"
+                        style={{ transform: [{ scaleX: 0.9 }, { scaleY: 0.9 }] }}
+                      />
+                    </View>
+                  </View>
+                );
+              }}
+            />
+
+            {/* Modal Bottom Footer */}
+            <View
+              style={{ paddingBottom: Math.max(insets.bottom, 16) }}
+              className="px-5 pt-3 border-t border-gray-100 flex-row items-center justify-between bg-white z-10"
+            >
+              <Text className="text-xs text-gray-500 font-medium">
+                {inactiveProductsCount > 0
+                  ? `${inactiveProductsCount} produk dimatikan`
+                  : 'Semua produk tersedia'}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setIsAvailabilityModalOpen(false)}
+                activeOpacity={0.8}
+                className="bg-blue-600 px-5 py-2.5 rounded-xl shadow-xs active:bg-blue-700"
+              >
+                <Text className="text-white text-xs font-bold">Selesai</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </View>
