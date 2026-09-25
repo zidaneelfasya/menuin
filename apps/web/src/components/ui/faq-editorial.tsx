@@ -42,7 +42,7 @@ const faqData: FAQItem[] = [
   {
     question: 'Bagaimana hak akses kasir, manajer, dan pemilik dipisahkan?',
     answer:
-      'Setiap anggota tim diberi peran: Owner, Manajer, Kasir, atau Staf. Data keuangan dan pengaturan sensitif hanya terbuka untuk peran yang berhak, dan setiap pembatalan transaksi wajib disertai alasan sehingga tetap bisa ditelusuri.',
+      'Setiap anggota tim diberi peran: Owner, Manajer, atau Kasir. Data keuangan dan pengaturan sensitif hanya terbuka untuk peran yang berhak, dan setiap pembatalan transaksi wajib disertai alasan sehingga tetap bisa ditelusuri.',
   },
   {
     question: 'Bisakah berhenti berlangganan kapan saja?',

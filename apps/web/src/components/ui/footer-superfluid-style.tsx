@@ -69,11 +69,11 @@ export default function FooterSuperfluidStyle() {
                 Produk
               </h4>
               <ul className="space-y-2 text-white/80">
-                <li><a href="#fitur" className="hover:text-white hover:underline transition-all">QR Self-Order</a></li>
+                <li><a href="#alur" className="hover:text-white hover:underline transition-all">Cara kerja</a></li>
                 <li><a href="#fitur" className="hover:text-white hover:underline transition-all">Kasir POS</a></li>
-                <li><a href="#fitur" className="hover:text-white hover:underline transition-all">Papan Pesanan</a></li>
                 <li><a href="#fitur" className="hover:text-white hover:underline transition-all">Shift &amp; Kas</a></li>
-                <li><a href="#fitur" className="hover:text-white hover:underline transition-all">Laporan</a></li>
+                <li><a href="#fitur" className="hover:text-white hover:underline transition-all">Stok &amp; HPP</a></li>
+                <li><a href="#fitur" className="hover:text-white hover:underline transition-all">Diskon &amp; Promo</a></li>
               </ul>
             </div>
 
@@ -84,7 +84,7 @@ export default function FooterSuperfluidStyle() {
               </h4>
               <ul className="space-y-2 text-white/80">
                 <li><a href="#tentang" className="hover:text-white hover:underline transition-all">Tentang</a></li>
-                <li><a href="#alur" className="hover:text-white hover:underline transition-all">Cara kerja</a></li>
+                <li><a href="#keamanan" className="hover:text-white hover:underline transition-all">Keamanan</a></li>
                 <li><a href="#pricing" className="hover:text-white hover:underline transition-all">Harga</a></li>
                 <li><a href="#faq" className="hover:text-white hover:underline transition-all">Tanya jawab</a></li>
                 <li><a href="https://wa.me/628123456789" target="_blank" rel="noopener noreferrer" className="hover:text-white hover:underline transition-all">Hubungi kami</a></li>

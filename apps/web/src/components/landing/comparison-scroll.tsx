@@ -5,7 +5,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 /**
- * Lima hal yang berubah — dijalankan oleh scroll.
+ * Empat masalah jam sibuk dan apa yang berubah — dijalankan oleh scroll.
  *
  * Dua versi sebelumnya gagal karena alasan yang sama: keduanya menyajikan
  * sepuluh kalimat sekaligus. Tabel dua kolom membuat mata membaca semuanya
@@ -19,39 +19,32 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 const steps = [
   {
-    topic: "Memesan",
-    before: "Tamu melambaikan tangan menunggu pelayan datang membawa buku menu.",
-    after: "Tamu memindai QR di meja, membuka menu berfoto, dan memesan saat itu juga.",
-    from: "4–8 menit",
-    to: "Saat itu juga",
+    topic: "Pesanan salah",
+    before: "Catatan \u201ctanpa gula\u201d hilang di antara kasir dan dapur.",
+    after: "Catatan tamu sampai ke dapur persis seperti yang ditulis.",
+    from: "Ditulis ulang",
+    to: "Sampai utuh",
   },
   {
-    topic: "Membayar",
-    before: "Antrean pembayaran menumpuk di kasir saat jam makan siang.",
-    after: "Tamu membayar dari meja lewat QRIS. Kasir fokus pada pesanan takeaway.",
+    topic: "Antrean kasir",
+    before: "Antrean memanjang setiap jam makan siang.",
+    after: "Tamu bayar dari meja. Kasir fokus melayani yang datang langsung.",
     from: "Satu antrean",
-    to: "Tanpa antre",
+    to: "Bayar dari meja",
   },
   {
-    topic: "Catatan pesanan",
-    before: 'Pesanan salah masak karena catatan tangan "sambal dipisah" terlewat.',
-    after: "Catatan tamu tampil persis di layar dapur dan tercetak di struk.",
-    from: "Tulisan tangan",
-    to: "Teks digital",
+    topic: "Kas selisih",
+    before: "Uang laci kurang dan tidak ada yang tahu sebabnya.",
+    after: "Setiap rupiah tercatat, dari modal awal sampai tutup shift.",
+    from: "Tidak ketahuan",
+    to: "Tercatat per shift",
   },
   {
-    topic: "Tutup shift",
-    before: "Uang laci tekor saat pergantian shift dan sumbernya tidak ketahuan.",
-    after: "Modal awal, kas keluar, dan hitungan fisik direkonsiliasi sistem.",
-    from: "Dicatat manual",
-    to: "Tercatat otomatis",
-  },
-  {
-    topic: "Mengawasi",
-    before: "Pemilik tidak berani meninggalkan outlet saat jam ramai.",
-    after: "Omzet tiap cabang bisa dipantau dari ponsel secara langsung.",
-    from: "Harus di tempat",
-    to: "Dari mana saja",
+    topic: "Rekap malam",
+    before: "Pemilik merekap nota sampai larut malam.",
+    after: "Omzet dan laba tersusun sendiri, bisa dicek dari ponsel.",
+    from: "Rekap manual",
+    to: "Tersusun sendiri",
   },
 ];
 
@@ -133,7 +126,7 @@ export default function ComparisonScroll() {
             Sebelum dan sesudah
           </p>
           <h2 className="mt-4 font-display text-[clamp(28px,7vw,36px)] font-semibold leading-[1.08] tracking-[-0.035em] text-[#0a0a0a] text-balance">
-            Lima hal yang berubah sejak hari pertama.
+            Yang biasanya bikin pusing di jam sibuk, sekarang beres sendiri.
           </h2>
 
           <ol className="mt-10 border-t border-black/[0.08]">
@@ -171,8 +164,8 @@ export default function ComparisonScroll() {
             <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#71717a]">
               Sebelum dan sesudah
             </p>
-            <h2 className="mt-4 max-w-[14ch] font-display text-[clamp(30px,4vw,48px)] font-semibold leading-[1.06] tracking-[-0.04em] text-[#0a0a0a] text-balance">
-              Lima hal yang berubah sejak hari pertama.
+            <h2 className="mt-4 max-w-[16ch] font-display text-[clamp(30px,4vw,48px)] font-semibold leading-[1.06] tracking-[-0.04em] text-[#0a0a0a] text-balance">
+              Yang biasanya bikin pusing di jam sibuk, sekarang beres sendiri.
             </h2>
 
             <ol className="mt-10 hidden md:block">

@@ -9,7 +9,7 @@ import AboutSection from "@/components/landing/about-section";
 import OrderJourney from "@/components/landing/order-journey";
 import ComparisonScroll from "@/components/landing/comparison-scroll";
 import FeatureShowcase from "@/components/landing/feature-showcase";
-import SpecBento from "@/components/landing/spec-bento";
+import SecuritySection from "@/components/landing/security-section";
 import { HeroIntro } from "@/components/landing/scroll-reveal";
 import FaqEditorial from "@/components/ui/faq-editorial";
 import FooterReadyToBegin from "@/components/ui/footer-ready-to-begin";
@@ -67,20 +67,6 @@ function FadeIn({
 const CONTACT_WHATSAPP =
   "https://wa.me/628123456789?text=Halo%20Menuin%2C%20saya%20ingin%20berdiskusi%20soal%20paket%20Enterprise";
 
-// Hanya mitra pembayaran & teknologi yang benar-benar terintegrasi.
-// Logo lembaga pemerintah sengaja tidak ditampilkan di sini — lihat
-// docs/landing-revamp/IMPLEMENTATION-PLAN.md §8 R1.
-// Semua di-host lokal; tidak ada lagi hotlink ke Wikimedia.
-// `midtrans-ink.svg` adalah salinan wordmark Midtrans yang fill putihnya
-// ditukar ke abu tinta — berkas aslinya dibuat untuk latar gelap.
-// Tinggi dipakai untuk menyamakan bobot optis, bukan tinggi kotaknya.
-const logos = [
-  { name: "Midtrans", src: "/img/brand_logo/midtrans-ink.svg", h: 18 },
-  { name: "QRIS", src: "/img/brand_logo/qris.svg", h: 22 },
-  { name: "BCA", src: "/img/brand_logo/bca.svg", h: 20 },
-  { name: "Bank Mandiri", src: "/img/brand_logo/mandiri.svg", h: 18 },
-  { name: "BNI", src: "/img/brand_logo/bni.svg", h: 22 },
-];
 
 /**
  * Visual hero: foto kasir Menuin dipakai di gerai sungguhan.
@@ -596,39 +582,20 @@ export default function LandingPage({
         </HeroIntro>
       </section>
 
-      {/* MITRA PEMBAYARAN */}
-      <section className="border-y border-black/[0.06] bg-[#fafafa] px-6 py-8" aria-label="Mitra pembayaran">
-        <div className="mx-auto max-w-[1280px] text-center">
-          <p className="text-[12px] uppercase tracking-[0.14em] text-[#a1a1aa]">
-            Pembayaran diproses lewat penyelenggara berizin
-          </p>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-10 gap-y-5">
-            {logos.map((logo) => (
-              <img
-                key={logo.name}
-                src={logo.src}
-                alt={logo.name}
-                loading="lazy"
-                style={{ height: logo.h }}
-                className="w-auto opacity-55 grayscale transition-opacity hover:opacity-100"
-              />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* TENTANG — siapa Menuin dan untuk siapa, dengan angka kunci */}
+      {/* TENTANG — siapa Menuin dan untuk siapa */}
       <AboutSection />
 
-      {/* ALUR PESANAN — dari scan QR sampai transaksi tercatat */}
-      <OrderJourney />
-
+      {/* SEBELUM & SESUDAH — masalah jam sibuk yang hilang */}
       <ComparisonScroll />
 
-      {/* FITUR UNGGULAN */}
+      {/* CARA KERJA — dari scan QR sampai transaksi tercatat */}
+      <OrderJourney />
+
+      {/* FITUR UNGGULAN — operasional di luar alur pesanan */}
       <FeatureShowcase />
 
-      <SpecBento />
+      {/* KEAMANAN — keraguan terakhir sebelum harga */}
+      <SecuritySection />
 
       {/* WRAPPER FOR TESTIMONIAL & PRICING */}
       <div className="relative overflow-hidden bg-[#FAFAFA]">
@@ -906,7 +873,7 @@ export default function LandingPage({
                           "QR meja tanpa batas jumlah pesanan",
                           "QRIS dinamis terverifikasi otomatis",
                           "Papan pesanan dan tiket dapur otomatis",
-                          "Hak akses Owner, Manajer, Kasir, dan Staf",
+                          "Hak akses Owner, Manajer, dan Kasir",
                           "Stok berjalan dan peringatan stok menipis",
                           "Laporan penjualan, shift, dan laba",
                           "Printer kasir Bluetooth dan LAN (58/80 mm)",
