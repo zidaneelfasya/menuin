@@ -15,9 +15,9 @@ import {
 /**
  * Hero parallax — setinggi satu layar.
  *
- * Teks ringkas di atas, lalu foto presenter besar di tengah yang mengisi
- * sisa tinggi layar (terpotong di pinggang), dengan tombol CTA melayang di
- * atas badannya. Di sekeliling, mockup perangkat (ponsel, laptop) melayang
+ * Teks ringkas di atas, lalu tangan memegang ponsel berisi aplikasi Menuin
+ * di tengah yang mengisi sisa tinggi layar, dengan tombol CTA melayang di
+ * bawahnya. Di sekeliling, mockup perangkat (ponsel, laptop) melayang
  * di kedalaman berbeda (terinspirasi "parallax hero images" Aceternity).
  *
  * Gerak mengikuti mouse tetap aktif walau reduced-motion menyala, karena
@@ -79,11 +79,20 @@ const layers: Layer[] = [
     ),
   },
   {
-    id: "bayar",
-    className: "right-[13%] top-[19%] w-[clamp(100px,7.6vw,128px)]",
-    depth: 1.2,
-    rotate: 8,
-    node: <Phone src="/img/landing/journey/tamu-bayar.webp" alt="Pilihan pembayaran tamu" />,
+    id: "tablet",
+    className: "right-[6%] top-[17%] w-[clamp(210px,17vw,280px)]",
+    depth: 1.1,
+    rotate: 7,
+    node: (
+      <Image
+        src="/img/landing/pos-ipad.webp"
+        alt="Kasir Menuin di tablet"
+        width={1800}
+        height={1382}
+        sizes="280px"
+        className="h-auto w-full drop-shadow-[0_24px_32px_rgba(15,23,42,0.25)]"
+      />
+    ),
   },
   {
     id: "laptop",
@@ -158,10 +167,8 @@ export default function HeroParallax({
 
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
 
-  // Presenter & tablet ikut bergeser, lebih sedikit dari kartu di tepi.
+  // Gambar tengah ikut bergeser sedikit, lebih pelan dari kartu di tepi.
   const personX = useTransform(mx, (v) => v * -10);
-  const tabletX = useTransform(mx, (v) => v * -34);
-  const tabletY = useTransform(my, (v) => v * -24);
 
   const onMove = (e: React.PointerEvent) => {
     const r = ref.current?.getBoundingClientRect();
@@ -181,7 +188,7 @@ export default function HeroParallax({
       onPointerLeave={onLeave}
       className="relative flex h-[100svh] min-h-[640px] flex-col overflow-hidden bg-white pt-[88px] lg:min-h-[720px] lg:pt-[96px]"
     >
-      {/* Cahaya lembut di belakang presenter */}
+      {/* Cahaya lembut di belakang ponsel */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute bottom-[-20%] left-1/2 h-[80vh] w-[80vh] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(14,89,249,0.14),transparent)]"
@@ -197,52 +204,32 @@ export default function HeroParallax({
       {/* Teks */}
       <div className="relative z-20 mx-auto w-full max-w-[860px] shrink-0 px-6">{heading}</div>
 
-      {/* Presenter besar mengisi sisa layar */}
+      {/* Tangan memegang ponsel berisi aplikasi Menuin, mengisi sisa layar */}
       <div className="relative z-10 mt-2 min-h-0 flex-1">
-        <div className="absolute left-1/2 top-0 h-[150%] -translate-x-1/2">
-        <motion.div
-          style={{ x: personX }}
-          initial={reduce ? false : { opacity: 0, y: 60 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-          className="h-full"
-        >
-          <Image
-            src="/img/landing/hero/person.webp"
-            alt="Pemilik outlet memperkenalkan Menuin"
-            width={377}
-            height={524}
-            priority
-            sizes="(max-width: 1024px) 80vw, 560px"
-            className="h-full w-auto max-w-none"
-          />
-        </motion.div>
-        </div>
-
-        {/* Tablet kasir melayang di samping badan */}
-        <div className="absolute left-1/2 top-[33%] hidden w-[clamp(150px,15vw,230px)] translate-x-[72%] sm:block">
-        <motion.div style={{ x: tabletX, y: tabletY }}>
+        <div className="absolute left-1/2 top-0 h-[92%] -translate-x-1/2">
           <motion.div
-            initial={reduce ? false : { opacity: 0, y: 50, rotate: -16 }}
-            animate={{ opacity: 1, y: 0, rotate: -9 }}
-            transition={{ duration: 1, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            style={{ x: personX }}
+            initial={reduce ? false : { opacity: 0, y: 80 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1.1, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+            className="h-full [mask-image:linear-gradient(to_bottom,black_72%,transparent)]"
           >
             <Image
-              src="/img/landing/pos-ipad.webp"
-              alt="Kasir Menuin di tablet"
-              width={1800}
-              height={1382}
-              sizes="340px"
-              className="h-auto w-full drop-shadow-[0_36px_40px_rgba(15,23,42,0.3)]"
+              src="/img/landing/hero/hands-phone.webp"
+              alt="Tamu memesan lewat katalog Menuin di ponselnya"
+              width={1594}
+              height={1679}
+              priority
+              sizes="(max-width: 1024px) 90vw, 640px"
+              className="h-full w-auto max-w-none"
             />
           </motion.div>
-        </motion.div>
         </div>
 
         {/* Pudar ke putih di dasar hero */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-white via-white/80 to-transparent" />
 
-        {/* CTA melayang di atas badan presenter */}
+        {/* CTA melayang di bawah ponsel */}
         <div className="absolute inset-x-0 bottom-[6%] z-30 px-6">{actions}</div>
       </div>
     </section>
