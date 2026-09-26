@@ -12,9 +12,10 @@ import {
   Percent,
   Banknote, 
   Wallet,
-  RotateCcw
+  RotateCcw,
   Package,
   CreditCard,
+  DollarSign,
   Info
 } from 'lucide-react';
 

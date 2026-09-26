@@ -140,18 +140,13 @@ export async function updateStoreGeneralSettings(formData: FormData) {
       }
     }
 
-    await db.update(tenants)
-      .set(updatePayload)
     const orderPrefix = orderPrefixRaw ? orderPrefixRaw.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : null;
+    if (orderPrefixRaw !== undefined) {
+      updatePayload.orderPrefix = orderPrefix || null;
+    }
 
     await db.update(tenants)
-      .set({
-        name,
-        storeDescription,
-        primaryColor,
-        orderPrefix: orderPrefix || null,
-        updatedAt: new Date(),
-      })
+      .set(updatePayload)
       .where(eq(tenants.id, user.tenantId));
 
     if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }

@@ -106,6 +106,7 @@ export function SettingsClient({
   const [storeLogoUrl, setStoreLogoUrl] = React.useState<string | null>(tenant?.storeLogoUrl || null);
   const [storeBannerUrl, setStoreBannerUrl] = React.useState<string | null>(tenant?.storeBannerUrl || null);
   const [primaryColor, setPrimaryColor] = React.useState(tenant?.primaryColor || '#2563EB');
+  const [orderPrefix, setOrderPrefix] = React.useState(tenant?.orderPrefix || '');
 
   // Tax and Fees Form State
   const [taxName, setTaxName] = React.useState(tenant?.taxName || 'Pajak (PB1)');
@@ -121,11 +122,6 @@ export function SettingsClient({
   const [posPinBestSellers, setPosPinBestSellers] = React.useState(tenant?.posPinBestSellers ?? true);
 
   // Midtrans Payment Form State
-  const [storeName, setStoreName] = React.useState(tenant?.name || '');
-  const [storeDescription, setStoreDescription] = React.useState(tenant?.storeDescription || '');
-  const [primaryColor, setPrimaryColor] = React.useState(tenant?.primaryColor || '#2563EB');
-  const [orderPrefix, setOrderPrefix] = React.useState(tenant?.orderPrefix || '');
-
   const [midtransEnvironment, setMidtransEnvironment] = React.useState(tenant?.midtransEnvironment || 'sandbox');
   const [midtransServerKey, setMidtransServerKey] = React.useState(tenant?.midtransServerKey || '');
   const [midtransClientKey, setMidtransClientKey] = React.useState(tenant?.midtransClientKey || '');
@@ -161,7 +157,6 @@ export function SettingsClient({
     storeDescription !== (tenant?.storeDescription || '') ||
     storeLogoUrl !== (tenant?.storeLogoUrl || null) ||
     storeBannerUrl !== (tenant?.storeBannerUrl || null) ||
-    primaryColor !== (tenant?.primaryColor || '#2563EB');
     primaryColor !== (tenant?.primaryColor || '#2563EB') ||
     orderPrefix !== (tenant?.orderPrefix || '');
 
@@ -268,6 +263,7 @@ export function SettingsClient({
     if (storeLogoUrl) fd.append('storeLogoUrl', storeLogoUrl);
     if (storeBannerUrl) fd.append('storeBannerUrl', storeBannerUrl);
     fd.append('primaryColor', primaryColor);
+    if (orderPrefix) fd.append('orderPrefix', orderPrefix);
 
     const res = await updateStoreGeneralSettings(fd);
     setIsSavingStore(false);
@@ -324,25 +320,6 @@ export function SettingsClient({
       toast.success('Preferensi tampilan katalog POS berhasil disimpan');
     } else {
       toast.error(res.error || 'Gagal menyimpan preferensi');
-      toast.error(res.error || 'Gagal menyimpan pengaturan');
-    }
-  };
-
-  const handleSaveStore = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSavingStore(true);
-    const fd = new FormData();
-    fd.append('name', storeName);
-    fd.append('storeDescription', storeDescription);
-    fd.append('primaryColor', primaryColor);
-    fd.append('orderPrefix', orderPrefix);
-
-    const res = await updateStoreGeneralSettings(fd);
-    setIsSavingStore(false);
-    if (res.success) {
-      toast.success('Informasi toko berhasil disimpan');
-    } else {
-      toast.error(res.error || 'Gagal menyimpan informasi');
     }
   };
 
@@ -707,20 +684,15 @@ export function SettingsClient({
                         </div>
                       </div>
                     </div>
-                  <OrderPrefixPicker
-                    value={orderPrefix}
-                    onChange={setOrderPrefix}
-                    outletName={storeName}
-                  />
+                  </div>
 
-                  <div className="flex justify-end pt-4 border-t">
-                    <Button disabled={isSavingStore || !hasStoreChanges} type="submit" size="lg" className="min-w-[140px] shadow-sm">
-                      {isSavingStore ? (
-                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Menyimpan...</>
-                      ) : (
-                        <><Save className="mr-2 h-4 w-4" /> Simpan Profil</>
-                      )}
-                    </Button>
+                  {/* ROW 6: FORMAT KODE PESANAN (ORDER PREFIX) */}
+                  <div className="py-5">
+                    <OrderPrefixPicker
+                      value={orderPrefix}
+                      onChange={setOrderPrefix}
+                      outletName={storeName}
+                    />
                   </div>
                 </div>
 

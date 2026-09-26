@@ -7,27 +7,13 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 import { 
-  IconLayoutDashboard, 
-  IconShoppingCart, 
-  IconPackage, 
-  IconTags, 
-  IconArchive, 
-  IconHistory, 
-  IconChartBar, 
-  IconWallet, 
-  IconPercentage, 
-  IconUserCircle, 
-  IconSettings, 
-  IconShoppingBag, 
-  IconLogout, 
   IconChevronLeft, 
   IconChevronRight, 
-  IconBuildingStore, 
-  IconChefHat, 
-  IconAdjustmentsHorizontal, 
+  IconLogout, 
   IconArrowsExchange
 } from '@tabler/icons-react';
-  LayoutDashboard, https://github.com/zidaneelfasya/menuin/pull/39/conflict?name=apps%252Fweb%252Fsrc%252Fapp%252Foutlet%252F%255BoutletKey%255D%252Fsettings%252Fsettings-client.tsx&ancestor_oid=0a346f22ba3975afd8ab635190e8eedf2d1c5f59&base_oid=052456e8e6e646fd1f98e6c8e0628cda0c823ad3&head_oid=09044a176caf9bfae5a49823824a499fe586c1d0
+import { 
+  LayoutDashboard, 
   ShoppingCart, 
   Package, 
   Tags, 
@@ -37,19 +23,13 @@ import {
   Percent, 
   UserCircle, 
   Settings,
-  ShoppingBag,
-  LogOut,
-  ChevronLeft,
-  ChevronRight,
   Store,
   ChefHat,
   SlidersHorizontal,
-  ArrowRightLeft,
   Smartphone
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
-import { motion } from 'framer-motion';
 import { UserProfile } from '@/lib/actions/auth';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { useRealtimeOrder } from '@/components/providers/realtime-order-provider';
