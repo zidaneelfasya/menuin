@@ -27,6 +27,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import { getPosCardPalette, getPosCardPaletteByName, getProductInitials } from '../lib/pos-card-theme';
 
 interface ShoppingCartProps {
   posSettings?: any;
@@ -55,7 +56,8 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
     tableNumber,
     setTableNumber,
     appliedPromo,
-    setAppliedPromo
+    setAppliedPromo,
+    displayMode
   } = useCartStore();
 
   React.useEffect(() => {
@@ -300,8 +302,14 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
         ) : (
           items.map((item) => (
             <div key={item.id} className="flex gap-2.5 bg-muted/20 p-2.5 rounded-xl border border-border/50">
-              <div className="h-11 w-11 rounded-lg bg-muted/60 shrink-0 overflow-hidden border border-border/40 relative flex items-center justify-center">
-                <CartItemThumbnail src={item.imageUrl} alt={item.name} fallbackName={item.name} />
+              <div className="h-11 w-11 rounded-xl shrink-0 overflow-hidden relative flex items-center justify-center">
+                <CartItemThumbnail 
+                  src={item.imageUrl} 
+                  alt={item.name} 
+                  fallbackName={item.name} 
+                  displayMode={displayMode}
+                  colorIndex={item.colorIndex}
+                />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-1">
@@ -506,27 +514,70 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
   );
 }
 
-function CartItemThumbnail({ src, alt, fallbackName }: { src?: string | null; alt: string; fallbackName: string }) {
+function CartItemThumbnail({ 
+  src, 
+  alt, 
+  fallbackName, 
+  displayMode = 'image', 
+  colorIndex 
+}: { 
+  src?: string | null; 
+  alt: string; 
+  fallbackName: string;
+  displayMode?: 'image' | 'color';
+  colorIndex?: number;
+}) {
   const [error, setError] = React.useState(false);
 
   React.useEffect(() => {
     setError(false);
   }, [src]);
 
+  const initials = getProductInitials(fallbackName);
+  const palette = typeof colorIndex === 'number' 
+    ? getPosCardPalette(colorIndex) 
+    : getPosCardPaletteByName(fallbackName);
+
+  if (displayMode === 'color') {
+    return (
+      <div
+        style={{
+          backgroundColor: palette.bgHex,
+          color: palette.textPrimaryHex,
+          borderColor: palette.borderHex,
+        }}
+        className="w-full h-full rounded-xl border flex items-center justify-center font-semibold text-xs select-none tracking-wider shadow-2xs"
+        title={fallbackName}
+      >
+        {initials}
+      </div>
+    );
+  }
+
   if (src && !error) {
     return (
-      <img
-        src={src}
-        alt={alt}
-        className="h-full w-full object-cover"
-        onError={() => setError(true)}
-      />
+      <div className="w-full h-full rounded-xl overflow-hidden border border-border/40 bg-muted/60 flex items-center justify-center">
+        <img
+          src={src}
+          alt={alt}
+          className="h-full w-full object-cover"
+          onError={() => setError(true)}
+        />
+      </div>
     );
   }
 
   return (
-    <div className="w-full h-full flex items-center justify-center font-semibold text-primary/60 bg-primary/5 text-xs uppercase select-none">
-      {fallbackName.charAt(0)}
+    <div
+      style={{
+        backgroundColor: palette.bgHex,
+        color: palette.textPrimaryHex,
+        borderColor: palette.borderHex,
+      }}
+      className="w-full h-full rounded-xl border flex items-center justify-center font-semibold text-xs select-none tracking-wider"
+      title={fallbackName}
+    >
+      {initials}
     </div>
   );
 }

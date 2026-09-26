@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Plus, Search, Star, Sparkles, Power, PowerOff, CheckCircle2, SlidersHorizontal, Package, X } from 'lucide-react';
+import { Plus, Search, Power, PowerOff, CheckCircle2, SlidersHorizontal, Package, X, Image as ImageIcon, Palette, ThumbsUp } from 'lucide-react';
 import { useCartStore } from '../stores/use-cart-store';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils/format';
@@ -14,6 +14,7 @@ import { useBarcodeScanner } from '@/hooks/use-barcode-scanner';
 import { toast } from 'sonner';
 import { CustomizationModal } from '@/components/shared/customization-modal';
 import { getCategoryIcon } from '@/features/categories/lib/category-icons';
+import { getPosCardPalette, getProductCardIcon } from '../lib/pos-card-theme';
 
 type Category = {
   id: string;
@@ -38,18 +39,47 @@ type Product = {
   modifierGroupIds?: string[];
 };
 
-export function ProductCatalog({ 
-  products, 
+export function ProductCatalog({
+  products,
   categories,
   modifierGroups
-}: { 
-  products: Product[], 
+}: {
+  products: Product[],
   categories: Category[],
   modifierGroups?: any[]
 }) {
   const [activeCategory, setActiveCategory] = React.useState('Semua');
   const [searchQuery, setSearchQuery] = React.useState('');
   const [visibleCount, setVisibleCount] = React.useState(40);
+  const displayMode = useCartStore((state) => state.displayMode);
+  const setDisplayMode = useCartStore((state) => state.setDisplayMode);
+
+  React.useEffect(() => {
+    try {
+      const saved = localStorage.getItem('menuin_pos_display_mode');
+      if (saved === 'color' || saved === 'image') {
+        setDisplayMode(saved);
+      }
+    } catch {
+      // LocalStorage fallback
+    }
+  }, [setDisplayMode]);
+
+  const handleSetDisplayMode = (mode: 'image' | 'color') => {
+    setDisplayMode(mode);
+  };
+
+  const categoryIconMap = React.useMemo(() => {
+    const map = new Map<string, string | null>();
+    categories.forEach((cat) => {
+      if (cat.icon) {
+        map.set(cat.id, cat.icon);
+        map.set(cat.name, cat.icon);
+      }
+    });
+    return map;
+  }, [categories]);
+
   const addItem = useCartStore((state) => state.addItem);
   const cartItems = useCartStore((state) => state.items);
 
@@ -63,7 +93,7 @@ export function ProductCatalog({
 
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const observerTarget = React.useRef<HTMLDivElement>(null);
-  
+
   const [localProducts, setLocalProducts] = React.useState<Product[]>(products);
   const [isAvailabilityModalOpen, setIsAvailabilityModalOpen] = React.useState(false);
   const [availabilitySearch, setAvailabilitySearch] = React.useState('');
@@ -107,22 +137,6 @@ export function ProductCatalog({
     );
   }, [localProducts, availabilitySearch]);
 
-  const handleAddToCart = (product: { id: string, name: string, price: string | number, imageUrl?: string | null }, modifiers: any[] = [], notes: string = '', quantity: number = 1) => {
-    let extraPrice = 0;
-    modifiers.forEach(m => extraPrice += Number(m.price));
-    
-    for(let i = 0; i < quantity; i++) {
-      addItem({ 
-        productId: product.id, 
-        name: product.name, 
-        price: Number(product.price) + extraPrice, 
-        imageUrl: product.imageUrl,
-        modifiers,
-        notes
-      });
-    }
-  };
-
   // Sort available products first (unavailable items go to the very bottom, even if Best Seller)
   const sortedProducts = React.useMemo(() => {
     return [...localProducts].sort((a, b) => {
@@ -144,12 +158,47 @@ export function ProductCatalog({
     });
   }, [localProducts]);
 
-  // Sync cart images with current product list
-  React.useEffect(() => {
-    if (localProducts && localProducts.length > 0) {
-      useCartStore.getState().syncProductImages(localProducts);
+  const productIndexMap = React.useMemo(() => {
+    const map = new Map<string, number>();
+    sortedProducts.forEach((p, idx) => map.set(p.id, idx));
+    return map;
+  }, [sortedProducts]);
+
+  const handleAddToCart = (
+    product: { id: string, name: string, price: string | number, imageUrl?: string | null },
+    modifiers: any[] = [],
+    notes: string = '',
+    quantity: number = 1,
+    colorIndex?: number
+  ) => {
+    let extraPrice = 0;
+    modifiers.forEach(m => extraPrice += Number(m.price));
+    const resolvedColorIndex = typeof colorIndex === 'number' ? colorIndex : productIndexMap.get(product.id);
+
+    for (let i = 0; i < quantity; i++) {
+      addItem({
+        productId: product.id,
+        name: product.name,
+        price: Number(product.price) + extraPrice,
+        imageUrl: product.imageUrl,
+        colorIndex: resolvedColorIndex,
+        modifiers,
+        notes
+      });
     }
-  }, [localProducts]);
+  };
+
+  // Sync cart images & color indices with current product list
+  React.useEffect(() => {
+    if (sortedProducts && sortedProducts.length > 0) {
+      const mapped = sortedProducts.map((p, idx) => ({
+        id: p.id,
+        imageUrl: p.imageUrl,
+        colorIndex: idx,
+      }));
+      useCartStore.getState().syncProductImages(mapped);
+    }
+  }, [sortedProducts]);
 
   // Reset visible count when filter changes
   React.useEffect(() => {
@@ -179,11 +228,11 @@ export function ProductCatalog({
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       // Allow barcode scanner to bypass this (it's very fast, but let's just let the hook handle it)
       if (
-        e.key.length === 1 && 
-        !e.ctrlKey && 
-        !e.metaKey && 
-        !e.altKey && 
-        document.activeElement?.tagName !== 'INPUT' && 
+        e.key.length === 1 &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.altKey &&
+        document.activeElement?.tagName !== 'INPUT' &&
         document.activeElement?.tagName !== 'TEXTAREA'
       ) {
         searchInputRef.current?.focus();
@@ -237,8 +286,8 @@ export function ProductCatalog({
       matchesCategory = p.categoryName === activeCategory;
     }
 
-    const matchesSearch = 
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    const matchesSearch =
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (p.barcode && p.barcode.includes(searchQuery));
     return matchesCategory && matchesSearch;
@@ -248,13 +297,13 @@ export function ProductCatalog({
 
   return (
     <div className="flex flex-col h-full space-y-4">
-      {/* Search Bar + Quick Availability Shortcut Button */}
+      {/* Search Bar + Display Mode Switcher + Quick Availability Shortcut Button */}
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input 
+          <Input
             ref={searchInputRef}
-            placeholder="Cari produk atau scan barcode..." 
+            placeholder="Cari produk atau scan barcode..."
             className="pl-9 pr-9 bg-card border-border rounded-xl h-11 text-sm"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -274,6 +323,39 @@ export function ProductCatalog({
             </button>
           )}
         </div>
+
+        {/* Display Mode Switcher: Foto vs Kotak Warna */}
+        <div className="flex items-center bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 shrink-0 h-11 gap-0.5">
+          <button
+            type="button"
+            onClick={() => handleSetDisplayMode('image')}
+            className={cn(
+              "flex items-center gap-1.5 h-9 px-2.5 sm:px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+              displayMode === 'image'
+                ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-2xs"
+                : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
+            )}
+            title="Tampilan Gambar (Foto Menu)"
+          >
+            <ImageIcon className="w-3.5 h-3.5 text-slate-600 dark:text-slate-300" />
+            <span className="hidden md:inline">Gambar</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSetDisplayMode('color')}
+            className={cn(
+              "flex items-center gap-1.5 h-9 px-2.5 sm:px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+              displayMode === 'color'
+                ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-2xs"
+                : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
+            )}
+            title="Tampilan Warna (POS Cepat Tanpa Gambar)"
+          >
+            <Palette className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+            <span className="hidden md:inline">Warna</span>
+          </button>
+        </div>
+
         <Button
           variant="outline"
           size="sm"
@@ -282,7 +364,7 @@ export function ProductCatalog({
           title="Kelola ketersediaan menu secara cepat"
         >
           <Power className="w-3.5 h-3.5 text-emerald-600" />
-          <span className="hidden sm:inline">Ketersediaan Menu</span>
+          <span className="hidden sm:inline">Ketersediaan</span>
         </Button>
       </div>
 
@@ -293,8 +375,8 @@ export function ProductCatalog({
             onClick={() => setActiveCategory('Semua')}
             className={cn(
               "px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors border",
-              activeCategory === 'Semua' 
-                ? "bg-primary text-primary-foreground border-primary shadow-xs font-semibold" 
+              activeCategory === 'Semua'
+                ? "bg-primary text-primary-foreground border-primary shadow-xs font-semibold"
                 : "bg-card text-muted-foreground border-border hover:bg-muted"
             )}
           >
@@ -306,12 +388,13 @@ export function ProductCatalog({
               onClick={() => setActiveCategory('Best Seller')}
               className={cn(
                 "px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-colors border flex items-center gap-1.5",
-                activeCategory === 'Best Seller' 
-                  ? "bg-primary text-primary-foreground border-primary shadow-xs" 
+                activeCategory === 'Best Seller'
+                  ? "bg-primary text-primary-foreground border-primary shadow-xs"
                   : "bg-card text-muted-foreground border-border hover:bg-muted"
               )}
             >
-              Best Seller
+
+              <span>Rekomendasi</span>
             </button>
           )}
 
@@ -323,8 +406,8 @@ export function ProductCatalog({
                 onClick={() => setActiveCategory(category.name)}
                 className={cn(
                   "px-3.5 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors border flex items-center gap-1.5",
-                  activeCategory === category.name 
-                    ? "bg-primary text-primary-foreground border-primary shadow-xs font-semibold" 
+                  activeCategory === category.name
+                    ? "bg-primary text-primary-foreground border-primary shadow-xs font-semibold"
                     : "bg-card text-muted-foreground border-border hover:bg-muted"
                 )}
               >
@@ -336,131 +419,300 @@ export function ProductCatalog({
         </div>
       </div>
 
-      {/* Product Grid */}
-      <div className="flex-1 overflow-y-auto pr-2 pb-24">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          {filteredProducts.slice(0, visibleCount).map((product) => {
-            const isActive = product.isActive !== false;
-            const isOutOfStock = product.trackStock !== false && product.stock <= 0;
-            const isAvailable = isActive && !isOutOfStock;
-            const cartQuantity = cartCounts[product.id] || 0;
-            const isInCart = cartQuantity > 0;
+      {/* Product Grid (Dual Mode: Gambar vs Warna Pastel) */}
+      <div className="flex-1 overflow-y-auto px-1 pt-1.5 sm:pt-2 pr-2 pb-24">
+        {displayMode === 'color' ? (
+          /* ================= COLOR / NO-IMAGE MODE ================= */
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {filteredProducts.slice(0, visibleCount).map((product, productIndex) => {
+              const isActive = product.isActive !== false;
+              const isOutOfStock = product.trackStock !== false && product.stock <= 0;
+              const isAvailable = isActive && !isOutOfStock;
+              const cartQuantity = cartCounts[product.id] || 0;
+              const isInCart = cartQuantity > 0;
+              const palette = getPosCardPalette(productIndex);
+              const catIcon = product.categoryId
+                ? categoryIconMap.get(product.categoryId)
+                : (product.categoryName ? categoryIconMap.get(product.categoryName) : null);
+              const FoodIcon = getProductCardIcon(product.name, catIcon);
 
-            return (
-              <div 
-                key={product.id} 
-                className={cn(
-                  "bg-card border rounded-2xl overflow-hidden transition-all flex flex-col relative select-none",
-                  isAvailable 
-                    ? isInCart
-                      ? "cursor-pointer group border-blue-600 dark:border-blue-500 dark:ring-blue-500/20 shadow-xs active:scale-[0.98]"
-                      : "cursor-pointer group hover:shadow-md hover:border-primary/50 active:scale-[0.98]" 
-                    : "opacity-40 grayscale-[30%] bg-slate-100 dark:bg-slate-900/60 border-dashed border-slate-300 dark:border-slate-800 cursor-not-allowed pointer-events-none"
-                )}
-                onClick={() => {
-                  if (isAvailable) {
-                    if (product.modifierGroupIds && product.modifierGroupIds.length > 0) {
-                      setSelectedProductForModal(product);
-                      setIsModalOpen(true);
-                    } else {
-                      handleAddToCart(product);
-                    }
-                  }
-                }}
-              >
-                {!isActive ? (
-                  <div className="absolute inset-0 bg-slate-950/70 z-20 flex flex-col items-center justify-center p-2 text-center backdrop-blur-[1px]">
-                    <span className="text-white text-[11px] font-semibold tracking-wider uppercase bg-rose-600/95 px-2.5 py-1 rounded-md shadow-xs">
-                      TIDAK TERSEDIA
-                    </span>
-                    <span className="text-[10px] text-slate-300 mt-1 font-medium">Menu Dinonaktifkan</span>
-                  </div>
-                ) : isOutOfStock ? (
-                  <div className="absolute inset-0 bg-slate-950/60 z-20 flex flex-col items-center justify-center p-2 text-center backdrop-blur-[1px]">
-                    <span className="text-white text-[11px] font-semibold tracking-wider uppercase bg-amber-600/95 px-2.5 py-1 rounded-md shadow-xs">
-                      STOK HABIS
-                    </span>
-                  </div>
-                ) : null}
-
-                {product.isFeatured && (
-                  <div className="absolute top-2 left-2 z-10 bg-amber-500/95 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full shadow-md flex items-center gap-1 backdrop-blur-sm">
-                    BEST SELLER
-                  </div>
-                )}
-                
-                <div className="aspect-[4/3] bg-muted relative overflow-hidden flex items-center justify-center">
-                  {product.imageUrl ? (
-                    <>
-                      <img 
-                        src={product.imageUrl} 
-                        alt={product.name} 
-                        loading="lazy"
-                        className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300" 
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                          e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                          e.currentTarget.nextElementSibling?.classList.add('flex');
-                        }}
-                      />
-                      <div className="hidden w-full h-full items-center justify-center text-muted-foreground bg-primary/5 text-4xl font-semibold text-primary/20">
-                        {product.name.charAt(0)}
-                      </div>
-                    </>
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-primary/5 text-4xl font-semibold text-primary/20">
-                      {product.name.charAt(0)}
-                    </div>
+              return (
+                <div
+                  key={product.id}
+                  style={{
+                    backgroundColor: isAvailable ? palette.bgHex : undefined,
+                    borderColor: isAvailable ? (isInCart ? palette.activeRingHex : palette.borderHex) : undefined,
+                    boxShadow: isAvailable && isInCart
+                      ? `0 0 0 1.5px ${palette.activeRingHex}, 0 4px 12px -2px rgba(0, 0, 0, 0.08)`
+                      : undefined,
+                  }}
+                  className={cn(
+                    "rounded-2xl border p-4 sm:p-5 flex flex-col justify-between transition-all select-none relative min-h-[148px] sm:min-h-[156px]",
+                    isAvailable
+                      ? isInCart
+                        ? "cursor-pointer group shadow-sm active:scale-[0.98]"
+                        : "cursor-pointer group hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98]"
+                      : "opacity-40 grayscale-[30%] bg-slate-100 dark:bg-slate-900/60 border-dashed border-slate-300 dark:border-slate-800 cursor-not-allowed pointer-events-none"
                   )}
-                </div>
-                <div className="p-3 flex flex-col flex-1">
-                  <h3 className="font-semibold text-sm line-clamp-2 leading-tight mb-1">{product.name}</h3>
-                  
-                  <div className="mt-auto flex items-center justify-between gap-1 pt-0.5">
-                    <span className="text-primary font-semibold text-sm">{formatCurrency(parseFloat(product.price))}</span>
+                  onClick={() => {
+                    if (isAvailable) {
+                      const colorIdx = productIndexMap.get(product.id) ?? productIndex;
+                      if (product.modifierGroupIds && product.modifierGroupIds.length > 0) {
+                        setSelectedProductForModal({ ...product, colorIndex: colorIdx } as any);
+                        setIsModalOpen(true);
+                      } else {
+                        handleAddToCart(product, [], '', 1, colorIdx);
+                      }
+                    }
+                  }}
+                >
+                  {/* Status Overlay for Inactive or Out of Stock */}
+                  {!isActive ? (
+                    <div className="absolute inset-0 bg-slate-950/70 z-20 flex flex-col items-center justify-center p-2 text-center rounded-2xl backdrop-blur-[1px]">
+                      <span className="text-white text-[11px] font-semibold tracking-wider uppercase bg-rose-600/95 px-2.5 py-1 rounded-md shadow-xs">
+                        TIDAK TERSEDIA
+                      </span>
+                      <span className="text-[10px] text-slate-300 mt-1 font-medium">Menu Dinonaktifkan</span>
+                    </div>
+                  ) : isOutOfStock ? (
+                    <div className="absolute inset-0 bg-slate-950/60 z-20 flex flex-col items-center justify-center p-2 text-center rounded-2xl backdrop-blur-[1px]">
+                      <span className="text-white text-[11px] font-semibold tracking-wider uppercase bg-amber-600/95 px-2.5 py-1 rounded-md shadow-xs">
+                        STOK HABIS
+                      </span>
+                    </div>
+                  ) : null}
+
+                  {/* Top Row: Food Icon + Recommendation Badge */}
+                  <div className="flex items-center justify-between gap-1.5">
+                    <div
+                      style={{
+                        backgroundColor: isAvailable ? palette.iconBgHex : undefined,
+                        color: isAvailable ? palette.iconColorHex : undefined,
+                      }}
+                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105"
+                    >
+                      <FoodIcon className="w-5 h-5" />
+                    </div>
+
+                    {product.isFeatured && (
+                      <div
+                        style={{
+                          backgroundColor: isAvailable ? palette.iconBgHex : undefined,
+                          borderColor: isAvailable ? palette.borderHex : undefined,
+                          color: isAvailable ? palette.iconColorHex : undefined,
+                        }}
+                        className="w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 transition-transform group-hover:scale-105"
+                        title="Menu Rekomendasi"
+                      >
+
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Middle: Product Name */}
+                  <div className="my-auto py-2.5">
+                    <h3
+                      style={{ color: isAvailable ? palette.textPrimaryHex : undefined }}
+                      className="font-semibold text-base sm:text-[17px] leading-snug line-clamp-2"
+                    >
+                      {product.name}
+                    </h3>
+                  </div>
+
+                  {/* Bottom: Price + Cart Quantity Badge */}
+                  <div
+                    style={{ borderColor: isAvailable ? `${palette.borderHex}88` : undefined }}
+                    className="flex items-center justify-between gap-2 pt-2 mt-auto border-t border-black/10 dark:border-white/10"
+                  >
+                    <span
+                      style={{ color: isAvailable ? palette.textPrimaryHex : undefined }}
+                      className="font-semibold text-sm sm:text-base tracking-tight"
+                    >
+                      {formatCurrency(parseFloat(product.price))}
+                    </span>
+
                     {isInCart && (
-                      <span className="flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full bg-blue-600 text-white text-[11px] font-semibold shadow-xs select-none">
+                      <span
+                        style={{
+                          backgroundColor: palette.activeRingHex,
+                          color: '#FFFFFF'
+                        }}
+                        className="flex items-center justify-center min-w-[26px] h-[26px] px-2 rounded-full text-xs font-semibold shadow-xs select-none animate-in zoom-in-50 duration-150"
+                      >
                         {cartQuantity}
                       </span>
                     )}
                   </div>
                 </div>
+              );
+            })}
+
+            {filteredProducts.length === 0 && (
+              <div className="col-span-full py-16 text-center text-muted-foreground flex flex-col items-center justify-center">
+                <Package className="w-10 h-10 mb-2.5 opacity-30 text-muted-foreground" />
+                <p className="text-sm font-semibold text-foreground">Tidak ada produk ditemukan</p>
+                <p className="text-xs text-muted-foreground mt-1">Coba kata kunci lain atau ubah kategori pilihan</p>
+                {(searchQuery || activeCategory !== 'Semua') && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setActiveCategory('Semua');
+                    }}
+                    className="mt-3 text-xs rounded-xl"
+                  >
+                    Tampilkan Semua Produk
+                  </Button>
+                )}
               </div>
-            );
-          })}
-          {filteredProducts.length === 0 && (
-            <div className="col-span-full py-16 text-center text-muted-foreground flex flex-col items-center justify-center">
-              <Package className="w-10 h-10 mb-2.5 opacity-30 text-muted-foreground" />
-              <p className="text-sm font-semibold text-foreground">Tidak ada produk ditemukan</p>
-              <p className="text-xs text-muted-foreground mt-1">Coba kata kunci lain atau ubah kategori pilihan</p>
-              {(searchQuery || activeCategory !== 'Semua') && (
-                <Button
-                  variant="outline"
-                  size="sm"
+            )}
+          </div>
+        ) : (
+          /* ================= IMAGE MODE ================= */
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {filteredProducts.slice(0, visibleCount).map((product) => {
+              const isActive = product.isActive !== false;
+              const isOutOfStock = product.trackStock !== false && product.stock <= 0;
+              const isAvailable = isActive && !isOutOfStock;
+              const cartQuantity = cartCounts[product.id] || 0;
+              const isInCart = cartQuantity > 0;
+
+              return (
+                <div
+                  key={product.id}
+                  className={cn(
+                    "bg-card border rounded-2xl overflow-hidden transition-all flex flex-col relative select-none",
+                    isAvailable
+                      ? isInCart
+                        ? "cursor-pointer group border-blue-600 dark:border-blue-500 dark:ring-blue-500/20 shadow-xs active:scale-[0.98]"
+                        : "cursor-pointer group hover:shadow-md hover:border-primary/50 active:scale-[0.98]"
+                      : "opacity-40 grayscale-[30%] bg-slate-100 dark:bg-slate-900/60 border-dashed border-slate-300 dark:border-slate-800 cursor-not-allowed pointer-events-none"
+                  )}
                   onClick={() => {
-                    setSearchQuery('');
-                    setActiveCategory('Semua');
+                    if (isAvailable) {
+                      const colorIdx = productIndexMap.get(product.id);
+                      if (product.modifierGroupIds && product.modifierGroupIds.length > 0) {
+                        setSelectedProductForModal({ ...product, colorIndex: colorIdx } as any);
+                        setIsModalOpen(true);
+                      } else {
+                        handleAddToCart(product, [], '', 1, colorIdx);
+                      }
+                    }
                   }}
-                  className="mt-3 text-xs rounded-xl"
                 >
-                  Tampilkan Semua Produk
-                </Button>
-              )}
-            </div>
-          )}
-        </div>
-        
+                  {!isActive ? (
+                    <div className="absolute inset-0 bg-slate-950/70 z-20 flex flex-col items-center justify-center p-2 text-center backdrop-blur-[1px]">
+                      <span className="text-white text-[11px] font-semibold tracking-wider uppercase bg-rose-600/95 px-2.5 py-1 rounded-md shadow-xs">
+                        TIDAK TERSEDIA
+                      </span>
+                      <span className="text-[10px] text-slate-300 mt-1 font-medium">Menu Dinonaktifkan</span>
+                    </div>
+                  ) : isOutOfStock ? (
+                    <div className="absolute inset-0 bg-slate-950/60 z-20 flex flex-col items-center justify-center p-2 text-center backdrop-blur-[1px]">
+                      <span className="text-white text-[11px] font-semibold tracking-wider uppercase bg-amber-600/95 px-2.5 py-1 rounded-md shadow-xs">
+                        STOK HABIS
+                      </span>
+                    </div>
+                  ) : null}
+
+                  {product.isFeatured && (
+                    <div className="absolute top-2 left-2 z-10 bg-blue-600 text-white text-[10px] font-semibold px-2 py-2 rounded-full shadow-md flex items-center gap-1 backdrop-blur-sm">
+                      <ThumbsUp className="w-4 h-4" />
+                      
+                    </div>
+                  )}
+
+                  <div className="aspect-[4/3] bg-muted relative overflow-hidden flex items-center justify-center">
+                    {product.imageUrl ? (
+                      <>
+                        <img
+                          src={product.imageUrl}
+                          alt={product.name}
+                          loading="lazy"
+                          className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                            e.currentTarget.nextElementSibling?.classList.add('flex');
+                          }}
+                        />
+                        <div className="hidden w-full h-full items-center justify-center text-muted-foreground bg-primary/5 text-4xl font-semibold text-primary/20">
+                          {product.name.charAt(0)}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-primary/5 text-4xl font-semibold text-primary/20">
+                        {product.name.charAt(0)}
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-3 flex flex-col flex-1">
+                    <h3 className="font-semibold text-sm line-clamp-2 leading-tight mb-1">{product.name}</h3>
+
+                    <div className="mt-auto flex items-center justify-between gap-1 pt-0.5">
+                      <span className="text-primary font-semibold text-sm">{formatCurrency(parseFloat(product.price))}</span>
+                      {isInCart && (
+                        <span className="flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full bg-blue-600 text-white text-[11px] font-semibold shadow-xs select-none">
+                          {cartQuantity}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+            {filteredProducts.length === 0 && (
+              <div className="col-span-full py-16 text-center text-muted-foreground flex flex-col items-center justify-center">
+                <Package className="w-10 h-10 mb-2.5 opacity-30 text-muted-foreground" />
+                <p className="text-sm font-semibold text-foreground">Tidak ada produk ditemukan</p>
+                <p className="text-xs text-muted-foreground mt-1">Coba kata kunci lain atau ubah kategori pilihan</p>
+                {(searchQuery || activeCategory !== 'Semua') && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setActiveCategory('Semua');
+                    }}
+                    className="mt-3 text-xs rounded-xl"
+                  >
+                    Tampilkan Semua Produk
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Infinite Scroll Skeleton Placeholders */}
         {visibleCount < filteredProducts.length && (
-          <div ref={observerTarget} className="mt-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 py-2">
-            {Array.from({ length: 4 }).map((_, idx) => (
-              <div key={idx} className="bg-card border border-border/60 rounded-2xl h-44 animate-pulse p-3 flex flex-col justify-between">
-                <div className="w-full h-24 bg-muted/60 rounded-xl"></div>
-                <div className="space-y-1.5 mt-2">
-                  <div className="h-3.5 w-3/4 bg-muted/60 rounded"></div>
-                  <div className="h-3 w-1/2 bg-muted/60 rounded"></div>
+          <div ref={observerTarget} className={cn(
+            "mt-4 py-2",
+            displayMode === 'color'
+              ? "grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+              : "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
+          )}>
+            {Array.from({ length: 6 }).map((_, idx) => (
+              displayMode === 'color' ? (
+                <div key={idx} className="bg-muted/40 border border-border/60 rounded-2xl h-[150px] animate-pulse p-4 flex flex-col justify-between">
+                  <div className="w-9 h-9 bg-muted rounded-xl"></div>
+                  <div className="space-y-1.5 my-auto">
+                    <div className="h-4 w-3/4 bg-muted rounded"></div>
+                    <div className="h-3 w-1/2 bg-muted rounded"></div>
+                  </div>
+                  <div className="h-3.5 w-1/3 bg-muted rounded"></div>
                 </div>
-              </div>
+              ) : (
+                <div key={idx} className="bg-card border border-border/60 rounded-2xl h-44 animate-pulse p-3 flex flex-col justify-between">
+                  <div className="w-full h-24 bg-muted/60 rounded-xl"></div>
+                  <div className="space-y-1.5 mt-2">
+                    <div className="h-3.5 w-3/4 bg-muted/60 rounded"></div>
+                    <div className="h-3 w-1/2 bg-muted/60 rounded"></div>
+                  </div>
+                </div>
+              )
             ))}
           </div>
         )}
@@ -472,7 +724,7 @@ export function ProductCatalog({
         product={selectedProductForModal}
         allModifierGroups={modifierGroups || []}
         onAddToCart={(product, modifiers, notes, qty) => {
-          handleAddToCart(product, modifiers, notes, qty);
+          handleAddToCart(product, modifiers, notes, qty, (selectedProductForModal as any)?.colorIndex);
           toast.success(`${product.name} ditambahkan`);
         }}
       />

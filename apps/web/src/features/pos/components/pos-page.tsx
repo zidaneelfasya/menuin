@@ -57,7 +57,12 @@ export function POSPage({
   React.useEffect(() => {
     setMounted(true);
     if (initialProducts && initialProducts.length > 0) {
-      useCartStore.getState().syncProductImages(initialProducts);
+      const mapped = initialProducts.map((p, idx) => ({
+        id: p.id,
+        imageUrl: p.imageUrl,
+        colorIndex: idx,
+      }));
+      useCartStore.getState().syncProductImages(mapped);
     }
   }, [initialProducts]);
 

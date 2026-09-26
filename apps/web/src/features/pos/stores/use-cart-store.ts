@@ -8,6 +8,7 @@ export interface CartItem {
   price: number;
   quantity: number;
   imageUrl?: string | null;
+  colorIndex?: number;
   modifiers?: any[];
   notes?: string;
 }
@@ -20,6 +21,8 @@ interface CartStore {
   customerName: string;
   tableNumber: string;
   appliedPromo: { id: string; name: string; discountAmount: number } | null;
+  displayMode: 'image' | 'color';
+  setDisplayMode: (mode: 'image' | 'color') => void;
   addItem: (item: Omit<CartItem, 'id' | 'quantity'>) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
@@ -32,7 +35,7 @@ interface CartStore {
   getSubtotal: () => number;
   getTaxAmount: () => number;
   getTotal: () => number;
-  syncProductImages: (products: { id: string; imageUrl?: string | null }[]) => void;
+  syncProductImages: (products: { id: string; imageUrl?: string | null; colorIndex?: number }[]) => void;
 }
 
 export const useCartStore = create<CartStore>()(
@@ -45,15 +48,31 @@ export const useCartStore = create<CartStore>()(
         customerName: '',
         tableNumber: '',
         appliedPromo: null,
+        displayMode: 'image',
+
+        setDisplayMode: (displayMode) => {
+          set({ displayMode });
+          try {
+            localStorage.setItem('menuin_pos_display_mode', displayMode);
+          } catch {}
+        },
 
         syncProductImages: (products) => {
           set((state) => {
             let hasChanges = false;
             const updatedItems = state.items.map((item) => {
               const matched = products.find((p) => p.id === item.productId);
-              if (matched && matched.imageUrl && item.imageUrl !== matched.imageUrl) {
-                hasChanges = true;
-                return { ...item, imageUrl: matched.imageUrl };
+              if (matched) {
+                let updated = item;
+                if (matched.imageUrl && item.imageUrl !== matched.imageUrl) {
+                  hasChanges = true;
+                  updated = { ...updated, imageUrl: matched.imageUrl };
+                }
+                if (typeof matched.colorIndex === 'number' && item.colorIndex !== matched.colorIndex) {
+                  hasChanges = true;
+                  updated = { ...updated, colorIndex: matched.colorIndex };
+                }
+                return updated;
               }
               return item;
             });
@@ -72,7 +91,12 @@ export const useCartStore = create<CartStore>()(
             return {
               items: state.items.map((i) =>
                 i.id === uniqueId
-                  ? { ...i, quantity: i.quantity + 1, imageUrl: newItem.imageUrl || i.imageUrl }
+                  ? { 
+                      ...i, 
+                      quantity: i.quantity + 1, 
+                      imageUrl: newItem.imageUrl || i.imageUrl,
+                      colorIndex: typeof newItem.colorIndex === 'number' ? newItem.colorIndex : i.colorIndex
+                    }
                   : i
               ),
             };
