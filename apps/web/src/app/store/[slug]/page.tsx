@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { categories, products, tenants, productModifierGroups, modifierGroups, transactionItems } from "@/lib/db/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, or } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { CatalogProductList } from "./catalog-product-list";
 import { connection } from "next/server";
@@ -19,7 +19,7 @@ export default async function StorePage({
   const tableNumber = table || null;
 
   // Get tenant
-  const tenantResult = await db.select().from(tenants).where(eq(tenants.slug, slug)).limit(1);
+  const tenantResult = await db.select().from(tenants).where(or(eq(tenants.slug, slug), eq(tenants.outletKey, slug))).limit(1);
   if (tenantResult.length === 0) notFound();
   const tenant = tenantResult[0];
 
