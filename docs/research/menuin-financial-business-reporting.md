@@ -1077,3 +1077,39 @@ Attempting to build full accounting capabilities inside a POS system is a catast
     * *Type:* Global F&B Financial Accounting Standard
     * *Relevant Information:* Prime Cost benchmarks (55% – 62%), standard classification of food and beverage revenues, operating expense taxonomy, and restaurant income statement structure.
     * *Access Date:* September 2026
+
+---
+
+## 25. Taksonomi Kanal Pesanan (Order Channel) vs Instrumen Pembayaran (Payment Tender) di Menuin
+
+Untuk menghindari kerancuan pelaporan (*reporting ambiguity*), Menuin memisahkan secara ketat dua dimensi transaksi yang sering tertukar:
+
+### 25.1 Matriks 2-Dimensi: Asal Pesanan vs Cara Bayar
+
+```
+                        ┌────────────────────────────────────────────────────────┐
+                        │              METODE PEMBAYARAN (TENDER)                │
+                        ├────────────────────┬──────────────────┬────────────────┤
+                        │    CASH (Tunai)    │    QRIS Kasir    │ ONLINE Gateway │
+┌───────────┬───────────┼────────────────────┼──────────────────┼────────────────┤
+│           │    POS    │ Kasir terima uang  │ Kasir sodorkan   │ Tidak berlaku  │
+│   KANAL   │  (Kasir)  │ fisik di kasir     │ QRIS ke pembeli  │ di meja kasir  │
+│  PESANAN  ├───────────┼────────────────────┼──────────────────┼────────────────┤
+│ (SOURCE)  │STOREFRONT │ Tamu pesan di HP,  │ Tidak langsung;  │ Tamu bayar di  │
+│           │(Self-Order│ bayar tunai di     │ biasanya masuk   │ HP via Midtrans│
+│           │  QR Meja) │ meja kasir         │ via Gateway      │ (QRIS/VA/OVO)  │
+└───────────┴───────────┴────────────────────┴──────────────────┴────────────────┘
+```
+
+### 25.2 Definisi & Perbedaan Kunci
+1. **`QRIS` (Tender Method):** Instrumen pembayaran QR standar BI. Kasir menyodorkan stiker/layar QRIS di outlet, kasir memverifikasi manual mutasi, kasir menandai status lunas di POS.
+2. **`ONLINE` (Payment Gateway):** Gerbang pembayaran otomatis terintegrasi (Midtrans Snap) pada Storefront. Pembeli membayar mandiri di HP tanpa kasir perlu sentuh layar kasir. Verifikasi dilakukan otomatis oleh webhook server-to-server.
+3. **Deteksi Transaksi Storefront:**
+   * Kolom `source`: `'ONLINE'` atau `'WEB_ORDER'` / `'QR'`.
+   * Kolom `cashierMembershipId`: bernilai `NULL` saat pesanan pertama kali dibuat oleh pelanggan.
+   * Kolom `tableNumber` / `customerPhone`: terisi dari inputan checkout mandiri.
+4. **Metrik Komparasi Kanal untuk Pemilik Bisnis:**
+   * **Tingkat Adopsi Self-Order (%):** Mengukur efisiensi kasir dan pengurangan antrean fisik di outlet.
+   * **Perbandingan AOV (Basket Size):** Menilai efektivitas upselling katalog foto Storefront vs penawaran kasir tatap muka.
+   * **Split Penjualan Bersih (Net Sales):** Memetakan porsi omzet dari kasir konvensional vs digital order.
+
