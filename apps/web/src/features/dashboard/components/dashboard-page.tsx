@@ -7,6 +7,7 @@ import { PeriodFilterBar } from './period-filter-bar';
 import { KpiCards } from './kpi-cards';
 import { SalesChartCard } from './sales-chart-card';
 import { TopSellingCard } from './top-selling-card';
+import { PaymentMixCard } from './payment-mix-card';
 import { BusinessInsightsCard } from './business-insights-card';
 import { OperationalPulseCard } from './operational-pulse-card';
 import { AttentionNeededCard } from './attention-needed-card';
@@ -31,9 +32,10 @@ export function DashboardPage({ data, outletKey }: DashboardPageProps) {
 
   return (
     <div className="space-y-6 pb-16 max-w-7xl mx-auto">
-      {/* 1. Hero / Outlet Overview */}
+      {/* 1. Hero / Operational Command Bar */}
       <OutletHero 
         outlet={data.outlet} 
+        activeShift={data.operationalPulse.activeShift}
         onScrollToAttention={scrollToAttention}
       />
 
@@ -51,7 +53,7 @@ export function DashboardPage({ data, outletKey }: DashboardPageProps) {
       />
 
       {/* 4. Sales Chart & Top Selling Menu */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div className="lg:col-span-2">
           <SalesChartCard 
             data={data.chartData}
@@ -67,10 +69,17 @@ export function DashboardPage({ data, outletKey }: DashboardPageProps) {
         </div>
       </div>
 
-      {/* 5. Ringkasan Bisnis (Data-Driven Smart Insights) */}
-      <BusinessInsightsCard 
-        insights={data.insights}
-      />
+      {/* 5. Business Intelligence & Payment Tender Breakdown */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        <BusinessInsightsCard 
+          insights={data.insights}
+        />
+
+        <PaymentMixCard 
+          paymentMix={data.paymentMix || []}
+          channelMix={data.channelMix || []}
+        />
+      </div>
 
       {/* 6. Special Tahunan Section: Annual Recap Monthly Breakdown */}
       {data.tab === 'tahunan' && data.annualBreakdown && (
@@ -82,7 +91,7 @@ export function DashboardPage({ data, outletKey }: DashboardPageProps) {
       )}
 
       {/* 7. Operational Pulse & Attention Needed */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div id="attention-section" className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         <OperationalPulseCard 
           pulse={data.operationalPulse}
           outletKey={outletKey}

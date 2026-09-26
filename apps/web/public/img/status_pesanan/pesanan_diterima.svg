@@ -1,0 +1,8 @@
+<svg width="139" height="118" viewBox="0 0 139 118" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M68.5 107H7C4.79086 107 3 105.209 3 103V13C3 10.7909 4.79086 9 7 9H28.375M104.5 45V13C104.5 10.7909 102.709 9 100.5 9H79.125" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
+  <rect x="31" y="3" width="42" height="11" rx="5.5" stroke="currentColor" stroke-width="6"/>
+  <line x1="26" y1="40" x2="77" y2="40" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
+  <line x1="24.9922" y1="61.5" x2="61.0041" y2="61.5" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
+  <path d="M107.5 58C123.24 58 136 70.7599 136 86.5C136 102.24 123.24 115 107.5 115C91.7599 115 79 102.24 79 86.5C79 70.7599 91.7599 58 107.5 58Z" stroke="var(--catalog-primary, #0E59F9)" stroke-width="6"/>
+  <path d="M92.8672 85.5195L103.773 95.3446C104.177 95.7088 104.798 95.6829 105.171 95.2864L121.867 77.5195" stroke="var(--catalog-primary, #0E59F9)" stroke-width="6" stroke-linecap="round"/>
+</svg>

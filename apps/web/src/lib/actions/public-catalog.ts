@@ -2,9 +2,10 @@
 
 import { db } from "@/lib/db";
 import { tenants, transactions, transactionItems, products } from "@/lib/db/schema";
-import { eq, inArray, and } from "drizzle-orm";
+import { eq, inArray, and, or } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { generateOrderNumber } from "@/lib/utils/order-number";
 
 const orderSchema = z.object({
   tenantSlug: z.string(),
@@ -24,15 +25,6 @@ const orderSchema = z.object({
   paymentMethod: z.string().default('ONLINE'),
   returnUrl: z.string().optional()
 });
-
-function generateOrderNumber() {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let result = '#';
-  for (let i = 0; i < 6; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-}
 
 export async function createOnlineOrder(formData: z.infer<typeof orderSchema>) {
   try {
@@ -115,7 +107,7 @@ export async function createOnlineOrder(formData: z.infer<typeof orderSchema>) {
     // Always start online orders as PENDING so they wait in the "Menunggu Pembayaran" queue
     // until the customer pays at the counter or completes Midtrans checkout.
     
-    const orderNumber = generateOrderNumber();
+    const orderNumber = generateOrderNumber(tenant);
 
     // 3. Create Transaction
     const [newTransaction] = await db.insert(transactions).values({
@@ -166,10 +158,17 @@ export async function generatePaymentToken(orderNumber: string, tenantSlug: stri
     if (tenantResult.length === 0) return { error: "Toko tidak ditemukan" };
     const tenant = tenantResult[0];
 
+    const cleanOrderNumber = orderNumber.replace(/^#/, '').trim().toUpperCase();
+    const hashOrderNumber = '#' + cleanOrderNumber;
+
     const orderResult = await db.select().from(transactions).where(
       and(
-        eq(transactions.orderNumber, orderNumber),
-        eq(transactions.tenantId, tenant.id)
+        eq(transactions.tenantId, tenant.id),
+        or(
+          eq(transactions.orderNumber, cleanOrderNumber),
+          eq(transactions.orderNumber, hashOrderNumber),
+          eq(transactions.orderNumber, orderNumber)
+        )
       )
     ).limit(1);
 
@@ -250,12 +249,19 @@ export async function updateOrderPaymentToCash(orderNumber: string, tenantSlug: 
     const tenantResult = await db.select().from(tenants).where(eq(tenants.slug, tenantSlug)).limit(1);
     if (tenantResult.length === 0) return { error: "Toko tidak ditemukan" };
     
+    const cleanOrderNumber = orderNumber.replace(/^#/, '').trim().toUpperCase();
+    const hashOrderNumber = '#' + cleanOrderNumber;
+    
     await db.update(transactions)
       .set({ paymentMethod: 'CASH' })
       .where(
         and(
-          eq(transactions.orderNumber, orderNumber),
-          eq(transactions.tenantId, tenantResult[0].id)
+          eq(transactions.tenantId, tenantResult[0].id),
+          or(
+            eq(transactions.orderNumber, cleanOrderNumber),
+            eq(transactions.orderNumber, hashOrderNumber),
+            eq(transactions.orderNumber, orderNumber)
+          )
         )
       );
       
@@ -272,7 +278,19 @@ export async function verifyOnlinePaymentStatus(orderNumber: string, tenantSlug:
     if (tenantResult.length === 0) return { error: "Toko tidak ditemukan" };
     const tenant = tenantResult[0];
 
-    const txs = await db.select().from(transactions).where(and(eq(transactions.orderNumber, orderNumber), eq(transactions.tenantId, tenant.id))).limit(1);
+    const cleanOrderNumber = orderNumber.replace(/^#/, '').trim().toUpperCase();
+    const hashOrderNumber = '#' + cleanOrderNumber;
+
+    const txs = await db.select().from(transactions).where(
+      and(
+        eq(transactions.tenantId, tenant.id),
+        or(
+          eq(transactions.orderNumber, cleanOrderNumber),
+          eq(transactions.orderNumber, hashOrderNumber),
+          eq(transactions.orderNumber, orderNumber)
+        )
+      )
+    ).limit(1);
     if (txs.length === 0) return { error: "Pesanan tidak ditemukan" };
     const order = txs[0];
     

@@ -3,6 +3,13 @@
 import React, { useRef, useEffect } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { OrderStatusRive } from "./order-status-rive";
+import {
+  MenungguPembayaranVector,
+  PesananDiterimaVector,
+  ProcessingVector,
+  ReadyVector,
+  SelesaiVector,
+} from "./order-status-vectors";
 
 export type OrderStatusType =
   | "AWAITING_PAYMENT"
@@ -27,11 +34,13 @@ export const RIVE_STATUS_SOURCES: Partial<Record<OrderStatusType, string>> = {
 interface OrderStatusVisualProps {
   status: OrderStatusType;
   orderNumber?: string;
+  primaryColor?: string;
   className?: string;
 }
 
 export function OrderStatusVisual({
   status,
+  primaryColor,
   className = "",
 }: OrderStatusVisualProps) {
   // Normalize WAITING_PAYMENT to AWAITING_PAYMENT for internal matching
@@ -44,91 +53,250 @@ export function OrderStatusVisual({
     prevStatusRef.current = normalizedStatus;
   }, [normalizedStatus]);
 
-  // Check if a Rive animation is available for this status
-  const riveSrc = RIVE_STATUS_SOURCES[normalizedStatus];
+  // Is this one of the 5 progressive vector states?
+  const isVectorStatus = [
+    "AWAITING_PAYMENT",
+    "CONFIRMED",
+    "PROCESSING",
+    "READY",
+    "COMPLETED",
+  ].includes(normalizedStatus);
 
-  // Map state to corresponding soft pastel blob variant (for fallback states)
+  // Map state to corresponding soft pastel blob variant (for exception states)
   const blobVariant = getBlobVariant(normalizedStatus);
 
   return (
     <div
-      className={`relative w-full h-full overflow-hidden select-none isolate ${className}`}
+      className={`relative w-full h-full overflow-hidden select-none isolate flex items-center justify-center ${className}`}
     >
-      {/* 
-        LAYER 1: SOFT PASTEL BACKGROUND BLOB (Only for non-Rive fallback states)
-      */}
-      {!riveSrc && (
-        <BackgroundBlob variant={blobVariant} />
-      )}
+      {/* Dynamic Minimalist Stage Blob family (4-8% subtle theme opacity) */}
+      {isVectorStatus && <StageBlob status={normalizedStatus} primaryColor={primaryColor} />}
 
-      {/* 
-        MAIN VISUAL STAGE
-        If Rive animation exists, render OrderStatusRive with 1:1 ratio.
-        Otherwise render fallback SVG animations.
-      */}
+      {/* Background blob only for exception states */}
+      {!isVectorStatus && <BackgroundBlob variant={blobVariant} />}
+
+      {/* Main Visual Stage */}
       <AnimatePresence mode="wait">
-        {riveSrc ? (
+        {normalizedStatus === "AWAITING_PAYMENT" && (
           <motion.div
-            key={`rive-${normalizedStatus}`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            key="vector-awaiting-payment"
+            initial={{ opacity: 0, y: 3 }}
+            animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full h-full absolute inset-0"
+            transition={{ duration: 0.22, ease: "easeOut" }}
+            className="relative z-10 w-full h-full flex items-center justify-center p-4 sm:p-6"
           >
-            <OrderStatusRive
-              key={riveSrc}
-              src={riveSrc}
-              stateMachine="State Machine 1"
-              ariaLabel={`Status: ${normalizedStatus}`}
-              className="w-full h-full"
-            />
+            <MenungguPembayaranVector primaryColor={primaryColor} className="max-w-[180px] max-h-[145px] sm:max-w-[210px] sm:max-h-[165px]" />
           </motion.div>
-        ) : (
-          <>
-            {normalizedStatus === "PAYMENT_FAILED" && (
-              <motion.div
-                key="payment-failed"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-                className="relative w-full h-full flex items-center justify-center"
-              >
-                <PaymentFailedVisual />
-              </motion.div>
-            )}
+        )}
 
-            {normalizedStatus === "CANCELLED" && (
-              <motion.div
-                key="cancelled"
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-                className="relative w-full h-full flex items-center justify-center"
-              >
-                <CancelledVisual />
-              </motion.div>
-            )}
+        {normalizedStatus === "CONFIRMED" && (
+          <motion.div
+            key="vector-confirmed"
+            initial={{ opacity: 0, y: 3 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
+            className="relative z-10 w-full h-full flex items-center justify-center p-4 sm:p-6"
+          >
+            <PesananDiterimaVector primaryColor={primaryColor} className="max-w-[170px] max-h-[145px] sm:max-w-[200px] sm:max-h-[165px]" />
+          </motion.div>
+        )}
 
-            {normalizedStatus === "REJECTED" && (
-              <motion.div
-                key="rejected"
-                initial={{ opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-                className="relative w-full h-full flex items-center justify-center"
-              >
-                <RejectedVisual />
-              </motion.div>
-            )}
-          </>
+        {normalizedStatus === "PROCESSING" && (
+          <motion.div
+            key="vector-processing"
+            initial={{ opacity: 0, y: 3 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
+            className="relative z-10 w-full h-full flex items-center justify-center p-4 sm:p-6"
+          >
+            <ProcessingVector primaryColor={primaryColor} className="max-w-[185px] max-h-[170px] sm:max-w-[215px] sm:max-h-[195px]" />
+          </motion.div>
+        )}
+
+        {normalizedStatus === "READY" && (
+          <motion.div
+            key="vector-ready"
+            initial={{ opacity: 0, y: 3 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
+            className="relative z-10 w-full h-full flex items-center justify-center p-4 sm:p-6"
+          >
+            <ReadyVector primaryColor={primaryColor} className="max-w-[175px] max-h-[170px] sm:max-w-[205px] sm:max-h-[195px]" />
+          </motion.div>
+        )}
+
+        {normalizedStatus === "COMPLETED" && (
+          <motion.div
+            key="vector-completed"
+            initial={{ opacity: 0, y: 3 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
+            className="relative z-10 w-full h-full flex items-center justify-center p-4 sm:p-6"
+          >
+            <SelesaiVector primaryColor={primaryColor} className="max-w-[175px] max-h-[150px] sm:max-w-[205px] sm:max-h-[175px]" />
+          </motion.div>
+        )}
+
+        {normalizedStatus === "PAYMENT_FAILED" && (
+          <motion.div
+            key="payment-failed"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+            className="relative w-full h-full flex items-center justify-center"
+          >
+            <PaymentFailedVisual />
+          </motion.div>
+        )}
+
+        {normalizedStatus === "CANCELLED" && (
+          <motion.div
+            key="cancelled"
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+            className="relative w-full h-full flex items-center justify-center"
+          >
+            <CancelledVisual />
+          </motion.div>
+        )}
+
+        {normalizedStatus === "REJECTED" && (
+          <motion.div
+            key="rejected"
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+            className="relative w-full h-full flex items-center justify-center"
+          >
+            <RejectedVisual />
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
   );
+}
+/**
+ * StageBlob:
+ * "Keluarga blob" organik minimalis sebagai stage di belakang ilustrasi status pesanan.
+ * - Formula: Simple + Organic + Subtle + Asymmetric
+ * - 5–7 anchor points dengan kurva Bezier halus, tanpa sudut tajam
+ * - Opacity 6.5% (dalam rentang 4–8% rekomendasi) mengikuti tema storefront
+ * - Silhouette & rotasi disesuaikan dengan karakter tiap status pesanan
+ */
+function StageBlob({
+  status,
+  primaryColor,
+  className = "",
+}: {
+  status: OrderStatusType;
+  primaryColor?: string;
+  className?: string;
+}) {
+  const accent = primaryColor || "var(--catalog-primary, var(--outlet-primary, #0E59F9))";
+
+  switch (status) {
+    case "AWAITING_PAYMENT":
+    case "WAITING_PAYMENT":
+      // Menunggu Konfirmasi: Lebih kompak, sedikit condong natural (-3deg)
+      return (
+        <div className={`absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0 ${className}`} aria-hidden="true">
+          <div className="w-[230px] h-[230px] sm:w-[260px] sm:h-[260px] flex items-center justify-center -rotate-3 transition-transform duration-500">
+            <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+              <path
+                d="M105 32 C135 32, 155 40, 160 62 C168 88, 172 110, 162 130 C150 152, 130 162, 108 162 C78 162, 42 154, 38 132 C34 105, 32 78, 48 55 C62 38, 80 32, 105 32 Z"
+                fill={accent}
+                fillOpacity={0.065}
+              />
+            </svg>
+          </div>
+        </div>
+      );
+
+    case "CONFIRMED":
+      // Pesanan Diterima: Rounded & proporsional membingkai papan nota (+1deg)
+      return (
+        <div className={`absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0 ${className}`} aria-hidden="true">
+          <div className="w-[220px] h-[220px] sm:w-[250px] sm:h-[250px] flex items-center justify-center rotate-1 transition-transform duration-500">
+            <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+              <path
+                d="M96 28 C126 28, 148 35, 156 56 C166 80, 172 105, 165 132 C158 155, 142 168, 112 168 C80 168, 48 160, 42 136 C36 108, 38 72, 54 50 C68 32, 80 28, 96 28 Z"
+                fill={accent}
+                fillOpacity={0.065}
+              />
+            </svg>
+          </div>
+        </div>
+      );
+
+    case "PROCESSING":
+      // Sedang Disiapkan: Lebih dinamis, melebar diagonal mengikuti kemiringan wajan & api (+6deg)
+      return (
+        <div className={`absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0 ${className}`} aria-hidden="true">
+          <div className="w-[245px] h-[245px] sm:w-[275px] sm:h-[275px] flex items-center justify-center rotate-6 transition-transform duration-500">
+            <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+              <path
+                d="M130 22 C155 22, 172 38, 178 62 C186 92, 188 120, 172 145 C156 168, 132 178, 102 176 C72 174, 32 162, 28 128 C24 94, 36 60, 62 40 C84 24, 110 22, 130 22 Z"
+                fill={accent}
+                fillOpacity={0.065}
+              />
+            </svg>
+          </div>
+        </div>
+      );
+
+    case "READY":
+      // Pesanan Sudah Siap: Lebih lebar horizontal membingkai tudung saji & piring (-5deg)
+      return (
+        <div className={`absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0 ${className}`} aria-hidden="true">
+          <div className="w-[255px] h-[220px] sm:w-[285px] sm:h-[245px] flex items-center justify-center -rotate-5 transition-transform duration-500">
+            <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+              <path
+                d="M92 26 C124 26, 155 35, 168 58 C182 82, 192 112, 182 136 C172 158, 142 168, 105 168 C68 168, 22 156, 18 128 C14 96, 26 56, 52 38 C68 28, 80 26, 92 26 Z"
+                fill={accent}
+                fillOpacity={0.065}
+              />
+            </svg>
+          </div>
+        </div>
+      );
+
+    case "COMPLETED":
+      // Pesanan Selesai: Rounded organik + 1 aksen blob kecil di samping (dual blob 6.5% + 4%)
+      return (
+        <div className={`absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0 ${className}`} aria-hidden="true">
+          <div className="w-[235px] h-[235px] sm:w-[265px] sm:h-[265px] relative flex items-center justify-center rotate-2 transition-transform duration-500">
+            <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+              {/* Blob Utama (6.5%) */}
+              <path
+                d="M102 24 C132 24, 162 36, 168 62 C176 92, 172 124, 156 148 C140 170, 112 175, 86 172 C56 168, 26 150, 24 118 C22 84, 38 48, 65 32 C80 24, 92 24, 102 24 Z"
+                fill={accent}
+                fillOpacity={0.065}
+              />
+              {/* Aksen Blob Kecil di samping kanan bawah (4%) */}
+              <circle
+                cx="178"
+                cy="148"
+                r="12"
+                fill={accent}
+                fillOpacity={0.04}
+              />
+            </svg>
+          </div>
+        </div>
+      );
+
+    default:
+      return null;
+  }
 }
 
 function getBlobVariant(status: string): "blue" | "cyan" | "mint" | "rose" | "amber" | "slate" {
@@ -167,32 +335,32 @@ function BackgroundBlob({
     blue: {
       fill: "#E0F2FE", // Soft sky blue
       stroke: "#BAE6FD",
-      opacity: 0.75,
+      opacity: 0.1,
     },
     cyan: {
       fill: "#E0F7FA", // Soft cyan
       stroke: "#B2EBF2",
-      opacity: 0.7,
+      opacity: 0.1,
     },
     mint: {
       fill: "#DCFCE7", // Soft mint
       stroke: "#BBF7D0",
-      opacity: 0.75,
+      opacity: 0.1,
     },
     rose: {
       fill: "#FFE4E6", // Soft rose/coral
       stroke: "#FECDD3",
-      opacity: 0.75,
+      opacity: 0.1,
     },
     amber: {
       fill: "#FFEDD5", // Soft peach/amber
       stroke: "#FED7AA",
-      opacity: 0.75,
+      opacity: 0.1,
     },
     slate: {
       fill: "#F1F5F9", // Soft slate/cool-gray
       stroke: "#CBD5E1",
-      opacity: 0.8,
+      opacity: 0.1,
     },
   };
 

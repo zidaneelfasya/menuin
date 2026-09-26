@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { db } from "@/lib/db";
-import { tenants } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { tenants, products, productModifierGroups, modifierGroups } from "@/lib/db/schema";
+import { eq, and } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { CheckoutClient } from "./checkout-client";
 
@@ -39,9 +39,54 @@ export default async function CheckoutPage({
     serviceChargeRate: parseFloat(tenant.serviceChargeRate || '0'),
   };
 
+  // Get products available online
+  const productsList = await db
+    .select({
+      id: products.id,
+      name: products.name,
+      price: products.price,
+      imageUrl: products.imageUrl,
+      description: products.description,
+      isFeatured: products.isFeatured,
+      categoryId: products.categoryId,
+    })
+    .from(products)
+    .where(and(
+      eq(products.tenantId, tenant.id),
+      eq(products.isActive, true),
+      eq(products.isAvailableOnline, true)
+    ));
+
+  // Fetch product modifiers mapping
+  const productMods = await db
+    .select({
+      productId: productModifierGroups.productId,
+      modifierGroupId: productModifierGroups.modifierGroupId,
+    })
+    .from(productModifierGroups)
+    .where(eq(productModifierGroups.tenantId, tenant.id));
+    
+  const productsWithMods = productsList.map((p) => ({
+    ...p,
+    modifierGroupIds: productMods
+      .filter((pm) => pm.productId === p.id)
+      .map((pm) => pm.modifierGroupId),
+  }));
+
+  // Get all modifier groups for this tenant
+  const tenantModGroups = await db.query.modifierGroups.findMany({
+    where: eq(modifierGroups.tenantId, tenant.id),
+    with: {
+      modifiers: true,
+    },
+  });
+
   return (
-    <div className="max-w-xl mx-auto">
-      <CheckoutClient tenantSlug={slug} settings={settings} />
-    </div>
+    <CheckoutClient
+      tenantSlug={slug}
+      settings={settings}
+      products={productsWithMods}
+      modifierGroups={tenantModGroups as any}
+    />
   );
 }

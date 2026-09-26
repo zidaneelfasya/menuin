@@ -95,7 +95,7 @@ export function OperationalPulseCard({ pulse, outletKey }: OperationalPulseCardP
 
             <div className="space-y-0.5 pt-0.5">
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold text-gray-900">
+                <span className="text-xs font-semibold text-gray-900">
                   {pulse.devices.active} / {pulse.devices.total}
                 </span>
                 <span className="text-xs text-gray-500">Online</span>
@@ -114,7 +114,7 @@ export function OperationalPulseCard({ pulse, outletKey }: OperationalPulseCardP
 
           <Link 
             href={`/outlet/${outletKey}/settings/devices`}
-            className="inline-flex items-center text-xs font-medium text-blue-600 hover:text-blue-700 pt-1"
+            className="inline-flex items-center text-xs font-medium text-emerald-600 hover:text-emerald-700 pt-1"
           >
             Daftar Perangkat <ChevronRight className="w-3 h-3 ml-0.5" />
           </Link>
@@ -132,7 +132,7 @@ export function OperationalPulseCard({ pulse, outletKey }: OperationalPulseCardP
 
             <div className="space-y-0.5 pt-0.5">
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold text-gray-900">
+                <span className="text-xs font-semibold text-gray-900">
                   {pulse.stockHealth.total} Produk
                 </span>
               </div>

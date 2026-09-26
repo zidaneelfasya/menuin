@@ -130,7 +130,7 @@ export function StartShiftModal({
                 <div className="space-y-2">
                   <Label htmlFor="posStartingCash">Modal Awal Kas (Rp)</Label>
                   <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-muted-foreground text-sm">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-semibold text-muted-foreground text-sm">
                       Rp
                     </span>
                     <Input
@@ -141,7 +141,7 @@ export function StartShiftModal({
                       value={formattedDisplayAmount}
                       onChange={handleAmountChange}
                       autoFocus
-                      className="pl-11 font-financial text-lg font-bold h-11 tabular-nums"
+                      className="pl-11 font-mono text-lg font-semibold h-11"
                     />
                   </div>
                 </div>
@@ -205,9 +205,9 @@ export function StartShiftModal({
                   </div>
                 </div>
 
-                <div className="bg-primary/10 border border-primary/20 p-3 rounded-xl flex justify-between items-center font-financial tabular-nums">
-                  <span className="text-xs font-bold text-foreground font-sans">Total Modal Dihitung:</span>
-                  <span className="text-base font-bold text-primary">
+                <div className="bg-primary/10 border border-primary/20 p-3 rounded-xl flex justify-between items-center">
+                  <span className="text-xs font-semibold text-foreground">Total Modal Dihitung:</span>
+                  <span className="text-base font-semibold font-mono text-primary">
                     {formatCurrency(calculatorTotal)}
                   </span>
                 </div>

@@ -12,10 +12,8 @@ import { Button } from "@/components/ui/button";
 import {
   Loader2,
   ArrowLeft,
-  Wallet,
   Banknote,
   CreditCard,
-  ShieldCheck,
   AlertTriangle,
   ChevronRight,
 } from "lucide-react";
@@ -28,6 +26,39 @@ declare global {
   interface Window {
     snap: any;
   }
+}
+
+function PaymentItemThumbnail({
+  src,
+  alt,
+  fallbackName,
+}: {
+  src?: string | null;
+  alt: string;
+  fallbackName: string;
+}) {
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    setError(false);
+  }, [src]);
+
+  if (src && !error) {
+    return (
+      <img
+        src={src}
+        alt={alt}
+        className="w-full h-full object-cover"
+        onError={() => setError(true)}
+      />
+    );
+  }
+
+  return (
+    <div className="w-full h-full flex items-center justify-center font-semibold text-gray-400 bg-gray-50 text-xl uppercase select-none">
+      {fallbackName.charAt(0)}
+    </div>
+  );
 }
 
 export default function OnlinePaymentPage({
@@ -193,7 +224,7 @@ export default function OnlinePaymentPage({
           <p className="text-red-500 font-medium text-sm">{error || "Pesanan tidak ditemukan"}</p>
           <Button
             asChild
-            className="w-full bg-catalog-primary hover:bg-catalog-primary/90 text-white rounded-xl h-12 font-semibold text-sm"
+            className="w-full bg-catalog-primary hover:bg-catalog-primary/90 text-white rounded-xl h-12 font-semibold text-sm cursor-pointer"
           >
             <Link href={`/store/${unwrappedParams.slug}`}>Kembali ke Menu</Link>
           </Button>
@@ -201,6 +232,11 @@ export default function OnlinePaymentPage({
       </div>
     );
   }
+
+  const totalItemsCount = (order.items || []).reduce(
+    (acc: number, i: any) => acc + (i.quantity || 0),
+    0
+  );
 
   return (
     <>
@@ -213,136 +249,306 @@ export default function OnlinePaymentPage({
         />
       )}
 
-      <div className="max-w-md mx-auto min-h-screen bg-gray-50 flex flex-col relative pb-24">
-        {/* Header */}
-        <div className="bg-white border-b border-gray-100 px-4 py-4 flex items-center justify-between sticky top-0 z-10">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              asChild
-              className="h-9 w-9 shrink-0 rounded-full hover:bg-gray-100 text-gray-600"
+      {/* Floating Payment Top Navigation Header (Edge-to-edge with shadow) */}
+      <header className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.08)] pt-[env(safe-area-inset-top)]">
+        <div className="max-w-md mx-auto px-4 h-14 sm:h-16 flex items-center justify-between">
+          <div className="w-9 flex items-center justify-start">
+            <Link
+              href={`/store/${unwrappedParams.slug}${
+                order.tableNumber ? `?table=${order.tableNumber}` : ""
+              }`}
+              className="w-9 h-9 -ml-1 flex items-center justify-center rounded-full text-gray-800 hover:text-gray-900 hover:bg-gray-100 active:scale-95 transition-all cursor-pointer"
+              aria-label="Kembali ke Menu"
             >
-              <Link
-                href={`/store/${unwrappedParams.slug}/status?order=${encodeURIComponent(
-                  orderNumber
-                )}`}
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
-            </Button>
-            <div>
-              <h1 className="font-bold text-base text-gray-900 leading-tight">
-                Pembayaran Online
-              </h1>
-              <p className="text-[11px] text-gray-500">Selesaikan transaksi Anda</p>
-            </div>
+              <ArrowLeft className="w-5 h-5 stroke-[2.2]" />
+            </Link>
           </div>
-          <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-amber-100 text-amber-800">
-            Menunggu Bayar
-          </span>
-        </div>
 
-        <div className="p-4 space-y-4">
-          {/* Main Online Payment Card */}
-          <div className="bg-white rounded-2xl p-5 shadow-xs border border-gray-200/80 space-y-4">
-            <div className="flex items-start justify-between border-b border-gray-100 pb-3">
+          <h1 className="font-semibold text-base sm:text-lg text-gray-900 tracking-tight text-center truncate px-2">
+            Pembayaran
+          </h1>
+
+          <div className="w-9 shrink-0" aria-hidden="true" />
+        </div>
+      </header>
+
+      {/* Main Content Container with top padding for fixed header and bottom padding for fixed footer */}
+      <main className="max-w-md mx-auto px-3.5 sm:px-4 pt-20 sm:pt-24 pb-36 sm:pb-40 w-full space-y-4">
+        {/* Main Summary Card */}
+        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200/90 shadow-2xs space-y-5 sm:space-y-6">
+          {/* 1. INFORMASI PEMESANAN */}
+          <div className="space-y-3.5">
+            <div className="border-b border-gray-100 pb-3 flex items-start justify-between gap-2">
               <div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 block">
-                  Total Tagihan
-                </span>
-                <div className="text-2xl sm:text-3xl font-black text-gray-900 mt-0.5 tracking-tight">
-                  {formatCurrency(Number(order.grandTotal))}
-                </div>
+                <h2 className="font-semibold text-base sm:text-lg text-gray-900 tracking-tight">
+                  Informasi Pemesanan
+                </h2>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Rincian pemesan dan layanan pesanan
+                </p>
               </div>
-              <div className="text-right">
-                <span className="text-[10px] uppercase font-bold text-gray-400 block">
-                  Nomor Pesanan
+              <div className="text-right shrink-0 flex flex-col items-end">
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 mb-0.5 whitespace-nowrap">
+                  Menunggu Bayar
                 </span>
-                <span className="font-extrabold text-xs text-gray-800 mt-0.5 block">
+                <span className="font-semibold text-xs sm:text-sm text-gray-800">
                   {order.orderNumber}
                 </span>
               </div>
             </div>
 
-            {/* Payment Method Details */}
-            <div className="bg-gray-50/80 rounded-xl p-3.5 border border-gray-100 space-y-2">
-              <div className="flex items-center gap-2 text-xs font-bold text-gray-800">
-                <ShieldCheck className="w-4 h-4 text-catalog-primary" />
-                <span>Pembayaran Resmi Midtrans</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-0.5">
+              <div className="p-3 rounded-xl bg-gray-50 border border-gray-100 space-y-0.5">
+                <span className="text-[11px] uppercase font-semibold tracking-wider text-gray-400 block">
+                  Nama Pemesan
+                </span>
+                <span className="font-semibold text-sm sm:text-base text-gray-900 block truncate">
+                  {order.customerName || "-"}
+                </span>
+                {order.customerPhone && (
+                  <span className="text-xs text-gray-500 block truncate">
+                    {order.customerPhone}
+                  </span>
+                )}
               </div>
-              <p className="text-xs text-gray-600 leading-relaxed">
-                Mendukung pembayaran instan melalui <strong>QRIS</strong>, <strong>GoPay</strong>,{" "}
-                <strong>ShopeePay</strong>, <strong>OVO</strong>, <strong>Virtual Account</strong>, dan{" "}
-                <strong>Kartu Kredit</strong>.
-              </p>
+
+              <div className="p-3 rounded-xl bg-gray-50 border border-gray-100 space-y-0.5">
+                <span className="text-[11px] uppercase font-semibold tracking-wider text-gray-400 block">
+                  Tipe Layanan
+                </span>
+                <span className="font-semibold text-sm sm:text-base text-gray-900 block">
+                  {order.orderType === "DINE_IN"
+                    ? `Dine-In (${order.tableNumber ? `Meja ${order.tableNumber}` : "Tanpa Meja"})`
+                    : order.orderType === "TAKEAWAY"
+                    ? "Bawa Pulang (Takeaway)"
+                    : "Delivery"}
+                </span>
+                <span className="text-xs text-gray-500 block">
+                  {new Date(order.createdAt).toLocaleDateString("id-ID", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              </div>
             </div>
-
-            {/* Primary Action Button */}
-            <Button
-              onClick={handlePayOnline}
-              disabled={isProcessing || isSwitchingToCash}
-              className="w-full h-14 bg-catalog-primary hover:bg-catalog-primary/90 text-white rounded-xl font-bold text-base shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all"
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  <span>Membuka Pembayaran...</span>
-                </>
-              ) : (
-                <>
-                  <CreditCard className="w-5 h-5" />
-                  <span>Bayar Sekarang (Buka Midtrans)</span>
-                </>
-              )}
-            </Button>
-
-            <p className="text-[11px] text-center text-gray-400">
-              Jendela pembayaran Midtrans akan terbuka secara otomatis di layar Anda.
-            </p>
           </div>
 
-          {/* Fallback / Jaga-jaga: Tombol Peringatan & Ganti ke Bayar di Kasir */}
-          <div className="bg-amber-50/70 rounded-2xl p-4 sm:p-5 border border-amber-200/80 space-y-3 shadow-xs">
-            <div className="flex items-start gap-3">
-              <div className="h-9 w-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
-                <AlertTriangle className="w-5 h-5" />
+          {/* 2. DAFTAR MENU DIPILIH (TANPA TOMBOL EDIT/TAMBAH/STEPPER) */}
+          <div className="space-y-1 pt-2 border-t border-gray-100">
+            <div className="pb-2.5 border-b border-gray-100">
+              <div className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                Daftar Menu ({totalItemsCount} item)
               </div>
-              <div className="space-y-1">
-                <h3 className="font-bold text-sm text-amber-950">
-                  Kendala Pembayaran Online?
-                </h3>
-                <p className="text-xs text-amber-900/90 leading-relaxed">
-                  Jika terjadi masalah dengan sistem pembayaran online, saldo e-wallet tidak cukup,
-                  atau QRIS gagal dipindai, silakan klik tombol di bawah untuk melakukan pembayaran di
-                  kasir.
+            </div>
+
+            <div className="divide-y divide-gray-100">
+              {(order.items || []).map((item: any) => {
+                const itemPrice = Number(item.price || item.subtotal / (item.quantity || 1));
+                const itemSubtotal = Number(item.subtotal || itemPrice * item.quantity);
+
+                return (
+                  <div key={item.id} className="py-3 sm:py-3.5 flex gap-3 sm:gap-4 items-start">
+                    <div className="h-20 w-20 sm:h-22 sm:w-22 bg-gray-50 rounded-2xl flex-shrink-0 border border-gray-100 overflow-hidden relative flex items-center justify-center">
+                      <PaymentItemThumbnail
+                        src={item.imageUrl}
+                        alt={item.productName}
+                        fallbackName={item.productName}
+                      />
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="font-semibold text-sm sm:text-base text-gray-900 leading-snug line-clamp-2">
+                          {item.productName}
+                        </div>
+                        <div className="font-semibold text-sm sm:text-base text-gray-900 whitespace-nowrap">
+                          {formatCurrency(itemSubtotal)}
+                        </div>
+                      </div>
+
+                      <div className="text-xs text-gray-500 mt-0.5">
+                        {formatCurrency(itemPrice)} / porsi
+                      </div>
+
+                      {/* Modifiers list */}
+                      {item.modifiers && item.modifiers.length > 0 && (
+                        <div className="text-xs text-gray-600 mt-1 line-clamp-2">
+                          {item.modifiers
+                            .map((m: any) =>
+                              Number(m.price) > 0
+                                ? `${m.name} (+${formatCurrency(Number(m.price))})`
+                                : m.name
+                            )
+                            .join(", ")}
+                        </div>
+                      )}
+
+                      {/* Notes */}
+                      {item.notes && (
+                        <div className="text-[11px] text-gray-600 italic mt-1 bg-amber-50/70 border border-amber-200/60 rounded-lg px-2.5 py-0.5 line-clamp-2">
+                          "{item.notes}"
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-1.5 mt-2">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-gray-100 text-gray-700">
+                          {item.quantity} porsi
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 3. SUBTOTAL MENU & RINCIAN PEMBAYARAN */}
+          <div className="space-y-3 pt-3 border-t border-gray-100">
+            <h3 className="font-semibold text-sm sm:text-base text-gray-900 tracking-tight">
+              Rincian Pembayaran
+            </h3>
+
+            <div className="space-y-2 text-xs sm:text-sm pt-0.5">
+              <div className="flex justify-between text-gray-600">
+                <span>Subtotal ({totalItemsCount} menu)</span>
+                <span className="font-semibold text-gray-800">
+                  {formatCurrency(Number(order.totalAmount))}
+                </span>
+              </div>
+
+              {Number(order.discount) > 0 && (
+                <div className="flex justify-between text-emerald-600 font-semibold">
+                  <span>Diskon Promo {order.promoCode ? `(${order.promoCode})` : ""}</span>
+                  <span>-{formatCurrency(Number(order.discount))}</span>
+                </div>
+              )}
+
+              {Number(order.serviceCharge) > 0 && (
+                <div className="flex justify-between text-gray-600">
+                  <span>Biaya Layanan</span>
+                  <span className="font-semibold text-gray-800">
+                    {formatCurrency(Number(order.serviceCharge))}
+                  </span>
+                </div>
+              )}
+
+              {Number(order.tax) > 0 && (
+                <div className="flex justify-between text-gray-600">
+                  <span>Pajak</span>
+                  <span className="font-semibold text-gray-800">
+                    {formatCurrency(Number(order.tax))}
+                  </span>
+                </div>
+              )}
+
+              <div className="border-t border-dashed border-gray-200 pt-2.5 flex justify-between items-baseline font-semibold text-sm sm:text-base text-gray-900">
+                <span>Total Tagihan</span>
+                <span className="text-lg sm:text-xl text-catalog-primary font-semibold tracking-tight">
+                  {formatCurrency(Number(order.grandTotal))}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* 4. METODE PEMBAYARAN ONLINE */}
+          <div className="space-y-2.5 pt-2 border-t border-gray-100">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-xs sm:text-sm tracking-wider text-gray-500 uppercase">
+                Metode Pembayaran
+              </h3>
+              
+            </div>
+
+            <div className="p-3.5 rounded-xl border-2 border-catalog-primary bg-catalog-primary/5 flex items-start gap-3">
+              <div className="h-9 w-9 rounded-lg bg-catalog-primary text-white flex items-center justify-center shrink-0 mt-0.5">
+                <CreditCard className="w-4.5 h-4.5" />
+              </div>
+              <div className="space-y-0.5">
+                <div className="font-semibold text-xs sm:text-sm text-gray-900">
+                  Pembayaran Online Instan
+                </div>
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  Mendukung <strong>QRIS</strong>, <strong>GoPay</strong>, <strong>ShopeePay</strong>, <strong>OVO</strong>, <strong>Virtual Account</strong>, dan <strong>Kartu Kredit</strong>.
                 </p>
               </div>
             </div>
-
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handlePayCash}
-              disabled={isSwitchingToCash || isProcessing}
-              className="w-full h-12 bg-white hover:bg-amber-100/50 border-amber-300 text-amber-950 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer"
-            >
-              {isSwitchingToCash ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin text-amber-700" />
-                  <span>Mengalihkan ke Kasir...</span>
-                </>
-              ) : (
-                <>
-                  <Banknote className="w-4 h-4 text-emerald-600" />
-                  <span>Bayar di Kasir Saja</span>
-                  <ChevronRight className="w-4 h-4 text-amber-600 ml-auto" />
-                </>
-              )}
-            </Button>
           </div>
         </div>
-      </div>
+
+        {/* Fallback Option: Kendala Pembayaran Online -> Bayar di Kasir */}
+        <div className="bg-amber-50/70 rounded-2xl p-3.5 sm:p-4 border border-amber-200/80 space-y-2.5 shadow-2xs">
+          <div className="flex items-start gap-2.5">
+            <div className="h-8 w-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
+              <AlertTriangle className="w-4 h-4" />
+            </div>
+            <div className="space-y-0.5">
+              <h3 className="font-semibold text-xs sm:text-sm text-amber-950">
+                Kendala Pembayaran Online?
+              </h3>
+              <p className="text-xs text-amber-900/90 leading-relaxed">
+                Jika saldo tidak mencukupi atau terjadi kendala, Anda dapat mengubah metode pembayaran ke kasir.
+              </p>
+            </div>
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handlePayCash}
+            disabled={isSwitchingToCash || isProcessing}
+            className="w-full h-11 bg-white hover:bg-amber-100/50 border-amber-300 text-amber-950 rounded-xl font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-2xs transition-all cursor-pointer"
+          >
+            {isSwitchingToCash ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin text-amber-700" />
+                <span>Mengalihkan ke Kasir...</span>
+              </>
+            ) : (
+              <>
+                <Banknote className="w-4 h-4 text-emerald-600" />
+                <span>Bayar di Kasir Saja</span>
+                <ChevronRight className="w-4 h-4 text-amber-600 ml-auto" />
+              </>
+            )}
+          </Button>
+        </div>
+      </main>
+
+      {/* Sticky Bottom Footer (Constrained to max-w-md with safe-area padding) */}
+      <footer className="fixed bottom-0 left-0 right-0 z-40 bg-white rounded-t-2xl sm:rounded-t-3xl border-t border-gray-100 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] ">
+        <div className="max-w-md mx-auto px-4 py-3 sm:py-3.5 flex items-center justify-between gap-3">
+          {/* Left: Total Tagihan */}
+          <div className="flex flex-col shrink-0 justify-center">
+            <span className="text-[11px] text-gray-500 font-medium leading-none mb-1">Total Tagihan</span>
+            <span className="text-lg sm:text-xl font-semibold text-gray-900 tracking-tight leading-tight whitespace-nowrap">
+              {formatCurrency(Number(order.grandTotal))}
+            </span>
+          </div>
+
+          {/* Right: Action Button */}
+          <Button
+            type="button"
+            onClick={handlePayOnline}
+            disabled={isProcessing || isSwitchingToCash}
+            className="h-11 sm:h-12 px-5 bg-catalog-primary hover:bg-catalog-primary/90 text-white rounded-xl font-semibold text-xs sm:text-sm shadow-xs active:scale-[0.98] transition-all cursor-pointer shrink-0 disabled:opacity-50"
+          >
+            {isProcessing ? (
+              <div className="flex items-center gap-1.5">
+                <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                <span>Membuka...</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <CreditCard className="w-4 h-4 shrink-0" />
+                <span>Bayar Sekarang</span>
+              </div>
+            )}
+          </Button>
+        </div>
+      </footer>
     </>
   );
 }

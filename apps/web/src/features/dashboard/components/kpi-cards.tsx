@@ -13,8 +13,10 @@ import {
   Banknote, 
   Wallet,
   RotateCcw
+  Package,
+  CreditCard,
+  Info
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 interface KpiCardsProps {
   metrics: PeriodMetrics;
@@ -31,23 +33,23 @@ export function KpiCards({ metrics, periodType }: KpiCardsProps) {
   const renderGrowthBadge = (growth: number, unit = '%') => {
     if (growth > 0) {
       return (
-        <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200/60 dark:border-emerald-900/40">
-          <TrendingUp className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/70">
+          <TrendingUp className="w-3 h-3 text-emerald-600" />
           +{growth}{unit}
         </span>
       );
     }
     if (growth < 0) {
       return (
-        <span className="inline-flex items-center gap-1 text-xs font-medium text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded-md border border-rose-200/60 dark:border-rose-900/40">
-          <TrendingDown className="w-3 h-3 text-rose-600 dark:text-rose-400" />
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200/70">
+          <TrendingDown className="w-3 h-3 text-rose-600" />
           {growth}{unit}
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
-        <Minus className="w-3 h-3 text-muted-foreground" />
+      <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md">
+        <Minus className="w-3 h-3 text-gray-400" />
         0{unit}
       </span>
     );
@@ -55,159 +57,176 @@ export function KpiCards({ metrics, periodType }: KpiCardsProps) {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {/* 1. Gross Sales (Penjualan Bruto) */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl p-5 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-colors flex flex-col justify-between">
+      {/* 1. Net Revenue - Primary Revenue Driver */}
+      <div className="bg-white border border-gray-200/90 rounded-xl p-5 shadow-xs hover:border-gray-300 transition-colors flex flex-col justify-between">
         <div>
           <div className="flex items-center justify-between pb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Gross Sales
+            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+              Net Revenue
             </span>
-            <div className="p-2 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-lg">
-              <Banknote className="w-4 h-4" />
+            <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg border border-blue-100">
+              <DollarSign className="w-4 h-4 text-blue-600" />
             </div>
           </div>
           <div className="space-y-1">
-            <div className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 font-financial tabular-nums">
-              {formatCurrency(metrics.grossSales)}
-            </div>
-            <div className="flex items-center gap-2 pt-1">
-              {renderGrowthBadge(metrics.grossSalesGrowth)}
-              <span className="text-xs text-muted-foreground">{comparisonText}</span>
-            </div>
-          </div>
-        </div>
-        <p className="text-[11px] text-muted-foreground/80 pt-2 border-t border-slate-100 dark:border-slate-800/80 mt-3">
-          Nilai penjualan bruto sebelum diskon & potongan
-        </p>
-      </div>
-
-      {/* 2. Net Sales (Penjualan Bersih) */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl p-5 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-colors flex flex-col justify-between">
-        <div>
-          <div className="flex items-center justify-between pb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Net Sales
-            </span>
-            <div className="p-2 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-lg">
-              <Wallet className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="space-y-1">
-            <div className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 font-financial tabular-nums">
+            <div className="text-2xl font-semibold tracking-tight text-gray-900">
               {formatCurrency(metrics.netSales)}
             </div>
-            <div className="flex items-center gap-2 pt-1 font-financial">
+            <div className="flex items-center gap-2 pt-1">
               {renderGrowthBadge(metrics.netSalesGrowth)}
-              <span className="text-xs text-muted-foreground">{comparisonText}</span>
+              <span className="text-xs text-gray-500">{comparisonText}</span>
             </div>
           </div>
         </div>
-        <p className="text-[11px] text-muted-foreground/80 pt-2 border-t border-slate-100 dark:border-slate-800/80 mt-3">
-          Penjualan setelah potongan diskon & voucher
-        </p>
+        <div className="pt-2 border-t border-gray-100 mt-3 flex items-center justify-between text-[11px] text-gray-500">
+          <span>Gross: {formatCurrency(metrics.grossSales)}</span>
+          {metrics.totalDiscount > 0 && (
+            <span className="text-rose-600 font-medium">Diskon: -{formatCurrency(metrics.totalDiscount)}</span>
+          )}
+        </div>
       </div>
 
-      {/* 3. Transactions (Jumlah Transaksi) */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl p-5 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-colors flex flex-col justify-between">
+      {/* 2. COGS (Cost of Goods Sold / HPP Modal Bahan) */}
+      <div className="bg-white border border-gray-200/90 rounded-xl p-5 shadow-xs hover:border-gray-300 transition-colors flex flex-col justify-between">
         <div>
           <div className="flex items-center justify-between pb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Transactions
-            </span>
-            <div className="p-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-lg">
-              <ShoppingBag className="w-4 h-4" />
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                COGS (Cost of Goods Sold)
+              </span>
+              <span title="Total modal bahan baku & resep produk yang terjual pada periode ini" className="cursor-help">
+                <Info className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600" />
+              </span>
+            </div>
+            <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg border border-blue-100">
+              <Package className="w-4 h-4 text-blue-600" />
             </div>
           </div>
           <div className="space-y-1">
-            <div className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 font-financial tabular-nums">
-              {metrics.totalTransactions.toLocaleString('id-ID')}
+            <div className="text-2xl font-semibold tracking-tight text-gray-900">
+              {formatCurrency(metrics.cogs)}
             </div>
-            <div className="flex items-center gap-2 pt-1 font-financial">
-              {renderGrowthBadge(metrics.transactionsGrowth)}
-              <span className="text-xs text-muted-foreground">{comparisonText}</span>
+            <div className="flex items-center gap-2 pt-1">
+              <span className="text-xs font-medium text-blue-800 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
+                HPP: {metrics.cogsRatio}% of Revenue
+              </span>
+              {renderGrowthBadge(metrics.cogsGrowth)}
             </div>
           </div>
         </div>
-        <p className="text-[11px] text-muted-foreground/80 pt-2 border-t border-slate-100 dark:border-slate-800/80 mt-3">
-          Total pesanan yang berhasil diselesaikan
+        <p className="text-[11px] text-gray-500 pt-2 border-t border-gray-100 mt-3">
+          Beban pokok bahan & modal resep produk terjual
         </p>
       </div>
 
-      {/* 4. Gross Profit (Laba Kotor Berdasarkan COGS) */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl p-5 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-colors flex flex-col justify-between">
+      {/* 3. Gross Profit (Laba Kotor = Net Revenue - COGS) */}
+      <div className="bg-white border border-gray-200/90 rounded-xl p-5 shadow-xs hover:border-gray-300 transition-colors flex flex-col justify-between">
         <div>
           <div className="flex items-center justify-between pb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Gross Profit
-            </span>
-            <div className="p-2 bg-teal-50 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400 rounded-lg">
-              <TrendingUp className="w-4 h-4" />
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                Gross Profit
+              </span>
+              <span title="Laba Kotor = Net Revenue dikurangi COGS modal bahan (sebelum beban sewa & gaji operasional)" className="cursor-help">
+                <Info className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600" />
+              </span>
+            </div>
+            <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg border border-blue-100">
+              <Percent className="w-4 h-4 text-blue-600" />
             </div>
           </div>
           <div className="space-y-1">
-            <div className="text-2xl font-bold tracking-tight text-teal-600 dark:text-teal-400 font-financial tabular-nums">
+            <div className="text-2xl font-semibold tracking-tight text-blue-700">
               {formatCurrency(metrics.grossProfit)}
             </div>
-            <div className="flex items-center gap-2 pt-1 font-financial">
+            <div className="flex items-center gap-2 pt-1">
+              <span className="text-xs font-semibold text-blue-800 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
+                Gross Margin: {metrics.grossMargin}%
+              </span>
               {renderGrowthBadge(metrics.grossProfitGrowth)}
-              <span className="text-xs text-muted-foreground">{comparisonText}</span>
             </div>
           </div>
         </div>
-        <p className="text-[11px] text-muted-foreground/80 pt-2 border-t border-slate-100 dark:border-slate-800/80 mt-3">
-          Laba kotor berdasarkan COGS (HPP modal) yang tercatat
+        <p className="text-[11px] text-gray-500 pt-2 border-t border-gray-100 mt-3">
+          Net Revenue dikurangi biaya modal bahan (COGS)
         </p>
       </div>
 
-      {/* 5. Average Sale per Transaction (AOV) */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl p-5 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-colors flex flex-col justify-between">
+      {/* 4. Total Orders (Volume Transaksi) */}
+      <div className="bg-white border border-gray-200/90 rounded-xl p-5 shadow-xs hover:border-gray-300 transition-colors flex flex-col justify-between">
         <div>
           <div className="flex items-center justify-between pb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Average Sale per Tx
+            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+              Total Orders
             </span>
-            <div className="p-2 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-lg">
-              <Receipt className="w-4 h-4" />
+            <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg border border-blue-100">
+              <ShoppingBag className="w-4 h-4 text-blue-600" />
             </div>
           </div>
           <div className="space-y-1">
-            <div className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 font-financial tabular-nums">
+            <div className="text-2xl font-semibold tracking-tight text-gray-900">
+              {metrics.totalTransactions.toLocaleString('id-ID')}
+            </div>
+            <div className="flex items-center gap-2 pt-1">
+              {renderGrowthBadge(metrics.transactionsGrowth)}
+              <span className="text-xs text-gray-500">{comparisonText}</span>
+            </div>
+          </div>
+        </div>
+        <p className="text-[11px] text-gray-500 pt-2 border-t border-gray-100 mt-3">
+          Total tiket pesanan berstatus selesai dan lunas
+        </p>
+      </div>
+
+      {/* 5. Average Order Value (AOV) */}
+      <div className="bg-white border border-gray-200/90 rounded-xl p-5 shadow-xs hover:border-gray-300 transition-colors flex flex-col justify-between">
+        <div>
+          <div className="flex items-center justify-between pb-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+              Average Order Value (AOV)
+            </span>
+            <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg border border-blue-100">
+              <Receipt className="w-4 h-4 text-blue-600" />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <div className="text-2xl font-semibold tracking-tight text-gray-900">
               {formatCurrency(metrics.averageOrderValue)}
             </div>
             <div className="flex items-center gap-2 pt-1 font-financial">
               {renderGrowthBadge(metrics.aovGrowth)}
-              <span className="text-xs text-muted-foreground">{comparisonText}</span>
+              <span className="text-xs text-gray-500">{comparisonText}</span>
             </div>
           </div>
         </div>
-        <p className="text-[11px] text-muted-foreground/80 pt-2 border-t border-slate-100 dark:border-slate-800/80 mt-3">
-          Rata-rata nilai penjualan per transaksi
+        <p className="text-[11px] text-gray-500 pt-2 border-t border-gray-100 mt-3">
+          Nilai keranjang belanja rata-rata per transaksi
         </p>
       </div>
 
-      {/* 6. Gross Margin (Persentase Margin Laba Kotor) */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl p-5 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-colors flex flex-col justify-between">
+      {/* 6. Gross Sales (Penjualan Bruto) */}
+      <div className="bg-white border border-gray-200/90 rounded-xl p-5 shadow-xs hover:border-gray-300 transition-colors flex flex-col justify-between">
         <div>
           <div className="flex items-center justify-between pb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Gross Margin
+            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+              Gross Sales (Bruto)
             </span>
-            <div className="p-2 bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 rounded-lg">
-              <Percent className="w-4 h-4" />
+            <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg border border-blue-100">
+              <CreditCard className="w-4 h-4 text-blue-600" />
             </div>
           </div>
           <div className="space-y-1">
-            <div className="text-2xl font-bold tracking-tight text-purple-600 dark:text-purple-400 font-financial tabular-nums">
-              {metrics.grossMargin}%
+            <div className="text-2xl font-semibold tracking-tight text-gray-900">
+              {formatCurrency(metrics.grossSales)}
             </div>
-            <div className="flex items-center gap-2 pt-1 font-financial">
-              {renderGrowthBadge(metrics.grossMarginGrowth, '% poin')}
-              <span className="text-xs text-muted-foreground">{comparisonText}</span>
+            <div className="flex items-center gap-2 pt-1">
+              {renderGrowthBadge(metrics.grossSalesGrowth)}
+              <span className="text-xs text-gray-500">{comparisonText}</span>
             </div>
           </div>
         </div>
-        <p className="text-[11px] text-muted-foreground/80 pt-2 border-t border-slate-100 dark:border-slate-800/80 mt-3">
-          Persentase margin laba kotor terhadap penjualan
+        <p className="text-[11px] text-gray-500 pt-2 border-t border-gray-100 mt-3">
+          Total transaksi sebelum potongan promo & diskon
         </p>
       </div>
     </div>

@@ -207,11 +207,11 @@ export function PeriodFilterBar({
         <div className="flex flex-wrap items-center gap-3 sm:gap-4">
           <div className="flex items-center gap-2 text-gray-400">
             <GripVertical className="w-4 h-4 text-gray-300 shrink-0" />
-            <span className="text-sm font-bold text-gray-900 whitespace-nowrap">
-              {totalTransactions.toLocaleString('id-ID')} Total Pesanan
+            <span className="text-sm font-semibold text-gray-900 whitespace-nowrap">
+              {totalTransactions.toLocaleString('id-ID')} Total Orders
             </span>
             <span className="text-gray-300">•</span>
-            <span className="text-xs font-mono font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60 whitespace-nowrap">
+            <span className="text-xs font-mono font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200/60 whitespace-nowrap">
               {successRate} Sukses
             </span>
           </div>

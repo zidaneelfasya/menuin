@@ -115,6 +115,7 @@ export async function updateStoreGeneralSettings(formData: FormData) {
     const storeBannerUrl = formData.get('storeBannerUrl') as string | null;
     const slug = formData.get('slug') as string | null;
     const primaryColor = (formData.get('primaryColor') as string) || '#2563EB';
+    const orderPrefixRaw = formData.get('orderPrefix') as string;
 
     if (!name || name.trim() === '') {
       return { success: false, error: 'Nama toko tidak boleh kosong' };
@@ -141,6 +142,16 @@ export async function updateStoreGeneralSettings(formData: FormData) {
 
     await db.update(tenants)
       .set(updatePayload)
+    const orderPrefix = orderPrefixRaw ? orderPrefixRaw.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : null;
+
+    await db.update(tenants)
+      .set({
+        name,
+        storeDescription,
+        primaryColor,
+        orderPrefix: orderPrefix || null,
+        updatedAt: new Date(),
+      })
       .where(eq(tenants.id, user.tenantId));
 
     if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }

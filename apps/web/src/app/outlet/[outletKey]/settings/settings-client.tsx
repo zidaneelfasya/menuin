@@ -52,6 +52,7 @@ const COLOR_PRESETS = [
   { name: 'Rose', hex: '#F43F5E' },
   { name: 'Slate Dark', hex: '#1E293B' },
 ];
+import { OrderPrefixPicker } from '@/components/shared/order-prefix-picker';
 
 export function SettingsClient({ 
   tenant, 
@@ -120,6 +121,11 @@ export function SettingsClient({
   const [posPinBestSellers, setPosPinBestSellers] = React.useState(tenant?.posPinBestSellers ?? true);
 
   // Midtrans Payment Form State
+  const [storeName, setStoreName] = React.useState(tenant?.name || '');
+  const [storeDescription, setStoreDescription] = React.useState(tenant?.storeDescription || '');
+  const [primaryColor, setPrimaryColor] = React.useState(tenant?.primaryColor || '#2563EB');
+  const [orderPrefix, setOrderPrefix] = React.useState(tenant?.orderPrefix || '');
+
   const [midtransEnvironment, setMidtransEnvironment] = React.useState(tenant?.midtransEnvironment || 'sandbox');
   const [midtransServerKey, setMidtransServerKey] = React.useState(tenant?.midtransServerKey || '');
   const [midtransClientKey, setMidtransClientKey] = React.useState(tenant?.midtransClientKey || '');
@@ -156,6 +162,8 @@ export function SettingsClient({
     storeLogoUrl !== (tenant?.storeLogoUrl || null) ||
     storeBannerUrl !== (tenant?.storeBannerUrl || null) ||
     primaryColor !== (tenant?.primaryColor || '#2563EB');
+    primaryColor !== (tenant?.primaryColor || '#2563EB') ||
+    orderPrefix !== (tenant?.orderPrefix || '');
 
   const hasTaxChanges = 
     taxName !== (tenant?.taxName || 'Pajak (PB1)') ||
@@ -316,6 +324,25 @@ export function SettingsClient({
       toast.success('Preferensi tampilan katalog POS berhasil disimpan');
     } else {
       toast.error(res.error || 'Gagal menyimpan preferensi');
+      toast.error(res.error || 'Gagal menyimpan pengaturan');
+    }
+  };
+
+  const handleSaveStore = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingStore(true);
+    const fd = new FormData();
+    fd.append('name', storeName);
+    fd.append('storeDescription', storeDescription);
+    fd.append('primaryColor', primaryColor);
+    fd.append('orderPrefix', orderPrefix);
+
+    const res = await updateStoreGeneralSettings(fd);
+    setIsSavingStore(false);
+    if (res.success) {
+      toast.success('Informasi toko berhasil disimpan');
+    } else {
+      toast.error(res.error || 'Gagal menyimpan informasi');
     }
   };
 
@@ -680,6 +707,20 @@ export function SettingsClient({
                         </div>
                       </div>
                     </div>
+                  <OrderPrefixPicker
+                    value={orderPrefix}
+                    onChange={setOrderPrefix}
+                    outletName={storeName}
+                  />
+
+                  <div className="flex justify-end pt-4 border-t">
+                    <Button disabled={isSavingStore || !hasStoreChanges} type="submit" size="lg" className="min-w-[140px] shadow-sm">
+                      {isSavingStore ? (
+                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Menyimpan...</>
+                      ) : (
+                        <><Save className="mr-2 h-4 w-4" /> Simpan Profil</>
+                      )}
+                    </Button>
                   </div>
                 </div>
 

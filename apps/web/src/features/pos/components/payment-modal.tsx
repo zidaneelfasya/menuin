@@ -6,29 +6,24 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils/format';
 import { 
-  Tag, 
-  Percent, 
-  Bike, 
+  Banknote, 
+  QrCode, 
+  CreditCard, 
+  ArrowRightLeft, 
+  Loader2, 
+  Delete, 
+  Check, 
   UtensilsCrossed, 
   ShoppingBag, 
-  Truck, 
-  Check, 
-  X, 
-  Loader2, 
-  Info,
-  CreditCard,
-  Banknote,
-  QrCode
+  Bike,
+  X
 } from 'lucide-react';
-import { validatePromotion, getActivePromotions } from '@/lib/actions/promotions';
-import { toast } from 'sonner';
+import { useCartStore } from '../stores/use-cart-store';
+import { cn } from '@/lib/utils';
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -51,140 +46,128 @@ interface PaymentModalProps {
   posSettings: any;
 }
 
-export function PaymentModal({ isOpen, onClose, subtotalAmount, onConfirm, posSettings }: PaymentModalProps) {
+export function PaymentModal({
+  isOpen,
+  onClose,
+  subtotalAmount,
+  onConfirm,
+  posSettings,
+}: PaymentModalProps) {
+  const [paymentMethod, setPaymentMethod] = React.useState<'cash' | 'qris' | 'card' | 'transfer'>('cash');
   const [cashReceivedStr, setCashReceivedStr] = React.useState('');
   const [isProcessing, setIsProcessing] = React.useState(false);
-  const [customerName, setCustomerName] = React.useState('');
-  const [tableNumber, setTableNumber] = React.useState('');
-  const [paymentMethod, setPaymentMethod] = React.useState('cash');
-  
-  // Order Type / Channel
-  const [orderType, setOrderType] = React.useState(
-    posSettings?.posOrderTypeSelection === 'MANUAL' ? 'DINE_IN' : (posSettings?.posOrderTypeSelection || 'DINE_IN')
-  );
 
-  // Promo State
-  const [appliedPromo, setAppliedPromo] = React.useState<{
-    id: string;
-    name: string;
-    discountAmount: number;
-  } | null>(null);
-  const [manualDiscount, setManualDiscount] = React.useState<number>(0);
-  const [isValidatingPromo, setIsValidatingPromo] = React.useState(false);
-  const [activePromosList, setActivePromosList] = React.useState<any[]>([]);
+  const { orderType, customerName, tableNumber, appliedPromo, discount: storeDiscount } = useCartStore();
 
-  // Load active promos when modal opens
+  // Reset state when opened
   React.useEffect(() => {
     if (isOpen) {
+      setPaymentMethod('cash');
       setCashReceivedStr('');
       setIsProcessing(false);
-      setCustomerName('');
-      setTableNumber('');
-      setPaymentMethod('cash');
-      setAppliedPromo(null);
-      setManualDiscount(0);
-      setOrderType(posSettings?.posOrderTypeSelection === 'MANUAL' ? 'DINE_IN' : (posSettings?.posOrderTypeSelection || 'DINE_IN'));
-      
-      getActivePromotions().then(res => {
-        if (res.success && res.data) {
-          setActivePromosList(res.data);
-        }
-      });
     }
-  }, [isOpen, posSettings]);
+  }, [isOpen]);
 
-  // Tax and rates
+  // Rates
   const taxRate = parseFloat(posSettings?.posTaxRate || '0');
   const serviceRate = parseFloat(posSettings?.serviceChargeRate || '0');
-  const taxName = posSettings?.taxName || 'Pajak (PB1)';
+  const discountAmount = storeDiscount || (appliedPromo ? appliedPromo.discountAmount : 0);
 
-  // Platform commission rates
-  const grabRate = parseFloat(posSettings?.grabFoodFeeRate || '20');
-  const shopeeRate = parseFloat(posSettings?.shopeeFoodFeeRate || '20');
-  const goFoodRate = parseFloat(posSettings?.goFoodFeeRate || '20');
-
-  // Calculations
-  const discountAmount = (appliedPromo ? appliedPromo.discountAmount : 0) + manualDiscount;
   const taxableSubtotal = Math.max(0, subtotalAmount - discountAmount);
-  const taxAmount = (taxableSubtotal * taxRate) / 100;
-  const serviceChargeAmount = (taxableSubtotal * serviceRate) / 100;
-  const grandTotal = taxableSubtotal + taxAmount + serviceChargeAmount;
+  const taxAmount = taxRate > 0 ? (taxableSubtotal * taxRate) / 100 : 0;
+  const serviceChargeAmount = serviceRate > 0 ? (taxableSubtotal * serviceRate) / 100 : 0;
+  const grandTotal = Math.round(taxableSubtotal + taxAmount + serviceChargeAmount);
 
-  // Platform Fee calculation
+  // Platform commissions (for online food orders)
   let platformCommissionRate = 0;
-  if (orderType === 'GRABFOOD') platformCommissionRate = grabRate;
-  else if (orderType === 'SHOPEEFOOD') platformCommissionRate = shopeeRate;
-  else if (orderType === 'GOFOOD') platformCommissionRate = goFoodRate;
+  if (orderType === 'GRABFOOD') platformCommissionRate = parseFloat(posSettings?.grabFoodFeeRate || '20');
+  else if (orderType === 'SHOPEEFOOD') platformCommissionRate = parseFloat(posSettings?.shopeeFoodFeeRate || '20');
+  else if (orderType === 'GOFOOD') platformCommissionRate = parseFloat(posSettings?.goFoodFeeRate || '20');
 
   const platformFeeAmount = (taxableSubtotal * platformCommissionRate) / 100;
-  const estimatedNetAmount = grandTotal - platformFeeAmount;
 
   const cashReceived = parseInt(cashReceivedStr.replace(/\D/g, ''), 10) || 0;
-  const change = paymentMethod === 'cash' ? (cashReceived - grandTotal) : 0;
+  const change = paymentMethod === 'cash' ? cashReceived - grandTotal : 0;
+  const isCashSufficient = paymentMethod !== 'cash' || cashReceived >= grandTotal;
 
-  const handleSelectPromo = async (promo: any) => {
-    if (appliedPromo?.id === promo.id) {
-      setAppliedPromo(null);
-      toast.info('Promo dibatalkan');
+  // Keyboard support for cash input & Enter to submit
+  React.useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isProcessing) return;
+
+      if (paymentMethod === 'cash') {
+        if (/^[0-9]$/.test(e.key)) {
+          e.preventDefault();
+          setCashReceivedStr((prev) => (prev === '0' ? e.key : prev + e.key));
+        } else if (e.key === 'Backspace') {
+          e.preventDefault();
+          setCashReceivedStr((prev) => prev.slice(0, -1));
+        } else if (e.key.toLowerCase() === 'c') {
+          e.preventDefault();
+          setCashReceivedStr('');
+        }
+      }
+
+      if (e.key === 'Enter' && isCashSufficient) {
+        e.preventDefault();
+        handleSubmit();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, paymentMethod, isCashSufficient, isProcessing, cashReceivedStr, grandTotal]);
+
+  const handleNumpadInput = (val: string) => {
+    if (val === 'CLEAR') {
+      setCashReceivedStr('');
       return;
     }
-
-    const minOrder = parseFloat(promo.minOrder || '0');
-    if (subtotalAmount < minOrder) {
-      toast.error(`Minimal transaksi Rp ${minOrder.toLocaleString('id-ID')} untuk menggunakan promo "${promo.name}"`);
+    if (val === 'BACKSPACE') {
+      setCashReceivedStr((prev) => prev.slice(0, -1));
       return;
     }
-
-    setIsValidatingPromo(true);
-    const res = await validatePromotion(promo.id, subtotalAmount);
-    setIsValidatingPromo(false);
-
-    if (res.success && res.data) {
-      setAppliedPromo({
-        id: res.data.id,
-        name: res.data.name,
-        discountAmount: res.data.discountAmount,
-      });
-      toast.success(`Promo "${res.data.name}" dipilih! Diskon ${formatCurrency(res.data.discountAmount)}`);
-    } else {
-      toast.error(res.error || 'Promo tidak dapat digunakan');
+    if (val === '00') {
+      if (!cashReceivedStr || cashReceivedStr === '0') return;
+      setCashReceivedStr((prev) => prev + '00');
+      return;
     }
+    setCashReceivedStr((prev) => (prev === '0' ? val : prev + val));
   };
 
-  const handleRemovePromo = () => {
-    setAppliedPromo(null);
-    toast.info('Promo dibatalkan');
-  };
-
-  const handleCashChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawValue = e.target.value.replace(/\D/g, '');
-    setCashReceivedStr(rawValue);
-  };
-
-  const handleExactChange = () => {
-    setCashReceivedStr(grandTotal.toString());
-  };
-
-  const handlePreset = (amount: number) => {
+  const handlePresetAmount = (amount: number) => {
     setCashReceivedStr(amount.toString());
   };
 
-  const requireCustomerName = posSettings?.customerNameRequired;
-  const requireTableNumber = posSettings?.tableNumberRequired;
-  const isCashSufficient = paymentMethod !== 'cash' || cashReceived >= grandTotal;
-  const isFormValid = isCashSufficient && 
-                      (!requireCustomerName || customerName.trim() !== '') && 
-                      (!requireTableNumber || orderType !== 'DINE_IN' || tableNumber.trim() !== '') && 
-                      orderType !== '';
+  // Smart suggested cash denominations
+  const suggestedAmounts = React.useMemo(() => {
+    const amounts = new Set<number>();
+    // Round to nearest 10k, 20k, 50k, 100k
+    const next10k = Math.ceil(grandTotal / 10000) * 10000;
+    const next20k = Math.ceil(grandTotal / 20000) * 20000;
+    const next50k = Math.ceil(grandTotal / 50000) * 50000;
+    const next100k = Math.ceil(grandTotal / 100000) * 100000;
+
+    if (next10k > grandTotal) amounts.add(next10k);
+    if (next20k > grandTotal) amounts.add(next20k);
+    if (next50k > grandTotal) amounts.add(next50k);
+    if (next100k > grandTotal) amounts.add(next100k);
+
+    const sorted = Array.from(amounts).sort((a, b) => a - b);
+    return sorted.slice(0, 3);
+  }, [grandTotal]);
 
   const handleSubmit = async () => {
-    if (!isFormValid) return;
+    if (!isCashSufficient || isProcessing) return;
+
     setIsProcessing(true);
     await onConfirm({
       cashReceived: paymentMethod === 'cash' ? cashReceived : grandTotal,
       change: Math.max(0, change),
       paymentMethod,
-      orderType,
+      orderType: orderType || 'DINE_IN',
       customerName: customerName || undefined,
       tableNumber: tableNumber || undefined,
       discount: discountAmount,
@@ -197,353 +180,254 @@ export function PaymentModal({ isOpen, onClose, subtotalAmount, onConfirm, posSe
     setIsProcessing(false);
   };
 
-  // Generate suggested quick cash amounts based on grandTotal
-  const suggestedAmounts = React.useMemo(() => {
-    const amounts = new Set<number>();
-    if (grandTotal < 20000) amounts.add(20000);
-    if (grandTotal < 50000) amounts.add(50000);
-    if (grandTotal < 100000) amounts.add(100000);
-
-    const nearest10k = Math.ceil(grandTotal / 10000) * 10000;
-    const nearest50k = Math.ceil(grandTotal / 50000) * 50000;
-    const nearest100k = Math.ceil(grandTotal / 100000) * 100000;
-
-    if (nearest10k > grandTotal) amounts.add(nearest10k);
-    if (nearest50k > grandTotal) amounts.add(nearest50k);
-    if (nearest100k > grandTotal) amounts.add(nearest100k);
-
-    return Array.from(amounts).sort((a, b) => a - b).slice(0, 3);
-  }, [grandTotal]);
+  // Human-readable Order Type description
+  const orderTypeLabel = 
+    orderType === 'DINE_IN' ? 'Makan di Tempat' :
+    orderType === 'TAKEAWAY' ? 'Bawa Pulang' :
+    orderType === 'GRABFOOD' ? 'GrabFood' :
+    orderType === 'SHOPEEFOOD' ? 'ShopeeFood' :
+    orderType === 'GOFOOD' ? 'GoFood' : 'Delivery';
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !isProcessing && !open && onClose()}>
-      <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-center">Pembayaran Kasir</DialogTitle>
-          <DialogDescription className="text-center">
-            Pilih channel penjualan, diskon/promo, dan selesaikan transaksi.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="flex flex-col gap-4 py-2">
-          {/* 1. CHANNEL / TIPE PESANAN */}
-          <div className="space-y-2">
-            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              Channel / Tipe Pesanan
-            </Label>
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-              <Button
-                type="button"
-                variant={orderType === 'DINE_IN' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setOrderType('DINE_IN')}
-                className="flex flex-col h-auto py-2.5 px-2 text-xs gap-1"
-              >
-                <UtensilsCrossed className="h-4 w-4" />
-                <span>Dine-In</span>
-              </Button>
-              <Button
-                type="button"
-                variant={orderType === 'TAKEAWAY' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setOrderType('TAKEAWAY')}
-                className="flex flex-col h-auto py-2.5 px-2 text-xs gap-1"
-              >
-                <ShoppingBag className="h-4 w-4" />
-                <span>Takeaway</span>
-              </Button>
-              <Button
-                type="button"
-                variant={orderType === 'GRABFOOD' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setOrderType('GRABFOOD')}
-                className={`flex flex-col h-auto py-2.5 px-2 text-xs gap-1 ${orderType === 'GRABFOOD' ? 'bg-green-600 hover:bg-green-700 text-white' : 'border-green-300 text-green-700 dark:text-green-400'}`}
-              >
-                <Bike className="h-4 w-4" />
-                <span>GrabFood</span>
-              </Button>
-              <Button
-                type="button"
-                variant={orderType === 'SHOPEEFOOD' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setOrderType('SHOPEEFOOD')}
-                className={`flex flex-col h-auto py-2.5 px-2 text-xs gap-1 ${orderType === 'SHOPEEFOOD' ? 'bg-orange-600 hover:bg-orange-700 text-white' : 'border-orange-300 text-orange-700 dark:text-orange-400'}`}
-              >
-                <Bike className="h-4 w-4" />
-                <span>ShopeeFood</span>
-              </Button>
-              <Button
-                type="button"
-                variant={orderType === 'GOFOOD' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setOrderType('GOFOOD')}
-                className={`flex flex-col h-auto py-2.5 px-2 text-xs gap-1 ${orderType === 'GOFOOD' ? 'bg-red-600 hover:bg-red-700 text-white' : 'border-red-300 text-red-700 dark:text-red-400'}`}
-              >
-                <Bike className="h-4 w-4" />
-                <span>GoFood</span>
-              </Button>
-              <Button
-                type="button"
-                variant={orderType === 'DELIVERY' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setOrderType('DELIVERY')}
-                className="flex flex-col h-auto py-2.5 px-2 text-xs gap-1"
-              >
-                <Truck className="h-4 w-4" />
-                <span>Delivery</span>
-              </Button>
-            </div>
-          </div>
-
-          {/* Customer / Table Info */}
-          {(posSettings?.customerNameRequired || posSettings?.tableNumberRequired || orderType === 'DINE_IN') && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border">
-              <div className="space-y-1">
-                <Label className="text-xs font-semibold">Nama Pelanggan {posSettings?.customerNameRequired && <span className="text-destructive">*</span>}</Label>
-                <Input
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  placeholder="Misal: Budi"
-                  className="h-9 bg-white dark:bg-slate-800 text-xs"
-                />
+      <DialogContent showCloseButton={false} className="max-w-[460px] p-0 overflow-hidden rounded-2xl bg-white dark:bg-slate-950 border border-border/80 shadow-xl">
+        <DialogHeader className="p-4 pb-3 border-b bg-slate-50/70 dark:bg-slate-900/50">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <DialogTitle className="text-base font-semibold text-foreground truncate">
+                Pembayaran Kasir
+              </DialogTitle>
+              <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground">
+                <span className="font-medium text-slate-700 dark:text-slate-300 shrink-0">{orderTypeLabel}</span>
+                {tableNumber && (
+                  <>
+                    <span className="shrink-0">•</span>
+                    <span className="shrink-0 font-medium">Meja {tableNumber}</span>
+                  </>
+                )}
+                {customerName && (
+                  <>
+                    <span className="shrink-0">•</span>
+                    <span className="truncate">{customerName}</span>
+                  </>
+                )}
               </div>
-              {orderType === 'DINE_IN' && (
-                <div className="space-y-1">
-                  <Label className="text-xs font-semibold">Nomor Meja {posSettings?.tableNumberRequired && <span className="text-destructive">*</span>}</Label>
-                  <Input
-                    value={tableNumber}
-                    onChange={(e) => setTableNumber(e.target.value)}
-                    placeholder="Misal: Meja 05"
-                    className="h-9 bg-white dark:bg-slate-800 text-xs"
-                  />
-                </div>
-              )}
             </div>
-          )}
-
-          {/* 2. PROMO & VOUCHER SECTION */}
-          <div className="p-3.5 bg-card border rounded-xl space-y-2.5">
-            <div className="flex items-center justify-between">
-              <Label className="text-xs font-bold flex items-center gap-1.5 text-primary">
-                <Tag className="h-4 w-4" />
-                Pilih Promo & Potongan Diskon
-              </Label>
-              {appliedPromo && (
-                <button 
-                  onClick={handleRemovePromo} 
-                  className="text-xs text-destructive hover:underline flex items-center gap-0.5 font-medium"
-                >
-                  <X className="h-3.5 w-3.5" /> Batalkan Promo
-                </button>
-              )}
-            </div>
-
-            {appliedPromo ? (
-              <div className="flex items-center justify-between p-3 rounded-xl bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-300 shadow-sm">
-                <div className="flex items-center gap-2.5">
-                  <div className="h-8 w-8 rounded-lg bg-green-200/80 dark:bg-green-900/60 flex items-center justify-center text-green-700 dark:text-green-300">
-                    <Check className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <span className="text-xs font-bold block">{appliedPromo.name}</span>
-                    <span className="text-[11px] text-green-700 dark:text-green-400">Promo berhasil diterapkan</span>
-                  </div>
-                </div>
-                <span className="font-bold text-sm text-green-700 dark:text-green-300">
-                  -{formatCurrency(appliedPromo.discountAmount)}
+            
+            <div className="flex items-center gap-3 shrink-0">
+              {/* Grand Total Badge */}
+              <div className="text-right">
+                <span className="text-[10px] text-muted-foreground block font-medium leading-none mb-0.5">Total Tagihan</span>
+                <span className="text-lg font-semibold text-blue-600 dark:text-blue-400 leading-tight">
+                  {formatCurrency(grandTotal)}
                 </span>
               </div>
-            ) : (
-              <div className="space-y-2">
-                {activePromosList.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {activePromosList.map((p) => {
-                      const minOrder = parseFloat(p.minOrder || '0');
-                      const isEligible = subtotalAmount >= minOrder;
-                      const val = parseFloat(p.value);
-                      const discountTag = p.type === 'PERCENTAGE' ? `Diskon ${val}%` : `Potongan ${formatCurrency(val)}`;
 
-                      return (
-                        <button
-                          key={p.id}
-                          type="button"
-                          disabled={isValidatingPromo}
-                          onClick={() => handleSelectPromo(p)}
-                          className={`text-left p-2.5 rounded-xl border transition-all flex flex-col justify-between ${
-                            !isEligible 
-                              ? 'opacity-60 bg-muted/40 border-dashed border-muted-foreground/30 hover:border-muted-foreground/50' 
-                              : 'bg-card hover:bg-primary/5 hover:border-primary/50 border-border active:scale-[0.98]'
-                          }`}
-                        >
-                          <div className="flex items-start justify-between gap-1">
-                            <span className="text-xs font-bold text-foreground line-clamp-1">{p.name}</span>
-                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary shrink-0">
-                              {discountTag}
-                            </span>
-                          </div>
-                          <div className="text-[10px] text-muted-foreground mt-1 flex items-center justify-between">
-                            <span>{minOrder > 0 ? `Min. ${formatCurrency(minOrder)}` : 'Tanpa Min.'}</span>
-                            <span className={`font-semibold ${isEligible ? 'text-primary' : 'text-muted-foreground'}`}>
-                              {isEligible ? 'Pilih Promo ➔' : 'Belum Memenuhi'}
-                            </span>
-                          </div>
-                        </button>
-                      );
-                    })}
+              {/* High-visibility Close Button */}
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isProcessing}
+                className="w-7 h-7 rounded-full bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-all flex items-center justify-center cursor-pointer shadow-2xs active:scale-95 disabled:opacity-50"
+                aria-label="Tutup"
+                title="Tutup"
+              >
+                <X className="w-4 h-4 stroke-[2.5]" />
+              </button>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <div className="p-4 space-y-3.5">
+          {/* Payment Method Selector Tabs */}
+          <div className="grid grid-cols-4 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl gap-1">
+            <button
+              type="button"
+              onClick={() => setPaymentMethod('cash')}
+              className={cn(
+                "py-2 px-1.5 rounded-lg text-xs font-semibold flex flex-col items-center gap-1 transition-all cursor-pointer",
+                paymentMethod === 'cash'
+                  ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-2xs"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Banknote className="w-4 h-4" />
+              <span>Tunai</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPaymentMethod('qris')}
+              className={cn(
+                "py-2 px-1.5 rounded-lg text-xs font-semibold flex flex-col items-center gap-1 transition-all cursor-pointer",
+                paymentMethod === 'qris'
+                  ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-2xs"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <QrCode className="w-4 h-4" />
+              <span>QRIS</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPaymentMethod('card')}
+              className={cn(
+                "py-2 px-1.5 rounded-lg text-xs font-semibold flex flex-col items-center gap-1 transition-all cursor-pointer",
+                paymentMethod === 'card'
+                  ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-2xs"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <CreditCard className="w-4 h-4" />
+              <span>Kartu EDC</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPaymentMethod('transfer')}
+              className={cn(
+                "py-2 px-1.5 rounded-lg text-xs font-semibold flex flex-col items-center gap-1 transition-all cursor-pointer",
+                paymentMethod === 'transfer'
+                  ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-2xs"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <ArrowRightLeft className="w-4 h-4" />
+              <span>Transfer</span>
+            </button>
+          </div>
+
+          {/* Cash Payment View (Touch Numpad & Tenders) */}
+          {paymentMethod === 'cash' ? (
+            <div className="space-y-3">
+              {/* Cash Display & Change Status */}
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground font-medium">Uang Diterima</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xl font-semibold text-slate-900 dark:text-slate-100">
+                      {cashReceived > 0 ? formatCurrency(cashReceived) : 'Rp 0'}
+                    </span>
+                    {cashReceivedStr && (
+                      <button
+                        type="button"
+                        onClick={() => setCashReceivedStr('')}
+                        className="text-[11px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-muted-foreground hover:text-foreground"
+                      >
+                        Reset
+                      </button>
+                    )}
                   </div>
-                ) : (
-                  <div className="text-xs text-muted-foreground py-2 text-center bg-muted/30 rounded-lg">
-                    Tidak ada promo aktif saat ini.
+                </div>
+
+                {/* Kembalian / Kekurangan indicator */}
+                {cashReceived > 0 && (
+                  <div
+                    className={cn(
+                      "flex items-center justify-between text-xs px-2.5 py-1.5 rounded-lg transition-colors",
+                      change >= 0
+                        ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                        : "bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800"
+                    )}
+                  >
+                    <span className="font-medium">
+                      {change >= 0 ? 'Kembalian Pelanggan' : 'Uang Kurang'}
+                    </span>
+                    <span className="font-semibold text-sm">
+                      {formatCurrency(Math.abs(change))}
+                    </span>
                   </div>
                 )}
               </div>
-            )}
-          </div>
 
-          {/* 3. CALCULATION BREAKDOWN */}
-          <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border space-y-2 text-xs">
-            <div className="flex justify-between text-muted-foreground">
-              <span>Subtotal Produk:</span>
-              <span className="font-semibold text-foreground">{formatCurrency(subtotalAmount)}</span>
-            </div>
-
-            {discountAmount > 0 && (
-              <div className="flex justify-between text-green-600 dark:text-green-400 font-medium">
-                <span>Potongan Promo / Diskon:</span>
-                <span>-{formatCurrency(discountAmount)}</span>
-              </div>
-            )}
-
-            {taxRate > 0 && (
-              <div className="flex justify-between text-muted-foreground">
-                <span>{taxName} ({taxRate}%):</span>
-                <span>+{formatCurrency(taxAmount)}</span>
-              </div>
-            )}
-
-            {serviceRate > 0 && (
-              <div className="flex justify-between text-muted-foreground">
-                <span>Biaya Layanan ({serviceRate}%):</span>
-                <span>+{formatCurrency(serviceChargeAmount)}</span>
-              </div>
-            )}
-
-            <div className="border-t pt-2 flex justify-between items-center">
-              <span className="font-bold text-sm">Total Tagihan:</span>
-              <span className="font-bold text-2xl text-primary">{formatCurrency(grandTotal)}</span>
-            </div>
-
-            {/* Platform online food deduction info */}
-            {platformCommissionRate > 0 && (
-              <div className="mt-2 p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 space-y-1">
-                <div className="flex justify-between text-amber-800 dark:text-amber-300 font-semibold text-[11px]">
-                  <span>Potongan Komisi {orderType} ({platformCommissionRate}%):</span>
-                  <span>-{formatCurrency(platformFeeAmount)}</span>
-                </div>
-                <div className="flex justify-between text-emerald-700 dark:text-emerald-400 font-bold text-xs pt-1 border-t border-amber-200/50">
-                  <span>Estimasi Bersih Diterima Toko:</span>
-                  <span>{formatCurrency(estimatedNetAmount)}</span>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* 4. PAYMENT METHOD SELECTOR */}
-          <div className="space-y-2">
-            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Metode Pembayaran</Label>
-            <div className="grid grid-cols-4 gap-2">
-              <Button
-                type="button"
-                variant={paymentMethod === 'cash' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setPaymentMethod('cash')}
-                className="text-xs gap-1 h-10"
-              >
-                <Banknote className="h-4 w-4" />
-                Tunai
-              </Button>
-              <Button
-                type="button"
-                variant={paymentMethod === 'qris' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setPaymentMethod('qris')}
-                className="text-xs gap-1 h-10"
-              >
-                <QrCode className="h-4 w-4" />
-                QRIS
-              </Button>
-              <Button
-                type="button"
-                variant={paymentMethod === 'transfer' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setPaymentMethod('transfer')}
-                className="text-xs gap-1 h-10"
-              >
-                <CreditCard className="h-4 w-4" />
-                Transfer
-              </Button>
-              <Button
-                type="button"
-                variant={paymentMethod === 'card' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setPaymentMethod('card')}
-                className="text-xs gap-1 h-10"
-              >
-                <CreditCard className="h-4 w-4" />
-                Kartu
-              </Button>
-            </div>
-          </div>
-
-          {/* 5. CASH INPUT SECTION */}
-          {paymentMethod === 'cash' && (
-            <div className="space-y-3 pt-1">
-              <Label className="text-xs font-semibold">Jumlah Uang Diterima</Label>
-              <Input
-                type="text"
-                autoFocus
-                value={cashReceivedStr ? formatCurrency(cashReceived).replace('Rp', '').trim() : ''}
-                onChange={handleCashChange}
-                className="text-right text-2xl font-bold h-12"
-                placeholder="0"
-                disabled={isProcessing}
-              />
-              <div className="flex flex-wrap gap-2">
-                <Button type="button" size="sm" variant="outline" onClick={handleExactChange} className="flex-1 text-xs" disabled={isProcessing}>
+              {/* Quick Preset Chips */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-hide text-xs">
+                <button
+                  type="button"
+                  onClick={() => handlePresetAmount(grandTotal)}
+                  className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 font-semibold text-blue-600 dark:text-blue-400 shrink-0 transition-colors cursor-pointer"
+                >
                   Uang Pas
-                </Button>
+                </button>
                 {suggestedAmounts.map((amt) => (
-                  <Button key={amt} type="button" size="sm" variant="outline" onClick={() => handlePreset(amt)} className="flex-1 text-xs" disabled={isProcessing}>
+                  <button
+                    key={amt}
+                    type="button"
+                    onClick={() => handlePresetAmount(amt)}
+                    className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 font-medium text-foreground shrink-0 transition-colors cursor-pointer"
+                  >
                     {formatCurrency(amt)}
-                  </Button>
+                  </button>
                 ))}
               </div>
 
-              {cashReceived > 0 && (
-                <div className={`p-3 rounded-xl text-center ${change >= 0 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'}`}>
-                  <span className="text-xs font-medium block mb-0.5">
-                    {change >= 0 ? 'Kembalian' : 'Uang Kurang'}
-                  </span>
-                  <span className="text-2xl font-bold">
-                    {formatCurrency(Math.abs(change))}
-                  </span>
-                </div>
-              )}
+              {/* 3x4 Touch Numpad */}
+              <div className="grid grid-cols-3 gap-1.5 pt-0.5">
+                {['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0', 'BACKSPACE'].map((btn) => (
+                  <button
+                    key={btn}
+                    type="button"
+                    onClick={() => handleNumpadInput(btn)}
+                    className={cn(
+                      "h-11 rounded-xl text-base font-medium flex items-center justify-center border transition-all active:scale-[0.97] cursor-pointer select-none",
+                      btn === 'BACKSPACE'
+                        ? "bg-slate-100 dark:bg-slate-800/80 text-muted-foreground border-slate-200 dark:border-slate-700 hover:bg-slate-200"
+                        : "bg-white dark:bg-slate-900 text-foreground border-slate-200/90 dark:border-slate-800 hover:bg-slate-50 shadow-2xs"
+                    )}
+                  >
+                    {btn === 'BACKSPACE' ? <Delete className="w-5 h-5" /> : btn}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            /* Non-cash Payment Guidance */
+            <div className="py-6 px-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/70 dark:border-slate-800 text-center space-y-2">
+              <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 mx-auto flex items-center justify-center">
+                {paymentMethod === 'qris' && <QrCode className="w-5 h-5" />}
+                {paymentMethod === 'card' && <CreditCard className="w-5 h-5" />}
+                {paymentMethod === 'transfer' && <ArrowRightLeft className="w-5 h-5" />}
+              </div>
+              <p className="text-xs font-semibold text-foreground">
+                {paymentMethod === 'qris' && 'Instruksi Pembayaran QRIS'}
+                {paymentMethod === 'card' && 'Instruksi Mesin EDC'}
+                {paymentMethod === 'transfer' && 'Instruksi Transfer Bank'}
+              </p>
+              <p className="text-[11px] text-muted-foreground max-w-xs mx-auto">
+                {paymentMethod === 'qris' && 'Tunjukkan kode QR dinamis/statis kepada pelanggan. Setelah verifikasi pembayaran berhasil di aplikasi, klik Selesaikan.'}
+                {paymentMethod === 'card' && 'Gesek atau tap kartu pelanggan pada terminal EDC kasir. Pastikan struk EDC tercetak.'}
+                {paymentMethod === 'transfer' && 'Verifikasi dana masuk pada mutasi rekening toko sebelum menyelesaikan transaksi ini.'}
+              </p>
             </div>
           )}
         </div>
 
-        <div className="flex gap-3 pt-2">
-          <Button type="button" variant="secondary" onClick={onClose} className="flex-1 h-11" disabled={isProcessing}>
+        {/* Modal Footer Actions */}
+        <div className="p-4 pt-3 border-t bg-slate-50/70 dark:bg-slate-900/50 flex gap-2.5">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            disabled={isProcessing}
+            className="flex-1 h-11 text-xs rounded-xl font-medium"
+          >
             Batal
           </Button>
-          <Button 
-            type="button" 
-            onClick={handleSubmit} 
-            className="flex-1 h-11 text-base font-bold shadow-md" 
-            disabled={!isFormValid || isProcessing}
+          <Button
+            type="button"
+            onClick={handleSubmit}
+            disabled={!isCashSufficient || isProcessing}
+            className="flex-[2] h-11 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5"
           >
-            {isProcessing ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Memproses...</> : 'Bayar & Cetak Struk'}
+            {isProcessing ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Memproses...</span>
+              </>
+            ) : (
+              <>
+                <Check className="w-4 h-4 stroke-[2.5]" />
+                <span>Selesaikan & Cetak Struk (Enter)</span>
+              </>
+            )}
           </Button>
         </div>
       </DialogContent>
