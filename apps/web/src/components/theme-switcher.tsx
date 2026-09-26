@@ -11,8 +11,21 @@ import {
 import { Laptop, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
 
-const ThemeSwitcher = () => {
+interface ThemeSwitcherProps {
+  className?: string;
+  triggerClassName?: string;
+  iconClassName?: string;
+  size?: number;
+}
+
+const ThemeSwitcher = ({
+  className,
+  triggerClassName,
+  iconClassName,
+  size = 16,
+}: ThemeSwitcherProps) => {
   const [mounted, setMounted] = useState(false);
   const { theme, setTheme } = useTheme();
 
@@ -25,54 +38,59 @@ const ThemeSwitcher = () => {
     return null;
   }
 
-  const ICON_SIZE = 16;
-
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size={"sm"}>
-          {theme === "light" ? (
-            <Sun
-              key="light"
-              size={ICON_SIZE}
-              className={"text-muted-foreground"}
-            />
-          ) : theme === "dark" ? (
-            <Moon
-              key="dark"
-              size={ICON_SIZE}
-              className={"text-muted-foreground"}
-            />
-          ) : (
-            <Laptop
-              key="system"
-              size={ICON_SIZE}
-              className={"text-muted-foreground"}
-            />
-          )}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-content" align="start">
-        <DropdownMenuRadioGroup
-          value={theme}
-          onValueChange={(e) => setTheme(e)}
-        >
-          <DropdownMenuRadioItem className="flex gap-2" value="light">
-            <Sun size={ICON_SIZE} className="text-muted-foreground" />{" "}
-            <span>Light</span>
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem className="flex gap-2" value="dark">
-            <Moon size={ICON_SIZE} className="text-muted-foreground" />{" "}
-            <span>Dark</span>
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem className="flex gap-2" value="system">
-            <Laptop size={ICON_SIZE} className="text-muted-foreground" />{" "}
-            <span>System</span>
-          </DropdownMenuRadioItem>
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div className={className}>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button 
+            variant="ghost" 
+            size="sm"
+            className={cn("text-muted-foreground hover:text-foreground", triggerClassName)}
+          >
+            {theme === "light" ? (
+              <Sun
+                key="light"
+                size={size}
+                className={cn("transition-colors", iconClassName || "currentColor")}
+              />
+            ) : theme === "dark" ? (
+              <Moon
+                key="dark"
+                size={size}
+                className={cn("transition-colors", iconClassName || "currentColor")}
+              />
+            ) : (
+              <Laptop
+                key="system"
+                size={size}
+                className={cn("transition-colors", iconClassName || "currentColor")}
+              />
+            )}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-content" align="start">
+          <DropdownMenuRadioGroup
+            value={theme}
+            onValueChange={(e) => setTheme(e)}
+          >
+            <DropdownMenuRadioItem className="flex gap-2 cursor-pointer" value="light">
+              <Sun size={16} className="text-muted-foreground" />{" "}
+              <span>Light</span>
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem className="flex gap-2 cursor-pointer" value="dark">
+              <Moon size={16} className="text-muted-foreground" />{" "}
+              <span>Dark</span>
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem className="flex gap-2 cursor-pointer" value="system">
+              <Laptop size={16} className="text-muted-foreground" />{" "}
+              <span>System</span>
+            </DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   );
 };
 
 export { ThemeSwitcher };
+

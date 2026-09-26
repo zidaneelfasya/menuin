@@ -75,7 +75,7 @@ export function PageTransitionProvider({ children }: { children: ReactNode }) {
             exit={{ y: "-100%" }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
             // Using primary color which corresponds to the brand's blue
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-primary" 
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-primary " 
           >
             {/* The Logo Container */}
             <div className="relative w-48 h-48 md:w-64 md:h-64">

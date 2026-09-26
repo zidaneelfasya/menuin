@@ -67,13 +67,17 @@ function SidebarContent({ collapsed, setCollapsed, user }: { collapsed: boolean;
   const outletKey = user.outletKey || 'unknown';
   const navItems = getNavItems(outletKey).filter(item => !item.roles || item.roles.includes(user.role as any));
 
+  // Determine if the current page has a sub-sidebar (e.g. Katalog Menu or Settings)
+  const hasSubSidebar = pathname.includes('/katalog');
+  const curvedTabBg = hasSubSidebar ? '#ffffff' : '#F9FBFF';
+
   return (
     <>
       {/* Logo Area */}
-      <div className="h-16 flex items-center justify-center border-b px-4 relative">
-        <div className="relative w-24 h-16 flex-shrink-0">
+      <div className="h-16 flex items-center justify-center px-4  relative flex-shrink-0">
+        <div className={cn("relative flex items-center transition-all", collapsed ? "w-8 h-8 mx-auto" : "w-28 h-9")}>
           <Image 
-            src="/logo-menuin-memanjang.svg" 
+            src="/menuin-putih.png" 
             alt="Logo Menuin" 
             fill 
             className="object-contain" 
@@ -84,15 +88,19 @@ function SidebarContent({ collapsed, setCollapsed, user }: { collapsed: boolean;
         {setCollapsed && (
           <button 
             onClick={() => setCollapsed(!collapsed)}
-            className="absolute -right-3 top-5 bg-card border rounded-full p-1 text-muted-foreground hover:text-foreground shadow-sm hidden md:block cursor-pointer"
+            className="absolute -right-3 top-5 bg-white text-[#0e59f9] border border-blue-100 rounded-full p-1 shadow-md hover:bg-white/95 hidden md:flex items-center justify-center cursor-pointer z-50 transition-transform active:scale-95"
+            title={collapsed ? "Perluas Sidebar" : "Kecilkan Sidebar"}
           >
-            {collapsed ? <IconChevronRight size={14} /> : <IconChevronLeft size={14} />}
+            {collapsed ? <IconChevronRight size={13} stroke={2.5} /> : <IconChevronLeft size={13} stroke={2.5} />}
           </button>
         )}
       </div>
 
       {/* Navigation */}
-      <div className="flex-1 overflow-y-auto py-5 px-3 scrollbar-hide space-y-4">
+      <div className={cn(
+        "flex-1 overflow-y-auto py-4 scrollbar-hide space-y-1",
+        collapsed ? "px-2" : "pl-3 pr-0"
+      )}>
         {/* Main Nav Items */}
         <nav className="space-y-1">
           {navItems.map((item) => {
@@ -106,28 +114,50 @@ function SidebarContent({ collapsed, setCollapsed, user }: { collapsed: boolean;
                   navigateWithTransition(item.href);
                 }}
               >
-                <div
-                  className={cn(
-                    'flex items-center px-3 py-2.5 rounded-xl transition-all duration-200 group relative cursor-pointer',
-                    isActive 
-                      ? 'bg-primary/10 text-primary font-semibold' 
-                      : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground font-medium'
-                  )}
-                  title={collapsed ? item.name : undefined}
-                >
-                  <item.icon className={cn('h-5 w-5 flex-shrink-0', isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground')} />
-                  {!collapsed && (
-                    <span className="ml-3 font-medium text-sm flex-1">{item.name}</span>
-                  )}
-                  {item.href.includes('/orders') && incomingOrders.length > 0 && (
-                    <span className={cn(
-                      "absolute bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded-full",
-                      collapsed ? "top-0 right-0 translate-x-1 -translate-y-1" : "right-3 top-1/2 -translate-y-1/2"
-                    )}>
-                      {incomingOrders.length}
+                {collapsed ? (
+                  /* Collapsed Nav Item */
+                  <div
+                    className={cn(
+                      'w-10 h-10 rounded-xl flex items-center justify-center mx-auto transition-all duration-150 group relative cursor-pointer my-1',
+                      isActive 
+                        ? 'bg-white text-[#0e59f9] shadow-sm' 
+                        : 'text-white/80 hover:text-white hover:bg-white/10'
+                    )}
+                    title={item.name}
+                  >
+                    <item.icon className={cn('h-5 w-5 flex-shrink-0', isActive ? 'text-[#0e59f9]' : 'text-white/80 group-hover:text-white')} />
+                    {item.href.includes('/orders') && incomingOrders.length > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full shadow-sm">
+                        {incomingOrders.length}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  /* Expanded Nav Item */
+                  <div
+                    className={cn(
+                      'flex items-center px-3.5 py-2.5 transition-all duration-150 group relative cursor-pointer my-0.5',
+                      isActive 
+                        ? 'curved-tab-active font-semibold z-20' 
+                        : 'mr-3 rounded-xl text-white/80 hover:text-white hover:bg-white/10 font-medium'
+                    )}
+                    style={isActive ? ({ '--curved-tab-bg': curvedTabBg } as React.CSSProperties) : undefined}
+                    title={item.name}
+                  >
+                    <item.icon className={cn('h-5 w-5 flex-shrink-0', isActive ? 'text-[#0e59f9]' : 'text-white/80 group-hover:text-white')} />
+                    <span className={cn('ml-3 font-semibold text-sm flex-1 truncate', isActive ? 'text-[#0e59f9]' : 'text-white/90 group-hover:text-white')}>
+                      {item.name}
                     </span>
-                  )}
-                </div>
+                    {item.href.includes('/orders') && incomingOrders.length > 0 && (
+                      <span className={cn(
+                        "text-xs font-bold px-2 py-0.5 rounded-full shadow-sm",
+                        isActive ? "bg-[#0e59f9] text-white" : "bg-white text-[#0e59f9]"
+                      )}>
+                        {incomingOrders.length}
+                      </span>
+                    )}
+                  </div>
+                )}
               </Link>
             );
           })}
@@ -135,35 +165,39 @@ function SidebarContent({ collapsed, setCollapsed, user }: { collapsed: boolean;
       </div>
 
       {/* Bottom User Area */}
-      <div className="p-4 border-t border-border/50">
+      <div className="p-3  flex-shrink-0">
         <div className={cn('flex items-center gap-2', collapsed ? 'flex-col justify-center' : 'justify-between')}>
           {!collapsed && (
             <div className="flex items-center overflow-hidden flex-1">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold flex-shrink-0 uppercase">
+              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white font-semibold flex-shrink-0 uppercase text-xs border border-white/20">
                 {user.name.charAt(0)}
               </div>
-              <div className="ml-3 overflow-hidden flex-1">
-                <p className="text-sm font-semibold truncate">{user.name}</p>
-                <p className="text-xs text-muted-foreground truncate">{user.role} &bull; {user.restaurantName}</p>
+              <div className="ml-2.5 overflow-hidden flex-1">
+                <p className="text-xs font-semibold text-white truncate">{user.name}</p>
+                <p className="text-[11px] text-white/70 truncate">{user.role} &bull; {user.restaurantName}</p>
               </div>
             </div>
           )}
-          <div className={cn('flex items-center gap-1 mt-2', collapsed && 'flex-col')}>
+          <div className={cn('flex items-center gap-1', collapsed && 'flex-col mt-1')}>
             <button 
               type="button"
               onClick={() => navigateWithTransition('/select-tenant')}
-              className={cn('text-muted-foreground hover:text-primary transition-colors h-9 w-9 flex items-center justify-center cursor-pointer', collapsed && 'bg-muted rounded-full')}
+              className={cn('text-white/80 hover:text-white hover:bg-white/15 transition-colors h-8 w-8 flex items-center justify-center rounded-lg cursor-pointer')}
               title="Ganti Toko / Cabang"
             >
-              <IconArrowsExchange size={collapsed ? 18 : 20} />
+              <IconArrowsExchange size={collapsed ? 16 : 18} />
             </button>
-            <ThemeSwitcher />
+            <ThemeSwitcher 
+              triggerClassName="text-white/80 hover:text-white hover:bg-white/15 transition-colors h-8 w-8 p-0 rounded-lg cursor-pointer flex items-center justify-center border-0 shadow-none bg-transparent"
+              iconClassName="text-white/80 hover:text-white"
+              size={collapsed ? 16 : 18}
+            />
             <button 
               onClick={handleLogout}
-              className={cn('text-muted-foreground hover:text-destructive transition-colors h-9 w-9 flex items-center justify-center cursor-pointer', collapsed && 'bg-muted rounded-full')}
+              className={cn('text-white/80 hover:text-rose-200 hover:bg-rose-500/20 transition-colors h-8 w-8 flex items-center justify-center rounded-lg cursor-pointer')}
               title="Keluar"
             >
-              <IconLogout size={collapsed ? 18 : 20} />
+              <IconLogout size={collapsed ? 16 : 18} />
             </button>
           </div>
         </div>
@@ -191,14 +225,14 @@ export function Sidebar({
       <motion.aside
         initial={false}
         animate={{ width: collapsed ? '80px' : '260px' }}
-        className="bg-card border-r hidden md:flex flex-col h-screen fixed left-0 top-0 z-40 transition-all duration-300 shadow-sm"
+        className="bg-[#0e59f9] text-white rounded-r-2xl md:rounded-r-3xl hidden md:flex flex-col h-screen fixed left-0 top-0 z-40 transition-all duration-300 shadow-[6px_0_24px_rgba(14,89,249,0.18),2px_0_8px_rgba(0,0,0,0.06)] select-none"
       >
         <SidebarContent collapsed={collapsed} setCollapsed={setCollapsed} user={user} />
       </motion.aside>
 
       {/* Mobile Sidebar */}
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="left" className="w-[260px] p-0 flex flex-col bg-card border-r">
+        <SheetContent side="left" className="w-[260px] p-0 flex flex-col bg-[#0e59f9] text-white border-0 select-none">
           <SheetTitle className="sr-only">Navigasi</SheetTitle>
           <SidebarContent collapsed={false} user={user} />
         </SheetContent>
@@ -206,3 +240,4 @@ export function Sidebar({
     </>
   );
 }
+
