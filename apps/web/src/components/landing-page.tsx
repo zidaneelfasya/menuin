@@ -11,6 +11,7 @@ import ComparisonScroll from "@/components/landing/comparison-scroll";
 import FeatureShowcase from "@/components/landing/feature-showcase";
 import SecuritySection from "@/components/landing/security-section";
 import { HeroIntro } from "@/components/landing/scroll-reveal";
+import HeroParallax from "@/components/landing/hero-parallax";
 import FaqEditorial from "@/components/ui/faq-editorial";
 import FooterReadyToBegin from "@/components/ui/footer-ready-to-begin";
 import FooterSuperfluidStyle from "@/components/ui/footer-superfluid-style";
@@ -68,48 +69,6 @@ const CONTACT_WHATSAPP =
   "https://wa.me/628123456789?text=Halo%20Menuin%2C%20saya%20ingin%20berdiskusi%20soal%20paket%20Enterprise";
 
 
-/**
- * Visual hero: foto kasir Menuin dipakai di gerai sungguhan.
- * Screenshot lama di public/img/hero/*.png tidak dipakai karena masih
- * memperlihatkan tenant kosong ("Tidak ada data" / "Rp 0").
- */
-function HeroPhoto() {
-  return (
-    <figure className="relative mx-auto w-full max-w-[1280px]">
-      <div className="overflow-hidden rounded-[24px] bg-[#f4f4f5] shadow-[var(--landing-lift-lg)]">
-        <Image
-          src="/img/landing/hero-kasir.webp"
-          alt="Kasir sebuah coffee shop memproses pesanan lewat Menuin di tablet"
-          width={1357}
-          height={1024}
-          priority
-          sizes="(max-width: 1100px) 100vw, 1100px"
-          className="h-full w-full object-cover"
-        />
-      </div>
-
-      {/* Kartu status pesanan — sisi tamu dari transaksi yang sama */}
-      <div className="absolute -bottom-6 left-4 hidden w-[220px] rounded-2xl border border-black/[0.06] bg-white/95 p-4 shadow-[var(--landing-lift-lg)] backdrop-blur md:block lg:-left-6 lg:w-[248px]">
-        <div className="flex items-baseline justify-between">
-          <span className="text-[11px] text-[#71717a]">Meja 12</span>
-          <span className="font-display text-[11px] tabular-nums text-[#71717a]">02:14</span>
-        </div>
-        <p className="mt-1 text-[14px] font-semibold leading-snug text-[#0a0a0a]">
-          Sedang disiapkan barista
-        </p>
-        <ol className="mt-3 flex items-center gap-1.5">
-          {[true, true, false, false].map((done, i) => (
-            <li
-              key={i}
-              className={`h-1 flex-1 rounded-full ${done ? "bg-[#0E59F9]" : "bg-slate-200"}`}
-            />
-          ))}
-        </ol>
-        <p className="mt-2 text-[11px] text-[#71717a]">Diterima · Disiapkan · Siap · Selesai</p>
-      </div>
-    </figure>
-  );
-}
 
 const testimonialsData = [
   {
@@ -519,32 +478,32 @@ export default function LandingPage({
       </header>
 
       {/* HERO */}
-      <section className="relative px-6 pt-32 md:pt-40">
-        <HeroIntro>
-        <div className="mx-auto max-w-[1280px]">
-          <div data-hero-item>
-            <p className="text-center text-[12px] font-semibold uppercase tracking-[0.18em] text-[#71717a]">
-              Ekosistem operasional F&amp;B
-            </p>
-          </div>
-
-          <div data-hero-item>
-            <h1 className="mx-auto mt-6 max-w-[20ch] text-center font-display text-[clamp(34px,6.2vw,76px)] font-semibold leading-[1.03] tracking-[-0.04em] text-[#0a0a0a] text-balance">
-              Satu sentuhan di meja.
-              <span className="block">Kasir bergerak kilat.</span>
-              <span className="block">Dapur tepat waktu.</span>
-            </h1>
-          </div>
-
-          <div data-hero-item>
-            <p className="mx-auto mt-7 max-w-[62ch] text-center text-[16px] leading-relaxed text-[#52525b] md:text-[17px]">
-              Menuin menyatukan pemesanan mandiri lewat QR di meja, kasir cloud untuk jam sibuk, dan
-              layar dapur tanpa kertas — dalam satu sistem yang sama.
-            </p>
-          </div>
-
-          <div data-hero-item>
-            <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+      <HeroParallax
+        heading={
+          <HeroIntro>
+            <div data-hero-item>
+              <p className="text-center text-[11.5px] font-semibold uppercase tracking-[0.18em] text-[#71717a]">
+                Ekosistem operasional F&amp;B
+              </p>
+            </div>
+            <div data-hero-item>
+              <h1 className="mx-auto mt-4 text-center font-display text-[clamp(32px,4.6vw,64px)] font-semibold leading-[1.02] tracking-[-0.045em] text-[#0a0a0a]">
+                <span className="block">Satu sentuhan di meja.</span>
+                <span className="block">Kasir bergerak kilat.</span>
+                <span className="block">Dapur tepat waktu.</span>
+              </h1>
+            </div>
+            <div data-hero-item>
+              <p className="mx-auto mt-4 max-w-[56ch] text-center text-[15px] leading-relaxed text-[#52525b] md:text-[16px]">
+                Pemesanan mandiri lewat QR, kasir cloud untuk jam sibuk, dan layar dapur tanpa
+                kertas, dalam satu sistem yang sama.
+              </p>
+            </div>
+          </HeroIntro>
+        }
+        actions={
+          <div className="flex flex-col items-center">
+            <div className="flex w-full max-w-[420px] flex-col items-center justify-center gap-3 sm:w-auto sm:max-w-none sm:flex-row">
               <a
                 href={isLoggedIn ? "/select-tenant" : "/auth/signup"}
                 onClick={(e) => {
@@ -553,34 +512,24 @@ export default function LandingPage({
                     navigateWithTransition("/select-tenant");
                   }
                 }}
-                className="inline-flex h-11 w-full items-center justify-center rounded-full bg-[#0E59F9] px-6 text-[15px] font-medium text-white transition-colors hover:bg-[#0C4CD6] sm:w-auto"
+                className="inline-flex h-12 w-full items-center justify-center rounded-full bg-[#0E59F9] px-7 text-[15px] font-medium text-white shadow-[0_12px_30px_-10px_rgba(14,89,249,0.6)] transition-colors hover:bg-[#0C4CD6] sm:w-auto"
               >
                 {isLoggedIn ? "Buka dashboard" : "Mulai uji coba 14 hari"}
               </a>
               <a
                 href="#alur"
-                className="inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-full border border-black/[0.08] px-6 text-[15px] font-medium text-[#0a0a0a] transition-colors hover:bg-[#fafafa] sm:w-auto"
+                className="inline-flex h-12 w-full items-center justify-center gap-1.5 rounded-full bg-white px-7 text-[15px] font-medium text-[#0a0a0a] shadow-[0_12px_30px_-12px_rgba(15,23,42,0.35)] ring-1 ring-black/[0.06] transition-colors hover:bg-[#fafafa] sm:w-auto"
               >
                 Lihat cara kerjanya
                 <ArrowRight className="h-4 w-4 text-[#71717a]" />
               </a>
             </div>
-          </div>
-
-          <div data-hero-item>
-            <p className="mt-5 text-center text-[13px] text-[#71717a]">
-              Tanpa kartu kredit · Setup 5 menit · Printer Bluetooth &amp; LAN
+            <p className="mt-4 rounded-full bg-white/85 px-4 py-1.5 text-center text-[12.5px] text-[#52525b] backdrop-blur">
+              Tanpa kartu kredit · Setup 5 menit<span className="hidden sm:inline"> · Printer Bluetooth &amp; LAN</span>
             </p>
           </div>
-
-          <div data-hero-item>
-            <div className="mt-14 md:mt-16">
-              <HeroPhoto />
-            </div>
-          </div>
-        </div>
-        </HeroIntro>
-      </section>
+        }
+      />
 
       {/* TENTANG — siapa Menuin dan untuk siapa */}
       <AboutSection />
