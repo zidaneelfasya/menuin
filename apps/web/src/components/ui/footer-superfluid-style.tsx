@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function FooterSuperfluidStyle() {
   const [email, setEmail] = useState("");
@@ -69,11 +70,10 @@ export default function FooterSuperfluidStyle() {
                 Produk
               </h4>
               <ul className="space-y-2 text-white/80">
-                <li><a href="#alur" className="hover:text-white hover:underline transition-all">Cara kerja</a></li>
-                <li><a href="#fitur" className="hover:text-white hover:underline transition-all">Kasir POS</a></li>
-                <li><a href="#fitur" className="hover:text-white hover:underline transition-all">Shift &amp; Kas</a></li>
-                <li><a href="#fitur" className="hover:text-white hover:underline transition-all">Stok &amp; HPP</a></li>
-                <li><a href="#fitur" className="hover:text-white hover:underline transition-all">Diskon &amp; Promo</a></li>
+                <li><Link href="/fitur" className="hover:text-white hover:underline transition-all">Fitur</Link></li>
+                <li><Link href="/harga" className="hover:text-white hover:underline transition-all">Harga</Link></li>
+                <li><Link href="/keamanan" className="hover:text-white hover:underline transition-all">Keamanan</Link></li>
+                <li><Link href="/faq" className="hover:text-white hover:underline transition-all">Tanya jawab</Link></li>
               </ul>
             </div>
 
@@ -83,11 +83,10 @@ export default function FooterSuperfluidStyle() {
                 Menuin
               </h4>
               <ul className="space-y-2 text-white/80">
-                <li><a href="#tentang" className="hover:text-white hover:underline transition-all">Tentang</a></li>
-                <li><a href="#keamanan" className="hover:text-white hover:underline transition-all">Keamanan</a></li>
-                <li><a href="#pricing" className="hover:text-white hover:underline transition-all">Harga</a></li>
-                <li><a href="#faq" className="hover:text-white hover:underline transition-all">Tanya jawab</a></li>
-                <li><a href="https://wa.me/628123456789" target="_blank" rel="noopener noreferrer" className="hover:text-white hover:underline transition-all">Hubungi kami</a></li>
+                <li><Link href="/" className="hover:text-white hover:underline transition-all">Beranda</Link></li>
+                <li><Link href="/tentang" className="hover:text-white hover:underline transition-all">Tentang</Link></li>
+                <li><Link href="/kontak" className="hover:text-white hover:underline transition-all">Hubungi kami</Link></li>
+                <li><Link href="/auth/login" className="hover:text-white hover:underline transition-all">Masuk</Link></li>
               </ul>
             </div>
 

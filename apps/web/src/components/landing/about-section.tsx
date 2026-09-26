@@ -68,7 +68,7 @@ export default function AboutSection() {
         <div className="lg:col-span-6">
           <ScrollReveal>
             <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#71717a]">
-              Tentang Menuin
+              Kenapa Menuin
             </p>
             <h2 className="mt-4 text-[clamp(30px,4.2vw,48px)] font-semibold leading-[1.05] tracking-[-0.04em] text-balance">
               <span className="block text-[#0a0a0a]">Dibuat untuk jam sibuk</span>
