@@ -11,6 +11,7 @@ import ComparisonScroll from "@/components/landing/comparison-scroll";
 import FeatureShowcase from "@/components/landing/feature-showcase";
 import SecuritySection from "@/components/landing/security-section";
 import { HeroIntro } from "@/components/landing/scroll-reveal";
+import HeroParallax from "@/components/landing/hero-parallax";
 import FaqEditorial from "@/components/ui/faq-editorial";
 import FooterReadyToBegin from "@/components/ui/footer-ready-to-begin";
 import FooterSuperfluidStyle from "@/components/ui/footer-superfluid-style";
@@ -68,48 +69,6 @@ const CONTACT_WHATSAPP =
   "https://wa.me/628123456789?text=Halo%20Menuin%2C%20saya%20ingin%20berdiskusi%20soal%20paket%20Enterprise";
 
 
-/**
- * Visual hero: foto kasir Menuin dipakai di gerai sungguhan.
- * Screenshot lama di public/img/hero/*.png tidak dipakai karena masih
- * memperlihatkan tenant kosong ("Tidak ada data" / "Rp 0").
- */
-function HeroPhoto() {
-  return (
-    <figure className="relative mx-auto w-full max-w-[1280px]">
-      <div className="overflow-hidden rounded-[24px] bg-[#f4f4f5] shadow-[var(--landing-lift-lg)]">
-        <Image
-          src="/img/landing/hero-kasir.webp"
-          alt="Kasir sebuah coffee shop memproses pesanan lewat Menuin di tablet"
-          width={1357}
-          height={1024}
-          priority
-          sizes="(max-width: 1100px) 100vw, 1100px"
-          className="h-full w-full object-cover"
-        />
-      </div>
-
-      {/* Kartu status pesanan — sisi tamu dari transaksi yang sama */}
-      <div className="absolute -bottom-6 left-4 hidden w-[220px] rounded-2xl border border-black/[0.06] bg-white/95 p-4 shadow-[var(--landing-lift-lg)] backdrop-blur md:block lg:-left-6 lg:w-[248px]">
-        <div className="flex items-baseline justify-between">
-          <span className="text-[11px] text-[#71717a]">Meja 12</span>
-          <span className="font-display text-[11px] tabular-nums text-[#71717a]">02:14</span>
-        </div>
-        <p className="mt-1 text-[14px] font-semibold leading-snug text-[#0a0a0a]">
-          Sedang disiapkan barista
-        </p>
-        <ol className="mt-3 flex items-center gap-1.5">
-          {[true, true, false, false].map((done, i) => (
-            <li
-              key={i}
-              className={`h-1 flex-1 rounded-full ${done ? "bg-[#0E59F9]" : "bg-slate-200"}`}
-            />
-          ))}
-        </ol>
-        <p className="mt-2 text-[11px] text-[#71717a]">Diterima · Disiapkan · Siap · Selesai</p>
-      </div>
-    </figure>
-  );
-}
 
 const testimonialsData = [
   {
@@ -519,9 +478,9 @@ export default function LandingPage({
       </header>
 
       {/* HERO */}
-      <section className="relative px-6 pt-32 md:pt-40">
+      <HeroParallax>
         <HeroIntro>
-        <div className="mx-auto max-w-[1280px]">
+        <div>
           <div data-hero-item>
             <p className="text-center text-[12px] font-semibold uppercase tracking-[0.18em] text-[#71717a]">
               Ekosistem operasional F&amp;B
@@ -573,14 +532,9 @@ export default function LandingPage({
             </p>
           </div>
 
-          <div data-hero-item>
-            <div className="mt-14 md:mt-16">
-              <HeroPhoto />
-            </div>
-          </div>
         </div>
         </HeroIntro>
-      </section>
+      </HeroParallax>
 
       {/* TENTANG — siapa Menuin dan untuk siapa */}
       <AboutSection />
