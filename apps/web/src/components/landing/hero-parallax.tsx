@@ -57,16 +57,16 @@ type Layer = {
 const layers: Layer[] = [
   {
     id: "keranjang",
-    className: "left-[9%] top-[17%] w-[clamp(104px,8.6vw,134px)]",
+    className: "left-[13%] top-[19%] w-[clamp(100px,7.6vw,128px)]",
     depth: 1.3,
-    rotate: -7,
+    rotate: -8,
     node: <Phone src="/img/landing/journey/tamu-keranjang.webp" alt="Keranjang pesanan tamu" />,
   },
   {
     id: "katalog",
-    className: "left-[2%] top-[50%] w-[clamp(200px,17vw,270px)]",
+    className: "left-[2%] top-[47%] w-[clamp(220px,17vw,290px)]",
     depth: 0.9,
-    rotate: 5,
+    rotate: 6,
     node: (
       <Image
         src="/img/landing/katalog-iphone.webp"
@@ -80,16 +80,16 @@ const layers: Layer[] = [
   },
   {
     id: "bayar",
-    className: "right-[10%] top-[15%] w-[clamp(100px,8.2vw,128px)]",
+    className: "right-[13%] top-[19%] w-[clamp(100px,7.6vw,128px)]",
     depth: 1.2,
-    rotate: 7,
+    rotate: 8,
     node: <Phone src="/img/landing/journey/tamu-bayar.webp" alt="Pilihan pembayaran tamu" />,
   },
   {
     id: "laptop",
-    className: "right-[2%] top-[58%] w-[clamp(240px,21vw,330px)]",
+    className: "right-[2%] top-[53%] w-[clamp(250px,20vw,330px)]",
     depth: 1,
-    rotate: -3,
+    rotate: -4,
     node: (
       <Image
         src="/img/landing/dashboard-macbook.webp"
@@ -220,7 +220,7 @@ export default function HeroParallax({
         </div>
 
         {/* Tablet kasir melayang di samping badan */}
-        <div className="absolute left-1/2 top-[34%] w-[clamp(170px,21vw,320px)] translate-x-[16%]">
+        <div className="absolute left-1/2 top-[33%] hidden w-[clamp(150px,15vw,230px)] translate-x-[72%] sm:block">
         <motion.div style={{ x: tabletX, y: tabletY }}>
           <motion.div
             initial={reduce ? false : { opacity: 0, y: 50, rotate: -16 }}
