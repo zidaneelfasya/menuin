@@ -3,6 +3,7 @@
 import React, { useRef } from "react";
 import Image from "next/image";
 import {
+  MotionConfig,
   motion,
   useMotionValue,
   useReducedMotion,
@@ -21,22 +22,36 @@ import {
  * di kedalaman berbeda (terinspirasi "parallax hero images" Aceternity).
  *
  * Gerak mengikuti mouse tetap aktif walau reduced-motion menyala, karena
- * geraknya kecil dan dipicu pengguna sendiri; animasi masuk dan parallax
- * scroll yang dimatikan untuk reduced-motion.
+ * geraknya kecil dan dipicu pengguna sendiri; animasi masuk (lewat
+ * MotionConfig) dan parallax scroll yang diredam untuk reduced-motion.
  */
 
 /* ------------------------------------------------------------------ */
 /* Bingkai                                                             */
 /* ------------------------------------------------------------------ */
 
-function Phone({ src, alt }: { src: string; alt: string }) {
+/** Tablet berbingkai CSS berisi tangkapan layar dashboard. */
+function Tablet({ src, alt, w, h }: { src: string; alt: string; w: number; h: number }) {
   return (
-    <div className="rounded-[20px] bg-[#0a0a0a] p-[4px] shadow-[0_24px_48px_-24px_rgba(15,23,42,0.5)] ring-1 ring-black/10">
-      <div className="relative overflow-hidden rounded-[16px] bg-white">
-        <span className="absolute left-1/2 top-1 z-10 h-[9px] w-[34px] -translate-x-1/2 rounded-full bg-[#0a0a0a]" />
-        <div className="pt-4">
-          <Image src={src} alt={alt} width={356} height={797} sizes="130px" className="block h-auto w-full" />
+    <div className="rounded-[18px] bg-[#111] p-[7px] shadow-[0_28px_50px_-24px_rgba(15,23,42,0.45)] ring-1 ring-black/20">
+      <div className="aspect-[4/3] overflow-hidden rounded-[12px] bg-white">
+        <Image src={src} alt={alt} width={w} height={h} sizes="300px" className="h-full w-full object-cover object-left-top" />
+      </div>
+    </div>
+  );
+}
+
+/** Laptop berbingkai CSS berisi tangkapan layar dashboard. */
+function Laptop({ src, alt, w, h }: { src: string; alt: string; w: number; h: number }) {
+  return (
+    <div className="drop-shadow-[0_28px_32px_rgba(15,23,42,0.22)]">
+      <div className="mx-[7%] rounded-t-[12px] bg-[#111] p-[6px] pb-[8px] ring-1 ring-black/20">
+        <div className="aspect-[16/10] overflow-hidden rounded-[4px] bg-white">
+          <Image src={src} alt={alt} width={w} height={h} sizes="320px" className="h-full w-full object-cover object-left-top" />
         </div>
+      </div>
+      <div className="relative h-[10px] rounded-b-[10px] bg-gradient-to-b from-[#d4d4d8] to-[#a1a1aa]">
+        <span className="absolute left-1/2 top-0 h-[4px] w-[18%] -translate-x-1/2 rounded-b-md bg-[#8b8b93]" />
       </div>
     </div>
   );
@@ -56,47 +71,42 @@ type Layer = {
 
 const layers: Layer[] = [
   {
-    id: "keranjang",
-    className: "left-[13%] top-[19%] w-[clamp(100px,7.6vw,128px)]",
-    depth: 1.3,
-    rotate: -8,
-    node: <Phone src="/img/landing/journey/tamu-keranjang.webp" alt="Keranjang pesanan tamu" />,
-  },
-  {
-    id: "katalog",
-    className: "left-[2%] top-[47%] w-[clamp(220px,17vw,290px)]",
-    depth: 0.9,
-    rotate: 6,
-    node: (
-      <Image
-        src="/img/landing/katalog-iphone.webp"
-        alt="Katalog menu Menuin di ponsel"
-        width={900}
-        height={1019}
-        sizes="270px"
-        className="h-auto w-full drop-shadow-[0_24px_32px_rgba(15,23,42,0.22)]"
-      />
-    ),
-  },
-  {
-    id: "tablet",
-    className: "right-[6%] top-[17%] w-[clamp(210px,17vw,280px)]",
+    id: "tablet-kiri",
+    className: "left-[4%] top-[16%] w-[clamp(220px,18vw,300px)]",
     depth: 1.1,
-    rotate: 7,
+    rotate: -7,
     node: (
       <Image
         src="/img/landing/pos-ipad.webp"
         alt="Kasir Menuin di tablet"
         width={1800}
         height={1382}
-        sizes="280px"
+        sizes="300px"
         className="h-auto w-full drop-shadow-[0_24px_32px_rgba(15,23,42,0.25)]"
       />
     ),
   },
   {
-    id: "laptop",
-    className: "right-[2%] top-[53%] w-[clamp(250px,20vw,330px)]",
+    id: "laptop-kiri",
+    className: "left-[3%] top-[55%] w-[clamp(240px,20vw,330px)]",
+    depth: 0.9,
+    rotate: 4,
+    node: (
+      <Laptop src="/img/landing/journey/outlet-laporan.webp" alt="Laporan penjualan Menuin di laptop" w={1270} h={600} />
+    ),
+  },
+  {
+    id: "tablet-kanan",
+    className: "right-[4%] top-[16%] w-[clamp(210px,17vw,285px)]",
+    depth: 1.2,
+    rotate: 7,
+    node: (
+      <Tablet src="/img/landing/journey/outlet-meja-qr.webp" alt="Pengaturan Meja & QR Code di tablet" w={1140} h={620} />
+    ),
+  },
+  {
+    id: "laptop-kanan",
+    className: "right-[2%] top-[55%] w-[clamp(250px,20vw,330px)]",
     depth: 1,
     rotate: -4,
     node: (
@@ -135,7 +145,7 @@ function FloatingLayer({
   return (
     <motion.div className={`absolute ${layer.className}`} style={{ x, y }}>
       <motion.div
-        initial={reduce ? false : { opacity: 0, scale: 0.85, y: 30 }}
+        initial={{ opacity: 0, scale: 0.85, y: 30 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.9, delay: 0.3 + index * 0.08, ease: [0.16, 1, 0.3, 1] }}
         style={{ rotate: layer.rotate }}
@@ -182,6 +192,9 @@ export default function HeroParallax({
   };
 
   return (
+    // reducedMotion="user": animasi masuk jadi instan untuk reduced-motion,
+    // tanpa membedakan markup server dan klien (penyebab hydration error).
+    <MotionConfig reducedMotion="user">
     <section
       ref={ref}
       onPointerMove={onMove}
@@ -209,7 +222,7 @@ export default function HeroParallax({
         <div className="absolute left-1/2 top-0 h-[92%] -translate-x-1/2">
           <motion.div
             style={{ x: personX }}
-            initial={reduce ? false : { opacity: 0, y: 80 }}
+            initial={{ opacity: 0, y: 80 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1.1, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
             className="h-full [mask-image:linear-gradient(to_bottom,black_72%,transparent)]"
@@ -233,5 +246,6 @@ export default function HeroParallax({
         <div className="absolute inset-x-0 bottom-[6%] z-30 px-6">{actions}</div>
       </div>
     </section>
+    </MotionConfig>
   );
 }
