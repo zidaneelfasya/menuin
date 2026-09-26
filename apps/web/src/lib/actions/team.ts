@@ -175,3 +175,57 @@ export async function removeMemberAction(membershipId: string) {
     return { error: error.message || 'Failed to remove member' };
   }
 }
+
+export async function cancelInvitationAction(invitationId: string) {
+  const context = await requireTenantAccess();
+  if (context.membership.role !== 'OWNER' && context.membership.role !== 'MANAGER') {
+    return { error: 'Unauthorized' };
+  }
+  try {
+    await db.delete(invitations).where(
+      and(
+        eq(invitations.id, invitationId),
+        eq(invitations.tenantId, context.tenant.id)
+      )
+    );
+    if (context?.tenant?.outletKey) { revalidatePath(`/outlet/${context.tenant.outletKey}`, "layout"); }
+    return { success: true };
+  } catch (error: any) {
+    return { error: error.message || 'Failed to cancel invitation' };
+  }
+}
+
+export async function resendInvitationAction(invitationId: string) {
+  const context = await requireTenantAccess();
+  if (context.membership.role !== 'OWNER' && context.membership.role !== 'MANAGER') {
+    return { error: 'Unauthorized' };
+  }
+  try {
+    const [invitation] = await db.select().from(invitations).where(
+      and(
+        eq(invitations.id, invitationId),
+        eq(invitations.tenantId, context.tenant.id)
+      )
+    ).limit(1);
+
+    if (!invitation) return { error: 'Invitation not found' };
+
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    await db.update(invitations).set({
+      tokenHash,
+      expiresAt,
+    }).where(eq(invitations.id, invitationId));
+
+    const inviteLink = await AuthService.generateInviteLink(invitation.email, rawToken);
+    await EmailService.sendInvitationEmail(invitation.email, inviteLink, invitation.role as any, 'Menuin App');
+
+    return { success: true, inviteLink };
+  } catch (error: any) {
+    return { error: error.message || 'Failed to resend invitation' };
+  }
+}
+

@@ -68,6 +68,12 @@ type Promotion = {
 };
 
 const promoFormSchema = z.object({
+  code: z
+    .string()
+    .min(2, 'Kode promo minimal 2 karakter')
+    .max(30, 'Kode promo maksimal 30 karakter')
+    .regex(/^[A-Za-z0-9_-]+$/, 'Kode promo hanya boleh huruf, angka, strip (-), atau underscore (_)')
+    .trim(),
   name: z.string().min(1, 'Nama promo wajib diisi'),
   type: z.enum(['PERCENTAGE', 'FIXED']),
   value: z.coerce.number().min(0.01, 'Nilai potongan harus lebih dari 0'),
@@ -90,6 +96,7 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
   const form = useForm<z.infer<typeof promoFormSchema>>({
     resolver: zodResolver(promoFormSchema),
     defaultValues: {
+      code: '',
       name: '',
       type: 'PERCENTAGE',
       value: 10,
@@ -107,6 +114,7 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
   const handleOpenCreate = () => {
     setEditingPromo(null);
     form.reset({
+      code: '',
       name: '',
       type: 'PERCENTAGE',
       value: 10,
@@ -123,6 +131,7 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
   const handleOpenEdit = (promo: Promotion) => {
     setEditingPromo(promo);
     form.reset({
+      code: promo.code || '',
       name: promo.name,
       type: promo.type as 'PERCENTAGE' | 'FIXED',
       value: parseFloat(promo.value),
@@ -204,9 +213,16 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
       cell: ({ row }) => {
         const promo = row.original;
         return (
-          <div className="py-1">
-            <span className="font-semibold text-xs sm:text-sm text-foreground block">{promo.name}</span>
-            <span className="text-[11px] text-muted-foreground">
+          <div className="py-1 space-y-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-semibold text-xs sm:text-sm text-foreground">{promo.name}</span>
+              {promo.code && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-mono font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                  {promo.code}
+                </span>
+              )}
+            </div>
+            <span className="text-[11px] text-muted-foreground block">
               {promo.type === 'PERCENTAGE' ? 'Diskon Persentase (%)' : 'Potongan Nominal Langsung (Rp)'}
             </span>
           </div>
@@ -486,6 +502,30 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
 
                       <div className="space-y-4 pt-2">
                         <div className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <Label htmlFor="code" className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                              Kode Promo <span className="text-destructive">*</span>
+                            </Label>
+                            <span className="text-[10px] text-muted-foreground font-medium">Karakter kapital & angka tanpa spasi</span>
+                          </div>
+                          <Input
+                            id="code"
+                            {...form.register('code', {
+                              onChange: (e) => {
+                                e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+                              }
+                            })}
+                            placeholder="Contoh: HEMAT50, DISKON10, MERDEKA17"
+                            className="rounded-lg h-10 bg-background border-input text-sm font-mono tracking-wider focus-visible:ring-blue-500/20 focus-visible:border-blue-500 uppercase"
+                          />
+                          {form.formState.errors.code ? (
+                            <p className="text-xs text-destructive">{form.formState.errors.code.message}</p>
+                          ) : (
+                            <p className="text-[11px] text-muted-foreground">Pelanggan akan memasukkan kode ini saat checkout untuk mendapatkan potongan.</p>
+                          )}
+                        </div>
+
+                        <div className="space-y-1.5">
                           <Label htmlFor="name" className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
                             Nama Promo <span className="text-destructive">*</span>
                           </Label>
@@ -723,10 +763,18 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                   </div>
 
                   {/* PROMO TITLE & BADGE */}
-                  <div className="p-3.5 rounded-xl border border-border/80 bg-zinc-50/70 dark:bg-zinc-900/40 space-y-1">
-                    <p className="text-xs font-semibold text-foreground truncate">
-                      {formValues.name || 'Nama Promo Belum Diisi'}
-                    </p>
+                  <div className="p-3.5 rounded-xl border border-border/80 bg-zinc-50/70 dark:bg-zinc-900/40 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs font-semibold text-foreground truncate">
+                        {formValues.name || 'Nama Promo Belum Diisi'}
+                      </p>
+                      {formValues.code && (
+                        <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-mono text-[10px] font-bold">
+                          <Tag className="w-2.5 h-2.5" />
+                          {formValues.code}
+                        </span>
+                      )}
+                    </div>
                     <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                       <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                       <span>{formValues.type === 'PERCENTAGE' ? 'Diskon Persentase' : 'Potongan Nominal'}</span>

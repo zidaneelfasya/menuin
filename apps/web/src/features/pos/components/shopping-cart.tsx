@@ -12,13 +12,15 @@ import {
   X, 
   Check, 
   ChevronDown,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 import { useCartStore } from '../stores/use-cart-store';
 import { formatCurrency } from '@/lib/utils/format';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { getActivePromotions, validatePromotion } from '@/lib/actions/promotions';
+import { getActivePromotions, validatePromotion, validatePosPromoCode } from '@/lib/actions/promotions';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -39,8 +41,12 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
   const [mounted, setMounted] = React.useState(false);
   const [isPromoModalOpen, setIsPromoModalOpen] = React.useState(false);
   const [activePromosList, setActivePromosList] = React.useState<any[]>([]);
+  const [promoCodeInput, setPromoCodeInput] = React.useState('');
   const [isValidatingPromo, setIsValidatingPromo] = React.useState(false);
   const [showClearConfirm, setShowClearConfirm] = React.useState(false);
+  const [promoTab, setPromoTab] = React.useState<'promo' | 'manual'>('promo');
+  const [manualDiscountType, setManualDiscountType] = React.useState<'FIXED' | 'PERCENTAGE'>('FIXED');
+  const [manualDiscountValue, setManualDiscountValue] = React.useState('');
 
   const { 
     items, 
@@ -73,10 +79,40 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
   }, []);
 
   const handleOpenPromoModal = () => {
+    setPromoCodeInput('');
+    setManualDiscountValue('');
+    setPromoTab('promo');
     loadPromos();
     setIsPromoModalOpen(true);
   };
 
+  const handleApplyPromoCode = async (codeToUse?: string) => {
+    const code = (codeToUse || promoCodeInput).trim().toUpperCase();
+    if (!code) {
+      toast.error('Masukkan kode promo terlebih dahulu');
+      return;
+    }
+    const subtotal = getSubtotal();
+    setIsValidatingPromo(true);
+    const res = await validatePosPromoCode(code, subtotal);
+    setIsValidatingPromo(false);
+
+    if (res.success && res.data) {
+      setAppliedPromo({
+        id: res.data.id,
+        code: res.data.code,
+        name: res.data.name,
+        discountAmount: res.data.discountAmount,
+      });
+      setIsPromoModalOpen(false);
+      setPromoCodeInput('');
+      toast.success(`Promo "${res.data.name}" (${res.data.code}) diterapkan`);
+    } else {
+      toast.error(res.error || 'Promo tidak dapat digunakan');
+    }
+  };
+
+  // Kasir langsung apply promo outlet dengan 1 klik
   const handleSelectPromo = async (promo: any) => {
     const subtotal = getSubtotal();
     const minOrder = parseFloat(promo.minOrder || '0');
@@ -92,14 +128,50 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
     if (res.success && res.data) {
       setAppliedPromo({
         id: res.data.id,
+        code: res.data.code,
         name: res.data.name,
         discountAmount: res.data.discountAmount,
       });
       setIsPromoModalOpen(false);
-      toast.success(`Promo "${res.data.name}" diterapkan`);
+      toast.success(`Diskon "${res.data.name}" langsung diterapkan (-${formatCurrency(res.data.discountAmount)})`);
     } else {
       toast.error(res.error || 'Promo tidak dapat digunakan');
     }
+  };
+
+  // Kasir memasukkan diskon manual langsung (Nominal Rp atau Persentase %)
+  const handleApplyManualDiscount = () => {
+    const val = parseFloat(manualDiscountValue);
+    if (isNaN(val) || val <= 0) {
+      toast.error('Masukkan nilai potongan diskon yang valid');
+      return;
+    }
+    const currentSubtotal = getSubtotal();
+    if (currentSubtotal <= 0) {
+      toast.error('Keranjang masih kosong');
+      return;
+    }
+
+    let discAmount = 0;
+    if (manualDiscountType === 'PERCENTAGE') {
+      if (val > 100) {
+        toast.error('Diskon persen maksimal 100%');
+        return;
+      }
+      discAmount = (currentSubtotal * val) / 100;
+    } else {
+      discAmount = Math.min(val, currentSubtotal);
+    }
+
+    setAppliedPromo({
+      id: 'manual',
+      code: 'MANUAL',
+      name: `Diskon Manual (${manualDiscountType === 'PERCENTAGE' ? `${val}%` : formatCurrency(val)})`,
+      discountAmount: discAmount,
+    });
+    setIsPromoModalOpen(false);
+    setManualDiscountValue('');
+    toast.success(`Diskon manual ${formatCurrency(discAmount)} berhasil diterapkan`);
   };
 
   const handleRemovePromo = () => {
@@ -375,6 +447,11 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
           <div className="flex items-center justify-between text-xs py-1.5 px-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300">
             <div className="flex items-center gap-1.5 min-w-0">
               <Tag size={13} className="shrink-0 text-emerald-600" />
+              {appliedPromo.code && (
+                <span className="shrink-0 px-1.5 py-0.5 rounded bg-emerald-200/60 dark:bg-emerald-900/60 text-emerald-900 dark:text-emerald-200 font-mono text-[10px] font-bold">
+                  {appliedPromo.code}
+                </span>
+              )}
               <span className="font-semibold truncate">{appliedPromo.name}</span>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
@@ -459,55 +536,179 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
           <DialogHeader className="p-4 pb-3 border-b bg-slate-50/70 dark:bg-slate-900/50">
             <DialogTitle className="text-base font-semibold flex items-center gap-2">
               <Tag className="w-4 h-4 text-blue-600" />
-              Pilih Promo Aktif
+              Kelola Diskon & Promo Transaksi
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              Pilih voucher atau promo potongan harga untuk transaksi ini.
+              Pilih promo outlet langsung terapkan, atau berikan diskon manual kasir.
             </DialogDescription>
+
+            {/* TAB SELECTOR */}
+            <div className="flex bg-muted/60 p-1 rounded-xl mt-3">
+              <button
+                type="button"
+                onClick={() => setPromoTab('promo')}
+                className={cn(
+                  "flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer",
+                  promoTab === 'promo' 
+                    ? "bg-background text-foreground shadow-2xs" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Promo Outlet (1-Klik)
+              </button>
+              <button
+                type="button"
+                onClick={() => setPromoTab('manual')}
+                className={cn(
+                  "flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer",
+                  promoTab === 'manual' 
+                    ? "bg-background text-foreground shadow-2xs" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Diskon Manual / Kode
+              </button>
+            </div>
           </DialogHeader>
 
-          <div className="p-4 max-h-72 overflow-y-auto space-y-2">
-            {activePromosList.length > 0 ? (
-              activePromosList.map((p) => {
-                const minOrder = parseFloat(p.minOrder || '0');
-                const isEligible = subtotal >= minOrder;
-                const val = parseFloat(p.value);
-                const discountTag = p.type === 'PERCENTAGE' ? `Diskon ${val}%` : `Potongan ${formatCurrency(val)}`;
+          {promoTab === 'promo' ? (
+            <div className="p-4 max-h-80 overflow-y-auto space-y-2">
+              <p className="text-[11px] text-muted-foreground pb-1">
+                Klik promo di bawah untuk langsung memasang diskon ke transaksi kasir:
+              </p>
+              {activePromosList.length > 0 ? (
+                activePromosList.map((p) => {
+                  const minOrder = parseFloat(p.minOrder || '0');
+                  const isEligible = subtotal >= minOrder;
+                  const val = parseFloat(p.value);
+                  const discountTag = p.type === 'PERCENTAGE' ? `Diskon ${val}%` : `Potongan ${formatCurrency(val)}`;
 
-                return (
-                  <button
-                    key={p.id}
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      disabled={isValidatingPromo}
+                      onClick={() => handleSelectPromo(p)}
+                      className={cn(
+                        "w-full text-left p-3 rounded-xl border transition-all flex flex-col justify-between cursor-pointer",
+                        !isEligible
+                          ? "opacity-60 bg-muted/30 border-dashed border-border cursor-not-allowed"
+                          : "bg-card hover:bg-blue-50/50 dark:hover:bg-blue-950/20 hover:border-blue-300 border-border active:scale-[0.99]"
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          {p.code && (
+                            <span className="shrink-0 px-1.5 py-0.5 rounded bg-blue-100/80 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300 font-mono text-[10px] font-bold">
+                              {p.code}
+                            </span>
+                          )}
+                          <span className="text-xs font-semibold text-foreground truncate">{p.name}</span>
+                        </div>
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 shrink-0">
+                          {discountTag}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-muted-foreground mt-1.5 flex items-center justify-between">
+                        <span>{minOrder > 0 ? `Min. Belanja ${formatCurrency(minOrder)}` : 'Tanpa Minimum'}</span>
+                        <span className={cn("font-semibold", isEligible ? "text-blue-600" : "text-muted-foreground")}>
+                          {isEligible ? "Langsung Terapkan ➔" : "Belum Memenuhi"}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="py-8 text-center text-xs text-muted-foreground">
+                  Tidak ada promo aktif yang terdaftar di outlet.
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="p-4 space-y-4">
+              {/* Diskon Manual Kasir */}
+              <div className="space-y-3 p-3.5 rounded-xl border border-border bg-slate-50/50 dark:bg-slate-900/30">
+                <span className="text-xs font-semibold text-foreground block">
+                  Potongan Diskon Manual Kasir
+                </span>
+                <div className="flex gap-2">
+                  <div className="flex bg-muted/60 p-0.5 rounded-lg shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setManualDiscountType('FIXED')}
+                      className={cn(
+                        "px-2.5 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer",
+                        manualDiscountType === 'FIXED'
+                          ? "bg-background text-foreground shadow-2xs"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      Rp
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setManualDiscountType('PERCENTAGE')}
+                      className={cn(
+                        "px-2.5 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer",
+                        manualDiscountType === 'PERCENTAGE'
+                          ? "bg-background text-foreground shadow-2xs"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      %
+                    </button>
+                  </div>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={manualDiscountValue}
+                    onChange={(e) => setManualDiscountValue(e.target.value)}
+                    placeholder={manualDiscountType === 'FIXED' ? 'Misal: 10000' : 'Misal: 10'}
+                    className="h-9 text-xs bg-background"
+                  />
+                  <Button
                     type="button"
-                    disabled={isValidatingPromo}
-                    onClick={() => handleSelectPromo(p)}
-                    className={cn(
-                      "w-full text-left p-3 rounded-xl border transition-all flex flex-col justify-between cursor-pointer",
-                      !isEligible
-                        ? "opacity-60 bg-muted/30 border-dashed border-border cursor-not-allowed"
-                        : "bg-card hover:bg-blue-50/50 dark:hover:bg-blue-950/20 hover:border-blue-300 border-border active:scale-[0.99]"
-                    )}
+                    size="sm"
+                    onClick={handleApplyManualDiscount}
+                    disabled={!manualDiscountValue.trim()}
+                    className="h-9 px-3.5 text-xs bg-blue-600 hover:bg-blue-700 text-white shrink-0"
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <span className="text-xs font-semibold text-foreground">{p.name}</span>
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
-                        {discountTag}
-                      </span>
-                    </div>
-                    <div className="text-[10px] text-muted-foreground mt-1.5 flex items-center justify-between">
-                      <span>{minOrder > 0 ? `Min. Belanja ${formatCurrency(minOrder)}` : 'Tanpa Minimum'}</span>
-                      <span className={cn("font-semibold", isEligible ? "text-blue-600" : "text-muted-foreground")}>
-                        {isEligible ? "Gunakan Promo ➔" : "Belum Memenuhi"}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })
-            ) : (
-              <div className="py-8 text-center text-xs text-muted-foreground">
-                Tidak ada promo aktif yang tersedia saat ini.
+                    Terapkan
+                  </Button>
+                </div>
               </div>
-            )}
-          </div>
+
+              {/* Atau Pakai Kode Promo Khusus */}
+              <div className="space-y-2 pt-1 border-t border-border">
+                <span className="text-xs font-semibold text-foreground block">
+                  Atau Input Kode Promo Khusus
+                </span>
+                <div className="flex gap-2">
+                  <Input
+                    value={promoCodeInput}
+                    onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ''))}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleApplyPromoCode();
+                      }
+                    }}
+                    placeholder="Masukkan kode promo (misal: HEMAT50)"
+                    className="h-9 text-xs font-mono uppercase bg-background"
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => handleApplyPromoCode()}
+                    disabled={isValidatingPromo || !promoCodeInput.trim()}
+                    className="h-9 px-3.5 text-xs bg-slate-800 hover:bg-slate-900 text-white shrink-0"
+                  >
+                    {isValidatingPromo ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Validasi'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

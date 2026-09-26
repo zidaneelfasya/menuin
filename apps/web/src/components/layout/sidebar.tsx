@@ -34,6 +34,8 @@ import { UserProfile } from '@/lib/actions/auth';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { useRealtimeOrder } from '@/components/providers/realtime-order-provider';
 import { usePageTransition } from '../providers/page-transition-provider';
+import { createAvatar } from '@dicebear/core';
+import { openPeeps } from '@dicebear/collection';
 
 const getNavItems = (outletKey: string) => [
   { name: 'Dashboard', href: `/outlet/${outletKey}/dashboard`, icon: LayoutDashboard, roles: ['OWNER', 'MANAGER'] },
@@ -48,7 +50,7 @@ const getNavItems = (outletKey: string) => [
   { name: 'Laporan Penjualan', href: `/outlet/${outletKey}/reports`, icon: BarChart3, roles: ['OWNER', 'MANAGER'] },
   { name: 'Diskon & Promo', href: `/outlet/${outletKey}/promotions`, icon: Percent, roles: ['OWNER', 'MANAGER'] },
   { name: 'Tim & Karyawan', href: `/outlet/${outletKey}/team`, icon: UserCircle, roles: ['OWNER'] },
-  { name: 'Perangkat Kasir', href: `/outlet/${outletKey}/settings/devices`, icon: Smartphone, roles: ['OWNER', 'MANAGER'] },
+  { name: 'Perangkat Kasir', href: `/outlet/${outletKey}/devices`, icon: Smartphone, roles: ['OWNER', 'MANAGER'] },
   { name: 'Pengaturan Toko', href: `/outlet/${outletKey}/settings`, icon: Settings, roles: ['OWNER', 'MANAGER'] },
 ];
 
@@ -67,9 +69,23 @@ function SidebarContent({ collapsed, setCollapsed, user }: { collapsed: boolean;
   const outletKey = user.outletKey || 'unknown';
   const navItems = getNavItems(outletKey).filter(item => !item.roles || item.roles.includes(user.role as any));
 
-  // Determine if the current page has a sub-sidebar (e.g. Katalog Menu or Settings)
-  const hasSubSidebar = pathname.includes('/katalog');
+  // Determine if the current page has a sub-sidebar (e.g. Katalog Menu, Shift Kasir, or Settings)
+  const hasSubSidebar = pathname.includes('/katalog') || pathname.includes('/shifts') || pathname.includes('/settings');
   const curvedTabBg = hasSubSidebar ? '#ffffff' : '#F9FBFF';
+
+  const userAvatarUri = React.useMemo(() => {
+    try {
+      const seed = (user.email || user.name || 'user').trim().toLowerCase();
+      const avatar = createAvatar(openPeeps, {
+        seed,
+        backgroundColor: ['dbeafe', 'eff6ff', 'e0f2fe'],
+        scale: 92,
+      });
+      return avatar.toDataUri();
+    } catch {
+      return null;
+    }
+  }, [user.email, user.name]);
 
   return (
     <>
@@ -169,9 +185,17 @@ function SidebarContent({ collapsed, setCollapsed, user }: { collapsed: boolean;
         <div className={cn('flex items-center gap-2', collapsed ? 'flex-col justify-center' : 'justify-between')}>
           {!collapsed && (
             <div className="flex items-center overflow-hidden flex-1">
-              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white font-semibold flex-shrink-0 uppercase text-xs border border-white/20">
-                {user.name.charAt(0)}
-              </div>
+              {userAvatarUri ? (
+                <img 
+                  src={userAvatarUri} 
+                  alt={user.name} 
+                  className="w-8 h-8 rounded-full border border-white/20 object-cover flex-shrink-0 select-none shadow-xs"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white font-semibold flex-shrink-0 uppercase text-xs border border-white/20">
+                  {user.name.charAt(0)}
+                </div>
+              )}
               <div className="ml-2.5 overflow-hidden flex-1">
                 <p className="text-xs font-semibold text-white truncate">{user.name}</p>
                 <p className="text-[11px] text-white/70 truncate">{user.role} &bull; {user.restaurantName}</p>

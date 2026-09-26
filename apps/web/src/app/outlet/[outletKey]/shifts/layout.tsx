@@ -18,25 +18,18 @@ export default async function ShiftsLayout({
   const hasActiveShift = Boolean(activeShiftResult.success && activeShiftResult.data);
 
   return (
-    <div className="space-y-6">
-      {/* Shifts Header */}
-      <div className="border-b border-border/60 pb-5">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Shift Kasir</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Kelola sesi kasir aktif, pencatatan kas masuk & keluar, dan audit riwayat shift.
-        </p>
-      </div>
-
-      {/* Main Shifts Body: Sidebar in layout + Content */}
-      <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
-        {/* Shifts Sidebar in Layout */}
+    <div className="flex flex-col md:flex-row h-full w-full overflow-hidden bg-[#F9FBFF]">
+      {/* Sub-sidebar docked directly flush with primary rail */}
+      <aside className="w-full md:w-60 flex-shrink-0 bg-white border-r border-[#EAEFF8] flex flex-col h-auto md:h-full relative z-20 shadow-[4px_0_16px_rgba(0,0,0,0.04),1px_0_4px_rgba(0,0,0,0.02)]">
         <ShiftsSidebar outletKey={outletKey} hasActiveShift={hasActiveShift} />
+      </aside>
 
-        {/* Content Area */}
-        <main className="flex-1 min-w-0 w-full">
+      {/* Main Content Area on #F9FBFF Canvas */}
+      <main className="flex-1 min-w-0 h-full overflow-y-auto p-4 md:p-8 bg-[#F9FBFF]">
+        <div className="max-w-5xl mx-auto space-y-6">
           {children}
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }

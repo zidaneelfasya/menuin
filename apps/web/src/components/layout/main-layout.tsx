@@ -14,7 +14,7 @@ export function MainLayout({ children, user, availableTenants }: { children: Rea
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const pathname = usePathname();
 
-  const hasSubSidebar = pathname.includes('/katalog');
+  const hasSubSidebar = pathname.includes('/katalog') || pathname.includes('/shifts') || pathname.includes('/settings');
 
   return (
     <RealtimeOrderProvider tenantId={user.tenantId || ''}>

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createOnlineOrder } from "@/lib/actions/public-catalog";
-import { getPublicPromotions } from "@/lib/actions/promotions";
+import { getPublicPromotions, validatePublicPromoCode } from "@/lib/actions/promotions";
 import Script from "next/script";
 import {
   ArrowLeft,
@@ -23,6 +23,8 @@ import {
   CreditCard,
   Banknote,
   Pencil,
+  Copy,
+  MoreHorizontal,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -177,8 +179,11 @@ export function CheckoutClient({
 
   // Promotions
   const [availablePromos, setAvailablePromos] = useState<any[]>([]);
+  const [promoCodeInput, setPromoCodeInput] = useState("");
+  const [isValidatingPromo, setIsValidatingPromo] = useState(false);
   const [appliedPromo, setAppliedPromo] = useState<{
     id: string;
+    code?: string;
     name: string;
     type: string;
     value: number;
@@ -212,18 +217,18 @@ export function CheckoutClient({
   // Recalculate promo discount whenever subtotal or applied promo changes
   const promoDiscount = (() => {
     if (!appliedPromo) return 0;
-    const promo = availablePromos.find((p) => p.id === appliedPromo.id);
+    const promo = availablePromos.find((p) => p.id === appliedPromo.id) || appliedPromo;
     if (!promo) return 0;
 
-    const minOrder = parseFloat(promo.minOrder || "0");
+    const minOrder = parseFloat(promo.minOrder ? String(promo.minOrder) : "0");
     if (subTotal < minOrder) return 0;
 
-    const promoVal = parseFloat(promo.value);
+    const promoVal = typeof promo.value === "number" ? promo.value : parseFloat(promo.value);
     let disc = 0;
     if (promo.type === "PERCENTAGE") {
       disc = (subTotal * promoVal) / 100;
       if (promo.maxDiscount) {
-        const maxDisc = parseFloat(promo.maxDiscount);
+        const maxDisc = parseFloat(String(promo.maxDiscount));
         if (disc > maxDisc) disc = maxDisc;
       }
     } else {
@@ -246,44 +251,48 @@ export function CheckoutClient({
       ? "https://app.midtrans.com/snap/snap.js"
       : "https://app.sandbox.midtrans.com/snap/snap.js";
 
-  const handleClaimPromo = (promo: any) => {
-    if (appliedPromo?.id === promo.id) {
-      setAppliedPromo(null);
-      toast.info("Promo dibatalkan");
+  const handleApplyPromoCode = async (codeToApply?: string) => {
+    const code = (codeToApply ?? promoCodeInput).trim().toUpperCase();
+    if (!code) {
+      toast.error("Silakan masukkan kode promo");
+      return;
+    }
+    if (subTotal <= 0) {
+      toast.error("Keranjang belanja masih kosong");
       return;
     }
 
-    const minOrder = parseFloat(promo.minOrder || "0");
-    if (subTotal < minOrder) {
-      toast.error(
-        `Minimal belanja Rp ${minOrder.toLocaleString("id-ID")} untuk klaim promo "${promo.name}"`
-      );
-      return;
-    }
-
-    const promoVal = parseFloat(promo.value);
-    let disc = 0;
-    if (promo.type === "PERCENTAGE") {
-      disc = (subTotal * promoVal) / 100;
-      if (promo.maxDiscount) {
-        const maxDisc = parseFloat(promo.maxDiscount);
-        if (disc > maxDisc) disc = maxDisc;
+    setIsValidatingPromo(true);
+    try {
+      const res = await validatePublicPromoCode(tenantSlug, code, subTotal);
+      if (!res.success || !res.data) {
+        toast.error(res.error || "Kode promo tidak valid");
+        return;
       }
-    } else {
-      disc = promoVal;
-    }
-    disc = Math.min(disc, subTotal);
 
-    setAppliedPromo({
-      id: promo.id,
-      name: promo.name,
-      type: promo.type,
-      value: promoVal,
-      discountAmount: disc,
-    });
-    toast.success(
-      `Promo "${promo.name}" berhasil diklaim! Hemat ${formatCurrency(disc)}`
-    );
+      setAppliedPromo({
+        id: res.data.id,
+        code: res.data.code,
+        name: res.data.name,
+        type: res.data.type,
+        value: res.data.value,
+        discountAmount: res.data.discountAmount,
+      });
+      setPromoCodeInput(res.data.code);
+      toast.success(
+        `Kode promo "${res.data.code}" berhasil digunakan! Hemat ${formatCurrency(res.data.discountAmount)}`
+      );
+    } catch (err: any) {
+      toast.error("Gagal memeriksa kode promo");
+    } finally {
+      setIsValidatingPromo(false);
+    }
+  };
+
+  const handleRemovePromo = () => {
+    setAppliedPromo(null);
+    setPromoCodeInput("");
+    toast.info("Promo dibatalkan");
   };
 
   // Direct Submission to Payment: creates order and proceeds directly to payment/status
@@ -316,6 +325,7 @@ export function CheckoutClient({
         customerName: formData.customerName.trim(),
         customerPhone: formData.customerPhone.trim(),
         promoName: appliedPromo ? appliedPromo.name : undefined,
+        promoCode: appliedPromo ? appliedPromo.code : undefined,
         promoId: appliedPromo ? appliedPromo.id : undefined,
         discount: promoDiscount,
         items: items.map((i) => ({
@@ -521,96 +531,135 @@ export function CheckoutClient({
               </div>
             </div>
 
-            {/* Promo Claim Section */}
-            {availablePromos.length > 0 && (
-              <div className="bg-amber-50/60 p-4 sm:p-5 rounded-2xl border border-amber-200 space-y-3.5 mt-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-amber-900 font-semibold text-xs sm:text-sm uppercase tracking-wider">
-                    <Tag className="w-4 h-4 text-amber-600" />
-                    <span>Klaim Promo & Diskon Outlet</span>
-                  </div>
-                  {appliedPromo && (
-                    <button
-                      type="button"
-                      onClick={() => setAppliedPromo(null)}
-                      className="text-xs sm:text-sm text-red-600 font-semibold hover:underline flex items-center gap-1 cursor-pointer"
-                    >
-                      <X className="w-4 h-4" /> Batalkan
-                    </button>
-                  )}
-                </div>
-
-                {appliedPromo ? (
-                  <div className="flex items-center justify-between p-3.5 sm:p-4 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-semibold shrink-0">
-                        <Check className="w-4 h-4 stroke-[2.5]" />
-                      </div>
-                      <div>
-                        <span className="font-semibold text-sm block">{appliedPromo.name}</span>
-                        <span className="text-xs text-emerald-700">Promo berhasil dipasang</span>
-                      </div>
-                    </div>
-                    <span className="font-semibold text-sm sm:text-base text-emerald-700">
-                      -{formatCurrency(promoDiscount)}
-                    </span>
-                  </div>
-                ) : (
-                  <div className="space-y-2.5">
-                    <p className="text-xs sm:text-sm text-gray-600">
-                      Pilih voucher promo aktif untuk mendapatkan potongan harga:
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                      {availablePromos.map((promo) => {
-                        const minOrder = parseFloat(promo.minOrder || "0");
-                        const isEligible = subTotal >= minOrder;
-                        const val = parseFloat(promo.value);
-                        const tag =
-                          promo.type === "PERCENTAGE"
-                            ? `Diskon ${val}%`
-                            : `Potongan ${formatCurrency(val)}`;
-
-                        return (
-                          <button
-                            key={promo.id}
-                            type="button"
-                            onClick={() => handleClaimPromo(promo)}
-                            className={`text-left p-3.5 sm:p-4 rounded-2xl border transition-all flex flex-col justify-between cursor-pointer ${
-                              !isEligible
-                                ? "opacity-60 bg-gray-50 border-dashed border-gray-200 cursor-not-allowed"
-                                : "bg-white hover:border-amber-400 hover:shadow-xs border-gray-200 active:scale-[0.99]"
-                            }`}
-                          >
-                            <div className="flex items-start justify-between gap-1.5">
-                              <span className="font-semibold text-sm text-gray-900 line-clamp-1">
-                                {promo.name}
-                              </span>
-                              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 shrink-0">
-                                {tag}
-                              </span>
-                            </div>
-                            <div className="text-xs text-gray-500 mt-2.5 flex items-center justify-between">
-                              <span>
-                                {minOrder > 0
-                                  ? `Min. ${formatCurrency(minOrder)}`
-                                  : "Tanpa Minimum"}
-                              </span>
-                              <span
-                                className={`font-semibold ${
-                                  isEligible ? "text-amber-700" : "text-gray-400"
-                                }`}
-                              >
-                                {isEligible ? "Klaim" : "Belum Cukup"}
-                              </span>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
+            {/* Promo Code Section */}
+            <div className="space-y-2.5 mt-4">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 tracking-wider uppercase">
+                <Tag className="w-3.5 h-3.5 text-blue-600" />
+                <span>Kode Promo</span>
               </div>
-            )}
+
+              {appliedPromo ? (
+                <div>
+                  {/* STANDALONE COMPACT SOLID BLUE VOUCHER CARD */}
+                  <div className="relative overflow-hidden rounded-xl bg-blue-600 text-white p-3.5 shadow-2xs select-none">
+                    {/* TOP ROW */}
+                    <div className="flex items-center justify-between relative z-10">
+                      <span className="text-[11px] sm:text-xs font-medium text-white/90 tracking-wide">
+                        {appliedPromo.name || "Limited"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleRemovePromo}
+                        className="p-1 rounded-full text-white/80 hover:text-white hover:bg-white/20 transition-colors cursor-pointer flex items-center justify-center"
+                        title="Hapus Promo"
+                      >
+                        <X className="w-4 h-4 stroke-[2.5]" />
+                      </button>
+                    </div>
+
+                    {/* MAIN HEADLINE (SEMIBOLD) */}
+                    <div className="relative z-10 mt-1 mb-0.5">
+                      <span className="text-lg sm:text-xl font-semibold tracking-tight text-white block leading-none">
+                        {appliedPromo.type === "PERCENTAGE"
+                          ? `${appliedPromo.value}% OFF`
+                          : `${formatCurrency(appliedPromo.value)} OFF`}
+                      </span>
+                    </div>
+
+                    {/* SUBTITLE */}
+                    <div className="relative z-10 mt-1">
+                      <span className="text-[11px] font-medium text-white/80 tracking-wide">
+                        Coded • {appliedPromo.code}
+                      </span>
+                    </div>
+
+                    {/* WATERMARK TICKET GRAPHIC */}
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-20 text-white">
+                      <svg
+                        width="100"
+                        height="60"
+                        viewBox="0 0 120 70"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="w-20 h-auto"
+                      >
+                        <path
+                          d="M 6 0 H 114 C 117.3 0 120 2.7 120 6 V 64 C 120 67.3 117.3 70 114 70 H 6 C 2.7 70 0 67.3 0 64 V 44 C 4.4 44 8 40.4 8 36 C 8 31.6 4.4 28 0 28 V 6 C 0 2.7 2.7 0 6 0 Z"
+                          fill="currentColor"
+                          fillOpacity="0.3"
+                        />
+                        <line
+                          x1="22"
+                          y1="8"
+                          x2="22"
+                          y2="62"
+                          stroke="currentColor"
+                          strokeOpacity="0.5"
+                          strokeWidth="2.5"
+                          strokeDasharray="3 3"
+                        />
+                        <circle
+                          cx="56"
+                          cy="24"
+                          r="4.5"
+                          stroke="currentColor"
+                          strokeOpacity="0.7"
+                          strokeWidth="2.5"
+                        />
+                        <line
+                          x1="78"
+                          y1="20"
+                          x2="50"
+                          y2="50"
+                          stroke="currentColor"
+                          strokeOpacity="0.7"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                        />
+                        <circle
+                          cx="72"
+                          cy="46"
+                          r="4.5"
+                          stroke="currentColor"
+                          strokeOpacity="0.7"
+                          strokeWidth="2.5"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Input
+                      type="text"
+                      value={promoCodeInput}
+                      onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ''))}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleApplyPromoCode();
+                        }
+                      }}
+                      placeholder="Masukkan kode promo (misal: HEMAT50)"
+                      className="h-10 bg-gray-50 border-gray-200 focus-visible:ring-blue-500 font-mono uppercase text-xs sm:text-sm placeholder:normal-case placeholder:font-sans rounded-xl px-3.5"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    disabled={isValidatingPromo || !promoCodeInput.trim()}
+                    onClick={() => handleApplyPromoCode()}
+                    className="h-10 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs sm:text-sm rounded-xl shrink-0 cursor-pointer shadow-xs disabled:opacity-50"
+                  >
+                    {isValidatingPromo ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      "Terapkan"
+                    )}
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* 2. DAFTAR MENU YANG DIPILIH */}

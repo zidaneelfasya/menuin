@@ -33,6 +33,7 @@ export type UserProfile = {
   outletKey: string | null;
   restaurantName: string | null;
   isPaid: boolean;
+  storeLogoUrl?: string | null;
 };
 
 export async function getCurrentMembership(): Promise<MembershipProfile | null> {
@@ -91,6 +92,7 @@ export async function getCurrentUser(): Promise<UserProfile | null> {
     outletKey: context.tenant.outletKey,
     restaurantName: context.tenant.name,
     isPaid: !context.entitlements.isLocked,
+    storeLogoUrl: context.tenant.storeLogoUrl || null,
   };
 }
 

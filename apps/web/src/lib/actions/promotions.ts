@@ -2,12 +2,19 @@
 
 import { db } from '@/lib/db';
 import { promotions, tenants } from '@/lib/db/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, sql, ne } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { getCurrentUser } from './auth';
 
 const promotionSchema = z.object({
+  code: z
+    .string()
+    .min(2, 'Kode promo minimal 2 karakter')
+    .max(30, 'Kode promo maksimal 30 karakter')
+    .regex(/^[A-Za-z0-9_-]+$/, 'Kode promo hanya boleh huruf, angka, strip (-), atau underscore (_)')
+    .trim()
+    .transform((v) => v.toUpperCase()),
   name: z.string().min(1, 'Nama promo wajib diisi').trim(),
   type: z.enum(['PERCENTAGE', 'FIXED']),
   value: z.coerce.number().min(0.01, 'Nilai potongan promo harus lebih dari 0'),
@@ -102,13 +109,23 @@ export async function createPromotion(formData: z.infer<typeof promotionSchema>)
 
     const validatedData = promotionSchema.parse(formData);
 
-    // Generate unique code fallback to satisfy legacy DB column
-    const cleanName = validatedData.name.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10);
-    const generatedCode = `${cleanName || 'PROMO'}-${Date.now().toString(36).toUpperCase()}`;
+    // Check unique code per tenant (case-insensitive)
+    const existingPromo = await db
+      .select({ id: promotions.id })
+      .from(promotions)
+      .where(and(
+        eq(promotions.tenantId, user.tenantId),
+        sql`UPPER(${promotions.code}) = ${validatedData.code}`
+      ))
+      .limit(1);
+
+    if (existingPromo.length > 0) {
+      return { success: false, error: `Kode promo "${validatedData.code}" sudah digunakan. Silakan gunakan kode lain.` };
+    }
 
     await db.insert(promotions).values({
       tenantId: user.tenantId,
-      code: generatedCode,
+      code: validatedData.code,
       name: validatedData.name,
       type: validatedData.type,
       value: validatedData.value.toString(),
@@ -134,9 +151,25 @@ export async function updatePromotion(id: string, formData: z.infer<typeof promo
 
     const validatedData = promotionSchema.parse(formData);
 
+    // Check unique code excluding current promotion
+    const existingPromo = await db
+      .select({ id: promotions.id })
+      .from(promotions)
+      .where(and(
+        eq(promotions.tenantId, user.tenantId),
+        sql`UPPER(${promotions.code}) = ${validatedData.code}`,
+        ne(promotions.id, id)
+      ))
+      .limit(1);
+
+    if (existingPromo.length > 0) {
+      return { success: false, error: `Kode promo "${validatedData.code}" sudah digunakan oleh promo lain.` };
+    }
+
     await db
       .update(promotions)
       .set({
+        code: validatedData.code,
         name: validatedData.name,
         type: validatedData.type,
         value: validatedData.value.toString(),
@@ -254,14 +287,141 @@ export async function validatePromotion(promoId: string, subtotal: number) {
       success: true,
       data: {
         id: promo.id,
+        code: promo.code,
         name: promo.name,
         type: promo.type,
         value: parseFloat(promo.value),
         discountAmount: calc.discountAmount,
+        minOrder: parseFloat(promo.minOrder || '0'),
+        maxDiscount: promo.maxDiscount ? parseFloat(promo.maxDiscount) : null,
       },
     };
   } catch (error) {
     console.error('Error validating promotion:', error);
     return { success: false, error: 'Gagal memvalidasi promo' };
+  }
+}
+
+export async function validatePublicPromoCode(tenantSlug: string, code: string, subtotal: number) {
+  try {
+    const cleanCode = (code || '').toUpperCase().trim();
+    if (!cleanCode) {
+      return { success: false, error: 'Silakan masukkan kode promo.' };
+    }
+
+    const tenantRows = await db
+      .select({ id: tenants.id })
+      .from(tenants)
+      .where(eq(tenants.slug, tenantSlug))
+      .limit(1);
+
+    if (tenantRows.length === 0) {
+      return { success: false, error: 'Toko tidak ditemukan.' };
+    }
+
+    const tenantId = tenantRows[0].id;
+    const promoRows = await db
+      .select()
+      .from(promotions)
+      .where(and(
+        eq(promotions.tenantId, tenantId),
+        sql`UPPER(${promotions.code}) = ${cleanCode}`,
+        eq(promotions.isActive, true)
+      ))
+      .limit(1);
+
+    if (promoRows.length === 0) {
+      return { success: false, error: `Kode promo "${cleanCode}" tidak ditemukan atau sudah tidak aktif.` };
+    }
+
+    const promo = promoRows[0];
+    const now = new Date();
+    if (promo.startDate && new Date(promo.startDate) > now) {
+      return { success: false, error: 'Kode promo ini belum mulai berlaku.' };
+    }
+    if (promo.endDate && new Date(promo.endDate) < now) {
+      return { success: false, error: 'Kode promo ini sudah berakhir/kadaluwarsa.' };
+    }
+
+    const calc = calculatePromoDiscount(promo, subtotal);
+    if (!calc.isValid) {
+      return { success: false, error: calc.error };
+    }
+
+    return {
+      success: true,
+      data: {
+        id: promo.id,
+        code: promo.code,
+        name: promo.name,
+        type: promo.type,
+        value: parseFloat(promo.value),
+        discountAmount: calc.discountAmount,
+        minOrder: parseFloat(promo.minOrder || '0'),
+        maxDiscount: promo.maxDiscount ? parseFloat(promo.maxDiscount) : null,
+      },
+    };
+  } catch (error) {
+    console.error('Error validating public promo code:', error);
+    return { success: false, error: 'Terjadi kesalahan saat memverifikasi kode promo.' };
+  }
+}
+
+export async function validatePosPromoCode(code: string, subtotal: number) {
+  try {
+    const user = await getCurrentUser();
+    if (!user || !user.tenantId) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    const cleanCode = (code || '').toUpperCase().trim();
+    if (!cleanCode) {
+      return { success: false, error: 'Masukkan kode promo.' };
+    }
+
+    const promoRows = await db
+      .select()
+      .from(promotions)
+      .where(and(
+        eq(promotions.tenantId, user.tenantId),
+        sql`UPPER(${promotions.code}) = ${cleanCode}`,
+        eq(promotions.isActive, true)
+      ))
+      .limit(1);
+
+    if (promoRows.length === 0) {
+      return { success: false, error: `Kode promo "${cleanCode}" tidak ditemukan atau nonaktif.` };
+    }
+
+    const promo = promoRows[0];
+    const now = new Date();
+    if (promo.startDate && new Date(promo.startDate) > now) {
+      return { success: false, error: 'Kode promo ini belum mulai berlaku.' };
+    }
+    if (promo.endDate && new Date(promo.endDate) < now) {
+      return { success: false, error: 'Kode promo ini sudah kadaluwarsa.' };
+    }
+
+    const calc = calculatePromoDiscount(promo, subtotal);
+    if (!calc.isValid) {
+      return { success: false, error: calc.error };
+    }
+
+    return {
+      success: true,
+      data: {
+        id: promo.id,
+        code: promo.code,
+        name: promo.name,
+        type: promo.type,
+        value: parseFloat(promo.value),
+        discountAmount: calc.discountAmount,
+        minOrder: parseFloat(promo.minOrder || '0'),
+        maxDiscount: promo.maxDiscount ? parseFloat(promo.maxDiscount) : null,
+      },
+    };
+  } catch (error) {
+    console.error('Error validating POS promo code:', error);
+    return { success: false, error: 'Gagal memvalidasi kode promo POS.' };
   }
 }
