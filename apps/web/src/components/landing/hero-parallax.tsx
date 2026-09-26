@@ -41,17 +41,15 @@ function Tablet({ src, alt, w, h }: { src: string; alt: string; w: number; h: nu
   );
 }
 
-/** Laptop berbingkai CSS berisi tangkapan layar dashboard. */
-function Laptop({ src, alt, w, h }: { src: string; alt: string; w: number; h: number }) {
+/** HP berbingkai CSS berisi tangkapan layar aplikasi. */
+function Phone({ src, alt }: { src: string; alt: string }) {
   return (
-    <div className="drop-shadow-[0_28px_32px_rgba(15,23,42,0.22)]">
-      <div className="mx-[7%] rounded-t-[12px] bg-[#111] p-[6px] pb-[8px] ring-1 ring-black/20">
-        <div className="aspect-[16/10] overflow-hidden rounded-[4px] bg-white">
-          <Image src={src} alt={alt} width={w} height={h} sizes="320px" className="h-full w-full object-cover object-left-top" />
+    <div className="rounded-[22px] bg-[#111] p-[5px] shadow-[0_28px_50px_-24px_rgba(15,23,42,0.5)] ring-1 ring-black/20">
+      <div className="relative overflow-hidden rounded-[17px] bg-white">
+        <span className="absolute left-1/2 top-1 z-10 h-[10px] w-[38px] -translate-x-1/2 rounded-full bg-[#111]" />
+        <div className="pt-4">
+          <Image src={src} alt={alt} width={356} height={797} sizes="150px" className="block h-auto w-full" />
         </div>
-      </div>
-      <div className="relative h-[10px] rounded-b-[10px] bg-gradient-to-b from-[#d4d4d8] to-[#a1a1aa]">
-        <span className="absolute left-1/2 top-0 h-[4px] w-[18%] -translate-x-1/2 rounded-b-md bg-[#8b8b93]" />
       </div>
     </div>
   );
@@ -69,55 +67,54 @@ type Layer = {
   node: React.ReactNode;
 };
 
+// Cermin kiri–kanan: HP di atas, tablet di bawah pada kedua sisi.
 const layers: Layer[] = [
   {
+    id: "hp-kiri",
+    className: "left-[12%] top-[16%] w-[clamp(108px,8.4vw,140px)]",
+    depth: 1.3,
+    rotate: -8,
+    node: <Phone src="/img/landing/journey/tamu-keranjang.webp" alt="Keranjang pesanan tamu di ponsel" />,
+  },
+  {
     id: "tablet-kiri",
-    className: "left-[4%] top-[16%] w-[clamp(220px,18vw,300px)]",
-    depth: 1.1,
-    rotate: -7,
+    className: "left-[3%] top-[54%] w-[clamp(230px,19vw,310px)]",
+    depth: 0.9,
+    rotate: 5,
     node: (
       <Image
         src="/img/landing/pos-ipad.webp"
         alt="Kasir Menuin di tablet"
         width={1800}
         height={1382}
-        sizes="300px"
+        sizes="310px"
         className="h-auto w-full drop-shadow-[0_24px_32px_rgba(15,23,42,0.25)]"
       />
     ),
   },
   {
-    id: "laptop-kiri",
-    className: "left-[3%] top-[55%] w-[clamp(240px,20vw,330px)]",
-    depth: 0.9,
-    rotate: 4,
+    id: "hp-kanan",
+    className: "right-[12%] top-[16%] w-[clamp(108px,8.4vw,140px)]",
+    depth: 1.2,
+    rotate: 8,
     node: (
-      <Laptop src="/img/landing/journey/outlet-laporan.webp" alt="Laporan penjualan Menuin di laptop" w={1270} h={600} />
+      <Image
+        src="/img/landing/hero/katalog-phone.webp"
+        alt="Katalog menu Menuin di ponsel"
+        width={463}
+        height={940}
+        sizes="150px"
+        className="h-auto w-full drop-shadow-[0_24px_32px_rgba(15,23,42,0.3)]"
+      />
     ),
   },
   {
     id: "tablet-kanan",
-    className: "right-[4%] top-[16%] w-[clamp(210px,17vw,285px)]",
-    depth: 1.2,
-    rotate: 7,
+    className: "right-[3%] top-[54%] w-[clamp(220px,18vw,295px)]",
+    depth: 1,
+    rotate: -5,
     node: (
       <Tablet src="/img/landing/journey/outlet-meja-qr.webp" alt="Pengaturan Meja & QR Code di tablet" w={1140} h={620} />
-    ),
-  },
-  {
-    id: "laptop-kanan",
-    className: "right-[2%] top-[55%] w-[clamp(250px,20vw,330px)]",
-    depth: 1,
-    rotate: -4,
-    node: (
-      <Image
-        src="/img/landing/dashboard-macbook.webp"
-        alt="Dashboard Menuin di laptop"
-        width={1800}
-        height={1145}
-        sizes="330px"
-        className="h-auto w-full drop-shadow-[0_24px_32px_rgba(15,23,42,0.22)]"
-      />
     ),
   },
 ];
