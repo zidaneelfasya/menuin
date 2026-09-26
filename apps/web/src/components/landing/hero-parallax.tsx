@@ -71,14 +71,14 @@ type Layer = {
 const layers: Layer[] = [
   {
     id: "hp-kiri",
-    className: "right-[calc(50%+min(31vw,540px))] top-[15%] w-[clamp(96px,7.6vw,132px)]",
+    className: "right-[calc(50%+min(25vw,440px))] top-[15%] w-[clamp(96px,7.6vw,132px)]",
     depth: 1.3,
     rotate: -8,
     node: <Phone src="/img/landing/journey/tamu-keranjang.webp" alt="Keranjang pesanan tamu di ponsel" />,
   },
   {
     id: "tablet-kiri",
-    className: "right-[calc(50%+min(21vw,380px))] top-[55%] w-[clamp(200px,17vw,290px)]",
+    className: "right-[calc(50%+min(25vw,440px))] top-[55%] w-[clamp(200px,17vw,290px)]",
     depth: 0.9,
     rotate: 5,
     node: (
@@ -94,7 +94,7 @@ const layers: Layer[] = [
   },
   {
     id: "hp-kanan",
-    className: "left-[calc(50%+min(31vw,540px))] top-[15%] w-[clamp(96px,7.6vw,132px)]",
+    className: "left-[calc(50%+min(25vw,440px))] top-[15%] w-[clamp(96px,7.6vw,132px)]",
     depth: 1.2,
     rotate: 8,
     node: (
@@ -110,7 +110,7 @@ const layers: Layer[] = [
   },
   {
     id: "tablet-kanan",
-    className: "left-[calc(50%+min(21vw,380px))] top-[55%] w-[clamp(190px,16vw,275px)]",
+    className: "left-[calc(50%+min(25vw,440px))] top-[55%] w-[clamp(190px,16vw,275px)]",
     depth: 1,
     rotate: -5,
     node: (
