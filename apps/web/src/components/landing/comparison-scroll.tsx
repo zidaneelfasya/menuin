@@ -257,7 +257,7 @@ function StoryCard({
       className={`flex h-full flex-col rounded-[28px] p-6 sm:p-8 ${
         isNew
           ? "bg-white shadow-[0_40px_80px_-40px_rgba(14,89,249,0.45)] ring-1 ring-[#0E59F9]/15"
-          : "bg-[#efeff1] ring-1 ring-black/[0.06]"
+          : "bg-[#f6f3ec] shadow-[0_24px_50px_-30px_rgba(15,23,42,0.35)] ring-1 ring-black/[0.06]"
       }`}
     >
       <span
@@ -285,6 +285,18 @@ function StoryCard({
 }
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+
+/** Posisi "jatuh" tiap kartu di tumpukan — sedikit acak supaya terasa kertas. */
+const PILE = [
+  { r: -4, x: -10, fromX: -60, spin: -14 },
+  { r: 3, x: 12, fromX: 70, spin: 12 },
+  { r: -2, x: -4, fromX: -40, spin: -10 },
+  { r: 5, x: 8, fromX: 80, spin: 16 },
+  { r: -5, x: -14, fromX: -70, spin: -12 },
+  { r: 2, x: 6, fromX: 50, spin: 10 },
+  { r: -3, x: -8, fromX: -55, spin: -14 },
+  { r: 4, x: 10, fromX: 65, spin: 12 },
+];
 const smooth = (v: number) => v * v * (3 - 2 * v);
 
 export default function ComparisonScroll() {
@@ -315,11 +327,16 @@ export default function ComparisonScroll() {
   }, []);
 
   const n = items.length;
-  const pos = p * n; // 0..n
-  const active = Math.min(n - 1, Math.floor(pos));
-  const local = pos - active; // 0..1 di dalam satu masalah
-  // Babak kedua (kartu "Dengan Menuin" naik) terjadi di 30–75% tiap masalah.
-  const reveal = smooth(clamp01((local - 0.3) / 0.45));
+  // Tumpukan berisi 2n kartu: Tanpa₁, Dengan₁, Tanpa₂, Dengan₂, …
+  // s berjalan 0 → 2n-1; kartu ke-k jatuh ke tumpukan saat s melewati k-1 → k.
+  const cards = items.flatMap((it, i) => [
+    { key: `old-${i}`, tone: "old" as const, visual: it.oldVisual },
+    { key: `new-${i}`, tone: "new" as const, visual: it.newVisual },
+  ]);
+  const s = p * (cards.length - 1) * 1.08; // sedikit jeda di akhir
+  const active = s < 1 ? 0 : Math.min(n - 1, Math.floor((s + 1) / 2));
+  const reveal = smooth(clamp01(s - 2 * active));
+  const local = clamp01((s - (2 * active - 1)) / 2);
   const item = items[active];
 
   return (
@@ -391,31 +408,32 @@ export default function ComparisonScroll() {
 
             {/* Kanan: tumpukan kartu */}
             <div className="col-span-7">
-              <div className="relative mx-auto h-[min(64vh,520px)] w-full max-w-[560px]">
-                {items.map((it, i) => {
-                  if (i !== active) return null;
+              <div className="relative mx-auto h-[min(62vh,500px)] w-full max-w-[540px]">
+                {cards.map((c, k) => {
+                  const inT = k === 0 ? 1 : smooth(clamp01(s - (k - 1)));
+                  if (inT <= 0) return null;
+                  const depth = Math.max(0, s - k); // berapa kartu sudah menimpanya
+                  if (depth > 4.5) return null;
+                  const rest = PILE[k % PILE.length];
+                  const falling = 1 - inT;
+                  const settle = Math.min(depth, 4);
                   return (
-                    <React.Fragment key={it.time}>
-                      <div
-                        className="absolute inset-0 origin-bottom"
-                        style={{
-                          transform: `translateY(${-reveal * 28}px) scale(${1 - reveal * 0.08}) rotate(${-3 + reveal * 1}deg)`,
-                          opacity: 1 - reveal * 0.45,
-                          filter: `blur(${reveal * 1.5}px)`,
-                        }}
-                      >
-                        <StoryCard tone="old" visual={it.oldVisual} large />
-                      </div>
-                      <div
-                        className="absolute inset-0"
-                        style={{
-                          transform: `translateY(${(1 - reveal) * 110}%) rotate(${(1 - reveal) * 4}deg)`,
-                          opacity: reveal > 0 ? 1 : 0,
-                        }}
-                      >
-                        <StoryCard tone="new" visual={it.newVisual} large />
-                      </div>
-                    </React.Fragment>
+                    <div
+                      key={c.key}
+                      className="absolute inset-0 will-change-transform"
+                      style={{
+                        zIndex: k,
+                        transform: [
+                          `translate(${rest.x + falling * rest.fromX}px, ${falling * 115 - settle * 3}%)`,
+                          `rotate(${rest.r + falling * rest.spin}deg)`,
+                          `scale(${1 - settle * 0.035})`,
+                        ].join(" "),
+                        opacity: depth > 3.5 ? clamp01(4.5 - depth) : 1,
+                        filter: `brightness(${1 - Math.min(settle, 3) * 0.04})`,
+                      }}
+                    >
+                      <StoryCard tone={c.tone} visual={c.visual} large />
+                    </div>
                   );
                 })}
               </div>
