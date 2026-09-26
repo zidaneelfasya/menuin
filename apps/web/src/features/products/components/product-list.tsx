@@ -10,8 +10,7 @@ import {
   Package, 
   Image as ImageIcon, 
   Printer, 
-  Star, 
-  StarOff,
+  ThumbsUp,
   Boxes,
   Upload,
   RefreshCw,
@@ -27,7 +26,11 @@ import {
   X,
   Power,
   PowerOff,
-  CheckCircle2
+  CheckCircle2,
+  LayoutList,
+  LayoutGrid,
+  Search as SearchIcon,
+  PackageSearch
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
@@ -36,6 +39,7 @@ const DataTable = dynamic(
   { ssr: false, loading: () => <div className="h-64 w-full bg-muted animate-pulse rounded-xl"></div> }
 );
 import { ImportProductDialog } from './import-product-dialog';
+import { QuickStockDialog } from './quick-stock-dialog';
 import Barcode from 'react-barcode';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils/format';
@@ -100,7 +104,17 @@ type Category = {
   name: string;
 };
 
-export function ProductList({ initialData, categories, modifierGroups = [] }: { initialData: ProductDto[], categories: Category[], modifierGroups?: any[] }) {
+export function ProductList({ 
+  initialData, 
+  categories, 
+  modifierGroups = [],
+  userRole = 'OWNER'
+}: { 
+  initialData: ProductDto[]; 
+  categories: Category[]; 
+  modifierGroups?: any[];
+  userRole?: string;
+}) {
   const [isAddOpen, setIsAddOpen] = React.useState(false);
   const [isEditOpen, setIsEditOpen] = React.useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
@@ -112,22 +126,66 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
   const [imageFile, setImageFile] = React.useState<File | null>(null);
   const [productsList, setProductsList] = React.useState<ProductDto[]>(initialData);
 
-  // Status Filter: 'ALL' | 'ACTIVE' | 'INACTIVE'
-  const [statusFilter, setStatusFilter] = React.useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
+  // Quick Stock Adjustment Dialog State
+  const [stockDialogProduct, setStockDialogProduct] = React.useState<ProductDto | null>(null);
+  const [isStockDialogOpen, setIsStockDialogOpen] = React.useState(false);
+
+  const canManageStock = userRole === 'OWNER' || userRole === 'MANAGER';
+
+  const handleOpenStockDialog = (product: ProductDto) => {
+    setStockDialogProduct(product);
+    setIsStockDialogOpen(true);
+  };
+
+  const handleStockSuccess = (productId: string, newStock: number) => {
+    setProductsList((prev) =>
+      prev.map((p) => (p.id === productId ? { ...p, stock: newStock } : p))
+    );
+  };
+
+  // Layout View Mode: 'list' | 'grid'
+  const [viewMode, setViewMode] = React.useState<'list' | 'grid'>('list');
+  // Category Filter: 'ALL' | categoryId
+  const [categoryFilter, setCategoryFilter] = React.useState<string>('ALL');
+  // Search query for card view
+  const [cardSearchQuery, setCardSearchQuery] = React.useState<string>('');
+
+  // Status Filter: 'ALL' | 'ACTIVE' | 'LOW_STOCK' | 'INACTIVE'
+  const [statusFilter, setStatusFilter] = React.useState<'ALL' | 'ACTIVE' | 'LOW_STOCK' | 'INACTIVE'>('ALL');
 
   const totalCount = productsList.length;
   const activeCount = React.useMemo(() => productsList.filter((p) => p.isActive !== false).length, [productsList]);
   const inactiveCount = React.useMemo(() => productsList.filter((p) => p.isActive === false).length, [productsList]);
+  const lowStockCount = React.useMemo(() => {
+    return productsList.filter((p) => p.trackStock !== false && (p.stock ?? 0) <= (p.minStock ?? 5)).length;
+  }, [productsList]);
 
   const displayedProducts = React.useMemo(() => {
+    let list = productsList;
+
     if (statusFilter === 'ACTIVE') {
-      return productsList.filter((p) => p.isActive !== false);
+      list = list.filter((p) => p.isActive !== false);
+    } else if (statusFilter === 'LOW_STOCK') {
+      list = list.filter((p) => p.trackStock !== false && (p.stock ?? 0) <= (p.minStock ?? 5));
+    } else if (statusFilter === 'INACTIVE') {
+      list = list.filter((p) => p.isActive === false);
     }
-    if (statusFilter === 'INACTIVE') {
-      return productsList.filter((p) => p.isActive === false);
+
+    if (categoryFilter !== 'ALL') {
+      list = list.filter((p) => p.categoryId === categoryFilter);
     }
-    return productsList;
-  }, [productsList, statusFilter]);
+
+    return list;
+  }, [productsList, statusFilter, categoryFilter]);
+
+  const cardGridProducts = React.useMemo(() => {
+    if (!cardSearchQuery.trim()) return displayedProducts;
+    const q = cardSearchQuery.toLowerCase().trim();
+    return displayedProducts.filter((p) => 
+      p.name.toLowerCase().includes(q) || 
+      (p.sku && p.sku.toLowerCase().includes(q))
+    );
+  }, [displayedProducts, cardSearchQuery]);
 
   // Row selection & Bulk Action states
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
@@ -472,7 +530,7 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
               <div className="flex items-center gap-1.5">
                 <span className="font-medium text-slate-900 dark:text-slate-100">{product.name}</span>
                 {product.isFeatured && (
-                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500 shrink-0" />
+                  <ThumbsUp className="w-3.5 h-3.5 fill-blue-500 text-blue-600 shrink-0" />
                 )}
               </div>
               <span className="text-xs text-muted-foreground font-mono">{product.sku}</span>
@@ -497,12 +555,12 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
               className={cn(
                 "p-1.5 rounded-lg transition-colors flex items-center justify-center",
                 isFeatured 
-                  ? "text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/30" 
-                  : "text-slate-300 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  ? "text-blue-600 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-400" 
+                  : "text-slate-300 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800"
               )}
-              title={isFeatured ? 'Rekomendasi Outlet (Klik untuk batalkan)' : 'Jadikan Rekomendasi Outlet'}
+              title={isFeatured ? 'Rekomendasi Menu (Klik untuk batalkan)' : 'Jadikan Rekomendasi Menu'}
             >
-              <Star className={cn("h-4 w-4", isFeatured && "fill-amber-400 text-amber-500")} />
+              <ThumbsUp className={cn("h-4 w-4", isFeatured ? "fill-blue-500 text-blue-600" : "text-slate-300")} />
             </button>
           </div>
         );
@@ -523,24 +581,74 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
     },
     {
       accessorKey: 'stock',
-      header: 'Stok',
+      header: 'Sisa Stok',
       cell: ({ row }) => {
         const product = row.original;
         const isTracked = product.trackStock !== false;
         
         if (!isTracked) {
           return (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900/50">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700">
               Tanpa Batas
             </span>
           );
         }
 
-        const stock = parseInt(row.getValue('stock'));
-        const minStock = product.minStock;
+        const stock = parseInt(row.getValue('stock')) || 0;
+        const minStock = product.minStock || 0;
+        const isLow = stock <= minStock && stock > 0;
+        const isZero = stock <= 0;
+
         return (
-          <div className={stock <= minStock ? 'text-destructive font-semibold' : 'font-medium'}>
-            {stock}
+          <div 
+            className="flex items-center gap-2 group/stock"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1.5">
+                <span className={cn(
+                  "text-xs font-semibold tabular-nums",
+                  isZero 
+                    ? "text-rose-600 dark:text-rose-400" 
+                    : isLow 
+                    ? "text-amber-600 dark:text-amber-400" 
+                    : "text-slate-900 dark:text-slate-100"
+                )}>
+                  {stock} porsi
+                </span>
+                {isZero ? (
+                  <span className="text-[10px] px-1.5 py-0.2 rounded font-medium bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/50">
+                    Habis
+                  </span>
+                ) : isLow ? (
+                  <span className="text-[10px] px-1.5 py-0.2 rounded font-medium bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50">
+                    Menipis
+                  </span>
+                ) : null}
+              </div>
+              {minStock > 0 && (
+                <span className="text-[10px] text-muted-foreground">
+                  Batas min: {minStock}
+                </span>
+              )}
+            </div>
+
+            {canManageStock && (
+              <button
+                type="button"
+                onClick={() => handleOpenStockDialog(product)}
+                className={cn(
+                  "p-1 rounded-md text-xs font-medium transition-all flex items-center gap-1 border",
+                  (isLow || isZero)
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/50" 
+                    : "opacity-0 group-hover/stock:opacity-100 text-slate-500 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
+                )}
+                title="Penyesuaian stok"
+              >
+                <Plus className="w-3 h-3" />
+                <span className="text-[10px]">{(isLow || isZero) ? 'Restock' : 'Atur'}</span>
+              </button>
+            )}
           </div>
         );
       },
@@ -639,17 +747,32 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
                   handleToggleBestSeller(product, !!product.isFeatured);
                 }}
               >
-                {product.isFeatured ? 'Hapus unggulan' : 'Jadikan unggulan'}
+                <ThumbsUp className={cn("w-3.5 h-3.5 mr-2", product.isFeatured ? "fill-blue-500 text-blue-600" : "text-slate-400")} />
+                {product.isFeatured ? 'Hapus rekomendasi' : 'Jadikan rekomendasi'}
               </DropdownMenuItem>
-              <DropdownMenuItem 
-                className="text-xs font-medium py-2 px-3 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleToggleTrackStock(product, isTracked);
-                }}
-              >
-                {isTracked ? 'Nonaktifkan stok' : 'Aktifkan stok'}
-              </DropdownMenuItem>
+              {isTracked && canManageStock && (
+                <DropdownMenuItem 
+                  className="text-xs font-medium py-2 px-3 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenStockDialog(product);
+                  }}
+                >
+                  <Boxes className="w-3.5 h-3.5 mr-2 text-slate-500" />
+                  Sesuaikan stok
+                </DropdownMenuItem>
+              )}
+              {canManageStock && (
+                <DropdownMenuItem 
+                  className="text-xs font-medium py-2 px-3 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleToggleTrackStock(product, isTracked);
+                  }}
+                >
+                  {isTracked ? 'Nonaktifkan lacak stok' : 'Aktifkan lacak stok'}
+                </DropdownMenuItem>
+              )}
               {(product.barcode || product.sku) && (
                 <DropdownMenuItem 
                   className="text-xs font-medium py-2 px-3 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
@@ -1219,7 +1342,22 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
   };
 
   const batchToolbar = (
-    <div className="flex items-center gap-2 flex-wrap">
+    <div className="flex items-center gap-2 flex-wrap sm:ml-auto">
+      {/* Category Filter */}
+      <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+        <SelectTrigger className="h-9 w-[150px] text-xs rounded-xl bg-card border-slate-200 dark:border-slate-800">
+          <SelectValue placeholder="Semua Kategori" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="ALL" className="text-xs">Semua Kategori</SelectItem>
+          {categories.map((cat) => (
+            <SelectItem key={cat.id} value={cat.id} className="text-xs">
+              {cat.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
       {/* Tombol Aktifkan Terpilih */}
       <Button
         type="button"
@@ -1256,7 +1394,7 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
         <span>Matikan {selectedCount > 0 ? `(${selectedCount})` : ''}</span>
       </Button>
 
-      {/* Tombol Best Seller */}
+      {/* Tombol Best Seller / Rekomendasi */}
       <Button
         type="button"
         variant="outline"
@@ -1268,18 +1406,18 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
           selectedCount === 0 
             ? "opacity-50 cursor-not-allowed border-slate-200 dark:border-slate-800 text-muted-foreground" 
             : allAreFeatured
-              ? "border-amber-300 dark:border-amber-800/80 bg-amber-50/60 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 hover:bg-amber-100/70"
-              : "border-amber-400 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-200 hover:bg-amber-100"
+              ? "border-blue-300 dark:border-blue-800/80 bg-blue-50/60 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 hover:bg-blue-100/70"
+              : "border-blue-400 dark:border-blue-700 bg-blue-50 dark:bg-blue-950/50 text-blue-800 dark:text-blue-200 hover:bg-blue-100"
         )}
       >
         {allAreFeatured ? (
           <>
-            <StarOff className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-            <span>Nonaktifkan Rekomendasi {selectedCount > 0 ? `(${selectedCount})` : ''}</span>
+            <ThumbsUp className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 opacity-60" />
+            <span>Batalkan Rekomendasi {selectedCount > 0 ? `(${selectedCount})` : ''}</span>
           </>
         ) : (
           <>
-            <Star className={cn("w-3.5 h-3.5 text-amber-500", selectedCount > 0 && "fill-amber-400")} />
+            <ThumbsUp className={cn("w-3.5 h-3.5 text-blue-600", selectedCount > 0 && "fill-blue-500")} />
             <span>Jadikan Rekomendasi {selectedCount > 0 ? `(${selectedCount})` : ''}</span>
           </>
         )}
@@ -1320,6 +1458,38 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
           </Button>
         </div>
       )}
+
+      {/* Switcher Tampilan (List vs Card) */}
+      <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl border border-slate-200 dark:border-slate-700">
+        <button
+          type="button"
+          onClick={() => setViewMode('list')}
+          className={cn(
+            "px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5",
+            viewMode === 'list'
+              ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs font-semibold"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+          title="Tampilan Tabel"
+        >
+          <LayoutList className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Tabel</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setViewMode('grid')}
+          className={cn(
+            "px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5",
+            viewMode === 'grid'
+              ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs font-semibold"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+          title="Tampilan Kartu"
+        >
+          <LayoutGrid className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Kartu</span>
+        </button>
+      </div>
     </div>
   );
 
@@ -1327,8 +1497,8 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Data Item</h1>
-          <p className="text-sm text-muted-foreground">Kelola semua item, harga, stok, gambar, dan barcode.</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">Daftar Menu</h1>
+          <p className="text-sm text-muted-foreground">Kelola katalog menu, harga jual, ketersediaan, dan sisa stok produk outlet.</p>
         </div>
         <div className="flex gap-2">
           <ImportProductDialog />
@@ -1347,8 +1517,8 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
         </div>
       </div>
 
-      {/* Filter Tabs Ketersediaan */}
-      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
+      {/* Filter Tabs Ketersediaan & Stok */}
+      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 flex-wrap">
         <button
           onClick={() => setStatusFilter('ALL')}
           className={cn(
@@ -1358,7 +1528,7 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
               : "text-muted-foreground hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800"
           )}
         >
-          <span>Semua Item</span>
+          <span>Semua Menu</span>
           <span className={cn(
             "text-[10px] px-1.5 py-0.2 rounded-full",
             statusFilter === 'ALL' ? "bg-white/20 text-white dark:bg-slate-900/20 dark:text-slate-900" : "bg-slate-200/60 dark:bg-slate-800"
@@ -1386,6 +1556,28 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
           </span>
         </button>
 
+        {/* Tab Cerdas: Hanya tampil bila ada barang yang melacak stok dan menipis */}
+        {lowStockCount > 0 && (
+          <button
+            onClick={() => setStatusFilter('LOW_STOCK')}
+            className={cn(
+              "px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5",
+              statusFilter === 'LOW_STOCK'
+                ? "bg-amber-600 text-white font-semibold shadow-xs"
+                : "text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40"
+            )}
+          >
+            <AlertCircle className="w-3.5 h-3.5" />
+            <span>Stok Menipis</span>
+            <span className={cn(
+              "text-[10px] px-1.5 py-0.2 rounded-full",
+              statusFilter === 'LOW_STOCK' ? "bg-white/25 text-white" : "bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300"
+            )}>
+              {lowStockCount}
+            </span>
+          </button>
+        )}
+
         <button
           onClick={() => setStatusFilter('INACTIVE')}
           className={cn(
@@ -1396,7 +1588,7 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
           )}
         >
           <PowerOff className="w-3.5 h-3.5" />
-          <span>Tidak Tersedia</span>
+          <span>Tidak Tersedia (86)</span>
           <span className={cn(
             "text-[10px] px-1.5 py-0.2 rounded-full",
             statusFilter === 'INACTIVE' ? "bg-white/25 text-white dark:bg-slate-900/25 dark:text-slate-900" : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
@@ -1406,19 +1598,255 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
         </button>
       </div>
 
-      <DataTable 
-        columns={columns} 
-        data={displayedProducts} 
-        searchKey="name" 
-        searchPlaceholder="Cari nama item..." 
-        onRowClick={handleRowClick}
-        infiniteScroll={true}
-        initialPageSize={10}
-        batchSize={10}
-        rowSelection={rowSelection}
-        onRowSelectionChange={setRowSelection}
-        toolbar={batchToolbar}
-      />
+      {viewMode === 'list' ? (
+        <DataTable 
+          columns={columns} 
+          data={displayedProducts} 
+          searchKey="name" 
+          searchPlaceholder="Cari nama item..." 
+          onRowClick={handleRowClick}
+          infiniteScroll={true}
+          initialPageSize={10}
+          batchSize={10}
+          rowSelection={rowSelection}
+          onRowSelectionChange={setRowSelection}
+          toolbar={batchToolbar}
+        />
+      ) : (
+        <div className="space-y-4">
+          {/* Card View Toolbar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center w-full max-w-sm relative">
+              <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Cari nama menu atau SKU..."
+                value={cardSearchQuery}
+                onChange={(e) => setCardSearchQuery(e.target.value)}
+                className="pl-9 bg-card"
+              />
+            </div>
+            {batchToolbar}
+          </div>
+
+          {/* Cards Grid */}
+          {cardGridProducts.length === 0 ? (
+            <div className="text-center py-16 px-4 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50/50 dark:bg-slate-900/20">
+              <PackageSearch className="w-10 h-10 text-muted-foreground mx-auto mb-3 opacity-60" />
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base">Tidak ada menu ditemukan</h3>
+              <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+                Coba ubah kata kunci pencarian atau ganti filter kategori dan status ketersediaan di atas.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5 sm:gap-4">
+              {cardGridProducts.map((product) => {
+                const isActive = product.isActive !== false;
+                const isTracked = product.trackStock !== false;
+                const stock = parseInt(String(product.stock)) || 0;
+                const minStock = product.minStock || 0;
+                const isOutOfStock = isTracked && stock <= 0;
+                const isLow = isTracked && stock <= minStock && stock > 0;
+                const isSelected = !!rowSelection[product.id];
+
+                return (
+                  <div
+                    key={product.id}
+                    onClick={() => handleRowClick(product)}
+                    className={cn(
+                      "border rounded-xl overflow-hidden bg-white dark:bg-slate-900 transition-all hover:shadow-xs group cursor-pointer flex flex-col relative",
+                      isSelected
+                        ? "border-primary ring-1 ring-primary shadow-xs"
+                        : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
+                    )}
+                  >
+                    {/* Image Container (Aspect 4:3) */}
+                    <div className="aspect-[4/3] bg-slate-100 dark:bg-slate-800 relative overflow-hidden flex items-center justify-center">
+                      {/* Checkbox for bulk select (top-left) */}
+                      <div 
+                        className="absolute top-2 left-2 z-30"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={(checked) => {
+                            setRowSelection((prev) => ({
+                              ...prev,
+                              [product.id]: !!checked,
+                            }));
+                          }}
+                          className="bg-white/90 backdrop-blur-sm data-[state=checked]:bg-primary"
+                        />
+                      </div>
+
+                      {/* Top-Right Badges & Actions */}
+                      <div 
+                        className="absolute top-2 right-2 z-30 flex items-center gap-1"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => handleToggleBestSeller(product, !!product.isFeatured)}
+                          className={cn(
+                            "p-1.5 rounded-lg backdrop-blur-sm transition-all shadow-xs",
+                            product.isFeatured
+                              ? "bg-blue-600 text-white"
+                              : "bg-white/85 dark:bg-slate-900/85 text-slate-400 hover:text-blue-600"
+                          )}
+                          title={product.isFeatured ? 'Rekomendasi Menu (Klik untuk batalkan)' : 'Jadikan Rekomendasi Menu'}
+                        >
+                          <ThumbsUp className={cn("w-3.5 h-3.5", product.isFeatured && "fill-white")} />
+                        </button>
+
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 rounded-lg bg-white/85 dark:bg-slate-900/85 backdrop-blur-sm text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-900 shadow-xs p-0"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-52 p-1 rounded-xl shadow-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                            <DropdownMenuItem onClick={() => handleRowClick(product)}>
+                              Detail item
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEditClick(product)}>
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleToggleActiveStatus(product, isActive)}>
+                              {isActive ? 'Matikan (Tidak Tersedia)' : 'Aktifkan (Tersedia)'}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleToggleBestSeller(product, !!product.isFeatured)}>
+                              <ThumbsUp className={cn("w-3.5 h-3.5 mr-2", product.isFeatured ? "fill-blue-500 text-blue-600" : "text-slate-400")} />
+                              {product.isFeatured ? 'Hapus rekomendasi' : 'Jadikan rekomendasi'}
+                            </DropdownMenuItem>
+                            {isTracked && canManageStock && (
+                              <DropdownMenuItem onClick={() => handleOpenStockDialog(product)}>
+                                <Boxes className="w-3.5 h-3.5 mr-2 text-slate-500" />
+                                Sesuaikan stok
+                              </DropdownMenuItem>
+                            )}
+                            {canManageStock && (
+                              <DropdownMenuItem onClick={() => handleToggleTrackStock(product, isTracked)}>
+                                {isTracked ? 'Nonaktifkan lacak stok' : 'Aktifkan lacak stok'}
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleDeleteClick(product)} className="text-destructive">
+                              Hapus item
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+
+                      {/* Inactive or Out of stock overlay (matches POS exactly!) */}
+                      {!isActive ? (
+                        <div className="absolute inset-0 bg-slate-950/70 z-20 flex flex-col items-center justify-center p-2 text-center backdrop-blur-[1px]">
+                          <span className="text-white text-[11px] font-semibold tracking-wider uppercase bg-slate-800/95 px-2.5 py-0.5 rounded-md shadow-xs">
+                            TIDAK TERSEDIA (86)
+                          </span>
+                        </div>
+                      ) : isOutOfStock ? (
+                        <div className="absolute inset-0 bg-slate-950/60 z-20 flex flex-col items-center justify-center p-2 text-center backdrop-blur-[1px]">
+                          <span className="text-white text-[11px] font-semibold tracking-wider uppercase bg-rose-600/95 px-2.5 py-0.5 rounded-md shadow-xs">
+                            STOK HABIS
+                          </span>
+                        </div>
+                      ) : null}
+
+                      {/* Product Image */}
+                      {product.imageUrl ? (
+                        <img
+                          src={product.imageUrl}
+                          alt={product.name}
+                          loading="lazy"
+                          className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-primary/5 text-4xl font-semibold text-primary/20">
+                          {product.name.charAt(0)}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Card Content */}
+                    <div className="p-3 flex flex-col flex-1">
+                      <div className="flex items-center justify-between gap-1 text-[11px] text-muted-foreground mb-1">
+                        <span className="truncate">{product.categoryName || 'Tanpa Kategori'}</span>
+                        <span className="font-mono text-[10px] shrink-0">{product.sku}</span>
+                      </div>
+
+                      <h3 className="font-semibold text-sm line-clamp-2 leading-tight mb-1 text-slate-900 dark:text-slate-100 group-hover:text-primary transition-colors">
+                        {product.name}
+                      </h3>
+
+                      <div className="text-primary font-semibold text-sm mb-2.5">
+                        {formatCurrency(parseFloat(product.price))}
+                      </div>
+
+                      {/* Bottom Footer: Stock info + Fast Restock + 86 Switch */}
+                      <div className="mt-auto pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-1.5">
+                        <div className="flex items-center gap-1 min-w-0">
+                          {!isTracked ? (
+                            <span className="text-[11px] text-muted-foreground font-medium">
+                              Tanpa Batas
+                            </span>
+                          ) : (
+                            <div className="flex items-center gap-1">
+                              <span className={cn(
+                                "text-xs font-semibold tabular-nums",
+                                isOutOfStock ? "text-rose-600 dark:text-rose-400" : isLow ? "text-amber-600 dark:text-amber-400" : "text-slate-700 dark:text-slate-300"
+                              )}>
+                                {stock} porsi
+                              </span>
+                              {isOutOfStock ? (
+                                <span className="text-[9px] px-1 rounded bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 font-medium">
+                                  Habis
+                                </span>
+                              ) : isLow ? (
+                                <span className="text-[9px] px-1 rounded bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 font-medium">
+                                  Menipis
+                                </span>
+                              ) : null}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                          {isTracked && canManageStock && (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenStockDialog(product)}
+                              className={cn(
+                                "h-6 px-1.5 rounded-md text-[10px] font-medium transition-all flex items-center gap-0.5 border",
+                                (isLow || isOutOfStock)
+                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400"
+                                  : "text-slate-500 hover:text-slate-900 bg-slate-50 border-slate-200 dark:bg-slate-800 dark:border-slate-700"
+                              )}
+                              title="Sesuaikan stok"
+                            >
+                              <Plus className="w-2.5 h-2.5" />
+                              <span>{(isLow || isOutOfStock) ? 'Restock' : 'Atur'}</span>
+                            </button>
+                          )}
+
+                          <Switch
+                            checked={isActive}
+                            onCheckedChange={() => handleToggleActiveStatus(product, isActive)}
+                            className="data-[state=checked]:bg-emerald-600 cursor-pointer scale-75"
+                            title={isActive ? 'Nonaktifkan menu (86)' : 'Aktifkan menu'}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Detail Item Modal (Pure Modern shadcn/ui) */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
@@ -1443,8 +1871,8 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
                       {detailProduct.name}
                     </h2>
                     {detailProduct.isFeatured && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/50">
-                        <Star className="w-3 h-3 fill-amber-400 text-amber-500" /> Rekomendasi
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900/50">
+                        <ThumbsUp className="w-3 h-3 fill-blue-500 text-blue-600" /> Rekomendasi
                       </span>
                     )}
                   </div>
@@ -1804,6 +2232,14 @@ export function ProductList({ initialData, categories, modifierGroups = [] }: { 
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* In-Context Quick Stock Adjust Dialog */}
+      <QuickStockDialog
+        product={stockDialogProduct}
+        isOpen={isStockDialogOpen}
+        onOpenChange={setIsStockDialogOpen}
+        onSuccess={handleStockSuccess}
+      />
     </div>
   );
 }

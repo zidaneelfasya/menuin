@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { transactions, transactionItems, products, tenants } from "@/lib/db/schema";
-import { eq, and, or, desc, inArray } from "drizzle-orm";
+import { eq, and, or, desc, inArray, ilike } from "drizzle-orm";
 import { getCurrentUser } from "./auth";
 import { revalidatePath } from "next/cache";
 
@@ -313,18 +313,25 @@ export async function getOrderByNumberForOutlet(orderNumber: string) {
   const user = await getCurrentUser();
   if (!user || !user.tenantId) throw new Error("Unauthorized");
 
-  const cleanOrderNumber = orderNumber.replace(/^#/, '').trim().toUpperCase();
+  const trimmed = orderNumber.trim();
+  const cleanOrderNumber = trimmed.replace(/^#/, '').toUpperCase();
   const hashOrderNumber = '#' + cleanOrderNumber;
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmed);
+
+  const searchConditions = [
+    ilike(transactions.orderNumber, cleanOrderNumber),
+    ilike(transactions.orderNumber, hashOrderNumber),
+    ilike(transactions.orderNumber, trimmed),
+  ];
+
+  if (isUuid) {
+    searchConditions.push(eq(transactions.id, trimmed));
+  }
 
   const txs = await db.select().from(transactions).where(
     and(
       eq(transactions.tenantId, user.tenantId),
-      or(
-        eq(transactions.orderNumber, cleanOrderNumber),
-        eq(transactions.orderNumber, hashOrderNumber),
-        eq(transactions.orderNumber, orderNumber),
-        eq(transactions.id, orderNumber)
-      )
+      or(...searchConditions)
     )
   ).limit(1);
 

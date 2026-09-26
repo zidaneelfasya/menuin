@@ -24,8 +24,15 @@ export type OutletOverviewData = {
 export type PeriodMetrics = {
   grossSales: number;
   grossSalesGrowth: number;
+  totalDiscount: number;
   netSales: number;
   netSalesGrowth: number;
+  totalTax: number;
+  totalServiceCharge: number;
+  totalCollected: number;
+  cogs: number;
+  cogsRatio: number;
+  cogsGrowth: number;
   grossProfit: number;
   grossProfitGrowth: number;
   totalTransactions: number;
@@ -40,6 +47,23 @@ export type PeriodMetrics = {
   profitMargin: number;
   omzetGrowth: number;
   labaGrowth: number;
+};
+
+export type PaymentMethodStat = {
+  method: string;
+  label: string;
+  totalAmount: number;
+  transactionCount: number;
+  percentage: number;
+};
+
+export type ChannelStat = {
+  channel: 'POS' | 'STOREFRONT';
+  label: string;
+  totalAmount: number;
+  transactionCount: number;
+  percentage: number;
+  aov: number;
 };
 
 export type ChartDataPoint = {
@@ -127,6 +151,8 @@ export type DashboardResponse = {
   metrics: PeriodMetrics;
   chartData: ChartDataPoint[];
   topProducts: TopSellingProduct[];
+  paymentMix: PaymentMethodStat[];
+  channelMix: ChannelStat[];
   operationalPulse: OperationalPulse;
   attentionItems: AttentionItem[];
   annualBreakdown?: AnnualMonthRecap[];
@@ -267,6 +293,8 @@ export async function getDashboardDataForTenant(
       stockStatsRes,
       lowStockItemsRes,
       todayTxRes,
+      paymentMixRes,
+      channelMixRes,
     ] = await Promise.all([
       // Staff count
       db.select({ count: sql<number>`count(${memberships.id})::int` })
@@ -301,16 +329,20 @@ export async function getDashboardDataForTenant(
       .where(and(eq(shifts.tenantId, tenantId), eq(shifts.status, 'ACTIVE')))
       .limit(1),
 
-      // Current Period Metrics (Transactions, Gross Sales, Net Sales)
+      // Current Period Metrics (Transactions, Gross Sales, Discounts, Net Sales, Tax PBJT, Service Charge, Collected)
       db.select({
         totalTransactions: sql<number>`count(${transactions.id})::int`,
         totalGrossSales: sql<number>`COALESCE(sum(${transactions.totalAmount}), 0)::numeric`,
-        totalNetSales: sql<number>`COALESCE(sum(${transactions.grandTotal}), 0)::numeric`,
+        totalDiscount: sql<number>`COALESCE(sum(${transactions.discount}), 0)::numeric`,
+        totalNetSales: sql<number>`COALESCE(sum(${transactions.totalAmount} - COALESCE(${transactions.discount}, 0)), 0)::numeric`,
+        totalTax: sql<number>`COALESCE(sum(${transactions.tax}), 0)::numeric`,
+        totalServiceCharge: sql<number>`COALESCE(sum(${transactions.serviceCharge}), 0)::numeric`,
+        totalCollected: sql<number>`COALESCE(sum(${transactions.grandTotal}), 0)::numeric`,
       })
       .from(transactions)
       .where(dateFilter),
 
-      // Current Period Profit (Revenue - Cost)
+      // Current Period Cost of Goods Sold (Recipe/Product Cost)
       db.select({
         totalRevenue: sql<number>`COALESCE(sum(${transactionItems.subtotal}), 0)::numeric`,
         totalCost: sql<number>`COALESCE(sum(${transactionItems.quantity} * ${products.costPrice}), 0)::numeric`,
@@ -324,12 +356,16 @@ export async function getDashboardDataForTenant(
       db.select({
         totalTransactions: sql<number>`count(${transactions.id})::int`,
         totalGrossSales: sql<number>`COALESCE(sum(${transactions.totalAmount}), 0)::numeric`,
-        totalNetSales: sql<number>`COALESCE(sum(${transactions.grandTotal}), 0)::numeric`,
+        totalDiscount: sql<number>`COALESCE(sum(${transactions.discount}), 0)::numeric`,
+        totalNetSales: sql<number>`COALESCE(sum(${transactions.totalAmount} - COALESCE(${transactions.discount}, 0)), 0)::numeric`,
+        totalTax: sql<number>`COALESCE(sum(${transactions.tax}), 0)::numeric`,
+        totalServiceCharge: sql<number>`COALESCE(sum(${transactions.serviceCharge}), 0)::numeric`,
+        totalCollected: sql<number>`COALESCE(sum(${transactions.grandTotal}), 0)::numeric`,
       })
       .from(transactions)
       .where(prevDateFilter),
 
-      // Previous Period Profit
+      // Previous Period Cost
       db.select({
         totalRevenue: sql<number>`COALESCE(sum(${transactionItems.subtotal}), 0)::numeric`,
         totalCost: sql<number>`COALESCE(sum(${transactionItems.quantity} * ${products.costPrice}), 0)::numeric`,
@@ -388,40 +424,77 @@ export async function getDashboardDataForTenant(
         eq(transactions.tenantId, tenantId),
         gte(transactions.createdAt, new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)),
         lte(transactions.createdAt, new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999))
-      ))
+      )),
+
+      // Payment Methods Distribution (Cash vs Digital Tender)
+      db.select({
+        method: transactions.paymentMethod,
+        totalAmount: sql<number>`COALESCE(sum(${transactions.grandTotal}), 0)::numeric`,
+        count: sql<number>`count(${transactions.id})::int`,
+      })
+      .from(transactions)
+      .where(dateFilter)
+      .groupBy(transactions.paymentMethod)
+      .orderBy(desc(sql`sum(${transactions.grandTotal})`)),
+
+      // Channel Distribution (Kasir POS vs Storefront Self-Order)
+      db.select({
+        source: transactions.source,
+        totalAmount: sql<number>`COALESCE(sum(${transactions.totalAmount} - COALESCE(${transactions.discount}, 0)), 0)::numeric`,
+        count: sql<number>`count(${transactions.id})::int`,
+      })
+      .from(transactions)
+      .where(dateFilter)
+      .groupBy(transactions.source),
     ]);
 
-    // 4. Calculate KPI Metrics & Growth
+    // 4. Calculate KPI Metrics & Growth (Strict F&B Accounting Standard)
     const curTx = metricsCurrentRes[0]?.totalTransactions || 0;
     const curGrossSales = Number(metricsCurrentRes[0]?.totalGrossSales || 0);
+    const curTotalDiscount = Number(metricsCurrentRes[0]?.totalDiscount || 0);
     const curNetSales = Number(metricsCurrentRes[0]?.totalNetSales || 0);
-    const curRevenue = Number(profitCurrentRes[0]?.totalRevenue || 0);
+    const curTotalTax = Number(metricsCurrentRes[0]?.totalTax || 0);
+    const curTotalServiceCharge = Number(metricsCurrentRes[0]?.totalServiceCharge || 0);
+    const curTotalCollected = Number(metricsCurrentRes[0]?.totalCollected || 0);
+
     const curCost = Number(profitCurrentRes[0]?.totalCost || 0);
-    const curGrossProfit = curNetSales > 0 ? Math.max(0, curRevenue - curCost) : 0;
+    // Theoretical Gross Profit = Net Operating Sales - Theoretical Unit Cost (COGS)
+    const curGrossProfit = curNetSales > 0 ? Math.max(0, curNetSales - curCost) : 0;
     const curAov = curTx > 0 ? Math.round(curNetSales / curTx) : 0;
     const curGrossMargin = curNetSales > 0 ? Number(((curGrossProfit / curNetSales) * 100).toFixed(1)) : 0;
+    const curCogsRatio = curNetSales > 0 ? Number(((curCost / curNetSales) * 100).toFixed(1)) : 0;
 
     const prevTx = metricsPrevRes[0]?.totalTransactions || 0;
     const prevGrossSales = Number(metricsPrevRes[0]?.totalGrossSales || 0);
     const prevNetSales = Number(metricsPrevRes[0]?.totalNetSales || 0);
-    const prevRevenue = Number(profitPrevRes[0]?.totalRevenue || 0);
     const prevCost = Number(profitPrevRes[0]?.totalCost || 0);
-    const prevGrossProfit = prevNetSales > 0 ? Math.max(0, prevRevenue - prevCost) : 0;
+    const prevGrossProfit = prevNetSales > 0 ? Math.max(0, prevNetSales - prevCost) : 0;
     const prevAov = prevTx > 0 ? Math.round(prevNetSales / prevTx) : 0;
     const prevGrossMargin = prevNetSales > 0 ? Number(((prevGrossProfit / prevNetSales) * 100).toFixed(1)) : 0;
 
     const grossSalesGrowth = prevGrossSales > 0 ? Number((((curGrossSales - prevGrossSales) / prevGrossSales) * 100).toFixed(1)) : (curGrossSales > 0 ? 100 : 0);
     const netSalesGrowth = prevNetSales > 0 ? Number((((curNetSales - prevNetSales) / prevNetSales) * 100).toFixed(1)) : (curNetSales > 0 ? 100 : 0);
+    const cogsGrowth = prevCost > 0 ? Number((((curCost - prevCost) / prevCost) * 100).toFixed(1)) : (curCost > 0 ? 100 : 0);
     const txGrowth = prevTx > 0 ? Number((((curTx - prevTx) / prevTx) * 100).toFixed(1)) : (curTx > 0 ? 100 : 0);
     const aovGrowth = prevAov > 0 ? Number((((curAov - prevAov) / prevAov) * 100).toFixed(1)) : (curAov > 0 ? 100 : 0);
     const grossProfitGrowth = prevGrossProfit > 0 ? Number((((curGrossProfit - prevGrossProfit) / prevGrossProfit) * 100).toFixed(1)) : (curGrossProfit > 0 ? 100 : 0);
     const grossMarginGrowth = prevGrossMargin > 0 ? Number((curGrossMargin - prevGrossMargin).toFixed(1)) : 0;
 
+    // Derived margin ratio for dynamic chart calculations
+    const dynamicMarginRatio = curNetSales > 0 ? (curGrossProfit / curNetSales) : 0.65;
+
     const metrics: PeriodMetrics = {
       grossSales: curGrossSales,
       grossSalesGrowth,
+      totalDiscount: curTotalDiscount,
       netSales: curNetSales,
       netSalesGrowth,
+      totalTax: curTotalTax,
+      totalServiceCharge: curTotalServiceCharge,
+      totalCollected: curTotalCollected,
+      cogs: curCost,
+      cogsRatio: curCogsRatio,
+      cogsGrowth,
       grossProfit: curGrossProfit,
       grossProfitGrowth,
       totalTransactions: curTx,
@@ -438,6 +511,71 @@ export async function getDashboardDataForTenant(
       profitMargin: curGrossMargin,
     };
 
+    // Calculate Payment Methods Breakdown (Tender Instrument)
+    const totalPaymentCollected = paymentMixRes.reduce((acc, p) => acc + Number(p.totalAmount || 0), 0);
+    const paymentLabelMap: Record<string, string> = {
+      CASH: 'Tunai (Cash)',
+      QRIS: 'QRIS',
+      EDC: 'Debit / EDC',
+      DEBIT: 'Kartu Debit',
+      CREDIT: 'Kartu Kredit',
+      TRANSFER: 'Transfer Bank',
+      ONLINE: 'Online (Midtrans Gateway)',
+      MIDTRANS: 'Online (Midtrans Gateway)',
+    };
+    const paymentMix: PaymentMethodStat[] = paymentMixRes.map(p => {
+      const amt = Number(p.totalAmount || 0);
+      return {
+        method: p.method,
+        label: paymentLabelMap[p.method.toUpperCase()] || p.method,
+        totalAmount: amt,
+        transactionCount: p.count,
+        percentage: totalPaymentCollected > 0 ? Number(((amt / totalPaymentCollected) * 100).toFixed(1)) : 0,
+      };
+    });
+
+    // Calculate Channel Distribution (Kasir Langsung POS vs Storefront Self-Order)
+    let posCount = 0;
+    let posAmount = 0;
+    let storefrontCount = 0;
+    let storefrontAmount = 0;
+
+    channelMixRes.forEach(row => {
+      const src = (row.source || 'POS').toUpperCase();
+      const count = Number(row.count || 0);
+      const amt = Number(row.totalAmount || 0);
+
+      if (src === 'POS') {
+        posCount += count;
+        posAmount += amt;
+      } else {
+        // ONLINE, WEB_ORDER, QR, STOREFRONT, etc.
+        storefrontCount += count;
+        storefrontAmount += amt;
+      }
+    });
+
+    const totalChannelSales = posAmount + storefrontAmount;
+
+    const channelMix: ChannelStat[] = [
+      {
+        channel: 'POS',
+        label: 'Kasir Langsung (POS)',
+        totalAmount: posAmount,
+        transactionCount: posCount,
+        percentage: totalChannelSales > 0 ? Number(((posAmount / totalChannelSales) * 100).toFixed(1)) : 0,
+        aov: posCount > 0 ? Math.round(posAmount / posCount) : 0,
+      },
+      {
+        channel: 'STOREFRONT',
+        label: 'Storefront (Self-Order)',
+        totalAmount: storefrontAmount,
+        transactionCount: storefrontCount,
+        percentage: totalChannelSales > 0 ? Number(((storefrontAmount / totalChannelSales) * 100).toFixed(1)) : 0,
+        aov: storefrontCount > 0 ? Math.round(storefrontAmount / storefrontCount) : 0,
+      },
+    ];
+
     // 5. Build Sales Chart Data
     let chartData: ChartDataPoint[] = [];
     let annualBreakdown: AnnualMonthRecap[] | undefined;
@@ -448,10 +586,10 @@ export async function getDashboardDataForTenant(
       const isCurrentYear = year === now.getFullYear();
       const currentMonthIndex = now.getMonth(); // 0-indexed
 
-      // Query monthly sums for the year
+      // Query monthly sums for the year (Net Sales = totalAmount - discount)
       const monthlyData = await db.select({
         month: sql<number>`EXTRACT(MONTH FROM ${transactions.createdAt})::int`,
-        omzet: sql<number>`COALESCE(sum(${transactions.grandTotal}), 0)::numeric`,
+        omzet: sql<number>`COALESCE(sum(${transactions.totalAmount} - COALESCE(${transactions.discount}, 0)), 0)::numeric`,
         pesanan: sql<number>`count(${transactions.id})::int`,
       })
       .from(transactions)
@@ -481,7 +619,7 @@ export async function getDashboardDataForTenant(
         const mOmzet = isFuture ? 0 : mData.omzet;
         const mPesanan = isFuture ? 0 : mData.pesanan;
         const mAov = mPesanan > 0 ? Math.round(mOmzet / mPesanan) : 0;
-        const mLaba = Math.round(mOmzet * 0.55); // estimated profit or actual
+        const mLaba = Math.round(mOmzet * dynamicMarginRatio);
 
         if (!isFuture && mOmzet > maxOmzet) {
           maxOmzet = mOmzet;
@@ -521,10 +659,10 @@ export async function getDashboardDataForTenant(
       const isHourly = tab === 'harian' && dayCount < 7;
 
       if (isHourly) {
-        // Query transactions grouped by hour
+        // Query transactions grouped by hour (Net Sales = totalAmount - discount)
         const hourlyData = await db.select({
           hourKey: sql<string>`to_char(${transactions.createdAt}, 'YYYY-MM-DD HH24')`,
-          omzet: sql<number>`COALESCE(sum(${transactions.grandTotal}), 0)::numeric`,
+          omzet: sql<number>`COALESCE(sum(${transactions.totalAmount} - COALESCE(${transactions.discount}, 0)), 0)::numeric`,
           pesanan: sql<number>`count(${transactions.id})::int`,
         })
         .from(transactions)
@@ -566,7 +704,7 @@ export async function getDashboardDataForTenant(
             }
           }
 
-          const blockLaba = Math.round(blockOmzet * 0.55);
+          const blockLaba = Math.round(blockOmzet * dynamicMarginRatio);
           const label = dayCount === 1 
             ? format(blockStart, 'HH:00')
             : format(blockStart, 'd MMM, HH:00', { locale: localeId });
@@ -584,10 +722,10 @@ export async function getDashboardDataForTenant(
 
         chartData = intervalPoints;
       } else {
-        // Daily intervals (>= 7 days or bulanan tab)
+        // Daily intervals (Net Sales = totalAmount - discount)
         const dailyData = await db.select({
           dayDate: sql<string>`to_char(${transactions.createdAt}, 'YYYY-MM-DD')`,
-          omzet: sql<number>`COALESCE(sum(${transactions.grandTotal}), 0)::numeric`,
+          omzet: sql<number>`COALESCE(sum(${transactions.totalAmount} - COALESCE(${transactions.discount}, 0)), 0)::numeric`,
           pesanan: sql<number>`count(${transactions.id})::int`,
         })
         .from(transactions)
@@ -604,7 +742,7 @@ export async function getDashboardDataForTenant(
         chartData = allDays.map(day => {
           const key = format(day, 'yyyy-MM-dd');
           const dInfo = dailyMap.get(key) || { omzet: 0, pesanan: 0 };
-          const dLaba = Math.round(dInfo.omzet * 0.55);
+          const dLaba = Math.round(dInfo.omzet * dynamicMarginRatio);
           const label = tab === 'bulanan' ? format(day, 'd MMM', { locale: localeId }) : format(day, 'EEE, d MMM', { locale: localeId });
           return {
             date: key,
@@ -732,81 +870,85 @@ export async function getDashboardDataForTenant(
       });
     }
 
-    // 8. Generate Business Insights
+    // 8. Generate Actionable F&B Business Insights (No Fluff, Data-Driven)
     const insights: BusinessInsight[] = [];
 
-    // Trend insight
-    if (curNetSales > 0) {
-      if (netSalesGrowth > 0) {
+    // A. Discount Rate / Margin Protection Insight
+    const discountRate = curGrossSales > 0 ? Number(((curTotalDiscount / curGrossSales) * 100).toFixed(1)) : 0;
+    if (curGrossSales > 0 && curTotalDiscount > 0) {
+      if (discountRate <= 8) {
         insights.push({
-          id: 'insight-trend',
-          type: 'trend',
-          text: `Penjualan bertumbuh ${netSalesGrowth}% dibandingkan periode sebelumnya, didukung oleh stabilitas volume transaksi.`,
-        });
-      } else if (netSalesGrowth < 0) {
-        insights.push({
-          id: 'insight-trend',
-          type: 'trend',
-          text: `Penjualan terkoreksi ${Math.abs(netSalesGrowth)}% dari periode sebelumnya. Periksa promosi dan ketersediaan menu favorit.`,
+          id: 'insight-discount',
+          type: 'profit',
+          text: `Tingkat Diskon Sehat: Pemotongan diskon sebesar ${discountRate}% (Rp ${curTotalDiscount.toLocaleString('id-ID')}) dari penjualan bruto masih berada dalam batas aman industri F&B (< 8%).`,
         });
       } else {
         insights.push({
-          id: 'insight-trend',
-          type: 'trend',
-          text: 'Performa penjualan stabil sama dengan periode sebelumnya.',
+          id: 'insight-discount',
+          type: 'profit',
+          text: `Peringatan Promosi: Tingkat diskon mencapai ${discountRate}% dari penjualan bruto. Evaluasi efektivitas promo agar tidak menggerus margin kontribusi menu utama.`,
         });
       }
-    } else {
-      insights.push({
-        id: 'insight-trend',
-        type: 'trend',
-        text: 'Belum ada transaksi selesai pada periode ini. Operasional siap melayani pesanan.',
-      });
     }
 
-    // Champion product insight
-    if (topProducts.length > 0) {
-      insights.push({
-        id: 'insight-champion',
-        type: 'champion',
-        text: `${topProducts[0].name} menjadi menu terfavorit pelanggan dengan total ${topProducts[0].totalSold} porsi terjual.`,
-      });
-    }
-
-    // Basket size / AOV insight
-    if (curAov > 0) {
-      const aovText = aovGrowth > 0 
-        ? `Rata-rata keranjang belanja sebesar Rp ${curAov.toLocaleString('id-ID')}, naik ${aovGrowth}% dibanding periode lalu.`
-        : `Rata-rata keranjang belanja tercatat Rp ${curAov.toLocaleString('id-ID')} per transaksi.`;
-      insights.push({
-        id: 'insight-basket',
-        type: 'basket',
-        text: aovText,
-      });
-    }
-
-    // Peak sales point insight
+    // B. Peak Operational Rush Hour
     let peakPoint: ChartDataPoint | null = null;
     for (const pt of chartData) {
-      if (!pt.isFuture && (!peakPoint || pt.omzet > peakPoint.omzet)) {
+      if (!pt.isFuture && (!peakPoint || pt.pesanan > peakPoint.pesanan)) {
         peakPoint = pt;
       }
     }
-
-    if (peakPoint && peakPoint.omzet > 0) {
+    if (peakPoint && peakPoint.pesanan > 0) {
       insights.push({
         id: 'insight-peak',
         type: 'peak',
-        text: `Puncak penjualan periode ini terjadi pada ${peakPoint.label} dengan omzet Rp ${(peakPoint.omzet).toLocaleString('id-ID')}.`,
+        text: `Jam Sibuk Operasional: Lonjakan pesanan tertinggi terjadi pada ${peakPoint.label} (${peakPoint.pesanan} transaksi). Optimalkan alokasi staf dan kesiapan bahan di jam tersebut.`,
       });
     }
 
-    // Profit margin insight
-    if (curGrossMargin > 0) {
+    // C. COGS & Margin Health
+    if (curNetSales > 0 && curCost > 0) {
       insights.push({
-        id: 'insight-profit',
+        id: 'insight-cogs',
         type: 'profit',
-        text: `Margin laba kotor outlet berada di level ${curGrossMargin}% dari total penjualan bersih.`,
+        text: `Pengendalian HPP (COGS): Beban modal bahan sebesar ${curCogsRatio}% dari Net Revenue (Rp ${curCost.toLocaleString('id-ID')}). ${curCogsRatio <= 38 ? 'Tingkat efisiensi biaya prima sangat baik (< 38%).' : 'Evaluasi potensi pemborosan bahan atau kenaikan harga supplier.'}`,
+      });
+    }
+
+    // D. Champion Product & Velocity
+    if (topProducts.length > 0 && topProducts[0].totalSold > 0) {
+      insights.push({
+        id: 'insight-champion',
+        type: 'champion',
+        text: `Menu Unggulan: ${topProducts[0].name} menjadi kontributor volume tertinggi (${topProducts[0].totalSold} porsi terjual). Pertimbangkan paket bundling atau variasi topping tambahan.`,
+      });
+    }
+
+    // E. Basket Size (AOV) Insight
+    if (curAov > 0) {
+      insights.push({
+        id: 'insight-basket',
+        type: 'basket',
+        text: `Rata-rata Nilai Transaksi (AOV): Tercatat Rp ${curAov.toLocaleString('id-ID')} per tiket belanja. Dorong kasir melakukan upselling minuman & side-dish untuk meningkatkan nilai keranjang.`,
+      });
+    }
+
+    // F. Storefront Self-Order Adoption Insight
+    const totalChannelOrders = posCount + storefrontCount;
+    if (totalChannelOrders > 0 && storefrontCount > 0) {
+      const storefrontRatio = Math.round((storefrontCount / totalChannelOrders) * 100);
+      insights.push({
+        id: 'insight-channel',
+        type: 'trend',
+        text: `Adopsi Storefront Mandiri: ${storefrontRatio}% pesanan (${storefrontCount} transaksi) dipesan mandiri oleh pelanggan via QR meja/Storefront, mempercepat alur antrean kasir.`,
+      });
+    }
+
+    if (insights.length === 0) {
+      insights.push({
+        id: 'insight-default',
+        type: 'trend',
+        text: 'Belum ada transaksi selesai pada periode ini. Data operasional siap tercatat secara otomatis saat kasir melayani pesanan.',
       });
     }
 
@@ -833,6 +975,8 @@ export async function getDashboardDataForTenant(
       metrics,
       chartData,
       topProducts,
+      paymentMix,
+      channelMix,
       operationalPulse,
       attentionItems,
       annualBreakdown,

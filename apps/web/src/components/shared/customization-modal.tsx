@@ -4,7 +4,8 @@ import * as React from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { formatCurrency } from '@/lib/utils/format';
-import { X, Plus, Minus, Check, AlertCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { X, Plus, Minus, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 export type Modifier = {
@@ -29,7 +30,7 @@ export type Product = {
   name: string;
   price: string | number;
   imageUrl?: string | null;
-  modifierGroupIds?: string[]; // Groups attached to this product
+  modifierGroupIds?: string[];
 };
 
 export interface CustomizationModalProps {
@@ -128,94 +129,61 @@ export function CustomizationModal({
     }, 3000);
   }, []);
 
-  // Single or Multi toggle handler for full-row clicks
-  const handleToggleModifier = (group: ModifierGroup, modifier: Modifier) => {
+  // Increment for multi-select group
+  const handleIncrement = (group: ModifierGroup, modifier: Modifier, e?: React.MouseEvent) => {
+    e?.stopPropagation();
     if (modifier.isAvailable === false) return;
-    const isSingleSelect = group.maxSelections === 1;
 
-    if (isSingleSelect) {
-      setSelectedMap(prev => {
-        const currentGroup = { ...(prev[group.id] || {}) };
-        const currentQty = currentGroup[modifier.id] || 0;
-
-        if (currentQty > 0) {
-          // If required, tapping selected keeps it selected. If optional, toggles off.
-          if (group.isRequired) return prev;
-          return { ...prev, [group.id]: {} };
-        }
-        return { ...prev, [group.id]: { [modifier.id]: 1 } };
-      });
-      return;
-    }
-
-    // Multi Select:
     const currentGroup = selectedMap[group.id] || {};
+    const currentQty = currentGroup[modifier.id] || 0;
     const currentGroupTotal = Object.values(currentGroup).reduce((a, b) => a + b, 0);
 
-    // If already at or above maximum selections, do NOT add and do NOT reset!
-    if (currentGroupTotal >= group.maxSelections) {
+    if (group.maxSelections && currentGroupTotal >= group.maxSelections) {
       showMaxLimitWarning(group);
       return;
     }
 
-    // Room exists: increment selected modifier quantity
-    setSelectedMap(prev => {
-      const prevGroup = { ...(prev[group.id] || {}) };
-      const prevQty = prevGroup[modifier.id] || 0;
-      return {
-        ...prev,
-        [group.id]: {
-          ...prevGroup,
-          [modifier.id]: prevQty + 1,
-        },
-      };
-    });
+    setSelectedMap(prev => ({
+      ...prev,
+      [group.id]: {
+        ...(prev[group.id] || {}),
+        [modifier.id]: currentQty + 1,
+      },
+    }));
+    setLimitWarningGroupId(null);
   };
 
-  // Inline increment button handler
-  const handleIncrementModifier = (group: ModifierGroup, modifier: Modifier) => {
-    if (modifier.isAvailable === false) return;
+  // Decrement for multi-select group
+  const handleDecrement = (group: ModifierGroup, modifier: Modifier, e?: React.MouseEvent) => {
+    e?.stopPropagation();
     const currentGroup = selectedMap[group.id] || {};
-    const currentGroupTotal = Object.values(currentGroup).reduce((a, b) => a + b, 0);
-
-    if (currentGroupTotal >= group.maxSelections) {
-      showMaxLimitWarning(group);
-      return;
-    }
+    const currentQty = currentGroup[modifier.id] || 0;
+    if (currentQty <= 0) return;
 
     setSelectedMap(prev => {
-      const prevGroup = { ...(prev[group.id] || {}) };
-      const prevQty = prevGroup[modifier.id] || 0;
-      return {
-        ...prev,
-        [group.id]: {
-          ...prevGroup,
-          [modifier.id]: prevQty + 1,
-        },
-      };
+      const updated = { ...(prev[group.id] || {}) };
+      if (currentQty <= 1) {
+        delete updated[modifier.id];
+      } else {
+        updated[modifier.id] = currentQty - 1;
+      }
+      return { ...prev, [group.id]: updated };
     });
   };
 
-  // Inline decrement button handler
-  const handleDecrementModifier = (group: ModifierGroup, modifier: Modifier) => {
+  // Single-select toggle handler
+  const handleSingleSelectToggle = (group: ModifierGroup, modifier: Modifier) => {
+    if (modifier.isAvailable === false) return;
     setSelectedMap(prev => {
       const currentGroup = { ...(prev[group.id] || {}) };
       const currentQty = currentGroup[modifier.id] || 0;
 
-      if (currentQty <= 1) {
-        const { [modifier.id]: _, ...rest } = currentGroup;
-        return { ...prev, [group.id]: rest };
+      if (currentQty > 0) {
+        // Deselect / toggle off
+        return { ...prev, [group.id]: {} };
       }
-
-      return {
-        ...prev,
-        [group.id]: {
-          ...currentGroup,
-          [modifier.id]: currentQty - 1,
-        },
-      };
+      return { ...prev, [group.id]: { [modifier.id]: 1 } };
     });
-    setLimitWarningGroupId(null);
   };
 
   const handleAddToCart = () => {
@@ -250,75 +218,76 @@ export function CustomizationModal({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
         showCloseButton={false}
-        style={{
-          "--outlet-primary": primaryColor || "var(--catalog-primary, #0E59F9)",
-        } as React.CSSProperties}
-        className="fixed bottom-0 top-auto left-0 right-0 sm:bottom-auto sm:top-[50%] sm:left-[50%] translate-x-0 translate-y-0 sm:translate-x-[-50%] sm:translate-y-[-50%] w-full max-w-full sm:max-w-lg rounded-t-[28px] sm:rounded-2xl max-h-[88vh] sm:max-h-[85vh] p-0 flex flex-col gap-0 bg-white border-t sm:border border-gray-200/90 shadow-2xl overflow-hidden focus:outline-hidden z-50"
+        className="fixed bottom-0 top-auto left-0 right-0 sm:bottom-auto sm:top-[50%] sm:left-[50%] translate-x-0 translate-y-0 sm:translate-x-[-50%] sm:translate-y-[-50%] w-full max-w-full sm:max-w-xl md:max-w-2xl rounded-t-[28px] sm:rounded-2xl max-h-[90vh] sm:max-h-[85vh] p-0 flex flex-col gap-0 bg-white dark:bg-slate-950 border-t sm:border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden focus:outline-hidden z-50 font-sans"
       >
         {/* Mobile Swipe Handle Indicator */}
-        <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mt-2.5 mb-0.5 sm:hidden shrink-0" aria-hidden="true" />
+        <div className="w-12 h-1 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mt-2.5 mb-1 sm:hidden shrink-0" aria-hidden="true" />
 
-        {/* 1. Header: Product Name, Base Price, Close Button */}
-        <div className="px-5 py-3.5 border-b border-gray-150 flex items-start justify-between gap-3 bg-white sticky top-0 z-10">
-          <div className="flex-1 pr-2">
-            <h3 className="font-bold text-base sm:text-lg text-gray-900 leading-snug line-clamp-2">
+        {/* 1. Header: Product Name & Clean Close Button */}
+        <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between bg-white dark:bg-slate-950 sticky top-0 z-10">
+          <div className="flex-1 text-center sm:text-left">
+            <h3 className="font-semibold text-lg sm:text-xl text-slate-900 dark:text-slate-100 leading-snug">
               {product.name}
             </h3>
-            <p className="text-sm font-semibold text-gray-600 mt-0.5">
+            <p className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400 mt-0.5">
               {formatCurrency(basePrice)}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="min-w-[44px] min-h-[44px] -mr-2 -mt-1 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 flex items-center justify-center transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-[var(--outlet-primary,#0E59F9)]/30"
-            aria-label="Tutup modal kustomisasi"
+            className="w-9 h-9 rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            aria-label="Tutup kustomisasi"
           >
-            <X className="w-5 h-5 stroke-[2]" />
+            <X className="w-5 h-5 stroke-[2.2]" />
           </button>
         </div>
 
-        {/* 2. Scrollable Body: Modifier Groups & Special Instructions */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6 overscroll-contain">
+        {/* 2. Scrollable Body: Pill & Stepper Modifier Grid */}
+        <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6 overscroll-contain">
           {productGroups.map(group => {
-            const isSingleSelect = group.maxSelections === 1;
             const groupSelections = selectedMap[group.id] || {};
             const currentGroupTotalQty = Object.values(groupSelections).reduce((a, b) => a + b, 0);
+            const isSingleSelect = group.maxSelections === 1;
             const isGroupSatisfied = group.isRequired
               ? currentGroupTotalQty >= Math.max(1, group.minSelections || 1)
               : true;
 
             return (
-              <div key={group.id} className="space-y-2.5 pb-5 border-b border-gray-100 last:border-b-0">
-                {/* Group Header */}
-                <div>
-                  <h4 className="font-bold text-sm sm:text-base text-gray-900 tracking-tight">
-                    {group.name}
-                  </h4>
-                  <p
-                    className={`text-xs mt-0.5 font-medium transition-colors ${
+              <div key={group.id} className="space-y-2.5">
+                {/* Group Title Header */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-baseline gap-2">
+                    <h4 className="font-semibold text-xs sm:text-sm text-slate-900 dark:text-slate-100 uppercase tracking-wider">
+                      {group.name}
+                    </h4>
+                    {group.maxSelections > 1 && (
+                      <span className="text-[11px] text-blue-600 dark:text-blue-400 font-medium">
+                        (bisa lebih dari 1)
+                      </span>
+                    )}
+                  </div>
+                  <span
+                    className={cn(
+                      "text-[11px] font-semibold",
                       group.isRequired
                         ? isGroupSatisfied
-                          ? "text-gray-900"
-                          : "text-amber-600"
-                        : currentGroupTotalQty > 0
-                        ? "text-gray-900"
-                        : "text-gray-500"
-                    }`}
+                          ? "text-slate-400 dark:text-slate-500"
+                          : "text-amber-600 dark:text-amber-400"
+                        : "text-slate-400 dark:text-slate-500"
+                    )}
                   >
                     {group.isRequired
-                      ? group.maxSelections === 1
-                        ? "Must be selected max. 1"
-                        : `Must be selected min. ${group.minSelections || 1}, max. ${group.maxSelections}`
-                      : group.maxSelections === 1
-                      ? "Opsional (Pilih maks. 1)"
-                      : `Opsional (Pilih maks. ${group.maxSelections})`}
-                  </p>
+                      ? isGroupSatisfied
+                        ? "Sudah dipilih"
+                        : "Wajib dipilih"
+                      : "Opsional"}
+                  </span>
                 </div>
 
-                {/* Max Limit Inline Warning Banner */}
+                {/* Max Limit Warning Banner */}
                 {limitWarningGroupId === group.id && (
-                  <div className="flex items-center gap-2 text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-300/90 px-3 py-2 rounded-xl animate-in fade-in slide-in-from-top-1 duration-200 shadow-2xs">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border border-amber-300/80 dark:border-amber-800 px-3 py-2 rounded-xl animate-in fade-in slide-in-from-top-1 duration-200">
                     <AlertCircle className="w-4 h-4 shrink-0 text-amber-600" />
                     <span>
                       Maksimal pilihan <strong>{group.name}</strong> hanya {group.maxSelections}
@@ -326,167 +295,123 @@ export function CustomizationModal({
                   </div>
                 )}
 
-                {/* Modifier Options List */}
-                <div
-                  className="space-y-2"
-                  role={isSingleSelect ? "radiogroup" : "group"}
-                  aria-label={group.name}
-                >
+                {/* Pill / Tile Buttons in Flex-Wrap Layout */}
+                <div className="flex flex-wrap gap-2.5 pt-0.5">
                   {group.modifiers?.map(mod => {
                     const isAvailable = mod.isAvailable !== false;
-                    const groupSelections = selectedMap[group.id] || {};
                     const selectedQty = groupSelections[mod.id] || 0;
                     const isSelected = selectedQty > 0;
                     const modPrice = Number(mod.price);
-                    const displayPrice = isSelected && selectedQty > 1 ? modPrice * selectedQty : modPrice;
 
-                    return (
-                      <div
-                        key={mod.id}
-                        onClick={() => isAvailable && handleToggleModifier(group, mod)}
-                        role={isSingleSelect ? "radio" : "checkbox"}
-                        aria-checked={isSelected}
-                        aria-disabled={!isAvailable}
-                        tabIndex={isAvailable ? 0 : -1}
-                        onKeyDown={(e) => {
-                          if (!isAvailable) return;
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            handleToggleModifier(group, mod);
-                          }
-                        }}
-                        className={`min-h-[48px] w-full px-3.5 py-3 rounded-xl border transition-all duration-150 flex items-center justify-between gap-3 text-left select-none ${
-                          !isAvailable
-                            ? "opacity-50 cursor-not-allowed bg-gray-50/70 border-dashed border-gray-200"
-                            : isSelected
-                            ? "shadow-2xs font-medium cursor-pointer active:scale-[0.99] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-[var(--outlet-primary,#0E59F9)]/30"
-                            : "bg-white border-gray-200/80 hover:bg-gray-50/70 hover:border-gray-300 cursor-pointer active:scale-[0.99] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-[var(--outlet-primary,#0E59F9)]/30"
-                        }`}
-                        style={
-                          isAvailable && isSelected
-                            ? {
-                                backgroundColor: "color-mix(in srgb, var(--outlet-primary, #0E59F9) 6%, white)",
-                                borderColor: "color-mix(in srgb, var(--outlet-primary, #0E59F9) 35%, transparent)",
-                              }
-                            : undefined
-                        }
-                      >
-                        {/* Left: Icon + Name */}
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                          {isSingleSelect ? (
-                            /* Radio Circle */
-                            <div
-                              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-                                isSelected ? "" : "border-gray-300 bg-white"
-                              }`}
-                              style={
-                                isSelected
-                                  ? { borderColor: "var(--outlet-primary, #0E59F9)" }
-                                  : undefined
-                              }
-                              aria-hidden="true"
-                            >
-                              {isSelected && (
-                                <div
-                                  className="w-2.5 h-2.5 rounded-full"
-                                  style={{ backgroundColor: "var(--outlet-primary, #0E59F9)" }}
-                                />
-                              )}
-                            </div>
-                          ) : (
-                            /* Checkbox Square */
-                            <div
-                              className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${
-                                isSelected
-                                  ? "text-white"
-                                  : "border-gray-300 bg-white"
-                              }`}
-                              style={
-                                isSelected
-                                  ? {
-                                      backgroundColor: "var(--outlet-primary, #0E59F9)",
-                                      borderColor: "var(--outlet-primary, #0E59F9)",
-                                    }
-                                  : undefined
-                              }
-                              aria-hidden="true"
-                            >
-                              {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-                            </div>
+                    // Formatted Price String
+                    const priceLabel = modPrice > 0 
+                      ? `+ ${modPrice.toLocaleString('id-ID')}`
+                      : '+ 0';
+
+                    // CASE A: Single-Select Group (e.g. UKURAN GELAS, TINGKAT KEMANISAN, ES)
+                    if (isSingleSelect) {
+                      return (
+                        <button
+                          key={mod.id}
+                          type="button"
+                          disabled={!isAvailable}
+                          onClick={() => handleSingleSelectToggle(group, mod)}
+                          className={cn(
+                            "min-h-[46px] sm:min-h-[48px] px-4 py-2.5 rounded-xl sm:rounded-md text-xs sm:text-sm transition-all select-none flex items-center gap-2 cursor-pointer active:scale-[0.98]",
+                            !isAvailable
+                              ? "opacity-40 bg-slate-100/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed pointer-events-none"
+                              : isSelected
+                              ? "bg-blue-50/70 dark:bg-blue-950/40 border-2 border-blue-600 dark:border-blue-500 text-slate-900 dark:text-slate-100 font-semibold"
+                              : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-700 font-medium"
                           )}
-
-                          <span
-                            className={`text-sm leading-tight transition-colors ${
-                              !isAvailable
-                                ? "line-through text-gray-400 font-normal"
-                                : isSelected
-                                ? "font-bold text-gray-900"
-                                : "font-normal text-gray-700"
-                            }`}
-                          >
-                            {mod.name}
+                        >
+                          <span>{mod.name}</span>
+                          <span className={cn(
+                            "font-semibold",
+                            isSelected ? "text-blue-600 dark:text-blue-400" : "text-slate-500 dark:text-slate-400"
+                          )}>
+                            {priceLabel}
                           </span>
-                        </div>
+                        </button>
+                      );
+                    }
 
-                        {/* Right: Price & Multi-Quantity Stepper */}
-                        <div className="flex items-center gap-2 shrink-0 text-right">
-                          {!isAvailable && (
-                            <span className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded">
-                              Habis
+                    // CASE B: Multi-Select Group with Quantity Stepper (e.g. EXTRA TOPPING)
+                    // If selected (qty >= 1): Shows inline stepper [-] [qty] [+] with total price
+                    // PLUS: Tapping the tile body will increment the quantity directly!
+                    if (isSelected) {
+                      const totalModPrice = modPrice * selectedQty;
+                      const totalModPriceLabel = totalModPrice > 0
+                        ? `+ ${totalModPrice.toLocaleString('id-ID')}`
+                        : '+ 0';
+
+                      return (
+                        <div
+                          key={mod.id}
+                          onClick={() => handleIncrement(group, mod)}
+                          role="button"
+                          tabIndex={0}
+                          className="min-h-[46px] sm:min-h-[48px] inline-flex items-center gap-2 bg-blue-50/70 dark:bg-blue-950/40 border-2 border-blue-600 dark:border-blue-500 rounded-xl sm:rounded-md pl-2 pr-4 py-1.5 transition-all select-none cursor-pointer active:scale-[0.98]"
+                          title="Klik tombol ini lagi untuk menambah kuantitas"
+                        >
+                          {/* Round Minus Button (Cart Style) */}
+                          <button
+                            type="button"
+                            onClick={(e) => handleDecrement(group, mod, e)}
+                            className="w-7 h-7 sm:w-7.5 sm:h-7.5 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex items-center justify-center shadow-2xs active:scale-90 cursor-pointer shrink-0"
+                            aria-label="Kurangi kuantitas"
+                          >
+                            <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
+                          </button>
+
+                          {/* Quantity Number */}
+                          <span className="min-w-5 sm:min-w-6 text-center text-xs sm:text-sm font-semibold text-foreground font-mono select-none">
+                            {selectedQty}
+                          </span>
+
+                          {/* Round Plus Button (Cart Style) */}
+                          <button
+                            type="button"
+                            onClick={(e) => handleIncrement(group, mod, e)}
+                            className="w-7 h-7 sm:w-7.5 sm:h-7.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition-all flex items-center justify-center active:scale-90 cursor-pointer shrink-0"
+                            aria-label="Tambah kuantitas"
+                          >
+                            <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                          </button>
+
+                          {/* Option Name & Calculated Multiplied Price */}
+                          <span className="text-xs sm:text-sm font-semibold text-foreground flex items-center gap-1.5 pl-0.5">
+                            <span>{mod.name}</span>
+                            <span className="text-blue-600 dark:text-blue-400 font-semibold">
+                              {totalModPriceLabel}
                             </span>
-                          )}
-                          <span
-                            className={`text-xs sm:text-sm font-semibold ${
-                              !isAvailable
-                                ? "text-gray-400"
-                                : isSelected
-                                ? "text-gray-900"
-                                : "text-gray-500"
-                            }`}
-                          >
-                            {displayPrice > 0 ? `+${formatCurrency(displayPrice)}` : "Gratis"}
                           </span>
-
-                          {/* Multi-Select Quantity Controls */}
-                          {!isSingleSelect && isSelected && group.maxSelections > 1 && (
-                            <div
-                              className="flex items-center bg-white rounded-lg border border-gray-200/90 shadow-2xs p-0.5"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDecrementModifier(group, mod);
-                                }}
-                                className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-600 active:scale-95 transition-all text-xs font-bold"
-                                aria-label={`Kurangi ${mod.name}`}
-                              >
-                                <Minus className="w-3 h-3 stroke-[2.5]" />
-                              </button>
-                              <span className="min-w-[20px] text-center font-bold text-xs text-gray-900 font-mono">
-                                {selectedQty}
-                              </span>
-                              <button
-                                type="button"
-                                disabled={currentGroupTotalQty >= group.maxSelections}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleIncrementModifier(group, mod);
-                                }}
-                                className={`w-7 h-7 flex items-center justify-center rounded-md text-xs font-bold transition-all ${
-                                  currentGroupTotalQty >= group.maxSelections
-                                    ? "opacity-30 cursor-not-allowed text-gray-400"
-                                    : "hover:bg-gray-100 text-gray-700 active:scale-95"
-                                }`}
-                                aria-label={`Tambah ${mod.name}`}
-                              >
-                                <Plus className="w-3 h-3 stroke-[2.5]" />
-                              </button>
-                            </div>
-                          )}
                         </div>
-                      </div>
+                      );
+                    }
+
+                    // Multi-select option unselected (qty = 0)
+                    return (
+                      <button
+                        key={mod.id}
+                        type="button"
+                        disabled={!isAvailable}
+                        onClick={() => handleIncrement(group, mod)}
+                        className={cn(
+                          "min-h-[46px] sm:min-h-[48px] px-4 py-2.5 rounded-xl sm:rounded-md text-xs sm:text-sm transition-all select-none flex items-center gap-2 cursor-pointer active:scale-[0.98]",
+                          !isAvailable
+                            ? "opacity-40 bg-slate-100/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed pointer-events-none"
+                            : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:border-blue-300 dark:hover:border-blue-800 font-medium"
+                        )}
+                      >
+                        <span className="w-4.5 h-4.5 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500">
+                          <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                        </span>
+                        <span>{mod.name}</span>
+                        <span className="text-slate-500 dark:text-slate-400 font-semibold">
+                          {priceLabel}
+                        </span>
+                      </button>
                     );
                   })}
                 </div>
@@ -494,93 +419,84 @@ export function CustomizationModal({
             );
           })}
 
-          {/* 3. Special Instruction / Note Field */}
+          {/* 3. Special Notes (Always Visible / Open) */}
           <div className="space-y-1.5 pt-1">
-            <label htmlFor="modal-notes" className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-              Catatan Khusus (Opsional)
-            </label>
+            <div className="flex items-center justify-between">
+              <label htmlFor="pos-modal-notes" className="text-xs font-semibold text-slate-900 dark:text-slate-100 uppercase tracking-wider">
+                Catatan Pesanan
+              </label>
+              <span className="text-[11px] text-muted-foreground font-medium">Opsional</span>
+            </div>
             <Textarea
-              id="modal-notes"
-              placeholder="Contoh: Jangan terlalu manis, ekstra es..."
+              id="pos-modal-notes"
+              placeholder="Contoh: Tanpa sedotan, saus dipisah, es batu sedikit..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="min-h-[64px] rounded-xl border-gray-200 text-sm focus-visible:ring-2 focus-visible:ring-[var(--outlet-primary,#0E59F9)]/20"
+              className="min-h-[64px] rounded-xl border-slate-200 dark:border-slate-800 text-xs sm:text-sm focus-visible:ring-2 focus-visible:ring-blue-600/20"
             />
           </div>
         </div>
 
         {/* 4. Sticky Bottom Action Bar (Footer) */}
-        <div className="bg-white border-t border-gray-150 p-4 sm:p-5 shadow-lg flex flex-col gap-2.5 sticky bottom-0 z-20">
-          {/* Missing Requirement or Out-of-Stock Alert */}
-          {unavailableRequiredGroups.length > 0 ? (
-            <div className="flex items-center gap-1.5 text-xs text-amber-800 bg-amber-50/90 border border-amber-200 px-3 py-1.5 rounded-lg animate-in fade-in duration-200">
-              <AlertCircle className="w-3.5 h-3.5 shrink-0 text-amber-600" />
-              <span>
-                Bahan untuk pilihan wajib ({unavailableRequiredGroups.map(g => g.name).join(', ')}) sedang habis.
+        <div className="bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 p-4 sm:p-5 shadow-lg flex items-center justify-between gap-4 sticky bottom-0 z-20">
+          {/* Left: Total Price Display & Required Alert */}
+          <div className="text-left shrink-0">
+            {!isValid && missingRequiredGroup ? (
+              <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 block leading-none mb-1">
+                Pilih {missingRequiredGroup.name}
               </span>
-            </div>
-          ) : !isValid && missingRequiredGroup ? (
-            <div className="flex items-center gap-1.5 text-xs text-amber-800 bg-amber-50/90 border border-amber-200 px-3 py-1.5 rounded-lg animate-in fade-in duration-200">
-              <AlertCircle className="w-3.5 h-3.5 shrink-0 text-amber-600" />
-              <span>
-                Pilih <strong>{missingRequiredGroup.name}</strong> terlebih dahulu
+            ) : (
+              <span className="text-[11px] text-muted-foreground font-medium block leading-none mb-1">
+                Total
               </span>
-            </div>
-          ) : null}
+            )}
+            <span className="text-base sm:text-lg font-semibold text-blue-600 dark:text-blue-400 leading-none">
+              {formatCurrency(grandTotal)}
+            </span>
+          </div>
 
-          <div className="flex items-center justify-between gap-3">
-            {/* Quantity Stepper with Touch Targets */}
-            <div className="flex items-center gap-1 shrink-0 bg-gray-50 p-1 rounded-xl border border-gray-200/80">
+          {/* Right: Plus-Minus Stepper beside SIMPAN button */}
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            {/* Stepper [-] 1 [+] with Round Circle Buttons */}
+            <div className="flex items-center gap-1 sm:gap-1.5">
               <button
                 type="button"
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
                 disabled={quantity <= 1 || unavailableRequiredGroups.length > 0}
-                className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg bg-white border border-gray-200 shadow-2xs flex items-center justify-center text-gray-700 hover:bg-gray-50 active:scale-95 transition-all disabled:opacity-35 disabled:cursor-not-allowed"
+                className="w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed active:scale-90 transition-all flex items-center justify-center shadow-2xs cursor-pointer"
                 aria-label="Kurangi jumlah pesanan"
               >
-                <Minus className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
+                <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
               </button>
-              <span className="min-w-[22px] sm:min-w-[28px] text-center font-black text-sm sm:text-base text-gray-900 font-mono">
+              <span className="min-w-6 text-center font-semibold text-sm sm:text-base text-foreground font-mono select-none px-1">
                 {quantity}
               </span>
               <button
                 type="button"
                 onClick={() => setQuantity(quantity + 1)}
                 disabled={unavailableRequiredGroups.length > 0}
-                className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg bg-white border border-gray-200 shadow-2xs flex items-center justify-center text-gray-700 hover:bg-gray-50 active:scale-95 transition-all disabled:opacity-35 disabled:cursor-not-allowed"
+                className="w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-xs disabled:opacity-30 disabled:cursor-not-allowed active:scale-90 transition-all flex items-center justify-center cursor-pointer"
                 aria-label="Tambah jumlah pesanan"
               >
-                <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
+                <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
               </button>
             </div>
 
-            {/* Primary Add to Cart CTA Button */}
+            {/* Primary Action Button: SIMPAN (Tanpa Harga) */}
             <button
               type="button"
               disabled={!isValid}
               onClick={handleAddToCart}
-              className="flex-1 h-11 sm:h-12 px-3 sm:px-4 rounded-xl font-bold text-xs sm:text-sm text-white shadow-xs transition-all flex items-center justify-between gap-2 disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-95 active:scale-[0.99] cursor-pointer"
-              style={{
-                backgroundColor: isValid
-                  ? "var(--outlet-primary, #0E59F9)"
-                  : "#9ca3af",
-              }}
-            >
-              <span className="truncate">
-                {unavailableRequiredGroups.length > 0 ? (
-                  "Bahan Habis"
-                ) : (
-                  <>
-                    <span>Tambah</span>
-                    <span className="hidden sm:inline"> ke Keranjang</span>
-                  </>
-                )}
-              </span>
-              {isValid && (
-                <span className="shrink-0 font-extrabold whitespace-nowrap pl-2 border-l border-white/25">
-                  {formatCurrency(grandTotal)}
-                </span>
+              className={cn(
+                "h-10 sm:h-11 px-5 sm:px-7 rounded-xl font-semibold text-xs sm:text-sm tracking-wider uppercase flex items-center justify-center transition-all cursor-pointer active:scale-[0.98] shadow-xs",
+                isValid
+                  ? "bg-blue-600 hover:bg-blue-700 text-white"
+                  : "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed"
               )}
+            >
+              <span>
+                {unavailableRequiredGroups.length > 0 ? "Bahan Habis" : "SIMPAN"}
+              </span>
             </button>
           </div>
         </div>

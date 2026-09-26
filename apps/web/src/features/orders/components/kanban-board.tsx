@@ -24,7 +24,9 @@ import {
   RefreshCw,
   Loader2,
   AlertCircle,
-  Camera
+  Camera,
+  Filter,
+  ChevronDown
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -33,10 +35,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+} from "@/components/ui/dropdown-menu";
 import { ReceiptPrinter, ReceiptData, TenantReceiptSettings } from "@/features/pos/components/receipt-printer";
 import { useBarcodeScanner } from "@/hooks/use-barcode-scanner";
 import { OrderCameraScannerDialog } from "./order-camera-scanner-dialog";
-import { playScanSuccessBeep, playScanErrorBeep } from "@/lib/utils/sound";
+import { playScanSuccessBeep, playScanErrorBeep, playScanWarningBeep } from "@/lib/utils/sound";
 
 type OrderItem = {
   id: string;
@@ -54,8 +62,15 @@ type OrderItem = {
 type Order = {
   id: string;
   tenantId: string;
+  source?: string | null;
+  cashierMembershipId?: string | null;
   totalAmount: string;
+  discount?: string | null;
+  tax?: string | null;
+  serviceCharge?: string | null;
+  platformFee?: string | null;
   grandTotal: string;
+  promoCode?: string | null;
   status: string;
   orderType: string;
   paymentMethod: string;
@@ -66,6 +81,9 @@ type Order = {
   createdAt: Date;
   items: OrderItem[];
 };
+
+type OrderTypeFilter = "DINE_IN" | "TAKEAWAY" | "ONLINE";
+const ALL_FILTER_TYPES: OrderTypeFilter[] = ["DINE_IN", "TAKEAWAY", "ONLINE"];
 
 type KanbanBoardProps = {
   initialOrders: Order[];
@@ -102,15 +120,79 @@ function formatElapsed(dateInput: Date | string): string {
   }
 }
 
-export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", receiptSettings }: KanbanBoardProps) {
+function formatTableLabel(tableNumber: string | null | undefined): string {
+  if (!tableNumber) return "";
+  const trimmed = tableNumber.trim();
+  if (trimmed.toLowerCase().startsWith("meja")) {
+    return trimmed;
+  }
+  return `Meja ${trimmed}`;
+}
+
+function getOrderSource(order: {
+  source?: string | null;
+  cashierMembershipId?: string | null;
+  orderType?: string | null;
+}) {
+  const src = (order.source || "").toUpperCase();
+  if (src === "POS" || src === "CASHIER") {
+    return {
+      label: "Kasir",
+      isSelfOrder: false,
+    };
+  }
+  if (
+    src === "ONLINE" ||
+    src === "STOREFRONT" ||
+    src === "QR" ||
+    src === "WEB_ORDER" ||
+    src === "SELF_ORDER"
+  ) {
+    return {
+      label: "Self Order",
+      isSelfOrder: true,
+    };
+  }
+  // Heuristic fallback: if no cashier assigned or orderType is ONLINE, it's a self order from storefront
+  if (!order.cashierMembershipId || order.orderType === "ONLINE") {
+    return {
+      label: "Self Order",
+      isSelfOrder: true,
+    };
+  }
+  return {
+    label: "Kasir",
+    isSelfOrder: false,
+  };
+}
+
+export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", receiptSettings }: KanbanBoardProps) {
   const [orders, setOrders] = useState<Order[]>(initialOrders);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [orderToPrepare, setOrderToPrepare] = useState<Order | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isPrepareModalOpen, setIsPrepareModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [typeFilter, setTypeFilter] = useState<"ALL" | "DINE_IN" | "TAKEAWAY" | "ONLINE">("ALL");
+  const [selectedTypes, setSelectedTypes] = useState<OrderTypeFilter[]>(ALL_FILTER_TYPES);
   const [syncingOrderId, setSyncingOrderId] = useState<string | null>(null);
+
+  const isAllSelected = selectedTypes.length === ALL_FILTER_TYPES.length;
+
+  const toggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedTypes([]);
+    } else {
+      setSelectedTypes([...ALL_FILTER_TYPES]);
+    }
+  };
+
+  const toggleType = (type: OrderTypeFilter) => {
+    if (selectedTypes.includes(type)) {
+      setSelectedTypes(prev => prev.filter(t => t !== type));
+    } else {
+      setSelectedTypes(prev => [...prev, type]);
+    }
+  };
   
   // Receipt printer states
   const [printData, setPrintData] = useState<ReceiptData | null>(null);
@@ -173,10 +255,34 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
     );
 
     if (existingOrder) {
+      const isAlreadyPaid =
+        existingOrder.paymentStatus === "PAID" ||
+        (existingOrder.status && existingOrder.status !== "PENDING");
+
+      if (isAlreadyPaid) {
+        playScanWarningBeep();
+        const statusMap: Record<string, string> = {
+          NEW: "Pesanan Baru (Antrean Dapur)",
+          PROCESSING: "Sedang Disiapkan di Dapur",
+          READY: "Siap Disajikan",
+          COMPLETED: "Pesanan Selesai",
+          CANCELLED: "Pesanan Dibatalkan",
+          FAILED: "Pesanan Gagal",
+        };
+        const statusLabel = statusMap[existingOrder.status] || existingOrder.status;
+        toast.info(
+          `Pesanan #${existingOrder.orderNumber?.replace(/^#/, "") || ""} sudah lunas & berstatus "${statusLabel}".`,
+          {
+            description: "Detail pesanan tidak dibuka untuk mencegah duplikasi pembayaran."
+          }
+        );
+        return;
+      }
+
       playScanSuccessBeep();
       setSelectedOrder(existingOrder);
       setIsDialogOpen(true);
-      toast.success(`Pesanan #${existingOrder.orderNumber?.replace(/^#/, "") || ""} ditemukan`);
+      toast.success(`Pesanan #${existingOrder.orderNumber?.replace(/^#/, "") || ""} siap diproses pembayarannya`);
       return;
     }
 
@@ -185,7 +291,6 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
     try {
       const res = await getOrderByNumberForOutlet(orderNum);
       if (res) {
-        playScanSuccessBeep();
         const loadedOrder = {
           ...res,
           createdAt: new Date(res.createdAt),
@@ -196,9 +301,35 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
           }
           return prev;
         });
+
+        const isAlreadyPaid =
+          loadedOrder.paymentStatus === "PAID" ||
+          (loadedOrder.status && loadedOrder.status !== "PENDING");
+
+        if (isAlreadyPaid) {
+          playScanWarningBeep();
+          const statusMap: Record<string, string> = {
+            NEW: "Pesanan Baru (Antrean Dapur)",
+            PROCESSING: "Sedang Disiapkan di Dapur",
+            READY: "Siap Disajikan",
+            COMPLETED: "Pesanan Selesai",
+            CANCELLED: "Pesanan Dibatalkan",
+            FAILED: "Pesanan Gagal",
+          };
+          const statusLabel = statusMap[loadedOrder.status] || loadedOrder.status;
+          toast.info(
+            `Pesanan #${loadedOrder.orderNumber?.replace(/^#/, "") || ""} sudah lunas & berstatus "${statusLabel}".`,
+            {
+              description: "Detail pesanan tidak dibuka untuk mencegah duplikasi pembayaran."
+            }
+          );
+          return;
+        }
+
+        playScanSuccessBeep();
         setSelectedOrder(loadedOrder);
         setIsDialogOpen(true);
-        toast.success(`Pesanan #${loadedOrder.orderNumber?.replace(/^#/, "") || ""} ditemukan`);
+        toast.success(`Pesanan #${loadedOrder.orderNumber?.replace(/^#/, "") || ""} siap diproses pembayarannya`);
       } else {
         playScanErrorBeep();
         toast.error(`Pesanan #${orderNum} tidak ditemukan`);
@@ -278,6 +409,11 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
     transactionId: order.orderNumber || order.id.slice(0, 8).toUpperCase(),
     date: new Date(order.createdAt),
     cashierName: cashierName,
+    subtotal: Number(order.totalAmount || order.grandTotal),
+    discount: Number(order.discount || 0),
+    promoCode: order.promoCode || undefined,
+    tax: Number(order.tax || 0),
+    serviceCharge: Number(order.serviceCharge || 0),
     totalAmount: Number(order.grandTotal),
     cashReceived: Number(order.grandTotal),
     change: 0,
@@ -507,9 +643,18 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
   const filteredOrders = useMemo(() => {
     return orders.filter(o => {
       // Type filter
-      if (typeFilter === "DINE_IN" && o.orderType !== "DINE_IN") return false;
-      if (typeFilter === "TAKEAWAY" && o.orderType !== "TAKE_AWAY" && o.orderType !== "TAKEAWAY") return false;
-      if (typeFilter === "ONLINE" && o.orderType !== "ONLINE") return false;
+      if (!isAllSelected) {
+        const isDineIn = o.orderType === "DINE_IN";
+        const isTakeaway = o.orderType === "TAKE_AWAY" || o.orderType === "TAKEAWAY";
+        const isOnline = o.orderType === "ONLINE";
+
+        const matches = (
+          (isDineIn && selectedTypes.includes("DINE_IN")) ||
+          (isTakeaway && selectedTypes.includes("TAKEAWAY")) ||
+          (isOnline && selectedTypes.includes("ONLINE"))
+        );
+        if (!matches) return false;
+      }
 
       // Search query
       if (!searchQuery.trim()) return true;
@@ -520,7 +665,7 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
         (o.tableNumber && `meja ${o.tableNumber}`.toLowerCase().includes(q))
       );
     });
-  }, [orders, typeFilter, searchQuery]);
+  }, [orders, selectedTypes, isAllSelected, searchQuery]);
 
   const renderColumn = (
     title: string, 
@@ -589,62 +734,79 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
                   {/* Top Meta Bar */}
                   <div>
                     <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-mono text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700 tracking-wider">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-sans text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700 tracking-wider">
                           {order.orderNumber || "#-"}
                         </span>
                         
                         {order.paymentStatus === "PAID" ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                            <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 text-emerald-600 border border-emerald-600 bg-emerald-50 rounded-full">
                             Lunas
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-slate-600 text-slate-600 bg-slate-50">
                             Belum Bayar
                           </span>
                         )}
                       </div>
 
-                      <div className="inline-flex items-center gap-1 text-[11px] text-muted-foreground/80 font-medium">
+                      <div className="inline-flex items-center gap-1 text-[11px] text-muted-foreground/80 font-medium shrink-0">
                         <Clock className="w-3 h-3 opacity-60" />
                         <span>{formatElapsed(order.createdAt)}</span>
                       </div>
                     </div>
 
-                    {/* Order Title & Customer Info */}
-                    <div className="mt-2.5">
-                      <div className="text-[13px] font-semibold text-foreground tracking-tight flex items-center gap-1.5">
+                    {/* Order Title & Source (Sejajar Meja di sebelah kanan) */}
+                    <div className="mt-2.5 flex items-center justify-between gap-2">
+                      <div className="text-[13px] font-semibold text-foreground tracking-tight flex items-center gap-1.5 min-w-0">
                         {order.tableNumber ? (
                           <>
-                            <UtensilsCrossed className="w-3.5 h-3.5 text-blue-600" />
-                            <span>Meja {order.tableNumber}</span>
+                            <UtensilsCrossed className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                            <span className="truncate">{formatTableLabel(order.tableNumber)}</span>
                           </>
                         ) : isTakeaway ? (
                           <>
-                            <ShoppingBag className="w-3.5 h-3.5 text-blue-600" />
-                            <span>Bawa Pulang (Takeaway)</span>
+                            <ShoppingBag className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                            <span className="truncate">Bawa Pulang (Takeaway)</span>
                           </>
                         ) : isOnline ? (
                           <>
-                            <Store className="w-3.5 h-3.5 text-blue-600" />
-                            <span>Pesanan Online</span>
+                            <Store className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                            <span className="truncate">Pesanan Online</span>
                           </>
                         ) : (
                           <>
-                            <UtensilsCrossed className="w-3.5 h-3.5 text-blue-600" />
-                            <span>Makan di Tempat</span>
+                            <UtensilsCrossed className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                            <span className="truncate">Makan di Tempat</span>
                           </>
                         )}
                       </div>
-                      
-                      {order.customerName && (
-                        <div className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5 font-normal">
-                          <User className="w-3 h-3 opacity-60" />
-                          <span className="truncate max-w-[200px]">{order.customerName}</span>
-                        </div>
-                      )}
+
+                      {/* Sumber Pemesanan (Self Order / Kasir) */}
+                      {(() => {
+                        const srcInfo = getOrderSource(order);
+                        return (
+                          <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${
+                            srcInfo.isSelfOrder
+                              ? "border-blue-500/30 bg-blue-50 text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300"
+                              : "border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                          }`}>
+                            {srcInfo.label}
+                          </span>
+                        );
+                      })()}
+                    </div>
+
+                    {/* Customer Info & Metode Bayar (Sejajar Nama Pelanggan di sebelah kanan) */}
+                    <div className="flex items-center justify-between gap-2 mt-1 text-[11px]">
+                      <div className="text-muted-foreground flex items-center gap-1 font-normal min-w-0">
+                        <User className="w-3 h-3 opacity-60 shrink-0" />
+                        <span className="truncate max-w-[150px]">{order.customerName || "Tamu / Umum"}</span>
+                      </div>
+
+                      <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 uppercase shrink-0">
+                        {order.paymentMethod || "CASH"}
+                      </span>
                     </div>
 
                     {/* Items Checklist */}
@@ -755,85 +917,105 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
       />
 
       {/* Search & Filter Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
-        <div className="flex items-center gap-2 w-full sm:max-w-md">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/70" />
-            <Input 
-              placeholder="Cari meja, no order, nama..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-9 text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg"
-            />
-          </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 shrink-0">
+        <div className="relative flex-1 max-w-full sm:max-w-xs md:max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/70" />
+          <Input 
+            placeholder="Cari meja, no order, nama..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 h-9 text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg shadow-xs"
+          />
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0 justify-between sm:justify-end">
+          {/* Dropdown Filter Jenis Pesanan (di samping kiri tombol scan qr) */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-9 px-3 gap-1.5 text-xs font-medium border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-xs shrink-0 cursor-pointer"
+                title="Filter berdasarkan jenis pesanan"
+              >
+                <Filter className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                <span>Jenis Pesanan</span>
+                <span className="text-[11px] text-muted-foreground font-normal">
+                  ({isAllSelected 
+                    ? "Semua" 
+                    : selectedTypes.length === 1 
+                      ? (selectedTypes[0] === "DINE_IN" ? "Dine In" : selectedTypes[0] === "TAKEAWAY" ? "Bawa Pulang" : "Online")
+                      : selectedTypes.length === 0 
+                        ? "0" 
+                        : `${selectedTypes.length}`
+                  })
+                </span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-0.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48 p-1.5 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg">
+              <DropdownMenuCheckboxItem
+                checked={isAllSelected}
+                onCheckedChange={toggleSelectAll}
+                onSelect={(e) => e.preventDefault()}
+                className="text-xs py-1.5 cursor-pointer rounded-lg font-medium text-slate-700 dark:text-slate-200"
+              >
+                Semua
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={selectedTypes.includes("DINE_IN")}
+                onCheckedChange={() => toggleType("DINE_IN")}
+                onSelect={(e) => e.preventDefault()}
+                className="text-xs py-1.5 cursor-pointer rounded-lg font-medium text-slate-700 dark:text-slate-200"
+              >
+                Dine In (Meja)
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={selectedTypes.includes("TAKEAWAY")}
+                onCheckedChange={() => toggleType("TAKEAWAY")}
+                onSelect={(e) => e.preventDefault()}
+                className="text-xs py-1.5 cursor-pointer rounded-lg font-medium text-slate-700 dark:text-slate-200"
+              >
+                Bawa Pulang
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={selectedTypes.includes("ONLINE")}
+                onCheckedChange={() => toggleType("ONLINE")}
+                onSelect={(e) => e.preventDefault()}
+                className="text-xs py-1.5 cursor-pointer rounded-lg font-medium text-slate-700 dark:text-slate-200"
+              >
+                Online
+              </DropdownMenuCheckboxItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Tombol Scan QR (posisi di samping tombol refresh, jika layar kecil hanya icon) */}
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={() => setIsCameraScannerOpen(true)}
-            className="h-9 px-3 gap-1.5 text-xs font-semibold border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-xs shrink-0 cursor-pointer"
+            className="h-9 px-2.5 sm:px-3 gap-1.5 text-xs font-semibold border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-xs shrink-0 cursor-pointer"
             title="Pindai QR pesanan pelanggan menggunakan kamera"
           >
-            <Camera className="w-3.5 h-3.5 text-blue-600" />
-            <span>Scan QR</span>
+            <Camera className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+            <span className="hidden sm:inline">Scan QR</span>
           </Button>
-        </div>
 
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-          <button
-            onClick={() => setTypeFilter("ALL")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              typeFilter === "ALL" 
-                ? "bg-blue-600 text-white shadow-xs font-semibold" 
-                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-foreground"
-            }`}
-          >
-            Semua
-          </button>
-          <button
-            onClick={() => setTypeFilter("DINE_IN")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              typeFilter === "DINE_IN" 
-                ? "bg-blue-600 text-white shadow-xs font-semibold" 
-                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-foreground"
-            }`}
-          >
-            Dine In (Meja)
-          </button>
-          <button
-            onClick={() => setTypeFilter("TAKEAWAY")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              typeFilter === "TAKEAWAY" 
-                ? "bg-blue-600 text-white shadow-xs font-semibold" 
-                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-foreground"
-            }`}
-          >
-            Bawa Pulang
-          </button>
-          <button
-            onClick={() => setTypeFilter("ONLINE")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              typeFilter === "ONLINE" 
-                ? "bg-blue-600 text-white shadow-xs font-semibold" 
-                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-foreground"
-            }`}
-          >
-            Online
-          </button>
-
-          <div className="h-4 w-px bg-slate-200 dark:bg-slate-800 mx-0.5 shrink-0" />
-
-          {/* Tombol Refresh di samping kanan pilihan filter online */}
-          <button
+          {/* Tombol Refresh */}
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-foreground transition-all shadow-xs shrink-0 active:scale-95 disabled:opacity-50 cursor-pointer"
+            className="h-9 px-2.5 sm:px-3 gap-1.5 text-xs font-semibold border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-xs shrink-0 active:scale-95 disabled:opacity-50 cursor-pointer"
             title="Refresh antrean pesanan"
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isRefreshing ? "animate-spin text-blue-600" : ""}`} />
-            <span>Refresh</span>
-          </button>
+            <RefreshCw className={`w-3.5 h-3.5 text-slate-500 shrink-0 ${isRefreshing ? "animate-spin text-blue-600" : ""}`} />
+            <span className="hidden sm:inline">Refresh</span>
+          </Button>
         </div>
       </div>
 
@@ -910,7 +1092,7 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
                   Siapkan Pesanan & Cetak Struk
                 </DialogTitle>
                 <DialogDescription className="text-xs text-slate-500">
-                  {orderToPrepare?.orderNumber} • {orderToPrepare?.tableNumber ? `Meja ${orderToPrepare.tableNumber}` : orderToPrepare?.orderType.replace("_", " ")}
+                  {orderToPrepare?.orderNumber} • {orderToPrepare?.tableNumber ? formatTableLabel(orderToPrepare.tableNumber) : orderToPrepare?.orderType.replace("_", " ")}
                 </DialogDescription>
               </div>
             </div>
@@ -928,11 +1110,11 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
                   {orderToPrepare.items.map((item, idx) => (
                     <div key={idx} className="flex justify-between items-center text-xs py-1 border-b border-dashed border-slate-200 dark:border-slate-800 last:border-0">
                       <span className="text-slate-800 dark:text-slate-200">
-                        <strong className="text-blue-600 font-mono mr-1.5">{item.quantity}x</strong>
+                        <strong className="text-blue-600 font-sans mr-1.5">{item.quantity}x</strong>
                         {item.productName}
                         {item.notes && <span className="block text-[10px] text-slate-400 italic">({item.notes})</span>}
                       </span>
-                      <span className="text-slate-500 text-[11px] font-mono">{formatCurrency(Number(item.subtotal))}</span>
+                      <span className="text-slate-500 text-[11px] font-sans">{formatCurrency(Number(item.subtotal))}</span>
                     </div>
                   ))}
                 </div>
@@ -952,7 +1134,7 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
                     disabled={isPrinting || isUpdatingStatus}
                     className="h-10 text-xs font-medium border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 text-slate-700 dark:text-slate-300 gap-1.5 disabled:opacity-50"
                   >
-                    <ChefHat className="w-3.5 h-3.5 text-amber-600" />
+                    
                     Tiket Dapur
                   </Button>
                   <Button
@@ -962,7 +1144,7 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
                     disabled={isPrinting || isUpdatingStatus}
                     className="h-10 text-xs font-medium border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 text-slate-700 dark:text-slate-300 gap-1.5 disabled:opacity-50"
                   >
-                    <ReceiptText className="w-3.5 h-3.5 text-blue-600" />
+                    
                     Struk Pelanggan
                   </Button>
                 </div>
@@ -973,8 +1155,8 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
                   disabled={isPrinting || isUpdatingStatus}
                   className="w-full h-9 text-xs border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 text-slate-700 dark:text-slate-300 gap-1.5 disabled:opacity-50"
                 >
-                  <Printer className="w-3.5 h-3.5 text-slate-600" />
-                  Cetak Keduanya (Struk & Tiket Dapur)
+                  
+                  Cetak Keduanya
                 </Button>
               </div>
 
@@ -1001,8 +1183,8 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
                     </>
                   ) : (
                     <>
-                      <ChefHat className="w-3.5 h-3.5" />
-                      <span>Mulai Penyiapan (Masuk Dapur)</span>
+                      
+                      <span>Proses Pesanan</span>
                     </>
                   )}
                 </Button>
@@ -1023,7 +1205,7 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
           <DialogHeader className="border-b pb-3 border-slate-100 dark:border-slate-800">
             <DialogTitle className="flex items-center gap-2 text-base">
               <span>Detail Pesanan</span>
-              <span className="font-mono text-blue-600">{selectedOrder?.orderNumber || ""}</span>
+              <span className="font-sans text-blue-600">{selectedOrder?.orderNumber || ""}</span>
             </DialogTitle>
             <DialogDescription className="text-xs">
               Waktu: {selectedOrder ? formatDate(selectedOrder.createdAt) : ""}
@@ -1032,29 +1214,46 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
 
           {selectedOrder && (
             <div className="space-y-4 pt-2">
-              {/* Order Info Card */}
-              <div className="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
+              {/* Order Info (Flat layout, no nested card) */}
+              <div className="grid grid-cols-2 gap-y-2.5 gap-x-4 text-xs pb-3 border-b border-slate-100 dark:border-slate-800">
                 <div>
-                  <span className="text-muted-foreground block mb-0.5">Tipe Pesanan</span>
+                  <span className="text-muted-foreground block text-[11px] mb-0.5">
+                    {selectedOrder.tableNumber ? "Meja" : "Tipe Pesanan"}
+                  </span>
                   <span className="font-semibold text-foreground">
-                    {selectedOrder.tableNumber ? `Meja ${selectedOrder.tableNumber}` : selectedOrder.orderType.replace("_", " ")}
+                    {selectedOrder.tableNumber ? formatTableLabel(selectedOrder.tableNumber) : selectedOrder.orderType.replace("_", " ")}
                   </span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground block mb-0.5">Pelanggan</span>
+                  <span className="text-muted-foreground block text-[11px] mb-0.5">Pemesanan Lewat</span>
+                  {(() => {
+                    const srcInfo = getOrderSource(selectedOrder);
+                    return (
+                      <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                        srcInfo.isSelfOrder
+                          ? "border-blue-500/30 bg-blue-50 text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300"
+                          : "border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                      }`}>
+                        {srcInfo.label}
+                      </span>
+                    );
+                  })()}
+                </div>
+                <div>
+                  <span className="text-muted-foreground block text-[11px] mb-0.5">Pelanggan</span>
                   <span className="font-semibold text-foreground">
                     {selectedOrder.customerName || "Tamu / Umum"}
                   </span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground block mb-0.5">Metode Bayar</span>
+                  <span className="text-muted-foreground block text-[11px] mb-0.5">Metode Bayar</span>
                   <span className="font-semibold text-foreground">
                     {selectedOrder.paymentMethod || "CASH"}
                   </span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground block mb-0.5">Status Pembayaran</span>
-                  <span className={`font-semibold ${selectedOrder.paymentStatus === "PAID" ? "text-blue-600" : "text-amber-600"}`}>
+                  <span className="text-muted-foreground block text-[11px] mb-0.5">Status Pembayaran</span>
+                  <span className={`font-semibold ${selectedOrder.paymentStatus === "PAID" ? "text-emerald-600" : "text-slate-500"}`}>
                     {selectedOrder.paymentStatus === "PAID" ? "LUNAS" : "BELUM LUNAS"}
                   </span>
                 </div>
@@ -1080,7 +1279,7 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
                       }`}
                       onClick={() => !isUpdatingStatus && handleToggleItem(selectedOrder.id, item.id, !item.isCompleted)}
                     >
-                      <div className="flex items-center gap-2.5 flex-1">
+                      <div className="flex items-center gap-2.5 flex-1 pr-2 min-w-0">
                         <Checkbox 
                           id={`modal-item-${item.id}`} 
                           checked={item.isCompleted} 
@@ -1090,21 +1289,22 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
                         />
                         <label 
                           htmlFor={`modal-item-${item.id}`}
-                          className={`leading-tight ${
+                          className={`leading-tight truncate ${
                             isUpdatingStatus ? "cursor-not-allowed" : "cursor-pointer"
                           } ${item.isCompleted ? "text-muted-foreground line-through" : "text-foreground font-medium"}`}
                         >
-                          <span className="font-bold font-mono mr-1">{item.quantity}x</span> {item.productName}
+                          <span className="font-bold mr-1">{item.quantity}x</span> {item.productName}
+                          {item.notes && <span className="block text-[10px] text-muted-foreground italic font-normal">"{item.notes}"</span>}
                         </label>
                       </div>
-                      <span className="font-mono text-muted-foreground">{formatCurrency(Number(item.subtotal))}</span>
+                      <span className="font-sans text-muted-foreground shrink-0">{formatCurrency(Number(item.subtotal))}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Print buttons inside detail */}
-              <div className="p-2.5 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
+              {/* Print buttons inside detail (Flat, no nested card) */}
+              <div className="space-y-1.5 pt-1">
                 <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 block">Cetak Struk:</span>
                 <div className="flex gap-2">
                   <Button
@@ -1113,9 +1313,9 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
                     variant="outline"
                     disabled={isPrinting || isUpdatingStatus}
                     onClick={() => handlePrintReceipt(selectedOrder, 'customer')}
-                    className="flex-1 h-8 text-xs gap-1 border-slate-200 text-slate-700 dark:text-slate-300 hover:bg-white disabled:opacity-50"
+                    className="flex-1 h-8 text-xs gap-1 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs cursor-pointer disabled:opacity-50"
                   >
-                    <ReceiptText className="w-3 h-3 text-blue-600" />
+                    <Printer className="w-3.5 h-3.5 text-slate-500 mr-1" />
                     Struk Pelanggan
                   </Button>
                   <Button
@@ -1124,9 +1324,9 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
                     variant="outline"
                     disabled={isPrinting || isUpdatingStatus}
                     onClick={() => handlePrintReceipt(selectedOrder, 'kitchen')}
-                    className="flex-1 h-8 text-xs gap-1 border-slate-200 text-slate-700 dark:text-slate-300 hover:bg-white disabled:opacity-50"
+                    className="flex-1 h-8 text-xs gap-1 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs cursor-pointer disabled:opacity-50"
                   >
-                    <ChefHat className="w-3 h-3 text-amber-600" />
+                    <ReceiptText className="w-3.5 h-3.5 text-slate-500 mr-1" />
                     Tiket Dapur
                   </Button>
                 </div>
@@ -1134,12 +1334,72 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
 
               {/* Total & Action Buttons */}
               <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-3">
-                <div className="flex justify-between items-center text-sm font-bold">
-                  <span>Total Tagihan</span>
-                  <span className="font-mono text-blue-600 text-base">
-                    {formatCurrency(Number(selectedOrder.grandTotal))}
-                  </span>
-                </div>
+                {/* Rincian Biaya (Subtotal, Diskon, Pajak, Layanan, Grand Total) */}
+                {(() => {
+                  const subtotalNum = Number(selectedOrder.totalAmount || 0) > 0 
+                    ? Number(selectedOrder.totalAmount) 
+                    : selectedOrder.items.reduce((sum, item) => sum + Number(item.subtotal || 0), 0);
+                  const discountNum = Number(selectedOrder.discount || 0);
+                  const taxNum = Number(selectedOrder.tax || 0);
+                  const serviceChargeNum = Number(selectedOrder.serviceCharge || 0);
+                  const platformFeeNum = Number(selectedOrder.platformFee || 0);
+                  const grandTotalNum = Number(selectedOrder.grandTotal || 0);
+                  
+                  // Perbedaan yang belum teralokasi (jika ada pesanan legacy)
+                  const knownDiff = taxNum + serviceChargeNum + platformFeeNum - discountNum;
+                  const unexplainedDiff = grandTotalNum - (subtotalNum + knownDiff);
+
+                  return (
+                    <div className="space-y-1.5 text-xs text-muted-foreground pb-2 border-b border-slate-100 dark:border-slate-800">
+                      <div className="flex justify-between items-center">
+                        <span>Subtotal</span>
+                        <span className="font-sans font-medium text-foreground">{formatCurrency(subtotalNum)}</span>
+                      </div>
+
+                      {discountNum > 0 && (
+                        <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400">
+                          <span>Diskon {selectedOrder.promoCode ? `(${selectedOrder.promoCode})` : ""}</span>
+                          <span className="font-sans font-medium">-{formatCurrency(discountNum)}</span>
+                        </div>
+                      )}
+
+                      {serviceChargeNum > 0 && (
+                        <div className="flex justify-between items-center">
+                          <span>Biaya Layanan</span>
+                          <span className="font-sans font-medium text-foreground">{formatCurrency(serviceChargeNum)}</span>
+                        </div>
+                      )}
+
+                      {taxNum > 0 && (
+                        <div className="flex justify-between items-center">
+                          <span>Pajak (PB1)</span>
+                          <span className="font-sans font-medium text-foreground">{formatCurrency(taxNum)}</span>
+                        </div>
+                      )}
+
+                      {platformFeeNum > 0 && (
+                        <div className="flex justify-between items-center">
+                          <span>Biaya Platform</span>
+                          <span className="font-sans font-medium text-foreground">{formatCurrency(platformFeeNum)}</span>
+                        </div>
+                      )}
+
+                      {unexplainedDiff > 0 && taxNum === 0 && (
+                        <div className="flex justify-between items-center">
+                          <span>Pajak & Biaya Lainnya</span>
+                          <span className="font-sans font-medium text-foreground">{formatCurrency(unexplainedDiff)}</span>
+                        </div>
+                      )}
+
+                      <div className="flex justify-between items-center text-sm font-bold text-foreground pt-1.5">
+                        <span>Total Tagihan</span>
+                        <span className="font-sans text-blue-600 text-base font-semibold">
+                          {formatCurrency(grandTotalNum)}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 <div className="flex flex-col gap-2">
                   {selectedOrder.status === "PENDING" && (selectedOrder.orderType === "ONLINE" || selectedOrder.paymentMethod === "ONLINE") && (
@@ -1258,7 +1518,7 @@ export function KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", re
                     className="flex items-center justify-between p-1.5 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-[11px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
+                      <span className="font-sans text-[11px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
                         {o.orderNumber || "#-"}
                       </span>
                       <span className="text-slate-700 dark:text-slate-300 font-medium truncate max-w-[160px]">

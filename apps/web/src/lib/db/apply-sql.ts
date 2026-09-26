@@ -8,8 +8,8 @@ async function run() {
   }
   const sql = postgres(process.env.DATABASE_URL, { max: 1, prepare: false });
   try {
-    console.log('Running: ALTER TABLE products ADD COLUMN IF NOT EXISTS track_stock boolean DEFAULT true NOT NULL;');
-    await sql.unsafe('ALTER TABLE products ADD COLUMN IF NOT EXISTS track_stock boolean DEFAULT true NOT NULL;');
+    console.log('Running: ALTER TABLE categories ADD COLUMN IF NOT EXISTS icon text;');
+    await sql.unsafe('ALTER TABLE categories ADD COLUMN IF NOT EXISTS icon text;');
     console.log('Migration applied successfully!');
   } catch (e) {
     console.error('Failed to execute statement:', e);
