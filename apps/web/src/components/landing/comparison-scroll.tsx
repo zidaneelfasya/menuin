@@ -1,21 +1,19 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { Check, ChevronsLeftRight, Printer, Smartphone, User } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { Check, Printer, Smartphone, User, X } from "lucide-react";
 
 /**
- * Sebelum dan sesudah — empat masalah jam sibuk.
+ * Sebelum dan sesudah — "satu hari di outlet".
  *
- * Setiap kartu adalah slider before/after yang dijalankan scroll: kartu
- * masuk dalam keadaan "Dulu" (kusam, berantakan), lalu saat mendekati
- * tengah layar lapisan "Dengan Menuin" menyapu dari kiri dengan garis
- * pembatas biru. Isi kedua lapisan berupa gambaran kecil, bukan kalimat
- * yang dicoret, supaya perubahannya terlihat, bukan hanya terbaca.
+ * Panggung sticky setinggi layar. Kiri: jam yang berjalan mengikuti scroll
+ * dan masalah yang sedang dibahas. Kanan: tumpukan kartu. Setiap masalah
+ * punya dua babak: kartu "Tanpa Menuin" muncul lebih dulu, lalu kartu
+ * "Dengan Menuin" naik menutupinya sementara kartu lama mundur ke belakang.
  *
- * Tanpa JS atau dengan reduced-motion, kartu langsung tampil dalam
- * keadaan "Dengan Menuin".
+ * Progres dihitung dari posisi scroll kontainer tinggi (tanpa pin GSAP),
+ * jadi tidak ada spacer yang perlu dihitung ulang. Di layar sempit semua
+ * masalah tampil sebagai pasangan kartu bertumpuk biasa.
  */
 
 /* ------------------------------------------------------------------ */
@@ -201,20 +199,26 @@ function NewRecap() {
 
 const items = [
   {
+    time: "12.15",
+    moment: "Jam makan siang",
     topic: "Pesanan salah",
-    before: "Catatan “tanpa gula” hilang di antara kasir dan dapur.",
+    before: "Catatan \u201ctanpa gula\u201d hilang di antara kasir dan dapur.",
     after: "Catatan tamu sampai ke dapur persis seperti yang ditulis.",
     oldVisual: <OldNote />,
     newVisual: <NewTicket />,
   },
   {
+    time: "13.30",
+    moment: "Antrean memuncak",
     topic: "Antrean kasir",
-    before: "Antrean memanjang setiap jam makan siang.",
+    before: "Antrean memanjang dan tamu mulai pergi.",
     after: "Tamu bayar dari meja. Kasir fokus melayani yang datang langsung.",
     oldVisual: <OldQueue />,
     newVisual: <NewTables />,
   },
   {
+    time: "21.40",
+    moment: "Tutup shift",
     topic: "Kas selisih",
     before: "Uang laci kurang dan tidak ada yang tahu sebabnya.",
     after: "Setiap rupiah tercatat, dari modal awal sampai tutup shift.",
@@ -222,9 +226,11 @@ const items = [
     newVisual: <NewCash />,
   },
   {
+    time: "23.40",
+    moment: "Setelah tutup",
     topic: "Rekap malam",
     before: "Pemilik merekap nota sampai larut malam.",
-    after: "Omzet dan laba tersusun sendiri, bisa dicek dari ponsel.",
+    after: "Omzet dan laba tersusun sendiri, sudah bisa dicek sejak tadi.",
     oldVisual: <OldRecap />,
     newVisual: <NewRecap />,
   },
@@ -234,160 +240,218 @@ const items = [
 /* Kartu                                                               */
 /* ------------------------------------------------------------------ */
 
-function Layer({
+function StoryCard({
   tone,
-  index,
-  topic,
   text,
   visual,
+  large = false,
 }: {
   tone: "old" | "new";
-  index: number;
-  topic: string;
-  text: string;
+  text?: string;
   visual: React.ReactNode;
+  large?: boolean;
 }) {
   const isNew = tone === "new";
   return (
     <div
-      className={`flex h-full flex-col p-6 sm:p-8 ${
-        isNew ? "bg-gradient-to-br from-white via-white to-[#eef4ff]" : "bg-[#f1f1f2]"
+      className={`flex h-full flex-col rounded-[28px] p-6 sm:p-8 ${
+        isNew
+          ? "bg-white shadow-[0_40px_80px_-40px_rgba(14,89,249,0.45)] ring-1 ring-[#0E59F9]/15"
+          : "bg-[#efeff1] ring-1 ring-black/[0.06]"
       }`}
     >
-      <div className="flex items-center justify-between gap-3">
-        <span className="flex items-baseline gap-2.5">
-          <span className={`text-[13px] tabular-nums ${isNew ? "text-[#0E59F9]" : "text-[#a1a1aa]"}`}>
-            {String(index + 1).padStart(2, "0")}
-          </span>
-          <span className={`text-[15px] font-semibold tracking-[-0.01em] ${isNew ? "text-[#0a0a0a]" : "text-[#71717a]"}`}>
-            {topic}
-          </span>
-        </span>
-        <span
-          className={`rounded-full px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-[0.12em] ${
-            isNew ? "bg-[#0E59F9] text-white" : "bg-black/[0.06] text-[#71717a]"
-          }`}
-        >
-          {isNew ? "Dengan Menuin" : "Dulu"}
-        </span>
+      <span
+        className={`inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${
+          isNew ? "bg-[#0E59F9] text-white" : "bg-black/[0.07] text-[#71717a]"
+        }`}
+      >
+        {isNew ? <Check className="h-3 w-3" strokeWidth={3} /> : <X className="h-3 w-3" strokeWidth={3} />}
+        {isNew ? "Dengan Menuin" : "Tanpa Menuin"}
+      </span>
+      <div className={`flex flex-1 items-center justify-center py-6 ${isNew ? "" : "grayscale-[0.5]"}`}>
+        <div className={large ? "scale-[1.35]" : ""}>{visual}</div>
       </div>
-
-      <div className={`flex flex-1 items-center justify-center py-8 ${isNew ? "" : "grayscale-[0.4]"}`}>
-        {visual}
-      </div>
-
+      {text && (
       <p
-        className={`text-[clamp(17px,1.6vw,20px)] leading-snug tracking-[-0.015em] ${
+        className={`text-[clamp(16px,1.5vw,19px)] leading-snug tracking-[-0.015em] ${
           isNew ? "font-medium text-[#0a0a0a]" : "text-[#71717a]"
         }`}
       >
         {text}
       </p>
+      )}
     </div>
   );
 }
 
-function CompareCard({ item, index }: { item: (typeof items)[number]; index: number }) {
-  return (
-    <article
-      data-compare-card
-      className="relative h-[430px] overflow-hidden rounded-[28px] ring-1 ring-black/[0.06] sm:h-[460px]"
-    >
-      {/* Lapisan bawah: kondisi dulu */}
-      <div className="absolute inset-0">
-        <Layer tone="old" index={index} topic={item.topic} text={item.before} visual={item.oldVisual} />
-      </div>
-
-      {/* Lapisan atas: dengan Menuin, dibuka oleh clip-path */}
-      <div data-compare-new className="absolute inset-0" style={{ clipPath: "inset(0 0 0 0)" }}>
-        <Layer tone="new" index={index} topic={item.topic} text={item.after} visual={item.newVisual} />
-      </div>
-
-      {/* Garis pembatas + pegangan */}
-      <div
-        data-compare-handle
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-y-0 left-full w-0 opacity-0"
-      >
-        <span className="absolute inset-y-0 -left-px w-[2px] bg-[#0E59F9]" />
-        <span className="absolute left-0 top-1/2 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-[#0E59F9] text-white shadow-[0_8px_20px_-6px_rgba(14,89,249,0.6)]">
-          <ChevronsLeftRight className="h-4 w-4" />
-        </span>
-      </div>
-    </article>
-  );
-}
+const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+const smooth = (v: number) => v * v * (3 - 2 * v);
 
 export default function ComparisonScroll() {
-  const rootRef = useRef<HTMLElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [p, setP] = useState(0);
 
   useEffect(() => {
-    gsap.registerPlugin(ScrollTrigger);
-    const mm = gsap.matchMedia();
-
-    mm.add("(prefers-reduced-motion: no-preference)", () => {
-      const cards = gsap.utils.toArray<HTMLElement>("[data-compare-card]", rootRef.current);
-      const ease = gsap.parseEase("power1.inOut");
-
-      const triggers = cards.map((card) => {
-        const layer = card.querySelector<HTMLElement>("[data-compare-new]")!;
-        const handle = card.querySelector<HTMLElement>("[data-compare-handle]")!;
-
-        // p = 0: semua "Dulu"; p = 1: semua "Dengan Menuin".
-        const set = (p: number) => {
-          const pct = p * 100;
-          layer.style.clipPath = `inset(0 ${100 - pct}% 0 0)`;
-          handle.style.left = `${pct}%`;
-          handle.style.opacity = p > 0.01 && p < 0.99 ? "1" : "0";
-        };
-        set(0);
-
-        return ScrollTrigger.create({
-          trigger: card,
-          start: "top 75%",
-          end: "top 25%",
-          onUpdate: (self) => set(ease(self.progress)),
-          onRefresh: (self) => set(ease(self.progress)),
-        });
-      });
-
-      return () => {
-        triggers.forEach((t) => t.kill());
-        cards.forEach((card) => {
-          const layer = card.querySelector<HTMLElement>("[data-compare-new]");
-          const handle = card.querySelector<HTMLElement>("[data-compare-handle]");
-          if (layer) layer.style.clipPath = "inset(0 0 0 0)";
-          if (handle) handle.style.opacity = "0";
-        });
-      };
-    });
-
-    return () => mm.revert();
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const el = trackRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const total = r.height - window.innerHeight;
+      setP(total > 0 ? clamp01(-r.top / total) : 0);
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
   }, []);
 
-  return (
-    <section ref={rootRef} className="border-t border-black/[0.06] bg-[#fafafa] px-6 py-24 md:py-32">
-      <div className="mx-auto max-w-[1280px]">
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-12 md:items-end">
-          <div className="md:col-span-7">
-            <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#71717a]">
-              Sebelum dan sesudah
-            </p>
-            <h2 className="mt-4 max-w-[18ch] text-[clamp(30px,4.2vw,48px)] font-semibold leading-[1.05] tracking-[-0.04em] text-[#0a0a0a] text-balance">
-              Yang biasanya bikin pusing di jam sibuk, sekarang beres sendiri.
-            </h2>
-          </div>
-          <p className="max-w-[44ch] text-[16px] leading-relaxed text-[#52525b] md:col-span-5 md:justify-self-end">
-            Empat masalah yang paling sering dikeluhkan pemilik outlet. Gulir untuk melihat apa
-            yang berubah.
-          </p>
-        </div>
+  const n = items.length;
+  const pos = p * n; // 0..n
+  const active = Math.min(n - 1, Math.floor(pos));
+  const local = pos - active; // 0..1 di dalam satu masalah
+  // Babak kedua (kartu "Dengan Menuin" naik) terjadi di 30–75% tiap masalah.
+  const reveal = smooth(clamp01((local - 0.3) / 0.45));
+  const item = items[active];
 
-        <div className="mt-14 grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
-          {items.map((item, i) => (
-            <CompareCard key={item.topic} item={item} index={i} />
-          ))}
+  return (
+    <section className="relative border-t border-black/[0.06] bg-[#fafafa]">
+      {/* Desktop: panggung sticky */}
+      <div ref={trackRef} className="relative hidden lg:block" style={{ height: `${n * 100 + 40}vh` }}>
+        <div className="sticky top-[64px] flex h-[calc(100vh-64px)] items-center">
+          <div className="mx-auto grid w-full max-w-[1280px] grid-cols-12 items-center gap-12 px-6">
+            {/* Kiri */}
+            <div className="col-span-5">
+              <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#71717a]">
+                Sebelum dan sesudah
+              </p>
+              <h2 className="mt-4 max-w-[16ch] text-[clamp(28px,3.4vw,42px)] font-semibold leading-[1.06] tracking-[-0.04em] text-[#0a0a0a] text-balance">
+                Satu hari di outlet, dua cara menjalaninya.
+              </h2>
+
+              {/* Jam */}
+              <div className="mt-10 flex items-end gap-4">
+                <span
+                  key={item.time}
+                  className="animate-in fade-in slide-in-from-bottom-2 text-[clamp(56px,6vw,84px)] font-semibold leading-none tracking-[-0.05em] tabular-nums text-[#0a0a0a] duration-500"
+                >
+                  {item.time}
+                </span>
+                <span className="pb-2 text-[14px] text-[#71717a]">{item.moment}</span>
+              </div>
+
+              {/* Masalah aktif */}
+              <div key={item.topic} className="mt-6 min-h-[132px] animate-in fade-in duration-500">
+                <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#0E59F9]">
+                  {String(active + 1).padStart(2, "0")} · {item.topic}
+                </p>
+                <p
+                  className="mt-3 max-w-[40ch] text-[16px] leading-relaxed text-[#71717a] decoration-[#a1a1aa]"
+                  style={{ textDecorationLine: reveal > 0.2 ? "line-through" : "none", opacity: 1 - reveal * 0.45 }}
+                >
+                  {item.before}
+                </p>
+                <p
+                  className="mt-2 max-w-[40ch] text-[19px] font-medium leading-snug tracking-[-0.015em] text-[#0a0a0a] transition-none"
+                  style={{ opacity: reveal, transform: `translateY(${(1 - reveal) * 10}px)` }}
+                >
+                  {item.after}
+                </p>
+              </div>
+
+              {/* Linimasa */}
+              <ol className="mt-8 grid grid-cols-4 gap-2">
+                {items.map((it, i) => {
+                  const fill = i < active ? 1 : i === active ? local : 0;
+                  return (
+                    <li key={it.time}>
+                      <span className="block h-1 overflow-hidden rounded-full bg-black/[0.08]">
+                        <span className="block h-full bg-[#0E59F9]" style={{ width: `${fill * 100}%` }} />
+                      </span>
+                      <span
+                        className={`mt-2 block text-[12px] tabular-nums ${
+                          i === active ? "font-medium text-[#0a0a0a]" : "text-[#a1a1aa]"
+                        }`}
+                      >
+                        {it.time}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
+
+            {/* Kanan: tumpukan kartu */}
+            <div className="col-span-7">
+              <div className="relative mx-auto h-[min(64vh,520px)] w-full max-w-[560px]">
+                {items.map((it, i) => {
+                  if (i !== active) return null;
+                  return (
+                    <React.Fragment key={it.time}>
+                      <div
+                        className="absolute inset-0 origin-bottom"
+                        style={{
+                          transform: `translateY(${-reveal * 28}px) scale(${1 - reveal * 0.08}) rotate(${-3 + reveal * 1}deg)`,
+                          opacity: 1 - reveal * 0.45,
+                          filter: `blur(${reveal * 1.5}px)`,
+                        }}
+                      >
+                        <StoryCard tone="old" visual={it.oldVisual} large />
+                      </div>
+                      <div
+                        className="absolute inset-0"
+                        style={{
+                          transform: `translateY(${(1 - reveal) * 110}%) rotate(${(1 - reveal) * 4}deg)`,
+                          opacity: reveal > 0 ? 1 : 0,
+                        }}
+                      >
+                        <StoryCard tone="new" visual={it.newVisual} large />
+                      </div>
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
+
+      {/* Layar sempit: pasangan kartu bertumpuk */}
+      <div className="px-6 py-24 lg:hidden">
+        <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#71717a]">
+          Sebelum dan sesudah
+        </p>
+        <h2 className="mt-4 max-w-[18ch] text-[clamp(28px,7vw,36px)] font-semibold leading-[1.08] tracking-[-0.04em] text-[#0a0a0a] text-balance">
+          Satu hari di outlet, dua cara menjalaninya.
+        </h2>
+        <ol className="mt-10 space-y-12">
+          {items.map((it, i) => (
+            <li key={it.time}>
+              <div className="flex items-baseline gap-3">
+                <span className="text-[28px] font-semibold tabular-nums tracking-[-0.04em] text-[#0a0a0a]">{it.time}</span>
+                <span className="text-[13px] text-[#71717a]">
+                  {String(i + 1).padStart(2, "0")} · {it.topic}
+                </span>
+              </div>
+              <div className="mt-4 space-y-3">
+                <div className="h-[340px]">
+                  <StoryCard tone="old" text={it.before} visual={it.oldVisual} />
+                </div>
+                <div className="relative z-10 -mt-10 ml-4 h-[340px]">
+                  <StoryCard tone="new" text={it.after} visual={it.newVisual} />
+                </div>
+              </div>
+            </li>
+          ))}
+        </ol>
       </div>
     </section>
   );
