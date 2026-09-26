@@ -28,6 +28,9 @@ export function CatalogSettingsForm({ settings, domain, catalogUrl }: { settings
     try {
       await updateCatalogStatus(formData);
       toast.success("Pengaturan katalog berhasil disimpan");
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("catalog-updated"));
+      }
     } catch (error) {
       toast.error("Gagal menyimpan pengaturan katalog");
     } finally {

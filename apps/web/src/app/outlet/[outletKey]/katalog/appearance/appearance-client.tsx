@@ -42,6 +42,9 @@ export function AppearanceClient({ initialSettings }: AppearanceClientProps) {
         toast.error(res.error);
       } else {
         toast.success('Tampilan storefront berhasil disimpan');
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('catalog-updated'));
+        }
       }
     });
   };
