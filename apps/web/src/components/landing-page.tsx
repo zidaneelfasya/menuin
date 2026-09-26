@@ -482,9 +482,16 @@ export default function LandingPage({
         heading={
           <HeroIntro>
             <div data-hero-item>
-              <p className="mx-auto flex w-fit items-center gap-2 rounded-full bg-[#0E59F9]/[0.07] px-3.5 py-1.5 text-[12.5px] font-semibold tracking-[-0.005em] text-[#0E59F9]">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#0E59F9]" />
-                Simple Ways to Run F&amp;B
+              <p className="mx-auto flex w-fit items-center gap-3 text-[13.5px] font-medium tracking-[-0.01em] text-[#52525b]">
+                <Image
+                  src="/img/landing/hero/menuin-wordmark.png"
+                  alt="Menuin"
+                  width={1271}
+                  height={258}
+                  className="h-[14px] w-auto"
+                />
+                <span aria-hidden="true" className="h-3.5 w-px bg-black/15" />
+                <span>Simple Ways to Run F&amp;B</span>
               </p>
             </div>
             <div data-hero-item>
