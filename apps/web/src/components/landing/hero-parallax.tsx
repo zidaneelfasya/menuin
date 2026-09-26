@@ -71,14 +71,14 @@ type Layer = {
 const layers: Layer[] = [
   {
     id: "hp-kiri",
-    className: "left-[11%] top-[16%] 2xl:left-[15%] w-[clamp(108px,8.4vw,140px)]",
+    className: "right-[calc(50%+min(25vw,400px))] top-[15%] w-[clamp(96px,7.6vw,132px)]",
     depth: 1.3,
     rotate: -8,
     node: <Phone src="/img/landing/journey/tamu-keranjang.webp" alt="Keranjang pesanan tamu di ponsel" />,
   },
   {
     id: "tablet-kiri",
-    className: "left-[4%] top-[54%] 2xl:left-[6%] w-[clamp(230px,19vw,310px)]",
+    className: "right-[calc(50%+min(16vw,250px))] top-[55%] w-[clamp(200px,17vw,290px)]",
     depth: 0.9,
     rotate: 5,
     node: (
@@ -94,7 +94,7 @@ const layers: Layer[] = [
   },
   {
     id: "hp-kanan",
-    className: "right-[11%] top-[16%] 2xl:right-[15%] w-[clamp(108px,8.4vw,140px)]",
+    className: "left-[calc(50%+min(25vw,400px))] top-[15%] w-[clamp(96px,7.6vw,132px)]",
     depth: 1.2,
     rotate: 8,
     node: (
@@ -110,7 +110,7 @@ const layers: Layer[] = [
   },
   {
     id: "tablet-kanan",
-    className: "right-[4%] top-[54%] 2xl:right-[6%] w-[clamp(220px,18vw,295px)]",
+    className: "left-[calc(50%+min(16vw,250px))] top-[55%] w-[clamp(190px,16vw,275px)]",
     depth: 1,
     rotate: -5,
     node: (
@@ -205,7 +205,7 @@ export default function HeroParallax({
       />
 
       {/* Kartu melayang — hanya desktop */}
-      <div className="pointer-events-none absolute inset-y-0 left-1/2 hidden w-full max-w-[1360px] -translate-x-1/2 lg:block">
+      <div className="pointer-events-none absolute inset-0 hidden lg:block">
         {layers.map((l, i) => (
           <FloatingLayer key={l.id} layer={l} index={i} mx={mx} my={my} scroll={scrollYProgress} reduce={reduce} />
         ))}
