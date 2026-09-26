@@ -256,7 +256,7 @@ function StoryCard({
     <div
       className={`flex h-full flex-col rounded-[28px] p-6 sm:p-8 ${
         isNew
-          ? "bg-white shadow-[0_40px_80px_-40px_rgba(14,89,249,0.45)] ring-1 ring-[#0E59F9]/15"
+          ? "bg-white shadow-[0_30px_60px_-30px_rgba(15,23,42,0.35)] ring-1 ring-black/[0.06]"
           : "bg-[#f6f3ec] shadow-[0_24px_50px_-30px_rgba(15,23,42,0.35)] ring-1 ring-black/[0.06]"
       }`}
     >
