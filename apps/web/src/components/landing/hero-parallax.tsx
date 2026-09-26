@@ -17,8 +17,8 @@ import {
  *
  * Teks ringkas di atas, lalu foto presenter besar di tengah yang mengisi
  * sisa tinggi layar (terpotong di pinggang), dengan tombol CTA melayang di
- * atas badannya. Di sekeliling, tangkapan layar Menuin melayang di
- * kedalaman berbeda (terinspirasi "parallax hero images" Aceternity).
+ * atas badannya. Di sekeliling, mockup perangkat (ponsel, laptop) melayang
+ * di kedalaman berbeda (terinspirasi "parallax hero images" Aceternity).
  *
  * Gerak mengikuti mouse tetap aktif walau reduced-motion menyala, karena
  * geraknya kecil dan dipicu pengguna sendiri; animasi masuk dan parallax
@@ -28,24 +28,6 @@ import {
 /* ------------------------------------------------------------------ */
 /* Bingkai                                                             */
 /* ------------------------------------------------------------------ */
-
-function Browser({ src, alt, w, h, url }: { src: string; alt: string; w: number; h: number; url: string }) {
-  return (
-    <div className="overflow-hidden rounded-lg border border-black/[0.08] bg-white shadow-[0_24px_48px_-24px_rgba(15,23,42,0.35)]">
-      <div className="flex items-center gap-1.5 border-b border-black/[0.06] bg-[#fafafa] px-2 py-1">
-        <span className="flex gap-[3px]" aria-hidden="true">
-          <span className="h-[5px] w-[5px] rounded-full bg-[#ff5f57]" />
-          <span className="h-[5px] w-[5px] rounded-full bg-[#febc2e]" />
-          <span className="h-[5px] w-[5px] rounded-full bg-[#28c840]" />
-        </span>
-        <span className="min-w-0 flex-1 truncate rounded bg-white px-1.5 text-center text-[7px] leading-[12px] text-[#a1a1aa] ring-1 ring-black/[0.05]">
-          {url}
-        </span>
-      </div>
-      <Image src={src} alt={alt} width={w} height={h} sizes="280px" className="block h-auto w-full" />
-    </div>
-  );
-}
 
 function Phone({ src, alt }: { src: string; alt: string }) {
   return (
@@ -74,50 +56,39 @@ type Layer = {
 
 const layers: Layer[] = [
   {
-    id: "laporan",
-    className: "left-[3%] top-[15%] w-[clamp(200px,17vw,270px)]",
-    depth: 0.7,
-    rotate: -4,
-    node: (
-      <Browser src="/img/landing/journey/outlet-laporan.webp" alt="Laporan penjualan Menuin" w={1270} h={600} url="Laporan Penjualan" />
-    ),
-  },
-  {
     id: "keranjang",
-    className: "left-[17%] top-[40%] w-[clamp(96px,8vw,124px)]",
-    depth: 1.4,
-    rotate: 7,
+    className: "left-[9%] top-[17%] w-[clamp(104px,8.6vw,134px)]",
+    depth: 1.3,
+    rotate: -7,
     node: <Phone src="/img/landing/journey/tamu-keranjang.webp" alt="Keranjang pesanan tamu" />,
   },
   {
-    id: "pesanan",
-    className: "left-[4%] top-[70%] w-[clamp(210px,18vw,280px)]",
-    depth: 1,
-    rotate: 3,
+    id: "katalog",
+    className: "left-[2%] top-[50%] w-[clamp(200px,17vw,270px)]",
+    depth: 0.9,
+    rotate: 5,
     node: (
-      <Browser src="/img/landing/journey/outlet-kolom-pesanan-baru.webp" alt="Papan Pesanan Masuk" w={1180} h={280} url="Pesanan Masuk" />
+      <Image
+        src="/img/landing/katalog-iphone.webp"
+        alt="Katalog menu Menuin di ponsel"
+        width={900}
+        height={1019}
+        sizes="270px"
+        className="h-auto w-full drop-shadow-[0_24px_32px_rgba(15,23,42,0.22)]"
+      />
     ),
   },
   {
     id: "bayar",
-    className: "right-[16%] top-[13%] w-[clamp(92px,7.5vw,118px)]",
-    depth: 1.25,
-    rotate: -7,
+    className: "right-[10%] top-[15%] w-[clamp(100px,8.2vw,128px)]",
+    depth: 1.2,
+    rotate: 7,
     node: <Phone src="/img/landing/journey/tamu-bayar.webp" alt="Pilihan pembayaran tamu" />,
   },
   {
-    id: "meja",
-    className: "right-[3%] top-[36%] w-[clamp(200px,17vw,260px)]",
-    depth: 0.8,
-    rotate: 4,
-    node: (
-      <Browser src="/img/landing/journey/outlet-meja-qr.webp" alt="Pengaturan Meja & QR Code" w={1140} h={620} url="Meja & QR Code" />
-    ),
-  },
-  {
     id: "laptop",
-    className: "right-[5%] top-[68%] w-[clamp(220px,19vw,300px)]",
-    depth: 1.1,
+    className: "right-[2%] top-[58%] w-[clamp(240px,21vw,330px)]",
+    depth: 1,
     rotate: -3,
     node: (
       <Image
@@ -125,7 +96,7 @@ const layers: Layer[] = [
         alt="Dashboard Menuin di laptop"
         width={1800}
         height={1145}
-        sizes="300px"
+        sizes="330px"
         className="h-auto w-full drop-shadow-[0_24px_32px_rgba(15,23,42,0.22)]"
       />
     ),

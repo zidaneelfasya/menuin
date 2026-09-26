@@ -121,6 +121,12 @@ export default function FooterSuperfluidStyle() {
           />
         </div>
 
+        {/* Tagline & misi */}
+        <div className="pb-8 text-center">
+          <p className="text-[15px] font-semibold tracking-[-0.01em] text-white">Simple Ways to Run F&amp;B</p>
+          <p className="mt-1 text-[13px] text-white/75">To make running and growing an F&amp;B business simpler.</p>
+        </div>
+
         {/* Bottom Bar: Copyright Only */}
         <div className="pt-8 border-t border-white/20 flex items-center justify-center text-center text-xs text-white/80">
           <p>&copy; 2026 Menuin. Hak cipta dilindungi.</p>

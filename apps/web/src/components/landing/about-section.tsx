@@ -82,6 +82,17 @@ export default function AboutSection() {
             </p>
           </ScrollReveal>
 
+          <ScrollReveal>
+            <figure className="mt-8 border-l-2 border-[#0E59F9] pl-5">
+              <figcaption className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#0E59F9]">
+                Misi kami
+              </figcaption>
+              <blockquote className="mt-2 text-[clamp(19px,1.8vw,23px)] font-medium leading-snug tracking-[-0.02em] text-[#0a0a0a]">
+                To make running and growing an F&amp;B business simpler.
+              </blockquote>
+            </figure>
+          </ScrollReveal>
+
           <ScrollReveal className="mt-10 space-y-3" stagger={0.1}>
             {pillars.map((p) => (
               <div
