@@ -57,7 +57,7 @@ export function TopSellingCard({ products }: TopSellingCardProps) {
                   )}
                 </div>
 
-                <div className="text-right shrink-0">
+                <div className="text-right shrink-0 font-financial tabular-nums">
                   <span className="font-semibold text-gray-900">
                     {formatCurrency(item.totalRevenue)}
                   </span>

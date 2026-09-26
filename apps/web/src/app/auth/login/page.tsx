@@ -11,12 +11,15 @@ import { useState } from "react";
 import Image from "next/image";
 import { getCurrentUser } from "@/lib/actions/auth";
 
+import { usePageTransition } from "@/components/providers/page-transition-provider";
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { navigateWithTransition } = usePageTransition();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +35,7 @@ export default function LoginPage() {
       if (error) throw error;
       
       if (session?.user) {
-        router.push("/select-tenant");
+        navigateWithTransition("/select-tenant");
       }
     } catch (error: any) {
       let errorMessage = error?.message || error?.error_description || "Terjadi kesalahan saat masuk";

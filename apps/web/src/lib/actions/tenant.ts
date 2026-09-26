@@ -4,8 +4,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getAvailableTenants } from './auth';
 
-export async function setTenantContextAction(outletKey: string) {
-  // Ensure the user actually has access to this tenant
+export async function selectTenantAction(outletKey: string) {
   const tenants = await getAvailableTenants();
   const hasAccess = tenants.some(t => t.outletKey === outletKey);
 
@@ -22,8 +21,14 @@ export async function setTenantContextAction(outletKey: string) {
     maxAge: 30 * 24 * 60 * 60, // 30 days
   });
 
+  return { success: true };
+}
+
+export async function setTenantContextAction(outletKey: string) {
+  await selectTenantAction(outletKey);
   redirect(`/outlet/${outletKey}/dashboard`);
 }
+
 
 export async function createTenantAction(formData: FormData) {
   const restaurantName = formData.get('restaurantName') as string;

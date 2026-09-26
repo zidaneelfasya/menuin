@@ -18,7 +18,7 @@ import {
   Sparkles,
   Barcode as BarcodeIcon,
   Tag,
-  DollarSign,
+  Banknote,
   TrendingUp,
   AlertCircle,
   Info,
@@ -92,6 +92,7 @@ import {
   toggleProductActiveStatus,
   bulkToggleProductActiveStatus
 } from '@/lib/actions/products';
+import { uploadImageToSupabase } from '@/lib/actions/storage';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -354,23 +355,15 @@ export function ProductList({
   });
 
   const uploadImage = async (file: File) => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
-    
-    const { data, error } = await supabase.storage
-      .from('product_image')
-      .upload(fileName, file);
+    const formData = new FormData();
+    formData.append('file', file);
 
-    if (error) {
-      console.error('Upload error:', error);
-      throw new Error('Gagal mengunggah gambar');
+    const res = await uploadImageToSupabase(formData, 'product_image');
+    if (!res.success || !res.url) {
+      throw new Error(res.error || 'Gagal mengunggah gambar ke Supabase Storage');
     }
 
-    const { data: publicUrlData } = supabase.storage
-      .from('product_image')
-      .getPublicUrl(fileName);
-
-    return publicUrlData.publicUrl;
+    return res.url;
   };
 
   const onSubmitAdd = async (values: z.infer<typeof productSchema>) => {
@@ -1046,7 +1039,7 @@ export function ProductList({
           {/* Card 3: Harga & Keuntungan */}
           <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-5 shadow-xs space-y-4">
             <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800/80">
-              <DollarSign className="w-4 h-4 text-emerald-600" />
+              <Banknote className="w-4 h-4 text-emerald-600" />
               <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Harga & Profitabilitas</h3>
             </div>
 
@@ -1441,6 +1434,17 @@ export function ProductList({
         <span>Hapus {selectedCount > 0 ? `(${selectedCount})` : ''}</span>
       </Button>
 
+      {/* Export Terpilih */}
+      {selectedCount > 0 && (
+        <ExportMenuDropdown
+          products={productsList}
+          selectedProducts={selectedProducts}
+          variant="outline"
+          size="sm"
+          className="h-9 px-3 rounded-xl text-xs font-medium border-slate-200 dark:border-slate-800"
+        />
+      )}
+
       {/* Selection counter & Batal */}
       {selectedCount > 0 && (
         <div className="flex items-center gap-1.5 pl-1">
@@ -1500,7 +1504,8 @@ export function ProductList({
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">Daftar Menu</h1>
           <p className="text-sm text-muted-foreground">Kelola katalog menu, harga jual, ketersediaan, dan sisa stok produk outlet.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          <ExportMenuDropdown products={productsList} selectedProducts={selectedProducts} />
           <ImportProductDialog />
           <Button 
             onClick={() => { 

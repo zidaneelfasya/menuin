@@ -21,17 +21,31 @@ export function PageTransitionProvider({ children }: { children: ReactNode }) {
   // Handle route change completion
   useEffect(() => {
     if (isTransitioning && targetHref) {
+      const normalizedTarget = targetHref.split('?')[0].split('#')[0];
+      const normalizedPath = pathname.split('?')[0].split('#')[0];
+
       // If we've reached the target pathname, end the transition
-      if (pathname === targetHref || pathname.startsWith(targetHref)) {
+      if (normalizedPath === normalizedTarget || (normalizedTarget !== '/' && normalizedPath.startsWith(normalizedTarget))) {
         // Small delay to ensure render is complete
         const timer = setTimeout(() => {
           setIsTransitioning(false);
           setTargetHref(null);
-        }, 100);
+        }, 150);
         return () => clearTimeout(timer);
       }
     }
   }, [pathname, isTransitioning, targetHref]);
+
+  // Safety fallback so transition never freezes permanently
+  useEffect(() => {
+    if (isTransitioning) {
+      const safetyTimer = setTimeout(() => {
+        setIsTransitioning(false);
+        setTargetHref(null);
+      }, 6000);
+      return () => clearTimeout(safetyTimer);
+    }
+  }, [isTransitioning]);
 
   const navigateWithTransition = (href: string) => {
     if (pathname === href) {

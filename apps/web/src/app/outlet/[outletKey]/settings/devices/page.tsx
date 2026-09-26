@@ -7,7 +7,8 @@ export const metadata: Metadata = {
   title: 'Perangkat Kasir - Menuin',
 };
 
-export default async function DevicesPage() {
+export default async function DevicesPage({ params }: { params: Promise<{ outletKey: string }> }) {
+  const { outletKey } = await params;
   const context = await requireTenantAccess();
   const res = await getDevicesAction();
   
@@ -17,17 +18,19 @@ export default async function DevicesPage() {
   
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Tautkan Perangkat Kasir</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Tautkan smartphone, tablet, atau mesin POS kasir yang terhubung ke outlet ini.
-        </p>
-      </div>
+      <div className="bg-card border border-border/70 rounded-2xl p-6 sm:p-8 shadow-xs">
+        <div className="pb-5 border-b border-border/60 mb-6">
+          <h2 className="text-lg font-bold tracking-tight text-foreground">Tautkan Perangkat Kasir</h2>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Tautkan smartphone, tablet, atau mesin POS kasir yang terhubung ke outlet ini.
+          </p>
+        </div>
 
-      <DevicesClient 
-        initialDevices={res.devices || []} 
-        canManage={context.membership.role === 'OWNER' || context.membership.role === 'MANAGER'} 
-      />
+        <DevicesClient 
+          initialDevices={res.devices || []} 
+          canManage={context.membership.role === 'OWNER' || context.membership.role === 'MANAGER'} 
+        />
+      </div>
     </div>
   );
 }

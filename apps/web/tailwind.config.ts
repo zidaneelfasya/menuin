@@ -60,8 +60,11 @@ export default {
       fontFamily: {
         sans: ["var(--font-poppins)", "sans-serif"],
         heading: ["var(--font-poppins)", "sans-serif"],
-        display: ["var(--font-display)", "-apple-system", "Segoe UI", "sans-serif"],
+        display: ["var(--font-inter)", "-apple-system", "Segoe UI", "sans-serif"],
         rounded: ["var(--font-poppins)", "sans-serif"],
+        financial: ["var(--font-inter)", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
+        numeric: ["var(--font-inter)", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
+        inter: ["var(--font-inter)", "sans-serif"],
       },
       keyframes: {
         marquee: {

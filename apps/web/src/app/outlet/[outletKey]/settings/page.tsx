@@ -4,11 +4,10 @@ import { getTenantSettings } from '@/lib/actions/settings';
 import { SettingsClient } from './settings-client';
 import { SettingsSkeleton } from '@/components/ui/settings-skeleton';
 import { getTenantCatalogSettings } from '@/lib/actions/catalog';
-
 import { getCurrentUser } from '@/lib/actions/auth';
 
 export const metadata: Metadata = {
-  title: 'Pengaturan Toko & Pajak - Menuin',
+  title: 'Pengaturan Toko - Menuin',
 };
 
 async function SettingsDataWrapper() {
@@ -23,10 +22,8 @@ async function SettingsDataWrapper() {
 
 export default function Page() {
   return (
-    <div className="p-6">
-      <Suspense fallback={<SettingsSkeleton />}>
-        <SettingsDataWrapper />
-      </Suspense>
-    </div>
+    <Suspense fallback={<SettingsSkeleton />}>
+      <SettingsDataWrapper />
+    </Suspense>
   );
 }
