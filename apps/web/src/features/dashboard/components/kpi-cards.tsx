@@ -7,10 +7,12 @@ import {
   TrendingUp, 
   TrendingDown, 
   Minus,
-  DollarSign, 
   ShoppingBag, 
   Receipt, 
   Percent,
+  Banknote, 
+  Wallet,
+  RotateCcw
   Package,
   CreditCard,
   Info
@@ -191,7 +193,7 @@ export function KpiCards({ metrics, periodType }: KpiCardsProps) {
             <div className="text-2xl font-semibold tracking-tight text-gray-900">
               {formatCurrency(metrics.averageOrderValue)}
             </div>
-            <div className="flex items-center gap-2 pt-1">
+            <div className="flex items-center gap-2 pt-1 font-financial">
               {renderGrowthBadge(metrics.aovGrowth)}
               <span className="text-xs text-gray-500">{comparisonText}</span>
             </div>

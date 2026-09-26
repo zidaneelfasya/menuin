@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { 
-  DollarSign, 
+  Banknote, 
   Receipt, 
   CreditCard, 
   Calendar, 
@@ -301,7 +301,7 @@ export function FinanceClient({ initialData }: { initialData: FinancialData }) {
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Total Omset</span>
               <div className="h-8 w-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
-                <DollarSign className="h-4 w-4" />
+                <Banknote className="h-4 w-4" />
               </div>
             </div>
             <div className="mt-3">

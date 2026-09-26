@@ -32,7 +32,7 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-sm font-bold text-foreground">
+                <p className="text-sm font-bold text-foreground font-financial tabular-nums">
                   {formatCurrency(Number(tx.totalAmount))}
                 </p>
                 <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${

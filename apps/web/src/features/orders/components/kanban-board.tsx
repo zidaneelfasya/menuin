@@ -440,6 +440,8 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
     setTimeout(() => {
       window.print();
       setIsPrinting(false);
+      const label = mode === 'kitchen' ? 'Tiket dapur' : mode === 'customer' ? 'Struk pelanggan' : 'Struk & tiket dapur';
+      toast.success(`${label} dicetak.`);
     }, 250);
   };
 

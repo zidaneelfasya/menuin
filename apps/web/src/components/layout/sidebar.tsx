@@ -3,11 +3,31 @@
 import * as React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 import { 
-  LayoutDashboard, 
+  IconLayoutDashboard, 
+  IconShoppingCart, 
+  IconPackage, 
+  IconTags, 
+  IconArchive, 
+  IconHistory, 
+  IconChartBar, 
+  IconWallet, 
+  IconPercentage, 
+  IconUserCircle, 
+  IconSettings, 
+  IconShoppingBag, 
+  IconLogout, 
+  IconChevronLeft, 
+  IconChevronRight, 
+  IconBuildingStore, 
+  IconChefHat, 
+  IconAdjustmentsHorizontal, 
+  IconArrowsExchange
+} from '@tabler/icons-react';
+  LayoutDashboard, https://github.com/zidaneelfasya/menuin/pull/39/conflict?name=apps%252Fweb%252Fsrc%252Fapp%252Foutlet%252F%255BoutletKey%255D%252Fsettings%252Fsettings-client.tsx&ancestor_oid=0a346f22ba3975afd8ab635190e8eedf2d1c5f59&base_oid=052456e8e6e646fd1f98e6c8e0628cda0c823ad3&head_oid=09044a176caf9bfae5a49823824a499fe586c1d0
   ShoppingCart, 
   Package, 
   Tags, 
@@ -29,9 +49,11 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
-import { UserProfile, signOutAction } from '@/lib/actions/auth';
+import { motion } from 'framer-motion';
+import { UserProfile } from '@/lib/actions/auth';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { useRealtimeOrder } from '@/components/providers/realtime-order-provider';
+import { usePageTransition } from '../providers/page-transition-provider';
 
 const getNavItems = (outletKey: string) => [
   { name: 'Dashboard', href: `/outlet/${outletKey}/dashboard`, icon: LayoutDashboard, roles: ['OWNER', 'MANAGER'] },
@@ -50,8 +72,6 @@ const getNavItems = (outletKey: string) => [
   { name: 'Pengaturan Toko', href: `/outlet/${outletKey}/settings`, icon: Settings, roles: ['OWNER', 'MANAGER'] },
 ];
 
-import { usePageTransition } from '../providers/page-transition-provider';
-
 function SidebarContent({ collapsed, setCollapsed, user }: { collapsed: boolean; setCollapsed?: (val: boolean) => void; user: UserProfile }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -63,6 +83,9 @@ function SidebarContent({ collapsed, setCollapsed, user }: { collapsed: boolean;
     await supabase.auth.signOut();
     router.push("/");
   };
+
+  const outletKey = user.outletKey || 'unknown';
+  const navItems = getNavItems(outletKey).filter(item => !item.roles || item.roles.includes(user.role as any));
 
   return (
     <>
@@ -81,18 +104,19 @@ function SidebarContent({ collapsed, setCollapsed, user }: { collapsed: boolean;
         {setCollapsed && (
           <button 
             onClick={() => setCollapsed(!collapsed)}
-            className="absolute -right-3 top-5 bg-card border rounded-full p-1 text-muted-foreground hover:text-foreground shadow-sm hidden md:block"
+            className="absolute -right-3 top-5 bg-card border rounded-full p-1 text-muted-foreground hover:text-foreground shadow-sm hidden md:block cursor-pointer"
           >
-            {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+            {collapsed ? <IconChevronRight size={14} /> : <IconChevronLeft size={14} />}
           </button>
         )}
       </div>
 
       {/* Navigation */}
-      <div className="flex-1 overflow-y-auto py-6 px-3 scrollbar-hide">
-        <nav className="space-y-1.5">
-          {getNavItems(user.outletKey || 'unknown').filter(item => !item.roles || item.roles.includes(user.role as any)).map((item) => {
-            const isActive = pathname.startsWith(item.href);
+      <div className="flex-1 overflow-y-auto py-5 px-3 scrollbar-hide space-y-4">
+        {/* Main Nav Items */}
+        <nav className="space-y-1">
+          {navItems.map((item) => {
+            const isActive = pathname === item.href || (item.href !== `/outlet/${outletKey}/dashboard` && pathname.startsWith(item.href));
             return (
               <Link 
                 key={item.name} 
@@ -104,9 +128,9 @@ function SidebarContent({ collapsed, setCollapsed, user }: { collapsed: boolean;
               >
                 <div
                   className={cn(
-                    'flex items-center px-3 py-2.5 rounded-xl transition-all duration-200 group relative',
+                    'flex items-center px-3 py-2.5 rounded-xl transition-all duration-200 group relative cursor-pointer',
                     isActive 
-                      ? 'bg-primary/10 text-primary font-medium' 
+                      ? 'bg-primary/10 text-primary font-semibold' 
                       : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground font-medium'
                   )}
                   title={collapsed ? item.name : undefined}
@@ -145,21 +169,21 @@ function SidebarContent({ collapsed, setCollapsed, user }: { collapsed: boolean;
             </div>
           )}
           <div className={cn('flex items-center gap-1 mt-2', collapsed && 'flex-col')}>
-            <Link href="/select-tenant" passHref>
-              <button 
-                className={cn('text-muted-foreground hover:text-primary transition-colors h-9 w-9 flex items-center justify-center', collapsed && 'bg-muted rounded-full')}
-                title="Ganti Toko / Cabang"
-              >
-                <ArrowRightLeft size={collapsed ? 18 : 20} />
-              </button>
-            </Link>
+            <button 
+              type="button"
+              onClick={() => navigateWithTransition('/select-tenant')}
+              className={cn('text-muted-foreground hover:text-primary transition-colors h-9 w-9 flex items-center justify-center cursor-pointer', collapsed && 'bg-muted rounded-full')}
+              title="Ganti Toko / Cabang"
+            >
+              <IconArrowsExchange size={collapsed ? 18 : 20} />
+            </button>
             <ThemeSwitcher />
             <button 
               onClick={handleLogout}
-              className={cn('text-muted-foreground hover:text-destructive transition-colors h-9 w-9 flex items-center justify-center', collapsed && 'bg-muted rounded-full')}
+              className={cn('text-muted-foreground hover:text-destructive transition-colors h-9 w-9 flex items-center justify-center cursor-pointer', collapsed && 'bg-muted rounded-full')}
               title="Keluar"
             >
-              <LogOut size={collapsed ? 18 : 20} />
+              <IconLogout size={collapsed ? 18 : 20} />
             </button>
           </div>
         </div>
