@@ -51,7 +51,7 @@ export function Header({
   return (
     <header 
       className={cn(
-        "h-16 bg-card border-b flex items-center justify-between px-4 fixed top-0 right-0 z-30 transition-all duration-300 left-0",
+        "h-16 bg-white border-b border-[#F0F2F6] flex items-center justify-between px-4 fixed top-0 right-0 z-30 transition-all duration-300 left-0 shadow-[0_4px_20px_rgba(0,0,0,0.05),0_1px_3px_rgba(0,0,0,0.02)]",
         collapsed ? "md:left-[80px]" : "md:left-[260px]"
       )}
     >

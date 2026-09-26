@@ -3,23 +3,18 @@ import { CatalogNav } from "./catalog-nav";
 
 export default function CatalogLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex flex-col gap-6 max-w-6xl mx-auto h-full p-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Katalog Menuin</h1>
-        <p className="text-muted-foreground mt-2">
-          Atur tampilan, visibilitas produk, dan pengaturan pemesanan untuk website katalog publik Anda.
-        </p>
-      </div>
+    <div className="flex flex-col md:flex-row h-full w-full overflow-hidden bg-[#F9FBFF]">
+      {/* Sub-sidebar docked directly flush with primary rail */}
+      <aside className="w-full md:w-60 flex-shrink-0 bg-white border-r border-[#EAEFF8] flex flex-col h-auto md:h-full relative z-20 shadow-[4px_0_16px_rgba(0,0,0,0.04),1px_0_4px_rgba(0,0,0,0.02)]">
+        <CatalogNav />
+      </aside>
 
-      <div className="flex flex-col md:flex-row gap-8 flex-1">
-        <aside className="w-full md:w-56 flex-shrink-0">
-          <CatalogNav />
-        </aside>
-        
-        <main className="flex-1 min-w-0 bg-card border rounded-xl shadow-sm overflow-hidden">
+      {/* Main Content Area on #F9FBFF Canvas */}
+      <main className="flex-1 min-w-0 h-full overflow-y-auto p-4 md:p-8 bg-[#F9FBFF]">
+        <div className="max-w-5xl mx-auto">
           {children}
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }
