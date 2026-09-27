@@ -6,7 +6,7 @@ import { Dialog, DialogOverlay, DialogPortal, DialogTitle } from '@/components/u
 import { Dialog as DialogPrimitive } from 'radix-ui';
 import { Textarea } from '@/components/ui/textarea';
 import { formatCurrency } from '@/lib/utils/format';
-import { X, Plus, Minus, Check, Maximize2 } from 'lucide-react';
+import { X, Plus, Minus, Check, Maximize2, Tag } from 'lucide-react';
 import { toast } from 'sonner';
 
 export type Modifier = {
@@ -30,6 +30,7 @@ export type Product = {
   id: string;
   name: string;
   price: string | number;
+  potongan?: string | number | null;
   imageUrl?: string | null;
   description?: string | null;
   categoryName?: string | null;
@@ -37,6 +38,14 @@ export type Product = {
   categoryId?: string | null;
   modifierGroupIds?: string[];
   totalSold?: number;
+  promo?: {
+    id: string;
+    code: string;
+    name: string;
+    discountedPrice: number;
+    discountAmount: number;
+    badgeText: string;
+  } | null;
 };
 
 export interface ProductDetailSheetProps {
@@ -153,7 +162,9 @@ export function ProductDetailSheet({
   }, [product, productGroups]);
 
   const isValid = !missingRequiredGroup && unavailableRequiredGroups.length === 0;
-  const basePrice = product ? Number(product.price) : 0;
+  const rawPrice = product ? Number(product.price) : 0;
+  const potongan = product?.potongan ? Number(product.potongan) : 0;
+  const basePrice = Math.max(0, rawPrice - potongan);
   const grandTotal = (basePrice + extraPrice) * quantity;
 
   const showMaxLimitWarning = React.useCallback((group: ModifierGroup) => {
@@ -308,8 +319,24 @@ export function ProductDetailSheet({
                 <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 tracking-tight leading-tight uppercase">
                   {product.name}
                 </h2>
-                <div className="text-lg sm:text-xl font-semibold text-gray-900 mt-1">
-                  {formatCurrency(basePrice)}
+                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                  {potongan > 0 ? (
+                    <>
+                      <span className="text-xl sm:text-2xl font-semibold text-rose-600">
+                        {formatCurrency(basePrice)}
+                      </span>
+                      <span className="text-sm sm:text-base text-gray-400 line-through">
+                        {formatCurrency(rawPrice)}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-600 border border-rose-200 uppercase tracking-wide">
+                        Hemat {formatCurrency(potongan)}
+                      </span>
+                    </>
+                  ) : (
+                    <div className="text-lg sm:text-xl font-semibold text-gray-900">
+                      {formatCurrency(basePrice)}
+                    </div>
+                  )}
                 </div>
                 {product.description && product.description.trim() !== '' && (
                   <p className="text-sm sm:text-[15px] text-gray-500 mt-2 leading-relaxed whitespace-pre-line">

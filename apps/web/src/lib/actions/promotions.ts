@@ -30,11 +30,9 @@ const promotionSchema = z.object({
 
 export type PromotionInput = z.infer<typeof promotionSchema>;
 
-export type CartItemForPromo = {
-  productId: string;
-  price: number;
-  quantity: number;
-};
+import { calculatePromoDiscount, type CartItemForPromo } from '@/lib/utils/promotions';
+
+export type { CartItemForPromo };
 
 export async function getPromotions() {
   try {
@@ -296,84 +294,6 @@ export async function deletePromotion(id: string) {
   }
 }
 
-function calculatePromoDiscount(promo: any, subtotal: number, items?: CartItemForPromo[]) {
-  const minOrder = parseFloat(promo.minOrder || '0');
-  if (subtotal < minOrder) {
-    return {
-      isValid: false,
-      error: `Minimal belanja Rp ${minOrder.toLocaleString('id-ID')} untuk menggunakan promo ini.`,
-      discountAmount: 0,
-    };
-  }
-
-  let eligibleSubtotal = subtotal;
-
-  if (promo.targetType === 'SPECIFIC_PRODUCTS') {
-    let applicableIds: string[] = [];
-    if (Array.isArray(promo.applicableProductIds)) {
-      applicableIds = promo.applicableProductIds;
-    } else if (typeof promo.applicableProductIds === 'string') {
-      try {
-        applicableIds = JSON.parse(promo.applicableProductIds);
-      } catch (e) {
-        applicableIds = [];
-      }
-    }
-
-    if (applicableIds.length > 0) {
-      if (items && items.length > 0) {
-        const matchingItems = items.filter((it) => applicableIds.includes(it.productId));
-        const totalQty = matchingItems.reduce((sum, it) => sum + (it.quantity || 1), 0);
-        const minQty = promo.minProductQty || 1;
-
-        if (totalQty < minQty) {
-          return {
-            isValid: false,
-            error: `Promo ini memerlukan minimal ${minQty} pcs produk promo dalam keranjang.`,
-            discountAmount: 0,
-          };
-        }
-
-        eligibleSubtotal = matchingItems.reduce((sum, it) => sum + (it.price * (it.quantity || 1)), 0);
-      }
-    }
-  }
-
-  if (eligibleSubtotal <= 0) {
-    return {
-      isValid: false,
-      error: 'Keranjang tidak mengandung produk yang berlaku untuk promo ini.',
-      discountAmount: 0,
-    };
-  }
-
-  let discountAmount = 0;
-  const promoValue = parseFloat(promo.value);
-
-  if (promo.type === 'PERCENTAGE') {
-    discountAmount = (eligibleSubtotal * promoValue) / 100;
-    if (promo.maxDiscount) {
-      const maxDisc = parseFloat(promo.maxDiscount);
-      if (discountAmount > maxDisc) {
-        discountAmount = maxDisc;
-      }
-    }
-  } else {
-    discountAmount = promoValue;
-  }
-
-  if (discountAmount > eligibleSubtotal) {
-    discountAmount = eligibleSubtotal;
-  }
-  if (discountAmount > subtotal) {
-    discountAmount = subtotal;
-  }
-
-  return {
-    isValid: true,
-    discountAmount,
-  };
-}
 
 export async function validatePromotion(promoId: string, subtotal: number, items?: CartItemForPromo[]) {
   try {
@@ -412,6 +332,10 @@ export async function validatePromotion(promoId: string, subtotal: number, items
         discountAmount: calc.discountAmount,
         minOrder: parseFloat(promo.minOrder || '0'),
         maxDiscount: promo.maxDiscount ? parseFloat(promo.maxDiscount) : null,
+        targetType: promo.targetType,
+        applicableProductIds: calc.applicableProductIds,
+        itemDiscounts: calc.itemDiscounts,
+        eligibleSubtotal: calc.eligibleSubtotal,
       },
     };
   } catch (error) {
@@ -477,6 +401,10 @@ export async function validatePublicPromoCode(tenantSlug: string, code: string, 
         discountAmount: calc.discountAmount,
         minOrder: parseFloat(promo.minOrder || '0'),
         maxDiscount: promo.maxDiscount ? parseFloat(promo.maxDiscount) : null,
+        targetType: promo.targetType,
+        applicableProductIds: calc.applicableProductIds,
+        itemDiscounts: calc.itemDiscounts,
+        eligibleSubtotal: calc.eligibleSubtotal,
       },
     };
   } catch (error) {
@@ -536,6 +464,10 @@ export async function validatePosPromoCode(code: string, subtotal: number, items
         discountAmount: calc.discountAmount,
         minOrder: parseFloat(promo.minOrder || '0'),
         maxDiscount: promo.maxDiscount ? parseFloat(promo.maxDiscount) : null,
+        targetType: promo.targetType,
+        applicableProductIds: calc.applicableProductIds,
+        itemDiscounts: calc.itemDiscounts,
+        eligibleSubtotal: calc.eligibleSubtotal,
       },
     };
   } catch (error) {

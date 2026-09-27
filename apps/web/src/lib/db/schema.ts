@@ -260,6 +260,7 @@ export const products = pgTable('products', {
   barcode: text('barcode'),
   price: decimal('price', { precision: 12, scale: 2 }).notNull(),
   costPrice: decimal('cost_price', { precision: 12, scale: 2 }).notNull(),
+  potongan: decimal('potongan', { precision: 12, scale: 2 }).default('0'),
   stock: integer('stock').notNull().default(0),
   minStock: integer('min_stock').notNull().default(5),
   trackStock: boolean('track_stock').default(true).notNull(),

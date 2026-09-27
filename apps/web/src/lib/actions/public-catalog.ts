@@ -1,11 +1,12 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { tenants, transactions, transactionItems, products } from "@/lib/db/schema";
-import { eq, inArray, and, or } from "drizzle-orm";
+import { tenants, transactions, transactionItems, products, promotions } from "@/lib/db/schema";
+import { eq, inArray, and, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { generateOrderNumber } from "@/lib/utils/order-number";
+import { calculatePromoDiscount } from "@/lib/utils/promotions";
 
 const orderSchema = z.object({
   tenantSlug: z.string(),
@@ -76,7 +77,9 @@ export async function createOnlineOrder(formData: z.infer<typeof orderSchema>) {
         });
       }
 
-      const unitPrice = Number(dbProduct.price) + modifierExtraPrice;
+      const productPotongan = Number(dbProduct.potongan || 0);
+      const baseProductPrice = Math.max(0, Number(dbProduct.price) - productPotongan);
+      const unitPrice = baseProductPrice + modifierExtraPrice;
       const total = unitPrice * item.quantity;
       subTotal += total;
 
@@ -92,7 +95,44 @@ export async function createOnlineOrder(formData: z.infer<typeof orderSchema>) {
     }
 
     // Apply promo discount if any
-    const discount = Math.max(0, Math.min(data.discount || 0, subTotal));
+    let discount = 0;
+    let validatedPromoId = data.promoId || null;
+    let validatedPromoCode = data.promoCode || data.promoName || null;
+
+    if (data.promoId || data.promoCode) {
+      const codeOrName = (data.promoCode || data.promoName || '').trim().toUpperCase();
+      const promoRows = await db
+        .select()
+        .from(promotions)
+        .where(
+          and(
+            eq(promotions.tenantId, tenant.id),
+            data.promoId
+              ? eq(promotions.id, data.promoId)
+              : sql`UPPER(${promotions.code}) = ${codeOrName}`,
+            eq(promotions.isActive, true)
+          )
+        )
+        .limit(1);
+
+      if (promoRows.length > 0) {
+        const promo = promoRows[0];
+        const itemsForPromo = itemsToInsert.map((it) => ({
+          productId: it.productId,
+          price: Number(it.price),
+          quantity: it.quantity,
+        }));
+        const calc = calculatePromoDiscount(promo, subTotal, itemsForPromo);
+        if (calc.isValid) {
+          discount = calc.discountAmount;
+          validatedPromoId = promo.id;
+          validatedPromoCode = promo.code;
+        }
+      }
+    } else if (data.discount) {
+      discount = Math.max(0, Math.min(data.discount, subTotal));
+    }
+
     const taxableSubtotal = Math.max(0, subTotal - discount);
 
     // Calculate tax & service charge from tenant settings
@@ -117,8 +157,8 @@ export async function createOnlineOrder(formData: z.infer<typeof orderSchema>) {
       shiftId: shiftId,
       totalAmount: subTotal.toString(),
       discount: discount.toString(),
-      promoCode: data.promoCode || data.promoName || null,
-      promotionId: data.promoId || null,
+      promoCode: validatedPromoCode,
+      promotionId: validatedPromoId,
       tax: taxAmount.toString(),
       serviceCharge: serviceChargeAmount.toString(),
       grandTotal: grandTotal.toString(),

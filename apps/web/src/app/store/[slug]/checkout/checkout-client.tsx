@@ -1,7 +1,7 @@
 "use client";
 
 import { useCartStore, type CartItem } from "@/lib/store/cart";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -214,28 +214,175 @@ export function CheckoutClient({
 
   const subTotal = getTotalPrice();
 
-  // Recalculate promo discount whenever subtotal or applied promo changes
-  const promoDiscount = (() => {
-    if (!appliedPromo) return 0;
+  // Recalculate promo discount strictly per-item whenever cart items, quantities, or applied promo change
+  const promoCalculation = useMemo(() => {
+    if (!appliedPromo) {
+      return {
+        discount: 0,
+        itemDiscounts: {} as Record<string, number>,
+        applicableProductIds: [] as string[],
+        eligibleItemCount: 0,
+        eligibleSubtotal: 0,
+        isSpecific: false,
+        discountedItemNames: [] as string[],
+        isValid: false,
+        error: null as string | null,
+      };
+    }
+
     const promo = availablePromos.find((p) => p.id === appliedPromo.id) || appliedPromo;
-    if (!promo) return 0;
+    if (!promo) {
+      return {
+        discount: 0,
+        itemDiscounts: {},
+        applicableProductIds: [],
+        eligibleItemCount: 0,
+        eligibleSubtotal: 0,
+        isSpecific: false,
+        discountedItemNames: [],
+        isValid: false,
+        error: null,
+      };
+    }
 
     const minOrder = parseFloat(promo.minOrder ? String(promo.minOrder) : "0");
-    if (subTotal < minOrder) return 0;
+    if (subTotal < minOrder) {
+      return {
+        discount: 0,
+        itemDiscounts: {},
+        applicableProductIds: [],
+        eligibleItemCount: 0,
+        eligibleSubtotal: 0,
+        isSpecific: false,
+        discountedItemNames: [],
+        isValid: false,
+        error: `Minimal belanja ${formatCurrency(minOrder)} untuk menggunakan promo ini`,
+      };
+    }
 
-    const promoVal = typeof promo.value === "number" ? promo.value : parseFloat(promo.value);
-    let disc = 0;
+    let applicableIds: string[] = [];
+    if (Array.isArray(promo.applicableProductIds)) {
+      applicableIds = promo.applicableProductIds;
+    } else if (typeof promo.applicableProductIds === "string") {
+      try {
+        applicableIds = JSON.parse(promo.applicableProductIds);
+      } catch (e) {
+        applicableIds = [];
+      }
+    }
+
+    const isSpecific = promo.targetType === "SPECIFIC_PRODUCTS" && applicableIds.length > 0;
+    const eligibleItems = isSpecific
+      ? items.filter((it) => applicableIds.includes(it.productId))
+      : items;
+
+    if (isSpecific) {
+      if (eligibleItems.length === 0) {
+        return {
+          discount: 0,
+          itemDiscounts: {},
+          applicableProductIds: applicableIds,
+          eligibleItemCount: 0,
+          eligibleSubtotal: 0,
+          isSpecific: true,
+          discountedItemNames: [],
+          isValid: false,
+          error: "Menu promo tidak ada dalam keranjang",
+        };
+      }
+
+      const totalQty = eligibleItems.reduce((sum, it) => sum + (it.quantity || 1), 0);
+      const minQty = Number(promo.minProductQty) || 1;
+      if (totalQty < minQty) {
+        return {
+          discount: 0,
+          itemDiscounts: {},
+          applicableProductIds: applicableIds,
+          eligibleItemCount: eligibleItems.length,
+          eligibleSubtotal: 0,
+          isSpecific: true,
+          discountedItemNames: eligibleItems.map((i) => i.name),
+          isValid: false,
+          error: `Minimal ${minQty} porsi menu promo untuk menggunakan promo ini`,
+        };
+      }
+    }
+
+    const eligibleSubtotal = eligibleItems.reduce(
+      (sum, it) => sum + it.price * (it.quantity || 1),
+      0
+    );
+
+    if (eligibleSubtotal <= 0) {
+      return {
+        discount: 0,
+        itemDiscounts: {},
+        applicableProductIds: applicableIds,
+        eligibleItemCount: 0,
+        eligibleSubtotal: 0,
+        isSpecific,
+        discountedItemNames: [],
+        isValid: false,
+        error: "Menu promo tidak memenuhi syarat",
+      };
+    }
+
+    const promoVal = typeof promo.value === "number" ? promo.value : parseFloat(String(promo.value));
+    let rawDiscount = 0;
     if (promo.type === "PERCENTAGE") {
-      disc = (subTotal * promoVal) / 100;
+      rawDiscount = (eligibleSubtotal * promoVal) / 100;
       if (promo.maxDiscount) {
-        const maxDisc = parseFloat(String(promo.maxDiscount));
-        if (disc > maxDisc) disc = maxDisc;
+        const maxD = parseFloat(String(promo.maxDiscount));
+        if (rawDiscount > maxD) rawDiscount = maxD;
       }
     } else {
-      disc = promoVal;
+      rawDiscount = promoVal;
     }
-    return Math.min(disc, subTotal);
-  })();
+
+    const finalDiscount = Math.min(rawDiscount, eligibleSubtotal, subTotal);
+
+    // Calculate per-cartItemId discount allocation
+    const itemDiscounts: Record<string, number> = {};
+    if (finalDiscount > 0 && eligibleItems.length > 0) {
+      if (promo.type === "PERCENTAGE") {
+        const sumItemRaw = eligibleItems.reduce(
+          (sum, it) => sum + (it.price * it.quantity * promoVal) / 100,
+          0
+        );
+        const scale = sumItemRaw > 0 ? finalDiscount / sumItemRaw : 1;
+        eligibleItems.forEach((it) => {
+          const raw = (it.price * it.quantity * promoVal) / 100;
+          itemDiscounts[it.cartItemId] = Math.round(raw * scale);
+        });
+      } else {
+        let allocated = 0;
+        eligibleItems.forEach((it, idx) => {
+          if (idx === eligibleItems.length - 1) {
+            itemDiscounts[it.cartItemId] = Math.max(0, Math.round(finalDiscount - allocated));
+          } else {
+            const share = (it.price * it.quantity / eligibleSubtotal) * finalDiscount;
+            const rounded = Math.round(share);
+            allocated += rounded;
+            itemDiscounts[it.cartItemId] = rounded;
+          }
+        });
+      }
+    }
+
+    return {
+      discount: Math.round(finalDiscount),
+      itemDiscounts,
+      applicableProductIds: applicableIds,
+      eligibleItemCount: eligibleItems.length,
+      eligibleSubtotal,
+      isSpecific,
+      discountedItemNames: Array.from(new Set(eligibleItems.map((i) => i.name))),
+      isValid: true,
+      error: null,
+    };
+  }, [appliedPromo, availablePromos, items, subTotal]);
+
+  const promoDiscount = promoCalculation.discount;
 
   const taxableSubtotal = Math.max(0, subTotal - promoDiscount);
   const taxRate = settings.taxRate || 0;
@@ -262,9 +409,15 @@ export function CheckoutClient({
       return;
     }
 
+    const cartItemsForPromo = items.map((i) => ({
+      productId: i.productId,
+      price: i.price,
+      quantity: i.quantity,
+    }));
+
     setIsValidatingPromo(true);
     try {
-      const res = await validatePublicPromoCode(tenantSlug, code, subTotal);
+      const res = await validatePublicPromoCode(tenantSlug, code, subTotal, cartItemsForPromo);
       if (!res.success || !res.data) {
         toast.error(res.error || "Kode promo tidak valid");
         return;
@@ -573,6 +726,13 @@ export function CheckoutClient({
                       </span>
                     </div>
 
+                    {promoCalculation.isSpecific && promoCalculation.discountedItemNames.length > 0 && (
+                      <div className="relative z-10 mt-1 flex items-center gap-1 text-[11px] text-white/90 font-medium">
+                        <Check className="w-3 h-3 stroke-[2.5]" />
+                        <span>Khusus: {promoCalculation.discountedItemNames.join(", ")}</span>
+                      </div>
+                    )}
+
                     {/* WATERMARK TICKET GRAPHIC */}
                     <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-20 text-white">
                       <svg
@@ -659,6 +819,37 @@ export function CheckoutClient({
                   </Button>
                 </div>
               )}
+
+              {/* Available Store Promos List */}
+              {!appliedPromo && availablePromos.length > 0 && (
+                <div className="space-y-1.5 pt-1">
+                  <div className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
+                    Promo Toko Tersedia
+                  </div>
+                  <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                    {availablePromos.map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => handleApplyPromoCode(p.code)}
+                        className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-200 bg-blue-50/70 hover:bg-blue-100 text-blue-800 text-xs font-medium transition-colors cursor-pointer"
+                      >
+                        <Tag className="w-3 h-3 text-blue-600" />
+                        <span className="font-mono font-bold">{p.code}</span>
+                        <span>•</span>
+                        <span>
+                          {p.type === "PERCENTAGE"
+                            ? `${p.value}% OFF`
+                            : `${formatCurrency(Number(p.value))} OFF`}
+                        </span>
+                        <span className="ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-600 text-white">
+                          Pakai
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -677,29 +868,54 @@ export function CheckoutClient({
               </Link>
             </div>
             <div className="divide-y divide-gray-100">
-              {items.map((item) => (
-                <div key={item.cartItemId} className="py-3 sm:py-3.5 flex gap-3 sm:gap-4 items-start">
-                  <div className="h-20 w-20 sm:h-22 sm:w-22 bg-gray-50 rounded-2xl flex-shrink-0 border border-gray-100 overflow-hidden relative flex items-center justify-center">
-                    <CheckoutItemThumbnail
-                      src={item.imageUrl}
-                      alt={item.name}
-                      fallbackName={item.name}
-                    />
-                  </div>
+              {items.map((item) => {
+                const itemDisc = promoCalculation.itemDiscounts[item.cartItemId] || 0;
+                const originalTotal = item.price * item.quantity;
+                const finalTotal = Math.max(0, originalTotal - itemDisc);
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="font-semibold text-sm sm:text-base text-gray-900 leading-snug line-clamp-2">
-                        {item.name}
-                      </div>
-                      <div className="font-semibold text-sm sm:text-base text-gray-900 whitespace-nowrap">
-                        {formatCurrency(item.price * item.quantity)}
-                      </div>
+                return (
+                  <div key={item.cartItemId} className="py-3 sm:py-3.5 flex gap-3 sm:gap-4 items-start">
+                    <div className="h-20 w-20 sm:h-22 sm:w-22 bg-gray-50 rounded-2xl flex-shrink-0 border border-gray-100 overflow-hidden relative flex items-center justify-center">
+                      <CheckoutItemThumbnail
+                        src={item.imageUrl}
+                        alt={item.name}
+                        fallbackName={item.name}
+                      />
                     </div>
 
-                    <div className="text-xs text-gray-500 mt-0.5">
-                      {formatCurrency(item.price)} / porsi
-                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="font-semibold text-sm sm:text-base text-gray-900 leading-snug line-clamp-2">
+                          {item.name}
+                        </div>
+                        <div className="flex flex-col items-end shrink-0">
+                          {itemDisc > 0 ? (
+                            <>
+                              <span className="font-bold text-sm sm:text-base text-emerald-600 whitespace-nowrap">
+                                {formatCurrency(finalTotal)}
+                              </span>
+                              <span className="text-xs text-gray-400 line-through whitespace-nowrap">
+                                {formatCurrency(originalTotal)}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="font-semibold text-sm sm:text-base text-gray-900 whitespace-nowrap">
+                              {formatCurrency(originalTotal)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="text-xs text-gray-500 mt-0.5">
+                        {formatCurrency(item.price)} / porsi
+                      </div>
+
+                      {itemDisc > 0 && (
+                        <div className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md bg-emerald-50 border border-emerald-200/70 text-emerald-700 text-[11px] font-medium">
+                          <Tag className="w-3 h-3 text-emerald-600" />
+                          <span>Diskon promo: -{formatCurrency(itemDisc)}</span>
+                        </div>
+                      )}
 
                     {item.modifiers && item.modifiers.length > 0 && (
                       <div
@@ -759,8 +975,9 @@ export function CheckoutClient({
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
+              );
+            })}
+          </div>
           </div>
 
           {/* 3. SUBTOTAL MENU & TOTAL ESTIMASI (FLAT ON PARENT CONTAINER) */}
@@ -775,12 +992,36 @@ export function CheckoutClient({
                 <span className="font-semibold text-gray-800">{formatCurrency(subTotal)}</span>
               </div>
 
-              {promoDiscount > 0 && (
-                <div className="flex justify-between text-emerald-600 font-semibold">
-                  <span>Diskon Promo ({appliedPromo?.name})</span>
-                  <span>-{formatCurrency(promoDiscount)}</span>
+              {promoDiscount > 0 ? (
+                <div className="space-y-1.5 pt-0.5">
+                  <div className="flex justify-between text-emerald-600 font-semibold text-sm sm:text-base">
+                    <span className="flex items-center gap-1.5">
+                      <Tag className="w-4 h-4 text-emerald-600" />
+                      <span>Diskon Promo ({appliedPromo?.name})</span>
+                    </span>
+                    <span>-{formatCurrency(promoDiscount)}</span>
+                  </div>
+                  {promoCalculation.isSpecific && promoCalculation.discountedItemNames.length > 0 && (
+                    <div className="bg-emerald-50/90 border border-emerald-200/70 rounded-xl p-2.5 text-xs text-emerald-800 space-y-1">
+                      <div className="flex items-center justify-between font-semibold">
+                        <span className="flex items-center gap-1">
+                          <Check className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Hanya memotong menu promo:</span>
+                        </span>
+                        <span>-{formatCurrency(promoDiscount)}</span>
+                      </div>
+                      <div className="text-[11px] text-emerald-700 pl-4 font-medium">
+                        {promoCalculation.discountedItemNames.join(", ")}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
+              ) : appliedPromo && promoCalculation.error ? (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-2.5 text-xs text-amber-800 flex items-start gap-1.5">
+                  <span className="font-semibold">⚠️ Info Promo:</span>
+                  <span>{promoCalculation.error}</span>
+                </div>
+              ) : null}
 
               {serviceChargeRate > 0 && (
                 <div className="flex justify-between text-gray-600">
