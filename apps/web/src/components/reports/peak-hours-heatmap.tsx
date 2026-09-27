@@ -268,7 +268,8 @@ export function PeakHoursHeatmap({
             <span className="text-xs text-slate-500">24 Jam</span>
           </div>
 
-          <div className="h-44 flex items-end gap-1 sm:gap-1.5 pt-4 pb-2 border-b border-dashed border-slate-200">
+          {/* Bars Canvas - Level and flat uniform baseline */}
+          <div className="h-36 flex items-end gap-1 sm:gap-1.5 pt-4 border-b border-dashed border-slate-200">
             {hourlyDistribution.map((item) => {
               const heightRatio = maxHourlyOrders > 0 ? (item.orderCount / maxHourlyOrders) * 100 : 0;
               const isPeak = item.orderCount === peakKpis.busiestHour.orderCount && item.orderCount > 0;
@@ -276,25 +277,49 @@ export function PeakHoursHeatmap({
               return (
                 <div
                   key={item.hour}
-                  className="flex-1 flex flex-col items-center h-full justify-end group cursor-pointer"
+                  className="flex-1 flex flex-col items-center h-full justify-end group cursor-pointer relative"
                   title={`${item.label}: ${item.orderCount} pesanan (Rp ${item.revenue.toLocaleString("id-ID")})`}
                 >
                   <div
                     className={cn(
-                      "w-full rounded-t-sm transition-all duration-300 min-h-[2px]",
+                      "w-full rounded-t-[3px] transition-all duration-300 min-h-[3px]",
                       isPeak
                         ? "bg-[#0e59f9] shadow-sm"
                         : "bg-blue-300/80 group-hover:bg-[#0e59f9]/80"
                     )}
                     style={{ height: `${Math.max(4, heightRatio)}%` }}
                   />
-                  <span className="text-[9px] font-mono text-slate-400 mt-2 truncate w-full text-center">
-                    {item.hour % 3 === 0 ? (item.hour === 0 ? "12a" : item.hour < 12 ? `${item.hour}a` : item.hour === 12 ? "12p" : `${item.hour - 12}p`) : ""}
-                  </span>
                 </div>
               );
             })}
           </div>
+
+          {/* Hour Labels Row - Dedicated row below the baseline so labels never interfere with bars */}
+          <div className="flex gap-1 sm:gap-1.5 pt-1.5 pb-0.5">
+            {hourlyDistribution.map((item) => {
+              const isLabelHour = item.hour % 3 === 0;
+              const labelText = item.hour === 0 
+                ? "12 AM" 
+                : item.hour < 12 
+                  ? `${item.hour} AM` 
+                  : item.hour === 12 
+                    ? "12 PM" 
+                    : `${item.hour - 12} PM`;
+
+              return (
+                <div key={item.hour} className="flex-1 text-center">
+                  {isLabelHour ? (
+                    <span className="text-[9px] font-mono text-slate-500 block truncate">
+                      {labelText}
+                    </span>
+                  ) : (
+                    <span className="text-[9px] block h-3 opacity-0">&nbsp;</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
           <div className="flex justify-between text-xs text-slate-500 pt-1">
             <span>Pagi (06:00 - 11:00)</span>
             <span>Siang (11:00 - 15:00)</span>
@@ -312,7 +337,8 @@ export function PeakHoursHeatmap({
             <span className="text-xs text-slate-500">Senin - Minggu</span>
           </div>
 
-          <div className="h-44 flex items-end gap-3 sm:gap-4 pt-4 pb-2 border-b border-dashed border-slate-200">
+          {/* Bars Canvas - Level and flat uniform baseline */}
+          <div className="h-36 flex items-end gap-3 sm:gap-4 pt-4 border-b border-dashed border-slate-200">
             {dayDistribution.map((item) => {
               const heightRatio = maxDayRevenue > 0 ? (item.revenue / maxDayRevenue) * 100 : 0;
               const isBusiest = item.dayIndex === peakKpis.busiestDay.dayIndex && item.revenue > 0;
@@ -325,20 +351,29 @@ export function PeakHoursHeatmap({
                 >
                   <div
                     className={cn(
-                      "w-full rounded-t-md transition-all duration-300 min-h-[4px]",
+                      "w-full rounded-t-[4px] transition-all duration-300 min-h-[4px]",
                       isBusiest
                         ? "bg-[#0e59f9] shadow-sm"
                         : "bg-blue-400/80 group-hover:bg-[#0e59f9]/80"
                     )}
                     style={{ height: `${Math.max(6, heightRatio)}%` }}
                   />
-                  <span className="text-[11px] font-semibold text-slate-600 mt-2 truncate">
-                    {item.dayLabel}
-                  </span>
                 </div>
               );
             })}
           </div>
+
+          {/* Day Labels Row - Dedicated row below the baseline */}
+          <div className="flex gap-3 sm:gap-4 pt-1.5 pb-0.5">
+            {dayDistribution.map((item) => (
+              <div key={item.dayIndex} className="flex-1 text-center">
+                <span className="text-[11px] font-semibold text-slate-600 block truncate">
+                  {item.dayLabel}
+                </span>
+              </div>
+            ))}
+          </div>
+
           <div className="flex justify-between items-center text-xs text-slate-500 pt-1">
             <span>Hari tersibuk: <strong className="text-emerald-600 font-semibold">{peakKpis.busiestDay.dayName}</strong></span>
             <span>Total Omset Mingguan: <strong>Rp {dayDistribution.reduce((acc, d) => acc + d.revenue, 0).toLocaleString("id-ID")}</strong></span>
