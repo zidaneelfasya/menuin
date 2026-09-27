@@ -45,7 +45,7 @@ const getNavItems = (outletKey: string) => [
   { name: 'Topping & Varian', href: `/outlet/${outletKey}/modifiers`, icon: SlidersHorizontal, roles: ['OWNER', 'MANAGER'] },
   { name: 'Shift Kasir', href: `/outlet/${outletKey}/shifts`, icon: Wallet, roles: ['OWNER', 'MANAGER', 'CASHIER'] },
   { name: 'Riwayat Transaksi', href: `/outlet/${outletKey}/transactions`, icon: History, roles: ['OWNER', 'MANAGER', 'CASHIER'] },
-  { name: 'Laporan Penjualan', href: `/outlet/${outletKey}/reports`, icon: BarChart3, roles: ['OWNER', 'MANAGER'] },
+  { name: 'Report & Analytics', href: `/outlet/${outletKey}/reports`, icon: BarChart3, roles: ['OWNER', 'MANAGER'] },
   { name: 'Diskon & Promo', href: `/outlet/${outletKey}/promotions`, icon: Percent, roles: ['OWNER', 'MANAGER'] },
   { name: 'Tim & Karyawan', href: `/outlet/${outletKey}/team`, icon: UserCircle, roles: ['OWNER'] },
   { name: 'Perangkat Kasir', href: `/outlet/${outletKey}/settings/devices`, icon: Smartphone, roles: ['OWNER', 'MANAGER'] },
@@ -67,8 +67,8 @@ function SidebarContent({ collapsed, setCollapsed, user }: { collapsed: boolean;
   const outletKey = user.outletKey || 'unknown';
   const navItems = getNavItems(outletKey).filter(item => !item.roles || item.roles.includes(user.role as any));
 
-  // Determine if the current page has a sub-sidebar (e.g. Katalog Menu or Settings)
-  const hasSubSidebar = pathname.includes('/katalog');
+  // Determine if the current page has a sub-sidebar (e.g. Katalog Menu or Report & Analytics)
+  const hasSubSidebar = pathname.includes('/katalog') || pathname.includes('/reports');
   const curvedTabBg = hasSubSidebar ? '#ffffff' : '#F9FBFF';
 
   return (

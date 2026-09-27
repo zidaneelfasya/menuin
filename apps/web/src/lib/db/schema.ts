@@ -519,3 +519,18 @@ export const devicePairingCodes = pgTable('device_pairing_codes', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
+export const expenses = pgTable('expenses', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
+  category: text('category').notNull(), // 'BAHAN_BAKU', 'PACKAGING', 'OPERASIONAL', 'GAJI', 'PEMELIHARAAN', 'MARKETING', 'LAINNYA'
+  amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
+  paymentMethod: text('payment_method').default('TUNAI').notNull(), // 'TUNAI', 'BANK_TRANSFER', 'EWALLET'
+  description: text('description').notNull(),
+  date: timestamp('date', { withTimezone: true }).defaultNow().notNull(),
+  receiptUrl: text('receipt_url'),
+  createdByMembershipId: uuid('created_by_membership_id'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+
