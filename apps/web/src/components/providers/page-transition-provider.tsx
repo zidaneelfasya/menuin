@@ -21,17 +21,31 @@ export function PageTransitionProvider({ children }: { children: ReactNode }) {
   // Handle route change completion
   useEffect(() => {
     if (isTransitioning && targetHref) {
+      const normalizedTarget = targetHref.split('?')[0].split('#')[0];
+      const normalizedPath = pathname.split('?')[0].split('#')[0];
+
       // If we've reached the target pathname, end the transition
-      if (pathname === targetHref || pathname.startsWith(targetHref)) {
+      if (normalizedPath === normalizedTarget || (normalizedTarget !== '/' && normalizedPath.startsWith(normalizedTarget))) {
         // Small delay to ensure render is complete
         const timer = setTimeout(() => {
           setIsTransitioning(false);
           setTargetHref(null);
-        }, 100);
+        }, 150);
         return () => clearTimeout(timer);
       }
     }
   }, [pathname, isTransitioning, targetHref]);
+
+  // Safety fallback so transition never freezes permanently
+  useEffect(() => {
+    if (isTransitioning) {
+      const safetyTimer = setTimeout(() => {
+        setIsTransitioning(false);
+        setTargetHref(null);
+      }, 6000);
+      return () => clearTimeout(safetyTimer);
+    }
+  }, [isTransitioning]);
 
   const navigateWithTransition = (href: string) => {
     if (pathname === href) {
@@ -61,7 +75,7 @@ export function PageTransitionProvider({ children }: { children: ReactNode }) {
             exit={{ y: "-100%" }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
             // Using primary color which corresponds to the brand's blue
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-primary" 
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-primary " 
           >
             {/* The Logo Container */}
             <div className="relative w-48 h-48 md:w-64 md:h-64">

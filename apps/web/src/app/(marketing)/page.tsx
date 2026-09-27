@@ -26,7 +26,7 @@ export default function Home() {
   // Fallback-nya sengaja kosong.
   //
   // Sebelumnya fallback ini merender <LandingPage /> utuh, sehingga seluruh
-  // halaman ada dua kali di DOM: id ganda (#ekosistem, #pilar, #harga),
+  // halaman ada dua kali di DOM: id ganda (#alur, #fitur, #pricing),
   // dua ScrollTrigger memperebutkan section yang sama, dan anchor nav
   // melompat ke salinan yang salah.
   return (

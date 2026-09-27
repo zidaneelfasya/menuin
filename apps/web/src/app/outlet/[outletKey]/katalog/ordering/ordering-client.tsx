@@ -56,6 +56,9 @@ export function OrderingClient({ settings }: { settings: any }) {
       toast.error(result.error);
     } else {
       toast.success("Pengaturan pesanan & pembayaran berhasil disimpan");
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("catalog-updated"));
+      }
     }
   };
 

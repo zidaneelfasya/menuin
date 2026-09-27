@@ -52,7 +52,7 @@ async function DashboardDataWrapper({ params, searchParams }: Props) {
   if (!dashboardData.success) {
     return (
       <div className="p-12 text-center space-y-3 bg-white border border-gray-200/80 rounded-xl shadow-sm my-8">
-        <h2 className="text-xl font-bold text-gray-900">Gagal Memuat Dashboard Outlet</h2>
+        <h2 className="text-xl font-semibold text-gray-900">Gagal Memuat Dashboard Outlet</h2>
         <p className="text-sm text-gray-500 max-w-md mx-auto">
           {dashboardData.error || 'Outlet tidak ditemukan atau Anda tidak memiliki akses ke cabang ini.'}
         </p>

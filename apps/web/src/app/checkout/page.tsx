@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Check, ArrowLeft, ShieldCheck, CreditCard, Sparkles } from "lucide-react";
 
 import { getTenantDetailsByEmail, markTenantAsPaidAction } from "@/lib/actions/auth";
+import { usePageTransition } from "@/components/providers/page-transition-provider";
 
 declare global {
   interface Window {
@@ -14,6 +15,7 @@ declare global {
 
 function CheckoutContent() {
   const router = useRouter();
+  const { navigateWithTransition } = usePageTransition();
   const searchParams = useSearchParams();
   const plan = searchParams.get("plan") || "starter";
 
@@ -127,7 +129,7 @@ function CheckoutContent() {
               if (res.error) {
                 setError(res.error);
               } else {
-                router.push("/select-tenant");
+                navigateWithTransition("/select-tenant");
               }
             } catch (err: any) {
               setError("Gagal memperbarui status pembayaran: " + err.message);

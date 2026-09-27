@@ -418,6 +418,8 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
                           tableNumber={order.tableNumber}
                           orderType={order.orderType}
                           primaryColor={outletPrimaryColor}
+                          paymentStatus={order.paymentStatus}
+                          status={order.status}
                         />
                       </div>
                     )}

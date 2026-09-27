@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { transactions, transactionItems, products } from '@/lib/db/schema';
-import { eq, desc, and, inArray } from 'drizzle-orm';
+import { eq, desc, and, inArray, or, ilike } from 'drizzle-orm';
 import * as jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'menuin-pos-secret-key-change-in-prod';
@@ -35,6 +35,62 @@ export async function GET(req: NextRequest) {
     }
 
     const tenantId = user.tenantId;
+    const url = new URL(req.url);
+    const searchQuery = url.searchParams.get('q') || url.searchParams.get('orderNumber');
+
+    if (searchQuery) {
+      const clean = searchQuery.trim();
+      const cleanOrderNumber = clean.replace(/^#/, '').toUpperCase();
+      const hashOrderNumber = '#' + cleanOrderNumber;
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(clean);
+
+      const searchConditions = [
+        ilike(transactions.orderNumber, cleanOrderNumber),
+        ilike(transactions.orderNumber, hashOrderNumber),
+        ilike(transactions.orderNumber, clean),
+      ];
+      if (isUuid) {
+        searchConditions.push(eq(transactions.id, clean));
+      }
+
+      const txs = await db
+        .select()
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.tenantId, tenantId),
+            or(...searchConditions)
+          )
+        )
+        .limit(1);
+
+      if (txs.length === 0) {
+        return NextResponse.json({ success: true, data: [] });
+      }
+
+      const tx = txs[0];
+      const items = await db
+        .select({
+          id: transactionItems.id,
+          transactionId: transactionItems.transactionId,
+          productId: transactionItems.productId,
+          quantity: transactionItems.quantity,
+          price: transactionItems.price,
+          productName: products.name,
+          subtotal: transactionItems.subtotal,
+          modifiers: transactionItems.modifiers,
+          notes: transactionItems.notes,
+          isCompleted: transactionItems.isCompleted,
+        })
+        .from(transactionItems)
+        .innerJoin(products, eq(transactionItems.productId, products.id))
+        .where(eq(transactionItems.transactionId, tx.id));
+
+      return NextResponse.json({
+        success: true,
+        data: [{ ...tx, items }],
+      });
+    }
 
     const activeTransactions = await db
       .select()

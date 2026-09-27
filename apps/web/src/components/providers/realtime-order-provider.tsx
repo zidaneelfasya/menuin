@@ -31,10 +31,7 @@ export function RealtimeOrderProvider({ children, tenantId }: { children: ReactN
   const pathname = usePathname();
 
   const [dismissedPopupIds, setDismissedPopupIds] = useState<Set<string>>(new Set());
-
-  // Audio is now played imperatively when a new order arrives, see below.
-
-  // Removed pathname-based auto clear so badge persists until order is processed.
+  const notifiedOrderIdsRef = useState(() => new Set<string>())[0];
 
   useEffect(() => {
     if (!tenantId) return;
@@ -53,6 +50,8 @@ export function RealtimeOrderProvider({ children, tenantId }: { children: ReactN
         },
         async (payload: any) => {
           const tx = payload.new as any;
+          if (!tx) return;
+
           const isNewInsert = payload.eventType === 'INSERT' && tx.status === 'NEW';
           const isPaidUpdate = payload.eventType === 'UPDATE' && tx.status === 'NEW';
           const isPendingInsert = payload.eventType === 'INSERT' && tx.status === 'PENDING';
@@ -92,9 +91,18 @@ export function RealtimeOrderProvider({ children, tenantId }: { children: ReactN
                   newSet.delete(fullOrder.id); // show popup for NEW
                   return newSet;
                 });
-                toast.success(`Pesanan Baru Masuk!`);
-                const audio = new Audio('/notification.mp3');
-                audio.play().catch(e => console.log('Audio auto-play blocked', e));
+
+                // Deduplicate: only play audio and show toast ONCE per order ID
+                if (!notifiedOrderIdsRef.has(fullOrder.id)) {
+                  notifiedOrderIdsRef.add(fullOrder.id);
+                  toast.success(`Pesanan Baru Masuk! #${fullOrder.orderNumber || fullOrder.id.slice(0, 6).toUpperCase()}`);
+                  try {
+                    const audio = new Audio('/notification.mp3');
+                    audio.play().catch(e => console.log('Audio auto-play blocked', e));
+                  } catch (e) {
+                    console.log('Audio notification error', e);
+                  }
+                }
               }
               
               if (pathname.includes('/pos') || pathname.includes('/transactions') || pathname.includes('/orders')) {
@@ -119,7 +127,7 @@ export function RealtimeOrderProvider({ children, tenantId }: { children: ReactN
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [tenantId, router, pathname]);
+  }, [tenantId, router, pathname, notifiedOrderIdsRef]);
 
   // Actually accepts and updates DB, removing from both
   const acceptOrder = (orderId: string) => {

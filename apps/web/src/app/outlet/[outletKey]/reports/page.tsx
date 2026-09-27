@@ -1,19 +1,29 @@
-import { Metadata } from 'next';
-import { requireFeature } from '@/lib/actions/auth-context';
-import { getFinancialReportData } from '@/lib/actions/finance';
-import { FinanceClient } from '../finance/finance-client';
+import { Metadata } from "next";
+import { requireFeature } from "@/lib/actions/auth-context";
+import { getSalesReport } from "@/lib/actions/reports";
+import { SalesReportClient } from "@/components/reports/sales-report-client";
 
-export const metadata: Metadata = { 
-  title: 'Laporan Penjualan & Keuangan - Menuin POS' 
+export const metadata: Metadata = {
+  title: "Laporan Penjualan (Sales Analytics) - MENUIN",
+  description: "Analisis performa omset, AOV, tren penjualan, dan rekapitulasi pembayaran.",
 };
 
-export default async function Page() {
-  await requireFeature('REPORTS');
-  const res = await getFinancialReportData({ period: 'this_month' });
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ outletKey: string }>;
+}) {
+  await requireFeature("REPORTS");
+  const { outletKey } = await params;
+  const res = await getSalesReport(outletKey, { period: "this_month" });
 
-  return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <FinanceClient initialData={res.data} />
-    </div>
-  );
+  if (!res.success || !res.data) {
+    return (
+      <div className="p-8 text-center text-slate-500 bg-white rounded-2xl border border-slate-200">
+        {res.error || "Gagal memuat laporan penjualan."}
+      </div>
+    );
+  }
+
+  return <SalesReportClient initialData={res.data} outletKey={outletKey} />;
 }

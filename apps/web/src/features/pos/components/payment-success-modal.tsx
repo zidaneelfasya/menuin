@@ -52,7 +52,7 @@ export function PaymentSuccessModal({
             <Check className="w-5 h-5 stroke-[2.5]" />
           </div>
           <div>
-            <DialogTitle className="text-lg font-bold text-slate-900">
+            <DialogTitle className="text-lg font-semibold text-slate-900">
               Transaksi Berhasil
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500 font-mono mt-0.5">
@@ -72,7 +72,7 @@ export function PaymentSuccessModal({
 
           <div className="flex justify-between items-center">
             <span>Total Tagihan</span>
-            <span className="font-bold text-sm text-slate-900">
+            <span className="font-semibold text-sm text-slate-900">
               {formatCurrency(receiptData.totalAmount)}
             </span>
           </div>
@@ -80,7 +80,7 @@ export function PaymentSuccessModal({
           {receiptData.change > 0 && (
             <div className="flex justify-between items-center pt-2 border-t border-slate-200 text-blue-700">
               <span className="font-semibold">Uang Kembalian</span>
-              <span className="font-bold text-sm">
+              <span className="font-semibold text-sm">
                 {formatCurrency(receiptData.change)}
               </span>
             </div>

@@ -237,6 +237,7 @@ export const categories = pgTable('categories', {
   tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
   name: text('name').notNull(),
   slug: text('slug').notNull(),
+  icon: text('icon'),
   displayOrder: integer('display_order').default(0).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
@@ -517,4 +518,19 @@ export const devicePairingCodes = pgTable('device_pairing_codes', {
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
+
+export const expenses = pgTable('expenses', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
+  category: text('category').notNull(), // 'BAHAN_BAKU', 'PACKAGING', 'OPERASIONAL', 'GAJI', 'PEMELIHARAAN', 'MARKETING', 'LAINNYA'
+  amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
+  paymentMethod: text('payment_method').default('TUNAI').notNull(), // 'TUNAI', 'BANK_TRANSFER', 'EWALLET'
+  description: text('description').notNull(),
+  date: timestamp('date', { withTimezone: true }).defaultNow().notNull(),
+  receiptUrl: text('receipt_url'),
+  createdByMembershipId: uuid('created_by_membership_id'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
 

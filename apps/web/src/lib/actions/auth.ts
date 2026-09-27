@@ -73,6 +73,8 @@ export async function getAvailableTenants() {
     name: row.tenant.name,
     slug: row.tenant.slug,
     outletKey: row.tenant.outletKey,
+    storeLogoUrl: row.tenant.storeLogoUrl,
+    storeDescription: row.tenant.storeDescription,
   }));
 }
 

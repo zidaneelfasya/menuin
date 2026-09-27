@@ -30,7 +30,7 @@ export default async function OrdersPage() {
     <div className="h-[calc(100vh-80px)] p-4 md:p-6 overflow-hidden flex flex-col space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 shrink-0">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground">Pesanan Masuk</h1>
+          <h1 className="text-xl md:text-2xl font-semibold font-sans tracking-tight text-foreground">Pesanan Masuk</h1>
           <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
             Pantau dan proses antrean pesanan kasir & online secara langsung.
           </p>

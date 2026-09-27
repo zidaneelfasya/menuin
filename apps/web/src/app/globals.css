@@ -1,4 +1,5 @@
 @tailwind base;
+
 @tailwind components;
 @tailwind utilities;
 
@@ -86,6 +87,52 @@
   }
 }
 
+@layer utilities {
+  .font-financial,
+  .font-numeric {
+    font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-feature-settings: "tnum", "cv02", "cv03", "cv04", "cv11";
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Dashboard Active Nav Tab Curved Scoop Styles */
+  .curved-tab-active {
+    position: relative;
+    background-color: var(--curved-tab-bg, #ffffff);
+    color: #0e59f9;
+    border-top-left-radius: 1rem;
+    border-bottom-left-radius: 1rem;
+    border-top-right-radius: 0px;
+    border-bottom-right-radius: 0px;
+  }
+  .curved-tab-active::before {
+    content: '';
+    position: absolute;
+    top: -16px;
+    right: 0;
+    width: 16px;
+    height: 16px;
+    background-color: transparent;
+    border-bottom-right-radius: 16px;
+    box-shadow: 4px 4px 0 4px var(--curved-tab-bg, #ffffff);
+    pointer-events: none;
+    z-index: 10;
+  }
+  .curved-tab-active::after {
+    content: '';
+    position: absolute;
+    bottom: -16px;
+    right: 0;
+    width: 16px;
+    height: 16px;
+    background-color: transparent;
+    border-top-right-radius: 16px;
+    box-shadow: 4px -4px 0 4px var(--curved-tab-bg, #ffffff);
+    pointer-events: none;
+    z-index: 10;
+  }
+}
+
 /* ---------------------------------------------------------------
    Landing page tokens.
    Namespace terpisah dari token produk supaya perubahan di sini
@@ -105,6 +152,15 @@
     --landing-lift: 0 1px 2px rgba(15, 23, 42, 0.04);
     --landing-lift-lg: 0 18px 40px -24px rgba(15, 23, 42, 0.28);
   }
+}
+
+/* Seluruh landing memakai font headline hero (Inter via --font-display).
+   Heading perlu disebut eksplisit karena aturan h1–h6 di atas memaksa
+   Poppins; dashboard dan kasir tidak memakai .landing-root sehingga
+   tetap Poppins. */
+.landing-root,
+.landing-root :is(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--font-display), -apple-system, "Segoe UI", sans-serif;
 }
 
 html.lenis,

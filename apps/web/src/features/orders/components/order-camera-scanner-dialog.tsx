@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
-import { Html5Qrcode, Html5QrcodeCameraScanConfig } from "html5-qrcode";
+import React, { useEffect, useRef, useState, useCallback } from "react";
+import jsQR from "jsqr";
 import {
   Dialog,
   DialogContent,
@@ -9,7 +9,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Camera, AlertCircle, RefreshCw, X, VideoOff } from "lucide-react";
+import { Camera, VideoOff } from "lucide-react";
 
 export interface OrderCameraScannerDialogProps {
   isOpen: boolean;
@@ -27,119 +27,265 @@ export function OrderCameraScannerDialog({
   const [isScanning, setIsScanning] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
 
-  const scannerRef = useRef<Html5Qrcode | null>(null);
-  const containerId = "order-qr-camera-viewport";
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
 
-  // Cleanup scanner instance safely
-  const stopScanner = async () => {
-    if (scannerRef.current) {
+  const isMountedRef = useRef(false);
+  const hasScannedRef = useRef(false);
+  const isStartingRef = useRef(false);
+
+  // Directly and unconditionally stop all tracks on the active MediaStream
+  const stopCamera = useCallback(() => {
+    // 1. Cancel the scan frame request immediately
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+
+    // 2. Explicitly stop every track on the hardware MediaStream
+    if (streamRef.current) {
       try {
-        if (scannerRef.current.isScanning) {
-          await scannerRef.current.stop();
-        }
-        await scannerRef.current.clear();
+        const tracks = streamRef.current.getTracks();
+        tracks.forEach((track) => {
+          track.enabled = false;
+          track.stop();
+        });
       } catch (err) {
-        console.warn("Failed to stop camera scanner cleanly:", err);
-      } finally {
-        scannerRef.current = null;
-        setIsScanning(false);
+        console.warn("Failed to stop media track:", err);
+      }
+      streamRef.current = null;
+    }
+
+    // 3. Clear video element source and pause
+    if (videoRef.current) {
+      try {
+        videoRef.current.pause();
+        videoRef.current.srcObject = null;
+      } catch (_) {}
+    }
+
+    setIsScanning(false);
+  }, []);
+
+  // Handle closing modal
+  const handleClose = useCallback(() => {
+    stopCamera();
+    onClose();
+  }, [stopCamera, onClose]);
+
+  // Frame scanner loop using native BarcodeDetector if available, falling back to jsQR
+  const startScanLoop = useCallback(() => {
+    let nativeDetector: any = null;
+    if (typeof window !== "undefined" && "BarcodeDetector" in window) {
+      try {
+        nativeDetector = new (window as any).BarcodeDetector({
+          formats: ["qr_code"],
+        });
+      } catch (_) {
+        nativeDetector = null;
       }
     }
-  };
 
-  // Enumerate cameras and start scanning when dialog opens
-  useEffect(() => {
-    let isMounted = true;
+    let lastScanTime = 0;
+    const scanIntervalMs = 70; // 70ms interval = ~14 FPS scan rate, buttery smooth and zero lag
 
-    if (!isOpen) {
-      stopScanner();
+    const tick = async (currentTime: number) => {
+      if (hasScannedRef.current || !streamRef.current || !isMountedRef.current) {
+        return;
+      }
+
+      const video = videoRef.current;
+      if (
+        video &&
+        video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
+        currentTime - lastScanTime >= scanIntervalMs
+      ) {
+        lastScanTime = currentTime;
+
+        try {
+          let detectedText: string | null = null;
+
+          // Strategy 1: Native BarcodeDetector (Chrome/Edge hardware accelerated C++)
+          if (nativeDetector) {
+            const barcodes = await nativeDetector.detect(video);
+            if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
+              detectedText = barcodes[0].rawValue;
+            }
+          }
+
+          // Strategy 2: Fast lightweight jsQR pure JS engine fallback
+          if (!detectedText) {
+            if (!canvasRef.current) {
+              canvasRef.current = document.createElement("canvas");
+            }
+            const canvas = canvasRef.current;
+            const ctx = canvas.getContext("2d", { willReadFrequently: true });
+            if (ctx && video.videoWidth > 0 && video.videoHeight > 0) {
+              canvas.width = video.videoWidth;
+              canvas.height = video.videoHeight;
+              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+              const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+              const qrCode = jsQR(imageData.data, imageData.width, imageData.height, {
+                inversionAttempts: "dontInvert",
+              });
+              if (qrCode && qrCode.data) {
+                detectedText = qrCode.data;
+              }
+            }
+          }
+
+          // Process detected QR code
+          if (detectedText && !hasScannedRef.current) {
+            hasScannedRef.current = true;
+            // IMMEDIATELY KILL HARDWARE CAMERA STREAM BEFORE CALLING HANDLERS
+            stopCamera();
+            onScan(detectedText.trim());
+            onClose();
+            return;
+          }
+        } catch (_) {
+          // Ignore individual frame decoding errors
+        }
+      }
+
+      if (!hasScannedRef.current && streamRef.current && isMountedRef.current) {
+        animationFrameRef.current = requestAnimationFrame(tick);
+      }
+    };
+
+    animationFrameRef.current = requestAnimationFrame(tick);
+  }, [onClose, onScan, stopCamera]);
+
+  // Start camera device and attach to video element
+  const startCamera = useCallback(
+    async (deviceIdToUse?: string) => {
+      if (isStartingRef.current) return;
+      isStartingRef.current = true;
       setCameraError(null);
-      return;
-    }
+      hasScannedRef.current = false;
 
-    const startCamera = async () => {
-      setCameraError(null);
-
-      // Brief delay to allow Dialog DOM element to mount
-      await new Promise((r) => setTimeout(r, 120));
-      if (!isMounted) return;
-
-      const element = document.getElementById(containerId);
-      if (!element) return;
+      // Stop any existing stream before starting a new one
+      stopCamera();
 
       try {
-        // Enumerate devices
-        const devices = await Html5Qrcode.getCameras();
-        if (!isMounted) return;
-
-        if (!devices || devices.length === 0) {
-          setCameraError("Tidak ada kamera yang terdeteksi pada perangkat ini.");
+        if (!navigator?.mediaDevices?.getUserMedia) {
+          setCameraError("Browser Anda tidak mendukung akses kamera.");
           return;
         }
 
-        setCameras(devices);
-
-        // Prefer back camera (environment) if available, otherwise first device
-        const backCamera = devices.find((d) =>
-          d.label.toLowerCase().includes("back") ||
-          d.label.toLowerCase().includes("rear") ||
-          d.label.toLowerCase().includes("environment")
-        );
-        const activeCameraId = selectedCameraId || (backCamera ? backCamera.id : devices[0].id);
-        setSelectedCameraId(activeCameraId);
-
-        const html5QrCode = new Html5Qrcode(containerId);
-        scannerRef.current = html5QrCode;
-
-        const config: Html5QrcodeCameraScanConfig = {
-          fps: 15,
-          qrbox: { width: 220, height: 220 },
-          aspectRatio: 1.0,
+        const constraints: MediaStreamConstraints = {
+          audio: false,
+          video: deviceIdToUse
+            ? { deviceId: { exact: deviceIdToUse } }
+            : {
+                facingMode: { ideal: "environment" },
+                width: { ideal: 1280 },
+                height: { ideal: 720 },
+              },
         };
 
-        await html5QrCode.start(
-          activeCameraId,
-          config,
-          (decodedText) => {
-            // Successfully scanned
-            if (isMounted) {
-              stopScanner().then(() => {
-                onScan(decodedText.trim());
-                onClose();
-              });
-            }
-          },
-          () => {
-            // Frame scan failure (no QR in frame) - standard ignore
-          }
-        );
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
 
-        if (isMounted) {
-          setIsScanning(true);
+        // If component unmounted while awaiting stream, terminate it immediately
+        if (!isMountedRef.current) {
+          stream.getTracks().forEach((track) => {
+            track.enabled = false;
+            track.stop();
+          });
+          return;
         }
+
+        streamRef.current = stream;
+
+        // Bind stream to video element
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play().catch((err) => {
+            console.warn("Video playback was interrupted:", err);
+          });
+        }
+
+        // Enumerate video devices so user can switch between cameras
+        try {
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          const videoDevices = devices
+            .filter((d) => d.kind === "videoinput")
+            .map((d, index) => ({
+              id: d.deviceId,
+              label: d.label || `Kamera ${index + 1}`,
+            }));
+          setCameras(videoDevices);
+
+          if (!deviceIdToUse) {
+            const activeTrack = stream.getVideoTracks()[0];
+            const settings = activeTrack?.getSettings();
+            if (settings?.deviceId) {
+              setSelectedCameraId(settings.deviceId);
+            }
+          }
+        } catch (_) {}
+
+        setIsScanning(true);
+        startScanLoop();
       } catch (err: any) {
         console.error("Camera access error:", err);
-        if (isMounted) {
+        stopCamera();
+        if (isMountedRef.current) {
           const errStr = (err?.message || String(err)).toLowerCase();
-          if (errStr.includes("permission") || errStr.includes("denied") || errStr.includes("notallowed")) {
-            setCameraError("Izin kamera ditolak. Silakan izinkan akses kamera di pengaturan browser Anda.");
+          if (
+            errStr.includes("permission") ||
+            errStr.includes("denied") ||
+            errStr.includes("notallowed")
+          ) {
+            setCameraError(
+              "Izin kamera ditolak. Silakan izinkan akses kamera di pengaturan browser Anda."
+            );
           } else {
-            setCameraError("Gagal mengakses kamera perangkat. Periksa koneksi kamera atau gunakan scanner barcode fisik.");
+            setCameraError(
+              "Gagal mengakses kamera perangkat. Periksa koneksi kamera atau gunakan scanner barcode fisik."
+            );
           }
         }
+      } finally {
+        isStartingRef.current = false;
       }
-    };
+    },
+    [startScanLoop, stopCamera]
+  );
 
-    startCamera();
+  const selectedCameraIdRef = useRef(selectedCameraId);
+  useEffect(() => {
+    selectedCameraIdRef.current = selectedCameraId;
+  }, [selectedCameraId]);
+
+  // Manage camera lifecycle based on isOpen prop
+  useEffect(() => {
+    isMountedRef.current = true;
+
+    if (isOpen) {
+      startCamera(selectedCameraIdRef.current || undefined);
+    } else {
+      stopCamera();
+      setCameraError(null);
+    }
 
     return () => {
-      isMounted = false;
-      stopScanner();
+      isMountedRef.current = false;
+      stopCamera();
     };
-  }, [isOpen, selectedCameraId]);
+  }, [isOpen, startCamera, stopCamera]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) {
+          handleClose();
+        }
+      }}
+    >
       <DialogContent className="max-w-xs sm:max-w-sm rounded-3xl p-5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden">
         <DialogHeader className="space-y-1">
           <div className="flex items-center gap-2">
@@ -159,8 +305,14 @@ export function OrderCameraScannerDialog({
 
         {/* Viewfinder Area */}
         <div className="relative my-2 w-full aspect-square max-w-[270px] mx-auto rounded-2xl overflow-hidden bg-slate-900 border border-slate-700/60 shadow-inner flex items-center justify-center">
-          {/* HTML5 QR Code Mount Node */}
-          <div id={containerId} className="w-full h-full object-cover overflow-hidden" />
+          {/* Direct HTML5 Video Stream Node */}
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className="w-full h-full object-cover"
+          />
 
           {/* Scanner Reticle Overlay (Laser scan guide) */}
           {isScanning && !cameraError && (
@@ -198,9 +350,9 @@ export function OrderCameraScannerDialog({
             <select
               value={selectedCameraId}
               onChange={(e) => {
-                stopScanner().then(() => {
-                  setSelectedCameraId(e.target.value);
-                });
+                const newCameraId = e.target.value;
+                setSelectedCameraId(newCameraId);
+                startCamera(newCameraId);
               }}
               className="text-xs font-semibold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 max-w-[170px] truncate"
             >
@@ -216,7 +368,7 @@ export function OrderCameraScannerDialog({
         {/* Action Button */}
         <button
           type="button"
-          onClick={onClose}
+          onClick={handleClose}
           className="w-full h-9 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-foreground font-semibold text-xs transition-colors cursor-pointer"
         >
           Tutup

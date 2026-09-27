@@ -3,7 +3,13 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { QRCodeSVG } from 'qrcode.react';
-import { Plus, MoreHorizontal, Laptop, Smartphone, Trash2 } from 'lucide-react';
+import { 
+  IconPlus, 
+  IconDots, 
+  IconDeviceLaptop, 
+  IconDeviceMobile, 
+  IconTrash 
+} from '@tabler/icons-react';
 import { generatePairingCodeAction, revokeDeviceAction } from '@/lib/actions/devices';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
@@ -83,21 +89,21 @@ export function DevicesClient({ initialDevices, canManage }: { initialDevices: D
     <div className="space-y-4">
       {canManage && (
         <div className="flex justify-end">
-          <Button onClick={handleGenerateCode} disabled={isLoading} className="gap-2">
-            <Plus className="w-4 h-4" />
+          <Button onClick={handleGenerateCode} disabled={isLoading} className="gap-2 h-11 rounded-xl px-5 font-semibold cursor-pointer">
+            <IconPlus className="w-4 h-4" />
             Tautkan Perangkat Baru
           </Button>
         </div>
       )}
 
-      <div className="bg-card border border-border rounded-xl shadow-xs overflow-hidden">
+      <div className="bg-card border border-border/70 rounded-2xl shadow-xs overflow-hidden">
         {devices.length === 0 ? (
-          <div className="p-8 text-center text-muted-foreground text-sm">
+          <div className="p-10 text-center text-muted-foreground text-sm">
             Belum ada perangkat kasir yang tertaut ke outlet ini.
           </div>
         ) : (
           <table className="w-full text-sm text-left">
-            <thead className="bg-muted/40 text-xs uppercase text-muted-foreground font-medium">
+            <thead className="bg-muted/40 text-xs uppercase text-muted-foreground font-semibold">
               <tr>
                 <th className="px-6 py-4">Perangkat</th>
                 <th className="px-6 py-4">Status</th>
@@ -110,44 +116,44 @@ export function DevicesClient({ initialDevices, canManage }: { initialDevices: D
                 <tr key={device.id} className="hover:bg-muted/30 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary">
-                        <Laptop className="w-5 h-5" />
+                      <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 text-primary">
+                        <IconDeviceLaptop className="w-5 h-5" />
                       </div>
                       <div>
-                        <div className="font-medium text-foreground">{device.name}</div>
-                        <div className="text-xs text-muted-foreground">ID: {device.deviceIdentifier}</div>
+                        <div className="font-semibold text-foreground">{device.name}</div>
+                        <div className="text-xs text-muted-foreground font-mono">ID: {device.deviceIdentifier}</div>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     {device.status === 'ACTIVE' ? (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
                         Aktif
                       </span>
                     ) : (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-muted text-muted-foreground">
                         {device.status}
                       </span>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-muted-foreground">
+                  <td className="px-6 py-4 text-muted-foreground text-xs">
                     {device.lastSeenAt ? new Date(device.lastSeenAt).toLocaleString('id-ID') : '-'}
                   </td>
                   <td className="px-6 py-4 text-right">
                     {canManage && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
+                          <Button variant="ghost" className="h-8 w-8 p-0 rounded-lg cursor-pointer">
                             <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                            <IconDots className="h-4 w-4 text-muted-foreground" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                        <DropdownMenuContent align="end" className="rounded-xl shadow-lg">
                           <DropdownMenuItem 
                             onClick={() => handleRevoke(device.id)}
-                            className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer"
+                            className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer rounded-lg text-xs"
                           >
-                            <Trash2 className="mr-2 h-4 w-4" />
+                            <IconTrash className="mr-2 h-4 w-4" />
                             Putuskan Sambungan
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -162,16 +168,16 @@ export function DevicesClient({ initialDevices, canManage }: { initialDevices: D
       </div>
 
       <Dialog open={isPairingModalOpen} onOpenChange={setIsPairingModalOpen}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="text-center">Tautkan Perangkat Kasir</DialogTitle>
-            <DialogDescription className="text-center">
+            <DialogTitle className="text-center font-bold text-lg">Tautkan Perangkat Kasir</DialogTitle>
+            <DialogDescription className="text-center text-xs">
               Masukkan kode pairing ini di aplikasi POS atau scan QR Code berikut.
             </DialogDescription>
           </DialogHeader>
 
           <div className="flex flex-col items-center justify-center py-6 space-y-6">
-            <div className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+            <div className="p-4 bg-white border border-border/80 rounded-2xl shadow-sm">
               {pairingCode && (
                 <QRCodeSVG 
                   value={JSON.stringify({ code: pairingCode })} 

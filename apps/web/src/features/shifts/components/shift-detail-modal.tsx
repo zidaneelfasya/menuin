@@ -164,25 +164,25 @@ export function ShiftDetailModal({
                     </Badge>
                   </div>
 
-                  <div className="space-y-1.5 text-xs py-0.5">
+                  <div className="space-y-1.5 text-xs py-0.5 font-financial tabular-nums">
                     <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Transaksi Selesai</span>
-                      <span className="font-mono font-semibold">{metrics.totalTransactions} Order</span>
+                      <span className="text-muted-foreground font-sans">Transaksi Selesai</span>
+                      <span className="font-semibold">{metrics.totalTransactions} Order</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Total Produk Terjual</span>
-                      <span className="font-mono font-semibold">{metrics.totalItemsSold} pcs</span>
+                      <span className="text-muted-foreground font-sans">Total Produk Terjual</span>
+                      <span className="font-semibold">{metrics.totalItemsSold} pcs</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Penjualan Online</span>
-                      <span className="font-mono text-muted-foreground">{formatCurrency(metrics.totalOnlineSales || 0)}</span>
+                      <span className="text-muted-foreground font-sans">Penjualan Online</span>
+                      <span className="text-muted-foreground">{formatCurrency(metrics.totalOnlineSales || 0)}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-3 pt-2.5 border-t flex justify-between items-baseline bg-muted/30 -mx-4 -mb-4 p-3 rounded-b-2xl">
-                  <span className="text-[11px] font-medium text-muted-foreground">Rata-rata Order (AOV)</span>
-                  <span className="text-xs font-bold font-mono text-foreground">
+                <div className="mt-3 pt-2.5 border-t flex justify-between items-baseline bg-muted/30 -mx-4 -mb-4 p-3 rounded-b-2xl font-financial tabular-nums">
+                  <span className="text-[11px] font-medium text-muted-foreground font-sans">Rata-rata Order (AOV)</span>
+                  <span className="text-xs font-bold text-foreground">
                     {formatCurrency(metrics.totalTransactions > 0 ? Math.round(metrics.totalSales / metrics.totalTransactions) : 0)}
                   </span>
                 </div>
@@ -203,38 +203,38 @@ export function ShiftDetailModal({
                         <span className="text-[10px] text-muted-foreground">Metode Bayar</span>
                       </div>
                     </div>
-                    <span className="text-[10px] font-mono text-primary font-semibold bg-primary/10 px-2 py-0.5 rounded">
+                    <span className="text-[10px] text-primary font-semibold bg-primary/10 px-2 py-0.5 rounded">
                       Omzet Bersih
                     </span>
                   </div>
 
-                  <div className="space-y-1.5 text-xs py-0.5">
+                  <div className="space-y-1.5 text-xs py-0.5 font-financial tabular-nums">
                     <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground flex items-center gap-1.5">
+                      <span className="text-muted-foreground flex items-center gap-1.5 font-sans">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Tunai (Cash)
                       </span>
-                      <span className="font-mono font-semibold">{formatCurrency(metrics.totalCashSales || 0)}</span>
+                      <span className="font-semibold">{formatCurrency(metrics.totalCashSales || 0)}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground flex items-center gap-1.5">
+                      <span className="text-muted-foreground flex items-center gap-1.5 font-sans">
                         <span className="w-1.5 h-1.5 rounded-full bg-blue-500" /> QRIS
                       </span>
-                      <span className="font-mono font-semibold">{formatCurrency(metrics.totalQrisSales || 0)}</span>
+                      <span className="font-semibold">{formatCurrency(metrics.totalQrisSales || 0)}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground flex items-center gap-1.5">
+                      <span className="text-muted-foreground flex items-center gap-1.5 font-sans">
                         <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Transfer / EDC
                       </span>
-                      <span className="font-mono font-semibold">
+                      <span className="font-semibold">
                         {formatCurrency((metrics.totalTransferSales || 0) + (metrics.totalDebitSales || 0))}
                       </span>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-3 pt-2.5 border-t flex justify-between items-baseline bg-muted/30 -mx-4 -mb-4 p-3 rounded-b-2xl">
-                  <span className="text-[11px] font-bold text-foreground">Total Omzet</span>
-                  <span className="text-sm font-bold font-mono text-primary">
+                <div className="mt-3 pt-2.5 border-t flex justify-between items-baseline bg-muted/30 -mx-4 -mb-4 p-3 rounded-b-2xl font-financial tabular-nums">
+                  <span className="text-[11px] font-bold text-foreground font-sans">Total Omzet</span>
+                  <span className="text-sm font-bold text-primary">
                     {formatCurrency(metrics.totalSales || 0)}
                   </span>
                 </div>
@@ -255,57 +255,57 @@ export function ShiftDetailModal({
                         <span className="text-[10px] text-muted-foreground">Uang Fisik Kasir</span>
                       </div>
                     </div>
-                    <Badge variant="outline" className="border-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-mono">
+                    <Badge variant="outline" className="border-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-[10px]">
                       Cash Drawer
                     </Badge>
                   </div>
 
-                  <div className="space-y-1 text-xs">
+                  <div className="space-y-1 text-xs font-financial tabular-nums">
                     <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Modal Awal Kas</span>
-                      <span className="font-mono">{formatCurrency(metrics.startingCash || 0)}</span>
+                      <span className="text-muted-foreground font-sans">Modal Awal Kas</span>
+                      <span>{formatCurrency(metrics.startingCash || 0)}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Penjualan Tunai (+)</span>
-                      <span className="font-mono text-emerald-600">+{formatCurrency(metrics.totalCashSales || 0)}</span>
+                      <span className="text-muted-foreground font-sans">Penjualan Tunai (+)</span>
+                      <span className="text-emerald-600">+{formatCurrency(metrics.totalCashSales || 0)}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Kas Masuk (+)</span>
-                      <span className="font-mono text-emerald-600">+{formatCurrency(metrics.totalCashIn || 0)}</span>
+                      <span className="text-muted-foreground font-sans">Kas Masuk (+)</span>
+                      <span className="text-emerald-600">+{formatCurrency(metrics.totalCashIn || 0)}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Kas Keluar (-)</span>
-                      <span className="font-mono text-rose-600">-{formatCurrency(metrics.totalCashOut || 0)}</span>
+                      <span className="text-muted-foreground font-sans">Kas Keluar (-)</span>
+                      <span className="text-rose-600">-{formatCurrency(metrics.totalCashOut || 0)}</span>
                     </div>
                     <div className="pt-1 border-t flex justify-between items-center font-medium">
-                      <span className="text-muted-foreground">Ekspektasi Kas Laci</span>
-                      <span className="font-mono font-semibold">{formatCurrency(metrics.expectedCash || 0)}</span>
+                      <span className="text-muted-foreground font-sans">Ekspektasi Kas Laci</span>
+                      <span className="font-semibold">{formatCurrency(metrics.expectedCash || 0)}</span>
                     </div>
                     {shift?.status === 'ENDED' && (
                       <div className="flex justify-between items-center font-semibold text-foreground">
-                        <span>Kas Aktual Dihitung</span>
-                        <span className="font-mono text-primary">{formatCurrency(metrics.actualCash || 0)}</span>
+                        <span className="font-sans">Kas Aktual Dihitung</span>
+                        <span className="text-primary">{formatCurrency(metrics.actualCash || 0)}</span>
                       </div>
                     )}
                   </div>
                 </div>
 
-                <div className="mt-3 pt-2.5 border-t flex justify-between items-center bg-emerald-500/5 -mx-4 -mb-4 p-3 rounded-b-2xl border-emerald-500/20">
-                  <span className="text-xs font-semibold">Selisih Kas</span>
+                <div className="mt-3 pt-2.5 border-t flex justify-between items-center bg-emerald-500/5 -mx-4 -mb-4 p-3 rounded-b-2xl border-emerald-500/20 font-financial tabular-nums">
+                  <span className="text-xs font-semibold font-sans">Selisih Kas</span>
                   {shift?.status === 'ACTIVE' ? (
-                    <Badge variant="outline" className="text-[10px] font-mono">
+                    <Badge variant="outline" className="text-[10px]">
                       Shift Berjalan
                     </Badge>
                   ) : metrics.cashDifference === 0 ? (
-                    <Badge className="bg-emerald-500/15 text-emerald-600 border border-emerald-500/30 text-xs font-mono font-bold">
+                    <Badge className="bg-emerald-500/15 text-emerald-600 border border-emerald-500/30 text-xs font-bold">
                       Pas (Rp 0)
                     </Badge>
                   ) : metrics.cashDifference < 0 ? (
-                    <Badge className="bg-rose-500/15 text-rose-600 border border-rose-500/30 text-xs font-mono font-bold">
+                    <Badge className="bg-rose-500/15 text-rose-600 border border-rose-500/30 text-xs font-bold">
                       Kurang {formatCurrency(Math.abs(metrics.cashDifference))}
                     </Badge>
                   ) : (
-                    <Badge className="bg-blue-500/15 text-blue-600 border border-blue-500/30 text-xs font-mono font-bold">
+                    <Badge className="bg-blue-500/15 text-blue-600 border border-blue-500/30 text-xs font-bold">
                       Lebih {formatCurrency(metrics.cashDifference)}
                     </Badge>
                   )}
@@ -356,7 +356,7 @@ export function ShiftDetailModal({
                       ) : (
                         data.transactions.map((tx: any) => (
                           <TableRow key={tx.id} className="text-xs hover:bg-muted/40 transition-colors">
-                            <TableCell className="font-mono text-muted-foreground">
+                            <TableCell className="text-muted-foreground font-financial tabular-nums">
                               {format(new Date(tx.createdAt), 'HH:mm:ss')}
                             </TableCell>
                             <TableCell className="font-mono font-bold">
@@ -378,7 +378,7 @@ export function ShiftDetailModal({
                                 )}
                               </div>
                             </TableCell>
-                            <TableCell className="text-right font-mono font-bold text-foreground">
+                            <TableCell className="text-right font-financial font-bold text-foreground tabular-nums">
                               {formatCurrency(Number(tx.grandTotal))}
                             </TableCell>
                           </TableRow>
@@ -411,14 +411,14 @@ export function ShiftDetailModal({
                       ) : (
                         data.soldProducts.map((item: any, idx: number) => (
                           <TableRow key={idx} className="text-xs hover:bg-muted/40 transition-colors">
-                            <TableCell className="text-center font-mono text-muted-foreground">{idx + 1}</TableCell>
+                            <TableCell className="text-center font-financial text-muted-foreground tabular-nums">{idx + 1}</TableCell>
                             <TableCell className="font-bold text-foreground">{item.name}</TableCell>
-                            <TableCell className="text-center font-mono font-bold">
+                            <TableCell className="text-center font-financial font-bold tabular-nums">
                               <span className="inline-block px-2.5 py-0.5 rounded-lg bg-muted text-foreground">
                                 {item.totalQuantity} pcs
                               </span>
                             </TableCell>
-                            <TableCell className="text-right font-mono font-bold text-foreground">
+                            <TableCell className="text-right font-financial font-bold text-foreground tabular-nums">
                               {formatCurrency(Number(item.totalRevenue))}
                             </TableCell>
                           </TableRow>
@@ -451,7 +451,7 @@ export function ShiftDetailModal({
                       ) : (
                         data.cashMovements.map((move: any) => (
                           <TableRow key={move.id} className="text-xs hover:bg-muted/40 transition-colors">
-                            <TableCell className="font-mono text-muted-foreground">
+                            <TableCell className="font-financial text-muted-foreground tabular-nums">
                               {format(new Date(move.createdAt), 'HH:mm')}
                             </TableCell>
                             <TableCell>
@@ -466,7 +466,7 @@ export function ShiftDetailModal({
                               )}
                             </TableCell>
                             <TableCell className="font-medium text-foreground">{move.description}</TableCell>
-                            <TableCell className={`text-right font-mono font-bold ${move.type === 'IN' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                            <TableCell className={`text-right font-financial font-bold tabular-nums ${move.type === 'IN' ? 'text-emerald-600' : 'text-rose-600'}`}>
                               {move.type === 'IN' ? '+' : '-'}{formatCurrency(Number(move.amount))}
                             </TableCell>
                           </TableRow>

@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { tenants, transactionItems, products } from "@/lib/db/schema";
-import { eq, sql, and } from "drizzle-orm";
+import { eq, sql, and, or } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { ReactNode } from "react";
 import { Inter } from "next/font/google";
@@ -8,13 +8,14 @@ import { connection } from "next/server";
 import { headers } from "next/headers";
 import { StoreHeroHeader } from "@/components/store/store-hero-header";
 import { StoreLayoutClient } from "@/components/store/store-layout-client";
+import { getCurrentUser } from "@/lib/actions/auth";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   await connection();
   const { slug } = await params;
-  const result = await db.select().from(tenants).where(eq(tenants.slug, slug)).limit(1);
+  const result = await db.select().from(tenants).where(or(eq(tenants.slug, slug), eq(tenants.outletKey, slug))).limit(1);
   if (result.length === 0) return { title: "Not Found" };
   
   const tenant = result[0];
@@ -33,13 +34,20 @@ export default async function StoreLayout({
 }) {
   await connection();
   const { slug } = await params;
-  const result = await db.select().from(tenants).where(eq(tenants.slug, slug)).limit(1);
+  const result = await db.select().from(tenants).where(or(eq(tenants.slug, slug), eq(tenants.outletKey, slug))).limit(1);
   
-  if (result.length === 0 || !result[0].storefrontEnabled) {
+  if (result.length === 0) {
     notFound();
   }
 
   const tenant = result[0];
+  const user = await getCurrentUser().catch(() => null);
+  const isAuthorized = user && user.tenantId === tenant.id;
+
+  if (!tenant.storefrontEnabled && !isAuthorized) {
+    notFound();
+  }
+
   const primaryColor = tenant.primaryColor || "#f43f5e"; // Default to a nice rose red for food apps
 
   // Query total products sold and total product count for this outlet

@@ -5,9 +5,10 @@ import { ProductCatalog } from './product-catalog';
 import { ShoppingCart } from './shopping-cart';
 import { useCartStore } from '../stores/use-cart-store';
 import { toast } from 'sonner';
-import { ShoppingBag } from 'lucide-react';
+import { ShoppingBag, Clock, AlertTriangle } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils/format';
 import { createTransaction } from '@/lib/actions/transactions';
+import { getActiveShift } from '@/lib/actions/shifts';
 import {
   Drawer,
   DrawerContent,
@@ -18,6 +19,7 @@ import { PaymentModal } from './payment-modal';
 import { PaymentSuccessModal } from './payment-success-modal';
 import { ReceiptPrinter, ReceiptData } from './receipt-printer';
 import { StartShiftModal } from './start-shift-modal';
+import { ShiftSummaryModal } from './shift-summary-modal';
 
 type Category = { id: string; name: string; };
 type Product = {
@@ -44,16 +46,23 @@ export function POSPage({
   const [isPaymentModalOpen, setIsPaymentModalOpen] = React.useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = React.useState(false);
   const [isStartShiftModalOpen, setIsStartShiftModalOpen] = React.useState(false);
+  const [isShiftSummaryOpen, setIsShiftSummaryOpen] = React.useState(false);
+  const [isMobileCartOpen, setIsMobileCartOpen] = React.useState(false);
   const [receiptData, setReceiptData] = React.useState<ReceiptData | null>(null);
   const [printMode, setPrintMode] = React.useState<'all' | 'customer' | 'kitchen'>('all');
   const [currentShift, setCurrentShift] = React.useState(activeShift);
   
-  const { items, clearCart, getTotal } = useCartStore();
+  const { items, clearCart, getTotal, getSubtotal } = useCartStore();
 
   React.useEffect(() => {
     setMounted(true);
     if (initialProducts && initialProducts.length > 0) {
-      useCartStore.getState().syncProductImages(initialProducts);
+      const mapped = initialProducts.map((p, idx) => ({
+        id: p.id,
+        imageUrl: p.imageUrl,
+        colorIndex: idx,
+      }));
+      useCartStore.getState().syncProductImages(mapped);
     }
   }, [initialProducts]);
 
@@ -117,7 +126,6 @@ export function POSPage({
       toast.success('Transaksi berhasil!', { id: toastId });
       
       const cashier = currentShift?.cashierName || 'Kasir';
-      // Prepare receipt data
       const newReceipt: ReceiptData = {
         transactionId: result.transactionId || 'TRX-UNKNOWN',
         date: new Date(),
@@ -172,78 +180,80 @@ export function POSPage({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [items, isPaymentModalOpen, isSuccessModalOpen]);
+  }, [items, isPaymentModalOpen, isSuccessModalOpen, handleCheckoutClick]);
 
   const totalItems = mounted ? items.reduce((sum, item) => sum + item.quantity, 0) : 0;
-  const cartTotal = mounted ? getTotal() : 0;
+  const cartSubtotal = mounted ? getSubtotal() : 0;
+  const discount = mounted ? useCartStore.getState().discount : 0;
+  const taxRate = parseFloat(posSettings?.posTaxRate || '0');
+  const serviceRate = parseFloat(posSettings?.serviceChargeRate || '0');
+  const taxableSubtotal = Math.max(0, cartSubtotal - discount);
+  const serviceChargeAmount = serviceRate > 0 ? (taxableSubtotal * serviceRate) / 100 : 0;
+  const taxAmount = taxRate > 0 ? (taxableSubtotal * taxRate) / 100 : 0;
+  const cartGrandTotal = taxableSubtotal + serviceChargeAmount + taxAmount;
 
   return (
     <>
-      <div className="flex h-full relative print:hidden w-full overflow-hidden">
-        <div className="flex-1 min-w-0 h-full pb-20 lg:pb-0">
-          <ProductCatalog products={initialProducts} categories={initialCategories} modifierGroups={modifierGroups || []} />
-        </div>
+      <div className="flex flex-col h-full relative print:hidden w-full overflow-hidden">
+        {/* Cashier Shift Status Banner */}
+        
 
-        <div className="hidden lg:block w-[300px] xl:w-[350px] 2xl:w-[400px] h-full flex-shrink-0 ml-4 lg:ml-6 relative">
-        <div className="h-full pb-[140px]">
-          <ShoppingCart />
-        </div>
-        <div className="absolute bottom-0 left-0 right-0 bg-background border-t p-4 pt-4 z-10">
-          <div className="flex justify-between text-lg font-bold mb-4">
-            <span>Total:</span>
-            <span>{formatCurrency(cartTotal)}</span>
+        {/* Main Workspace (Catalog + Cart) */}
+        <div className="flex-1 min-w-0 flex overflow-hidden">
+          <div className="flex-1 min-w-0 h-full pb-16 lg:pb-0">
+            <ProductCatalog products={initialProducts} categories={initialCategories} modifierGroups={modifierGroups || []} />
           </div>
-          <button 
-            onClick={handleCheckoutClick}
-            disabled={totalItems === 0 || isProcessing}
-            className="w-full h-14 bg-primary text-primary-foreground rounded-xl font-bold shadow-md hover:opacity-90 transition-opacity disabled:opacity-50"
-          >
-            Bayar Sekarang (F4)
-          </button>
+
+          {/* Desktop Cart Sidebar */}
+          <div className="hidden lg:block w-[320px] xl:w-[360px] 2xl:w-[400px] h-full flex-shrink-0 ml-4 lg:ml-6">
+            <ShoppingCart 
+              posSettings={posSettings} 
+              onCheckout={handleCheckoutClick} 
+              isProcessing={isProcessing} 
+            />
+          </div>
+        </div>
+
+        {/* Mobile Cart Floating Bottom Bar */}
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 p-3 bg-background/95 backdrop-blur-sm border-t border-border/80 z-20 shadow-xs">
+          <Drawer open={isMobileCartOpen} onOpenChange={setIsMobileCartOpen}>
+            <DrawerTrigger asChild>
+              <button className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-xl flex items-center justify-between px-4 font-semibold shadow-xs active:scale-[0.98] transition-transform cursor-pointer">
+                <div className="flex items-center">
+                  <div className="relative">
+                    <ShoppingBag size={18} />
+                    {totalItems > 0 && (
+                      <span className="absolute -top-1.5 -right-2 bg-rose-600 text-white text-[10px] h-4 min-w-[16px] px-1 rounded-full flex items-center justify-center font-semibold">
+                        {totalItems}
+                      </span>
+                    )}
+                  </div>
+                  <span className="ml-2.5 text-xs">Lihat Pesanan</span>
+                </div>
+                <span className="text-sm font-semibold">{formatCurrency(cartGrandTotal)}</span>
+              </button>
+            </DrawerTrigger>
+            <DrawerContent className="h-[88vh] p-0 flex flex-col">
+              <DrawerTitle className="sr-only">Keranjang Belanja</DrawerTitle>
+              <div className="flex-1 overflow-hidden p-2">
+                <ShoppingCart 
+                  posSettings={posSettings} 
+                  onCheckout={() => {
+                    setIsMobileCartOpen(false);
+                    handleCheckoutClick();
+                  }} 
+                  isProcessing={isProcessing} 
+                />
+              </div>
+            </DrawerContent>
+          </Drawer>
         </div>
       </div>
-
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-background border-t z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
-        <Drawer>
-          <DrawerTrigger asChild>
-            <button className="w-full h-14 bg-primary text-primary-foreground rounded-xl flex items-center justify-between px-6 font-semibold shadow-md active:scale-95 transition-transform">
-              <div className="flex items-center">
-                <div className="relative">
-                  <ShoppingBag size={20} />
-                  {totalItems > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-destructive text-white text-[10px] h-4 min-w-[16px] px-1 rounded-full flex items-center justify-center">
-                      {totalItems}
-                    </span>
-                  )}
-                </div>
-                <span className="ml-3">Lihat Keranjang</span>
-              </div>
-              <span className="text-lg">{formatCurrency(cartTotal)}</span>
-            </button>
-          </DrawerTrigger>
-          <DrawerContent className="h-[85vh] p-0 flex flex-col">
-            <DrawerTitle className="sr-only">Keranjang Belanja</DrawerTitle>
-            <div className="flex-1 overflow-hidden">
-              <ShoppingCart />
-            </div>
-            <div className="p-4 border-t bg-background mt-auto">
-              <button 
-                onClick={handleCheckoutClick}
-                disabled={totalItems === 0 || isProcessing}
-                className="w-full h-14 bg-primary text-primary-foreground rounded-xl font-bold shadow-md disabled:opacity-50"
-              >
-                Bayar Sekarang
-              </button>
-            </div>
-          </DrawerContent>
-        </Drawer>
-      </div>
-    </div>
 
       <PaymentModal 
         isOpen={isPaymentModalOpen}
         onClose={() => setIsPaymentModalOpen(false)}
-        subtotalAmount={cartTotal}
+        subtotalAmount={cartSubtotal}
         onConfirm={handleConfirmPayment}
         posSettings={posSettings}
       />
@@ -259,9 +269,20 @@ export function POSPage({
       <StartShiftModal
         isOpen={isStartShiftModalOpen}
         onClose={() => setIsStartShiftModalOpen(false)}
-        onSuccess={() => {
-           // Reload page to get new shift data
-           window.location.reload();
+        onSuccess={async () => {
+          const shiftRes = await getActiveShift();
+          if (shiftRes.success) {
+            setCurrentShift(shiftRes.data);
+          }
+        }}
+      />
+
+      <ShiftSummaryModal
+        isOpen={isShiftSummaryOpen}
+        onClose={() => setIsShiftSummaryOpen(false)}
+        shiftData={currentShift}
+        onShiftClosed={() => {
+          setCurrentShift(null);
         }}
       />
       
