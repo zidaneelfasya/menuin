@@ -93,8 +93,13 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
       return;
     }
     const subtotal = getSubtotal();
+    const cartItemsForPromo = items.map((i) => ({
+      productId: i.productId,
+      price: i.price,
+      quantity: i.quantity,
+    }));
     setIsValidatingPromo(true);
-    const res = await validatePosPromoCode(code, subtotal);
+    const res = await validatePosPromoCode(code, subtotal, cartItemsForPromo);
     setIsValidatingPromo(false);
 
     if (res.success && res.data) {
@@ -121,8 +126,14 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
       return;
     }
 
+    const cartItemsForPromo = items.map((i) => ({
+      productId: i.productId,
+      price: i.price,
+      quantity: i.quantity,
+    }));
+
     setIsValidatingPromo(true);
-    const res = await validatePromotion(promo.id, subtotal);
+    const res = await validatePromotion(promo.id, subtotal, cartItemsForPromo);
     setIsValidatingPromo(false);
 
     if (res.success && res.data) {

@@ -16,6 +16,7 @@ type CheckoutPayload = {
   platformFee?: number;
   grandTotal: number;
   promoCode?: string;
+  promotionId?: string;
   paymentMethod: string;
   customerName?: string;
   customerPhone?: string;
@@ -76,6 +77,7 @@ export async function createTransaction(payload: CheckoutPayload) {
         platformFee: (payload.platformFee || 0).toString(),
         grandTotal: payload.grandTotal.toString(),
         promoCode: payload.promoCode || null,
+        promotionId: payload.promotionId || null,
         paymentMethod: (payload.paymentMethod || 'CASH').toUpperCase(),
         paymentStatus: 'PAID', // POS transactions are always paid immediately
         status: 'PROCESSING', // POS orders directly go to kitchen as PROCESSING

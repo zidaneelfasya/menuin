@@ -1,8 +1,8 @@
 'use server';
 
 import { db } from '@/lib/db';
-import { promotions, tenants } from '@/lib/db/schema';
-import { eq, and, desc, sql, ne } from 'drizzle-orm';
+import { promotions, tenants, products, transactions } from '@/lib/db/schema';
+import { eq, and, desc, sql, ne, or } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { getCurrentUser } from './auth';
@@ -20,12 +20,21 @@ const promotionSchema = z.object({
   value: z.coerce.number().min(0.01, 'Nilai potongan promo harus lebih dari 0'),
   minOrder: z.coerce.number().min(0, 'Minimal order tidak boleh negatif').optional().nullable(),
   maxDiscount: z.coerce.number().min(0).optional().nullable(),
+  targetType: z.enum(['ALL', 'SPECIFIC_PRODUCTS']).default('ALL'),
+  applicableProductIds: z.array(z.string()).optional().default([]),
+  minProductQty: z.coerce.number().min(1, 'Minimal jumlah produk 1').default(1),
   isActive: z.boolean().default(true),
   startDate: z.string().optional().nullable(),
   endDate: z.string().optional().nullable(),
 });
 
 export type PromotionInput = z.infer<typeof promotionSchema>;
+
+export type CartItemForPromo = {
+  productId: string;
+  price: number;
+  quantity: number;
+};
 
 export async function getPromotions() {
   try {
@@ -40,7 +49,38 @@ export async function getPromotions() {
       .where(eq(promotions.tenantId, user.tenantId))
       .orderBy(desc(promotions.createdAt));
 
-    return { success: true, data };
+    // Fetch transactions stats for tenant
+    const txs = await db
+      .select({
+        id: transactions.id,
+        promoCode: transactions.promoCode,
+        promotionId: transactions.promotionId,
+        discount: transactions.discount,
+        status: transactions.status,
+      })
+      .from(transactions)
+      .where(and(
+        eq(transactions.tenantId, user.tenantId),
+        ne(transactions.status, 'CANCELED')
+      ));
+
+    const dataWithStats = data.map((promo) => {
+      const matching = txs.filter((t) =>
+        (t.promotionId && t.promotionId === promo.id) ||
+        (t.promoCode && t.promoCode.toUpperCase() === promo.code.toUpperCase())
+      );
+
+      const totalUsage = matching.length;
+      const totalDiscountValue = matching.reduce((sum, t) => sum + parseFloat(t.discount || '0'), 0);
+
+      return {
+        ...promo,
+        totalUsage,
+        totalDiscountValue,
+      };
+    });
+
+    return { success: true, data: dataWithStats };
   } catch (error) {
     console.error('Error fetching promotions:', error);
     return { success: false, error: 'Gagal mengambil data promo' };
@@ -64,6 +104,33 @@ export async function getActivePromotions() {
   } catch (error) {
     console.error('Error fetching active promotions:', error);
     return { success: false, error: 'Gagal mengambil promo aktif' };
+  }
+}
+
+export async function getTenantProductsForPromo() {
+  try {
+    const user = await getCurrentUser();
+    if (!user || !user.tenantId) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    const data = await db
+      .select({
+        id: products.id,
+        name: products.name,
+        price: products.price,
+        imageUrl: products.imageUrl,
+        sku: products.sku,
+        isActive: products.isActive,
+      })
+      .from(products)
+      .where(and(eq(products.tenantId, user.tenantId), eq(products.isActive, true)))
+      .orderBy(products.name);
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('Error fetching products for promo:', error);
+    return { success: false, error: 'Gagal mengambil daftar produk' };
   }
 }
 
@@ -131,6 +198,9 @@ export async function createPromotion(formData: z.infer<typeof promotionSchema>)
       value: validatedData.value.toString(),
       minOrder: (validatedData.minOrder || 0).toString(),
       maxDiscount: validatedData.maxDiscount ? validatedData.maxDiscount.toString() : null,
+      targetType: validatedData.targetType || 'ALL',
+      applicableProductIds: validatedData.applicableProductIds || [],
+      minProductQty: validatedData.minProductQty || 1,
       isActive: validatedData.isActive ?? true,
       startDate: validatedData.startDate ? new Date(validatedData.startDate) : null,
       endDate: validatedData.endDate ? new Date(validatedData.endDate) : null,
@@ -175,6 +245,9 @@ export async function updatePromotion(id: string, formData: z.infer<typeof promo
         value: validatedData.value.toString(),
         minOrder: (validatedData.minOrder || 0).toString(),
         maxDiscount: validatedData.maxDiscount ? validatedData.maxDiscount.toString() : null,
+        targetType: validatedData.targetType || 'ALL',
+        applicableProductIds: validatedData.applicableProductIds || [],
+        minProductQty: validatedData.minProductQty || 1,
         isActive: validatedData.isActive ?? true,
         startDate: validatedData.startDate ? new Date(validatedData.startDate) : null,
         endDate: validatedData.endDate ? new Date(validatedData.endDate) : null,
@@ -223,7 +296,7 @@ export async function deletePromotion(id: string) {
   }
 }
 
-function calculatePromoDiscount(promo: any, subtotal: number) {
+function calculatePromoDiscount(promo: any, subtotal: number, items?: CartItemForPromo[]) {
   const minOrder = parseFloat(promo.minOrder || '0');
   if (subtotal < minOrder) {
     return {
@@ -233,10 +306,52 @@ function calculatePromoDiscount(promo: any, subtotal: number) {
     };
   }
 
+  let eligibleSubtotal = subtotal;
+
+  if (promo.targetType === 'SPECIFIC_PRODUCTS') {
+    let applicableIds: string[] = [];
+    if (Array.isArray(promo.applicableProductIds)) {
+      applicableIds = promo.applicableProductIds;
+    } else if (typeof promo.applicableProductIds === 'string') {
+      try {
+        applicableIds = JSON.parse(promo.applicableProductIds);
+      } catch (e) {
+        applicableIds = [];
+      }
+    }
+
+    if (applicableIds.length > 0) {
+      if (items && items.length > 0) {
+        const matchingItems = items.filter((it) => applicableIds.includes(it.productId));
+        const totalQty = matchingItems.reduce((sum, it) => sum + (it.quantity || 1), 0);
+        const minQty = promo.minProductQty || 1;
+
+        if (totalQty < minQty) {
+          return {
+            isValid: false,
+            error: `Promo ini memerlukan minimal ${minQty} pcs produk promo dalam keranjang.`,
+            discountAmount: 0,
+          };
+        }
+
+        eligibleSubtotal = matchingItems.reduce((sum, it) => sum + (it.price * (it.quantity || 1)), 0);
+      }
+    }
+  }
+
+  if (eligibleSubtotal <= 0) {
+    return {
+      isValid: false,
+      error: 'Keranjang tidak mengandung produk yang berlaku untuk promo ini.',
+      discountAmount: 0,
+    };
+  }
+
   let discountAmount = 0;
   const promoValue = parseFloat(promo.value);
+
   if (promo.type === 'PERCENTAGE') {
-    discountAmount = (subtotal * promoValue) / 100;
+    discountAmount = (eligibleSubtotal * promoValue) / 100;
     if (promo.maxDiscount) {
       const maxDisc = parseFloat(promo.maxDiscount);
       if (discountAmount > maxDisc) {
@@ -247,6 +362,9 @@ function calculatePromoDiscount(promo: any, subtotal: number) {
     discountAmount = promoValue;
   }
 
+  if (discountAmount > eligibleSubtotal) {
+    discountAmount = eligibleSubtotal;
+  }
   if (discountAmount > subtotal) {
     discountAmount = subtotal;
   }
@@ -257,7 +375,7 @@ function calculatePromoDiscount(promo: any, subtotal: number) {
   };
 }
 
-export async function validatePromotion(promoId: string, subtotal: number) {
+export async function validatePromotion(promoId: string, subtotal: number, items?: CartItemForPromo[]) {
   try {
     const promoRows = await db
       .select()
@@ -278,7 +396,7 @@ export async function validatePromotion(promoId: string, subtotal: number) {
       return { success: false, error: 'Promo ini sudah berakhir/kadaluwarsa.' };
     }
 
-    const calc = calculatePromoDiscount(promo, subtotal);
+    const calc = calculatePromoDiscount(promo, subtotal, items);
     if (!calc.isValid) {
       return { success: false, error: calc.error };
     }
@@ -302,7 +420,7 @@ export async function validatePromotion(promoId: string, subtotal: number) {
   }
 }
 
-export async function validatePublicPromoCode(tenantSlug: string, code: string, subtotal: number) {
+export async function validatePublicPromoCode(tenantSlug: string, code: string, subtotal: number, items?: CartItemForPromo[]) {
   try {
     const cleanCode = (code || '').toUpperCase().trim();
     if (!cleanCode) {
@@ -343,7 +461,7 @@ export async function validatePublicPromoCode(tenantSlug: string, code: string, 
       return { success: false, error: 'Kode promo ini sudah berakhir/kadaluwarsa.' };
     }
 
-    const calc = calculatePromoDiscount(promo, subtotal);
+    const calc = calculatePromoDiscount(promo, subtotal, items);
     if (!calc.isValid) {
       return { success: false, error: calc.error };
     }
@@ -367,7 +485,7 @@ export async function validatePublicPromoCode(tenantSlug: string, code: string, 
   }
 }
 
-export async function validatePosPromoCode(code: string, subtotal: number) {
+export async function validatePosPromoCode(code: string, subtotal: number, items?: CartItemForPromo[]) {
   try {
     const user = await getCurrentUser();
     if (!user || !user.tenantId) {
@@ -402,7 +520,7 @@ export async function validatePosPromoCode(code: string, subtotal: number) {
       return { success: false, error: 'Kode promo ini sudah kadaluwarsa.' };
     }
 
-    const calc = calculatePromoDiscount(promo, subtotal);
+    const calc = calculatePromoDiscount(promo, subtotal, items);
     if (!calc.isValid) {
       return { success: false, error: calc.error };
     }
@@ -423,5 +541,68 @@ export async function validatePosPromoCode(code: string, subtotal: number) {
   } catch (error) {
     console.error('Error validating POS promo code:', error);
     return { success: false, error: 'Gagal memvalidasi kode promo POS.' };
+  }
+}
+
+export async function getPromotionTransactions(promoId: string) {
+  try {
+    const user = await getCurrentUser();
+    if (!user || !user.tenantId) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    const promoRows = await db
+      .select()
+      .from(promotions)
+      .where(and(eq(promotions.id, promoId), eq(promotions.tenantId, user.tenantId)))
+      .limit(1);
+
+    if (promoRows.length === 0) {
+      return { success: false, error: 'Promo tidak ditemukan' };
+    }
+
+    const promo = promoRows[0];
+
+    const data = await db
+      .select({
+        id: transactions.id,
+        orderNumber: transactions.orderNumber,
+        createdAt: transactions.createdAt,
+        customerName: transactions.customerName,
+        orderType: transactions.orderType,
+        totalAmount: transactions.totalAmount,
+        discount: transactions.discount,
+        grandTotal: transactions.grandTotal,
+        paymentMethod: transactions.paymentMethod,
+        paymentStatus: transactions.paymentStatus,
+        status: transactions.status,
+      })
+      .from(transactions)
+      .where(and(
+        eq(transactions.tenantId, user.tenantId),
+        or(
+          eq(transactions.promotionId, promoId),
+          sql`UPPER(${transactions.promoCode}) = ${promo.code.toUpperCase()}`
+        )
+      ))
+      .orderBy(desc(transactions.createdAt));
+
+    const totalUsage = data.length;
+    const totalDiscountValue = data
+      .filter((t) => t.status !== 'CANCELED')
+      .reduce((sum, t) => sum + parseFloat(t.discount || '0'), 0);
+
+    return {
+      success: true,
+      promo,
+      data,
+      stats: {
+        totalUsage,
+        totalDiscountValue,
+      },
+    };
+  } catch (error) {
+    console.error('Error fetching promotion transactions:', error);
+    return { success: false, error: 'Gagal mengambil transaksi promo' };
   }
 }

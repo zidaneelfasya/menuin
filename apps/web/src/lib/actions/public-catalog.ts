@@ -118,6 +118,7 @@ export async function createOnlineOrder(formData: z.infer<typeof orderSchema>) {
       totalAmount: subTotal.toString(),
       discount: discount.toString(),
       promoCode: data.promoCode || data.promoName || null,
+      promotionId: data.promoId || null,
       tax: taxAmount.toString(),
       serviceCharge: serviceChargeAmount.toString(),
       grandTotal: grandTotal.toString(),
