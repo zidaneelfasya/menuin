@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { createPortal } from 'react-dom';
-import { formatCurrency } from '@/lib/utils/format';
+import { formatCurrency, formatPaymentMethodLabel } from '@/lib/utils/format';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 
@@ -236,7 +236,7 @@ export const ReceiptPrinter = React.forwardRef<HTMLDivElement, ReceiptPrinterPro
                 )}
                 <div className="receipt-flex-between">
                   <span>METODE</span>
-                  <span>{data.paymentMethod || 'TUNAI'}</span>
+                  <span style={{ fontWeight: 'bold' }}>{formatPaymentMethodLabel(data.paymentMethod)}</span>
                 </div>
               </div>
 

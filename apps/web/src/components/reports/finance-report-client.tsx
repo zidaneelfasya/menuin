@@ -12,8 +12,13 @@ import {
   AlertCircle,
   Coins,
   ShieldCheck,
+  CreditCard,
+  Landmark,
   CheckCircle2,
-  Calendar
+  Calendar,
+  HelpCircle,
+  Clock,
+  User
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,6 +42,7 @@ import {
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { cn } from "@/lib/utils";
+import { formatPaymentMethodLabel } from "@/lib/utils/format";
 
 type FinanceReportData = NonNullable<Awaited<ReturnType<typeof getFinanceReport>>["data"]>;
 
@@ -158,10 +164,18 @@ export function FinanceReportClient({ initialData, outletKey }: FinanceReportCli
         { Indikator: "Outlet", Nilai: data.tenant.name },
         { Indikator: "Periode", Nilai: `${data.period.formattedStart} - ${data.period.formattedEnd}` },
         { Indikator: "Total Kas Masuk (Cash In)", Nilai: data.cashFlow.totalCashIn },
-        { Indikator: "Kas Penjualan Tunai", Nilai: data.cashFlow.cashSalesTotal },
+        { Indikator: "Penjualan Kasir Tunai (Fisik Laci)", Nilai: data.cashFlow.cashSalesTotal },
+        { Indikator: "Penerimaan QRIS / Digital (Gross)", Nilai: (data.cashFlow as any).nonCashGrandTotal || data.cashFlow.nonCashSalesTotal },
+        { Indikator: "Potongan MDR Payment Gateway (0.7%)", Nilai: (data.cashFlow as any).nonCashGatewayFee || (data.cashFlow as any).totalGatewayFee || 0 },
+        { Indikator: "Pencairan Bersih Bank (Net Settled)", Nilai: data.cashFlow.nonCashSalesTotal },
+        { Indikator: "Kas Masuk Manual Laci", Nilai: data.cashFlow.manualCashIn },
         { Indikator: "Total Kas Keluar (Cash Out)", Nilai: data.cashFlow.totalCashOut },
         { Indikator: "Biaya Kas Tunai", Nilai: data.cashFlow.cashExpenses },
+        { Indikator: "Biaya Non-Tunai / Transfer Bank", Nilai: data.cashFlow.nonCashExpenses },
+        { Indikator: "Pengambilan Kas Manual Laci", Nilai: data.cashFlow.manualCashOut },
         { Indikator: "Arus Kas Bersih (Net Cash Flow)", Nilai: data.cashFlow.netCashFlow },
+        { Indikator: "Net Arus Kas Laci Kasir", Nilai: data.cashFlow.drawerNetFlow },
+        { Indikator: "Net Saldo Bank & Digital", Nilai: data.cashFlow.digitalNetFlow },
         { Indikator: "Penjualan Bersih (Net Sales)", Nilai: data.profitability.netSales },
         { Indikator: "Estimasi HPP Modal Produk Terjual", Nilai: data.profitability.totalHpp },
         { Indikator: "Estimasi Laba Kotor (Gross Profit)", Nilai: data.profitability.estimatedGrossProfit },
@@ -184,13 +198,14 @@ export function FinanceReportClient({ initialData, outletKey }: FinanceReportCli
       // Shift Reconciliations
       const shiftRows = data.shifts.map((s) => ({
         "Shift ID": s.id.slice(0, 8),
+        Kasir: (s as any).cashierName || "Kasir",
         Status: s.status,
         Mulai: new Date(s.startTime).toLocaleString("id-ID"),
         Selesai: s.endTime ? new Date(s.endTime).toLocaleString("id-ID") : "-",
         "Modal Awal": parseFloat(s.startingCash || "0"),
-        "Uang Aktual Kasir": parseFloat(s.actualCash || "0"),
+        "Uang Aktual Kasir": s.actualCash ? parseFloat(s.actualCash) : "-",
         "Uang Sistem Diharapkan": parseFloat(s.expectedCash || "0"),
-        Selisih: parseFloat(s.cashDifference || "0"),
+        Selisih: s.cashDifference ? parseFloat(s.cashDifference) : "-",
       }));
       const shiftSheet = XLSX.utils.json_to_sheet(shiftRows);
       XLSX.utils.book_append_sheet(workbook, shiftSheet, "Rekonsiliasi Shift");
@@ -214,27 +229,27 @@ export function FinanceReportClient({ initialData, outletKey }: FinanceReportCli
       {/* Printable Header */}
       <div className="hidden print:flex items-center justify-between pb-6 mb-6 border-b-2 border-slate-900">
         <div>
-          <h1 className="text-2xl font-bold uppercase tracking-tight text-slate-900">{tenant.name}</h1>
+          <h1 className="text-2xl font-semibold uppercase tracking-tight text-slate-900">{tenant.name}</h1>
           <p className="text-xs text-slate-600">Laporan Arus Kas, Biaya Operasional & Rekonsiliasi Shift</p>
         </div>
         <div className="text-right">
-          <div className="text-xs font-semibold uppercase text-slate-500">Periode</div>
-          <div className="text-sm font-bold text-slate-900">{reportPeriod.formattedStart} - {reportPeriod.formattedEnd}</div>
+          <div className="text-xs font-medium uppercase text-slate-500">Periode</div>
+          <div className="text-sm font-semibold text-slate-900">{reportPeriod.formattedStart} - {reportPeriod.formattedEnd}</div>
         </div>
       </div>
 
       {/* Screen Title & Action */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 print:hidden">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Keuangan & Arus Kas</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Keuangan & Arus Kas</h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Monitoring kas masuk & keluar, pencatatan biaya operasional, dan rekonsiliasi shift laci kasir.
+            Monitoring kas masuk & keluar, distribusi tunai vs digital, dan rekonsiliasi laci kasir.
           </p>
         </div>
 
         <Button
           onClick={() => setIsModalOpen(true)}
-          className="bg-[#0e59f9] hover:bg-[#0c4cd4] text-white shadow-sm gap-2 h-10 px-4 self-start sm:self-auto cursor-pointer"
+          className="bg-[#0e59f9] hover:bg-[#0c4cd4] text-white shadow-sm gap-2 h-10 px-4 self-start sm:self-auto cursor-pointer font-medium"
         >
           <Plus className="h-4 w-4" />
           <span>Catat Biaya Operasional</span>
@@ -255,51 +270,55 @@ export function FinanceReportClient({ initialData, outletKey }: FinanceReportCli
       {/* 4 Financial KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Cash In */}
-        <Card className="border border-[#EAEFF8] shadow-sm rounded-2xl">
+        <Card className="border border-[#EAEFF8] shadow-sm rounded-2xl bg-white hover:border-[#d7e2f5] transition-colors">
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Total Kas Masuk (Cash In)
+                Total Kas Masuk (Inflow)
               </span>
               <div className="h-7 w-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
                 <ArrowDownLeft className="h-4 w-4" />
               </div>
             </div>
             <div className="mt-3">
-              <div className="text-2xl font-bold text-emerald-600">
+              <div className="text-2xl font-semibold text-emerald-600 tracking-tight">
                 Rp {cashFlow.totalCashIn.toLocaleString("id-ID")}
               </div>
-              <div className="text-xs text-slate-500 mt-1">
-                Kasir Tunai: Rp {cashFlow.cashSalesTotal.toLocaleString("id-ID")}
+              <div className="text-[11px] text-slate-500 mt-1.5 flex flex-wrap items-center gap-1.5">
+                <span>Tunai: <strong className="font-semibold text-slate-700">Rp {cashFlow.cashSalesTotal.toLocaleString("id-ID")}</strong></span>
+                <span className="text-slate-300">&bull;</span>
+                <span>QRIS/Bank: <strong className="font-semibold text-slate-700">Rp {cashFlow.nonCashSalesTotal.toLocaleString("id-ID")}</strong></span>
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Total Cash Out */}
-        <Card className="border border-[#EAEFF8] shadow-sm rounded-2xl">
+        <Card className="border border-[#EAEFF8] shadow-sm rounded-2xl bg-white hover:border-[#d7e2f5] transition-colors">
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Total Kas Keluar (Cash Out)
+                Total Kas Keluar (Outflow)
               </span>
               <div className="h-7 w-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
                 <ArrowUpRight className="h-4 w-4" />
               </div>
             </div>
             <div className="mt-3">
-              <div className="text-2xl font-bold text-rose-600">
+              <div className="text-2xl font-semibold text-rose-600 tracking-tight">
                 Rp {cashFlow.totalCashOut.toLocaleString("id-ID")}
               </div>
-              <div className="text-xs text-slate-500 mt-1">
-                Biaya Tunai: Rp {cashFlow.cashExpenses.toLocaleString("id-ID")}
+              <div className="text-[11px] text-slate-500 mt-1.5 flex flex-wrap items-center gap-1.5">
+                <span>Kas Laci: <strong className="font-semibold text-slate-700">Rp {(cashFlow.cashExpenses + cashFlow.manualCashOut).toLocaleString("id-ID")}</strong></span>
+                <span className="text-slate-300">&bull;</span>
+                <span>Bank/Transfer: <strong className="font-semibold text-slate-700">Rp {cashFlow.nonCashExpenses.toLocaleString("id-ID")}</strong></span>
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Net Cash Flow */}
-        <Card className="border border-[#EAEFF8] shadow-sm rounded-2xl">
+        <Card className="border border-[#EAEFF8] shadow-sm rounded-2xl bg-white hover:border-[#d7e2f5] transition-colors">
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
@@ -310,18 +329,32 @@ export function FinanceReportClient({ initialData, outletKey }: FinanceReportCli
               </div>
             </div>
             <div className="mt-3">
-              <div className={cn("text-2xl font-bold", cashFlow.netCashFlow >= 0 ? "text-slate-900" : "text-rose-600")}>
+              <div className={cn("text-2xl font-semibold tracking-tight", cashFlow.netCashFlow >= 0 ? "text-slate-900" : "text-rose-600")}>
                 Rp {cashFlow.netCashFlow.toLocaleString("id-ID")}
               </div>
-              <div className="text-xs text-slate-500 mt-1">
-                Non-Tunai: Rp {cashFlow.nonCashSalesTotal.toLocaleString("id-ID")}
+              <div className="text-[11px] mt-1.5 flex items-center gap-2">
+                <span
+                  className={cn(
+                    "inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold",
+                    cashFlow.netCashFlow >= 0 
+                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200" 
+                      : "bg-rose-50 text-rose-700 border border-rose-200"
+                  )}
+                >
+                  {cashFlow.netCashFlow >= 0 ? "Surplus Kas" : "Defisit Kas"}
+                </span>
+                <span className="text-slate-400 text-[11px]">
+                  {cashFlow.totalCashIn > 0 
+                    ? `${((cashFlow.netCashFlow / cashFlow.totalCashIn) * 100).toFixed(1)}% dari kas masuk`
+                    : "Belum ada arus kas"}
+                </span>
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Estimated Gross Profit */}
-        <Card className="border border-[#EAEFF8] shadow-sm rounded-2xl">
+        <Card className="border border-[#EAEFF8] shadow-sm rounded-2xl bg-white hover:border-[#d7e2f5] transition-colors">
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
@@ -332,15 +365,140 @@ export function FinanceReportClient({ initialData, outletKey }: FinanceReportCli
               </div>
             </div>
             <div className="mt-3">
-              <div className="text-2xl font-bold text-[#0e59f9]">
+              <div className="text-2xl font-semibold text-[#0e59f9] tracking-tight">
                 Rp {profitability.estimatedGrossProfit.toLocaleString("id-ID")}
               </div>
-              <div className="text-xs text-emerald-600 font-semibold mt-1">
-                Margin: {profitability.profitMargin.toFixed(1)}% &bull; HPP: Rp {profitability.totalHpp.toLocaleString("id-ID")}
+              <div className="text-[11px] text-emerald-600 font-semibold mt-1.5 flex items-center gap-1.5">
+                <span>Margin: {profitability.profitMargin.toFixed(1)}%</span>
+                <span className="text-slate-300">&bull;</span>
+                <span className="text-slate-500 font-normal">HPP: Rp {profitability.totalHpp.toLocaleString("id-ID")}</span>
               </div>
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Cash Distribution Channels (Dual-Channel Breakdown) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Channel 1: Physical Cash Drawer */}
+        <div className="bg-white rounded-2xl border border-[#EAEFF8] p-5 shadow-sm space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                <Coins className="h-4 w-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900">Arus Kas Laci Kasir (Fisik)</h3>
+                <p className="text-[11px] text-slate-500">Mutasi uang tunai di meja kasir toko</p>
+              </div>
+            </div>
+            <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+              Laci Toko
+            </span>
+          </div>
+
+          <div className="space-y-2 text-xs">
+            <div className="flex items-center justify-between text-slate-600">
+              <span>Penjualan Kasir Tunai</span>
+              <span className="font-semibold text-emerald-600">+ Rp {cashFlow.cashSalesTotal.toLocaleString("id-ID")}</span>
+            </div>
+            {cashFlow.manualCashIn > 0 && (
+              <div className="flex items-center justify-between text-slate-600">
+                <span>Setoran / Modal Tambahan Laci</span>
+                <span className="font-semibold text-emerald-600">+ Rp {cashFlow.manualCashIn.toLocaleString("id-ID")}</span>
+              </div>
+            )}
+            <div className="flex items-center justify-between text-slate-600">
+              <span>Biaya Kas Kecil (Tunai)</span>
+              <span className="font-semibold text-rose-600">- Rp {cashFlow.cashExpenses.toLocaleString("id-ID")}</span>
+            </div>
+            {cashFlow.manualCashOut > 0 && (
+              <div className="flex items-center justify-between text-slate-600">
+                <span>Pengambilan Kasir / Kasbon Laci</span>
+                <span className="font-semibold text-rose-600">- Rp {cashFlow.manualCashOut.toLocaleString("id-ID")}</span>
+              </div>
+            )}
+          </div>
+
+          <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+            <div>
+              <div className="text-[11px] font-medium text-slate-500">Net Arus Kas Tunai Laci</div>
+              <div className="text-base font-semibold text-slate-900">
+                Rp {cashFlow.drawerNetFlow.toLocaleString("id-ID")}
+              </div>
+            </div>
+            <span className="text-[11px] text-slate-400 italic">
+              Dipertanggungjawabkan saat tutup shift
+            </span>
+          </div>
+        </div>
+
+        {/* Channel 2: Digital & Bank Account */}
+        <div className="bg-white rounded-2xl border border-[#EAEFF8] p-5 shadow-sm space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#0e59f9] flex items-center justify-center">
+                <Landmark className="h-4 w-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900">Penerimaan Digital & Bank (QRIS)</h3>
+                <p className="text-[11px] text-slate-500">Dana mengendap di rekening / payment gateway</p>
+              </div>
+            </div>
+            <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-[#0e59f9] border border-blue-200">
+              Rekening & QRIS
+            </span>
+          </div>
+
+          <div className="space-y-2 text-xs">
+            <div className="flex items-center justify-between text-slate-600">
+              <span>Bruto Penjualan QRIS / Digital</span>
+              <span className="font-semibold text-slate-900">
+                Rp {(((cashFlow as any).nonCashGrandTotal || cashFlow.nonCashSalesTotal) as number).toLocaleString("id-ID")}
+              </span>
+            </div>
+            {(((cashFlow as any).nonCashGatewayFee || (cashFlow as any).totalGatewayFee || 0) as number) > 0 && (
+              <div className="flex items-center justify-between text-rose-600">
+                <span>Potongan MDR Gateway (DOKU 0.7%)</span>
+                <span className="font-semibold">
+                  - Rp {(((cashFlow as any).nonCashGatewayFee || (cashFlow as any).totalGatewayFee || 0) as number).toLocaleString("id-ID")}
+                </span>
+              </div>
+            )}
+            <div className="flex items-center justify-between text-slate-700 pt-1 border-t border-dashed border-slate-100">
+              <span>Pencairan Bersih Masuk Rekening</span>
+              <span className="font-semibold text-emerald-600">
+                + Rp {cashFlow.nonCashSalesTotal.toLocaleString("id-ID")}
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-slate-600">
+              <span>Biaya Dibayar via Transfer / Rekening</span>
+              <span className="font-semibold text-rose-600">- Rp {cashFlow.nonCashExpenses.toLocaleString("id-ID")}</span>
+            </div>
+            <div className="flex items-center justify-between text-slate-400 text-[11px] pt-1 border-t border-slate-50">
+              <span>Kanal Pembayaran Terdeteksi</span>
+              <span className="font-medium text-slate-600">
+                {Object.keys(cashFlow.paymentBreakdown || {})
+                  .filter((m) => m !== "TUNAI" && m !== "CASH")
+                  .map((m) => formatPaymentMethodLabel(m))
+                  .join(", ") || "QRIS & Online"}
+              </span>
+            </div>
+          </div>
+
+          <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+            <div>
+              <div className="text-[11px] font-medium text-slate-500">Net Penerimaan Rekening Bank</div>
+              <div className="text-base font-semibold text-[#0e59f9]">
+                Rp {cashFlow.digitalNetFlow.toLocaleString("id-ID")}
+              </div>
+            </div>
+            <span className="text-[11px] text-emerald-600 font-medium flex items-center gap-1">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              Settlement otomatis bebas selisih
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Transparent Profitability Disclaimer Box */}
@@ -348,7 +506,7 @@ export function FinanceReportClient({ initialData, outletKey }: FinanceReportCli
         <AlertCircle className="h-4 w-4 text-[#0e59f9] flex-shrink-0 mt-0.5" />
         <div>
           <strong className="font-semibold">Ketentuan Estimasi Laba Kotor (Theoretical Gross Profit):</strong>{" "}
-          {profitability.disclaimer} Untuk pencatatan depresiasi aset, hutang, dan laporan laba rugi akuntansi komprehensif, gunakan fitur Export Excel ke software akuntansi (Mekari Jurnal / Accurate).
+          {profitability.disclaimer} Untuk pencatatan depresiasi aset, amortisasi hutang, dan laporan laba rugi akuntansi komprehensif, gunakan fitur Export Excel ke software akuntansi (Mekari Jurnal / Accurate).
         </div>
       </div>
 
@@ -361,12 +519,23 @@ export function FinanceReportClient({ initialData, outletKey }: FinanceReportCli
               Catatan Pengeluaran Operasional ({expenses.length})
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              Daftar pengeluaran kas kecil dan biaya outlet selama periode laporan
+              Daftar pengeluaran kas kecil toko dan biaya operasional selama periode laporan
             </p>
           </div>
 
-          <div className="text-xs text-slate-500 font-medium">
-            Total Biaya: <strong className="text-slate-900">Rp {profitability.totalExpenses.toLocaleString("id-ID")}</strong>
+          <div className="flex items-center gap-3">
+            <div className="text-xs text-slate-500 font-medium">
+              Total Biaya: <strong className="text-slate-900 font-semibold">Rp {profitability.totalExpenses.toLocaleString("id-ID")}</strong>
+            </div>
+            <Button
+              onClick={() => setIsModalOpen(true)}
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs gap-1.5 border-slate-200 hover:bg-slate-50 text-slate-700 cursor-pointer print:hidden font-medium"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>Tambah Biaya</span>
+            </Button>
           </div>
         </div>
 
@@ -379,7 +548,7 @@ export function FinanceReportClient({ initialData, outletKey }: FinanceReportCli
                 className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs flex items-center gap-2 shadow-2xs"
               >
                 <span className="font-medium text-slate-700">{cat.category}:</span>
-                <span className="font-bold text-slate-900">Rp {cat.amount.toLocaleString("id-ID")}</span>
+                <span className="font-semibold text-slate-900">Rp {cat.amount.toLocaleString("id-ID")}</span>
                 <span className="text-[10px] text-slate-400">({cat.percentage.toFixed(0)}%)</span>
               </div>
             ))}
@@ -401,8 +570,9 @@ export function FinanceReportClient({ initialData, outletKey }: FinanceReportCli
             <tbody className="divide-y divide-slate-100 font-sans">
               {expenses.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-slate-400">
-                    Belum ada catatan pengeluaran operasional pada periode ini. Klik tombol "+ Catat Biaya Operasional" di atas.
+                  <td colSpan={6} className="py-10 text-center text-slate-400">
+                    <Receipt className="h-8 w-8 mx-auto mb-2 text-slate-300 opacity-60" />
+                    Belum ada catatan pengeluaran operasional pada periode ini.
                   </td>
                 </tr>
               ) : (
@@ -424,18 +594,23 @@ export function FinanceReportClient({ initialData, outletKey }: FinanceReportCli
                       {exp.description}
                     </td>
                     <td className="py-3 px-4">
-                      <span className="inline-block px-2 py-0.5 rounded text-[10px] bg-slate-100 text-slate-700 font-medium">
-                        {exp.paymentMethod}
+                      <span className={cn(
+                        "inline-block px-2 py-0.5 rounded text-[10px] font-medium border",
+                        exp.paymentMethod === "TUNAI" || exp.paymentMethod === "CASH"
+                          ? "bg-amber-50 text-amber-700 border-amber-200"
+                          : "bg-slate-100 text-slate-700 border-slate-200"
+                      )}>
+                        {exp.paymentMethod === "TUNAI" || exp.paymentMethod === "CASH" ? "Kasir Tunai" : exp.paymentMethod}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-right font-bold text-rose-600 font-mono">
+                    <td className="py-3 px-4 text-right font-semibold text-rose-600 font-mono">
                       Rp {parseFloat(exp.amount).toLocaleString("id-ID")}
                     </td>
                     <td className="py-3 px-4 text-center print:hidden">
                       <button
                         type="button"
                         onClick={() => handleDeleteExpense(exp.id)}
-                        className="text-slate-400 hover:text-rose-600 p-1 rounded transition-colors cursor-pointer"
+                        className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
                         title="Hapus Pengeluaran"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -467,7 +642,7 @@ export function FinanceReportClient({ initialData, outletKey }: FinanceReportCli
           <table className="w-full text-xs text-left">
             <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-100">
               <tr>
-                <th className="py-3 px-4">Shift ID</th>
+                <th className="py-3 px-4">Shift & Kasir</th>
                 <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-4">Waktu Buka / Tutup</th>
                 <th className="py-3 px-4 text-right">Modal Awal</th>
@@ -479,24 +654,32 @@ export function FinanceReportClient({ initialData, outletKey }: FinanceReportCli
             <tbody className="divide-y divide-slate-100 font-sans">
               {shifts.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-slate-400">
-                    Belum ada riwayat shift kasir.
+                  <td colSpan={7} className="py-10 text-center text-slate-400">
+                    <ShieldCheck className="h-8 w-8 mx-auto mb-2 text-slate-300 opacity-60" />
+                    Belum ada riwayat shift kasir pada periode ini.
                   </td>
                 </tr>
               ) : (
                 shifts.map((s) => {
                   const diff = parseFloat(s.cashDifference || "0");
+                  const cashier = (s as any).cashierName || "Kasir";
                   return (
                     <tr key={s.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3 px-4 font-bold text-slate-900 font-mono">
-                        {s.id.slice(0, 8)}
+                      <td className="py-3 px-4">
+                        <div className="font-semibold text-slate-900 font-mono text-[11px]">
+                          #{s.id.slice(0, 8)}
+                        </div>
+                        <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
+                          <User className="h-3 w-3 text-slate-400" />
+                          <span>{cashier}</span>
+                        </div>
                       </td>
                       <td className="py-3 px-4">
                         <span
                           className={cn(
-                            "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase",
+                            "px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase",
                             s.status === "ACTIVE"
-                              ? "bg-emerald-100 text-emerald-800"
+                              ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
                               : "bg-slate-100 text-slate-700"
                           )}
                         >
@@ -520,7 +703,7 @@ export function FinanceReportClient({ initialData, outletKey }: FinanceReportCli
                       <td className="py-3 px-4 text-right font-mono font-semibold text-slate-900">
                         {s.actualCash ? `Rp ${parseFloat(s.actualCash).toLocaleString("id-ID")}` : "-"}
                       </td>
-                      <td className="py-3 px-4 text-right font-mono font-bold">
+                      <td className="py-3 px-4 text-right font-mono font-semibold">
                         {s.status === "ACTIVE" ? (
                           <span className="text-slate-400 font-normal">Shift berjalan</span>
                         ) : diff === 0 ? (
@@ -544,7 +727,7 @@ export function FinanceReportClient({ initialData, outletKey }: FinanceReportCli
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-md bg-white rounded-2xl border border-slate-200">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold text-slate-900">
+            <DialogTitle className="text-lg font-semibold text-slate-900">
               Catat Pengeluaran Biaya Outlet
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
@@ -629,14 +812,14 @@ export function FinanceReportClient({ initialData, outletKey }: FinanceReportCli
                 type="button"
                 variant="outline"
                 onClick={() => setIsModalOpen(false)}
-                className="h-9 text-xs"
+                className="h-9 text-xs font-medium cursor-pointer"
               >
                 Batal
               </Button>
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="h-9 text-xs bg-[#0e59f9] hover:bg-[#0c4cd4] text-white cursor-pointer"
+                className="h-9 text-xs font-semibold bg-[#0e59f9] hover:bg-[#0c4cd4] text-white cursor-pointer"
               >
                 {isSubmitting ? "Menyimpan..." : "Simpan Pengeluaran"}
               </Button>

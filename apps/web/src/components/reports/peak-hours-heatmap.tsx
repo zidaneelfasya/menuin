@@ -91,7 +91,7 @@ export function PeakHoursHeatmap({
             </span>
           </div>
           <div className="mt-2.5">
-            <div className="text-2xl font-bold text-[#0e59f9]">
+            <div className="text-2xl font-semibold text-[#0e59f9]">
               {peakKpis.busiestHour.label}
             </div>
             <div className="text-xs text-slate-500 mt-1">
@@ -109,7 +109,7 @@ export function PeakHoursHeatmap({
             </span>
           </div>
           <div className="mt-2.5">
-            <div className="text-2xl font-bold text-slate-700">
+            <div className="text-2xl font-semibold text-slate-700">
               {peakKpis.slowestHour.label}
             </div>
             <div className="text-xs text-slate-500 mt-1">
@@ -127,7 +127,7 @@ export function PeakHoursHeatmap({
             </span>
           </div>
           <div className="mt-2.5">
-            <div className="text-2xl font-bold text-emerald-600">
+            <div className="text-2xl font-semibold text-emerald-600">
               {peakKpis.busiestDay.dayName}
             </div>
             <div className="text-xs text-slate-500 mt-1">
@@ -145,7 +145,7 @@ export function PeakHoursHeatmap({
             </span>
           </div>
           <div className="mt-2.5">
-            <div className="text-2xl font-bold text-rose-600">
+            <div className="text-2xl font-semibold text-rose-600">
               {peakKpis.slowestDay.dayName}
             </div>
             <div className="text-xs text-slate-500 mt-1">

@@ -109,19 +109,19 @@ export function OperationsReportClient({ initialData, outletKey }: OperationsRep
       {/* Printable Header */}
       <div className="hidden print:flex items-center justify-between pb-6 mb-6 border-b-2 border-slate-900">
         <div>
-          <h1 className="text-2xl font-bold uppercase tracking-tight text-slate-900">{tenant.name}</h1>
+          <h1 className="text-2xl font-semibold uppercase tracking-tight text-slate-900">{tenant.name}</h1>
           <p className="text-xs text-slate-600">Laporan Analisis Operasional, Heatmap Peak Hours & Menu</p>
         </div>
         <div className="text-right">
           <div className="text-xs font-semibold uppercase text-slate-500">Periode</div>
-          <div className="text-sm font-bold text-slate-900">{reportPeriod.formattedStart} - {reportPeriod.formattedEnd}</div>
+          <div className="text-sm font-semibold text-slate-900">{reportPeriod.formattedStart} - {reportPeriod.formattedEnd}</div>
         </div>
       </div>
 
       {/* Screen Title */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 print:hidden">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Operasional & Peak Hours</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Operasional & Peak Hours</h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
             Analisis waktu tersibuk, heatmap jam ramai, serta ranking produk terlaris di outlet.
           </p>
@@ -182,7 +182,7 @@ export function OperationsReportClient({ initialData, outletKey }: OperationsRep
               ) : (
                 topProducts.map((p, idx) => (
                   <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-3 px-4 text-center font-bold text-slate-500">
+                    <td className="py-3 px-4 text-center font-semibold text-slate-500">
                       {idx + 1}
                     </td>
                     <td className="py-3 px-4 font-semibold text-slate-900">
@@ -193,10 +193,10 @@ export function OperationsReportClient({ initialData, outletKey }: OperationsRep
                         {p.categoryName}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-center font-bold text-slate-800">
+                    <td className="py-3 px-4 text-center font-semibold text-slate-800">
                       {p.totalQty} porsi
                     </td>
-                    <td className="py-3 px-4 text-right font-bold text-slate-900 font-mono">
+                    <td className="py-3 px-4 text-right font-semibold text-slate-900 font-mono">
                       Rp {p.totalRevenue.toLocaleString("id-ID")}
                     </td>
                   </tr>

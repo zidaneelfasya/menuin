@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
-import { BarChart3, Clock, Wallet, FileSpreadsheet, ArrowLeft } from "lucide-react";
+import { LayoutDashboard, BarChart3, Clock, Wallet, FileSpreadsheet, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function ReportsNav() {
@@ -13,9 +13,15 @@ export function ReportsNav() {
   const navItems = [
     {
       href: `/outlet/${outletKey}/reports`,
+      icon: LayoutDashboard,
+      label: "Ringkasan",
+      exact: true,
+    },
+    {
+      href: `/outlet/${outletKey}/reports/sales`,
       icon: BarChart3,
       label: "Penjualan",
-      exact: true,
+      exact: false,
     },
     {
       href: `/outlet/${outletKey}/reports/operations`,

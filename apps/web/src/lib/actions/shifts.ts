@@ -82,30 +82,56 @@ export async function getActiveShift() {
     const totalSales = paidTxs.reduce((acc, t) => acc + (Number(t.grandTotal) || 0), 0);
     
     const totalCashSales = paidTxs
-      .filter(t => t.paymentMethod?.toUpperCase() === 'CASH')
+      .filter(t => {
+        const m = t.paymentMethod?.toUpperCase();
+        return m === 'CASH' || m === 'TUNAI';
+      })
       .reduce((acc, t) => acc + (Number(t.grandTotal) || 0), 0);
 
-    const totalQrisSales = paidTxs
+    const totalQrisStaticSales = paidTxs
+      .filter(t => t.paymentMethod?.toUpperCase() === 'QRIS_STATIC')
+      .reduce((acc, t) => acc + (Number(t.grandTotal) || 0), 0);
+
+    const totalQrisDynamicSales = paidTxs
+      .filter(t => t.paymentMethod?.toUpperCase() === 'QRIS_DYNAMIC')
+      .reduce((acc, t) => acc + (Number(t.grandTotal) || 0), 0);
+
+    const totalLegacyQrisSales = paidTxs
       .filter(t => t.paymentMethod?.toUpperCase() === 'QRIS')
       .reduce((acc, t) => acc + (Number(t.grandTotal) || 0), 0);
 
+    // Total QRIS captures all QRIS variants for backwards compatibility
+    const totalQrisSales = totalQrisStaticSales + totalQrisDynamicSales + totalLegacyQrisSales;
+
     const totalDebitSales = paidTxs
-      .filter(t => t.paymentMethod?.toUpperCase() === 'DEBIT' || t.paymentMethod?.toUpperCase() === 'CARD')
+      .filter(t => {
+        const m = t.paymentMethod?.toUpperCase();
+        return m === 'DEBIT' || m === 'CARD' || m === 'EDC';
+      })
       .reduce((acc, t) => acc + (Number(t.grandTotal) || 0), 0);
 
     const totalTransferSales = paidTxs
-      .filter(t => t.paymentMethod?.toUpperCase() === 'BANK_TRANSFER' || t.paymentMethod?.toUpperCase() === 'TRANSFER')
+      .filter(t => {
+        const m = t.paymentMethod?.toUpperCase();
+        return m === 'BANK_TRANSFER' || m === 'TRANSFER';
+      })
       .reduce((acc, t) => acc + (Number(t.grandTotal) || 0), 0);
 
     const totalOnlineSales = paidTxs
-      .filter(t => t.source === 'ONLINE')
+      .filter(t => t.source === 'ONLINE' || t.source === 'QR' || t.source === 'WEB_ORDER')
       .reduce((acc, t) => acc + (Number(t.grandTotal) || 0), 0);
 
     const totalPosSales = paidTxs
       .filter(t => t.source === 'POS')
       .reduce((acc, t) => acc + (Number(t.grandTotal) || 0), 0);
 
-    const totalNonCashSales = totalQrisSales + totalDebitSales + totalTransferSales + (paidTxs.filter(t => t.paymentMethod?.toUpperCase() === 'ONLINE').reduce((acc, t) => acc + (Number(t.grandTotal) || 0), 0));
+    // Penerimaan langsung ke rekening toko (QRIS Statis, EDC, Transfer Bank)
+    const totalDirectBankSales = totalQrisStaticSales + totalDebitSales + totalTransferSales;
+
+    // Penerimaan lewat payment gateway settlement (QRIS Dinamis & Online)
+    const totalGatewaySales = totalQrisDynamicSales + totalLegacyQrisSales + (paidTxs.filter(t => t.paymentMethod?.toUpperCase() === 'ONLINE').reduce((acc, t) => acc + (Number(t.grandTotal) || 0), 0));
+
+    const totalNonCashSales = totalDirectBankSales + totalGatewaySales;
 
     const totalCashIn = movements
       .filter(m => m.type === 'IN')
@@ -126,9 +152,13 @@ export async function getActiveShift() {
         ...shift,
         metrics: {
           totalCashSales,
+          totalQrisStaticSales,
+          totalQrisDynamicSales,
           totalQrisSales,
           totalDebitSales,
           totalTransferSales,
+          totalDirectBankSales,
+          totalGatewaySales,
           totalOnlineSales,
           totalPosSales,
           totalNonCashSales,
@@ -366,24 +396,46 @@ export async function getShiftDetails(shiftId: string) {
     const totalSales = paidTxs.reduce((acc, t) => acc + (Number(t.grandTotal) || 0), 0);
 
     const totalCashSales = paidTxs
-      .filter(t => t.paymentMethod?.toUpperCase() === 'CASH')
+      .filter(t => {
+        const m = t.paymentMethod?.toUpperCase();
+        return m === 'CASH' || m === 'TUNAI';
+      })
       .reduce((acc, t) => acc + (Number(t.grandTotal) || 0), 0);
 
-    const totalQrisSales = paidTxs
+    const totalQrisStaticSales = paidTxs
+      .filter(t => t.paymentMethod?.toUpperCase() === 'QRIS_STATIC')
+      .reduce((acc, t) => acc + (Number(t.grandTotal) || 0), 0);
+
+    const totalQrisDynamicSales = paidTxs
+      .filter(t => t.paymentMethod?.toUpperCase() === 'QRIS_DYNAMIC')
+      .reduce((acc, t) => acc + (Number(t.grandTotal) || 0), 0);
+
+    const totalLegacyQrisSales = paidTxs
       .filter(t => t.paymentMethod?.toUpperCase() === 'QRIS')
       .reduce((acc, t) => acc + (Number(t.grandTotal) || 0), 0);
 
+    const totalQrisSales = totalQrisStaticSales + totalQrisDynamicSales + totalLegacyQrisSales;
+
     const totalDebitSales = paidTxs
-      .filter(t => t.paymentMethod?.toUpperCase() === 'DEBIT' || t.paymentMethod?.toUpperCase() === 'CARD')
+      .filter(t => {
+        const m = t.paymentMethod?.toUpperCase();
+        return m === 'DEBIT' || m === 'CARD' || m === 'EDC';
+      })
       .reduce((acc, t) => acc + (Number(t.grandTotal) || 0), 0);
 
     const totalTransferSales = paidTxs
-      .filter(t => t.paymentMethod?.toUpperCase() === 'BANK_TRANSFER' || t.paymentMethod?.toUpperCase() === 'TRANSFER')
+      .filter(t => {
+        const m = t.paymentMethod?.toUpperCase();
+        return m === 'BANK_TRANSFER' || m === 'TRANSFER';
+      })
       .reduce((acc, t) => acc + (Number(t.grandTotal) || 0), 0);
 
     const totalOnlineSales = paidTxs
-      .filter(t => t.source === 'ONLINE')
+      .filter(t => t.source === 'ONLINE' || t.source === 'QR' || t.source === 'WEB_ORDER')
       .reduce((acc, t) => acc + (Number(t.grandTotal) || 0), 0);
+
+    const totalDirectBankSales = totalQrisStaticSales + totalDebitSales + totalTransferSales;
+    const totalGatewaySales = totalQrisDynamicSales + totalLegacyQrisSales;
 
     const totalCashIn = movements
       .filter(m => m.type === 'IN')
@@ -403,9 +455,13 @@ export async function getShiftDetails(shiftId: string) {
       totalItemsSold,
       totalSales,
       totalCashSales,
+      totalQrisStaticSales,
+      totalQrisDynamicSales,
       totalQrisSales,
       totalDebitSales,
       totalTransferSales,
+      totalDirectBankSales,
+      totalGatewaySales,
       totalOnlineSales,
       totalCashIn,
       totalCashOut,

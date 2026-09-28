@@ -27,7 +27,7 @@ export function PaymentMixCard({ paymentMix, channelMix = [] }: PaymentMixCardPr
 
   const storefrontStat = channelMix.find((c) => c.channel === 'STOREFRONT') || {
     channel: 'STOREFRONT' as const,
-    label: 'Storefront (Self-Order)',
+    label: 'Self QR (Pesan Mandiri)',
     totalAmount: 0,
     transactionCount: 0,
     percentage: 0,
@@ -82,7 +82,7 @@ export function PaymentMixCard({ paymentMix, channelMix = [] }: PaymentMixCardPr
             </h2>
             <p className="text-xs text-gray-500">
               {activeTab === 'channel' 
-                ? 'Perbandingan checkout Storefront vs Kasir POS' 
+                ? 'Perbandingan checkout Self QR vs Kasir POS' 
                 : 'Pemisahan kas fisik vs pembayaran digital (QRIS/EDC/Gateway)'}
             </p>
           </div>
@@ -115,7 +115,7 @@ export function PaymentMixCard({ paymentMix, channelMix = [] }: PaymentMixCardPr
         </div>
       </div>
 
-      {/* TAB 1: KANAL PESANAN (KASIR POS VS STOREFRONT) */}
+      {/* TAB 1: KANAL PESANAN (KASIR POS VS SELF QR) */}
       {activeTab === 'channel' && (
         <div className="space-y-4">
           {totalChannelTx === 0 ? (
@@ -132,7 +132,7 @@ export function PaymentMixCard({ paymentMix, channelMix = [] }: PaymentMixCardPr
                     Kasir Langsung ({posTxShare}%)
                   </span>
                   <span className="flex items-center gap-1.5 text-sky-700 font-semibold">
-                    Storefront ({storefrontTxShare}%)
+                    Self QR ({storefrontTxShare}%)
                     <span className="w-2 h-2 rounded-full bg-sky-500 inline-block" />
                   </span>
                 </div>
@@ -145,7 +145,7 @@ export function PaymentMixCard({ paymentMix, channelMix = [] }: PaymentMixCardPr
                   <div
                     className="bg-sky-500 transition-all duration-500"
                     style={{ width: `${Math.max(storefrontTxShare > 0 ? 3 : 0, storefrontTxShare)}%` }}
-                    title={`Storefront: ${storefrontTxShare}%`}
+                    title={`Self QR: ${storefrontTxShare}%`}
                   />
                 </div>
               </div>
@@ -174,12 +174,12 @@ export function PaymentMixCard({ paymentMix, channelMix = [] }: PaymentMixCardPr
                   </div>
                 </div>
 
-                {/* Storefront (Self-Order) Card */}
+                {/* Self QR (Pesan Mandiri) Card */}
                 <div className="p-3.5 rounded-lg border border-gray-100 bg-gray-50/50 space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-800">
                       <Smartphone className="w-3.5 h-3.5 text-sky-600" />
-                      <span>Storefront (Self-Order)</span>
+                      <span>Self QR (Pesan Mandiri)</span>
                     </div>
                     <span className="text-[11px] font-mono text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded border border-sky-100">
                       {storefrontStat.percentage}% revenue
@@ -199,7 +199,7 @@ export function PaymentMixCard({ paymentMix, channelMix = [] }: PaymentMixCardPr
 
               {/* Informative Micro-Note */}
               <div className="p-2.5 rounded-lg bg-blue-50/60 border border-blue-100/70 text-[11px] text-blue-800 flex items-center justify-between">
-                <span>Tingkat Adopsi Pesanan Mandiri:</span>
+                <span>Tingkat Adopsi Pesanan Mandiri (Self QR):</span>
                 <span className="font-semibold">{storefrontTxShare}% dari total checkout</span>
               </div>
             </>

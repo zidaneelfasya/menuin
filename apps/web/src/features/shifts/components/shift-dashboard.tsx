@@ -328,12 +328,12 @@ export function ShiftDashboard({
               {/* Header Status & Quick Actions */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-border/60">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-semibold">
                     <IconClock className="w-5 h-5" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h2 className="text-lg font-bold text-foreground tracking-tight">
+                      <h2 className="text-lg font-semibold text-foreground tracking-tight">
                         Sesi Shift Sedang Berjalan
                       </h2>
                       <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40">
@@ -377,7 +377,7 @@ export function ShiftDashboard({
                 {/* 1. Modal Awal */}
                 <div className="bg-muted/30 border border-border/60 rounded-xl p-4 space-y-1">
                   <span className="text-muted-foreground text-xs font-medium block">Modal Awal Kasir</span>
-                  <div className="text-lg font-bold font-financial tabular-nums text-foreground">
+                  <div className="text-lg font-semibold font-financial tabular-nums text-foreground">
                     {formatCurrency(Number(activeShift.startingCash || 0))}
                   </div>
                   <span className="text-[11px] text-muted-foreground block">Uang kembalian awal laci</span>
@@ -386,7 +386,7 @@ export function ShiftDashboard({
                 {/* 2. Total Penjualan & Breakdown */}
                 <div className="bg-muted/30 border border-border/60 rounded-xl p-4 space-y-1">
                   <span className="text-muted-foreground text-xs font-medium block">Total Penjualan (Omzet)</span>
-                  <div className="text-lg font-bold font-financial tabular-nums text-foreground">
+                  <div className="text-lg font-semibold font-financial tabular-nums text-foreground">
                     {formatCurrency(totalSalesAmount)}
                   </div>
                   <div className="text-[11px] text-muted-foreground flex items-center justify-between font-financial tabular-nums">
@@ -398,7 +398,7 @@ export function ShiftDashboard({
                 {/* 3. Pergerakan Kas */}
                 <div className="bg-muted/30 border border-border/60 rounded-xl p-4 space-y-1">
                   <span className="text-muted-foreground text-xs font-medium block">Pergerakan Kas Laci</span>
-                  <div className="text-lg font-bold font-financial tabular-nums text-foreground flex items-center gap-1.5">
+                  <div className="text-lg font-semibold font-financial tabular-nums text-foreground flex items-center gap-1.5">
                     <span className="text-emerald-600">+{formatCurrency(totalCashIn)}</span>
                     <span className="text-muted-foreground text-xs font-normal">/</span>
                     <span className="text-rose-600">-{formatCurrency(totalCashOut)}</span>
@@ -411,7 +411,7 @@ export function ShiftDashboard({
                 {/* 4. Estimasi Kas Laci Saat Ini */}
                 <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-4 space-y-1">
                   <span className="text-blue-600 dark:text-blue-400 text-xs font-semibold block">Estimasi Kas di Laci</span>
-                  <div className="text-lg font-bold font-financial tabular-nums text-blue-600 dark:text-blue-400">
+                  <div className="text-lg font-semibold font-financial tabular-nums text-blue-600 dark:text-blue-400">
                     {formatCurrency(currentCashInDrawer)}
                   </div>
                   <span className="text-[11px] text-muted-foreground block">
@@ -426,7 +426,7 @@ export function ShiftDashboard({
                   <div className="flex items-center justify-between pb-3 border-b border-border/60">
                     <div className="flex items-center gap-2 text-destructive">
                       <IconLogout className="w-5 h-5" />
-                      <h3 className="font-bold text-sm">Rekonsiliasi Kas & Konfirmasi Tutup Shift</h3>
+                      <h3 className="font-semibold text-sm">Rekonsiliasi Kas & Konfirmasi Tutup Shift</h3>
                     </div>
                     <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-full" onClick={() => setActivePanel("NONE")}>
                       <IconX className="w-4 h-4" />
@@ -436,7 +436,7 @@ export function ShiftDashboard({
                   <form onSubmit={handleEndShift} className="space-y-4 max-w-xl">
                     <div className="p-3 bg-card rounded-xl border text-xs flex justify-between items-center font-financial tabular-nums">
                       <span className="text-muted-foreground font-sans">Ekspektasi Kas Laci Sistem:</span>
-                      <span className="font-bold text-foreground text-sm">
+                      <span className="font-semibold text-foreground text-sm">
                         {formatCurrency(currentCashInDrawer)}
                       </span>
                     </div>
@@ -444,7 +444,7 @@ export function ShiftDashboard({
                     <div className="space-y-1.5">
                       <Label htmlFor="actualCash" className="text-xs font-semibold">Uang Fisik Aktual di Laci Kasir (Rp)</Label>
                       <div className="relative">
-                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-muted-foreground text-xs">Rp</span>
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-semibold text-muted-foreground text-xs">Rp</span>
                         <Input
                           id="actualCash"
                           type="text"
@@ -454,7 +454,7 @@ export function ShiftDashboard({
                           onChange={handleAmountChange}
                           autoFocus
                           required
-                          className="pl-10 font-financial text-base font-bold h-10 bg-background tabular-nums"
+                          className="pl-10 font-financial text-base font-semibold h-10 bg-background tabular-nums"
                         />
                       </div>
                     </div>
@@ -470,7 +470,7 @@ export function ShiftDashboard({
                               <span className="flex items-center gap-1.5 font-semibold font-sans">
                                 <IconCheck className="w-4 h-4 text-emerald-600" /> Kas Sesuai (Pas)
                               </span>
-                              <span className="font-bold">Rp 0</span>
+                              <span className="font-semibold">Rp 0</span>
                             </div>
                           );
                         }
@@ -480,7 +480,7 @@ export function ShiftDashboard({
                               <span className="flex items-center gap-1.5 font-semibold font-sans">
                                 <IconAlertTriangle className="w-4 h-4 text-rose-600" /> Kas Kurang (Minus)
                               </span>
-                              <span className="font-bold">-{formatCurrency(Math.abs(diff))}</span>
+                              <span className="font-semibold">-{formatCurrency(Math.abs(diff))}</span>
                             </div>
                           );
                         }
@@ -489,7 +489,7 @@ export function ShiftDashboard({
                             <span className="flex items-center gap-1.5 font-semibold font-sans">
                               <IconCheck className="w-4 h-4 text-blue-600" /> Kas Lebih (Plus)
                             </span>
-                            <span className="font-bold">+{formatCurrency(diff)}</span>
+                            <span className="font-semibold">+{formatCurrency(diff)}</span>
                           </div>
                         );
                       })()
@@ -512,11 +512,11 @@ export function ShiftDashboard({
             <div className="bg-card rounded-2xl border border-border/70 p-6 sm:p-8 shadow-xs space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-border/60">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-semibold">
                     <IconCash className="w-5 h-5" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-foreground tracking-tight">
+                    <h2 className="text-lg font-semibold text-foreground tracking-tight">
                       Buka Shift Kasir Baru
                     </h2>
                     <p className="text-xs text-muted-foreground mt-0.5">
@@ -544,7 +544,7 @@ export function ShiftDashboard({
                       Modal Awal Kasir (Rp)
                     </Label>
                     <div className="relative">
-                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-muted-foreground text-sm">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-semibold text-muted-foreground text-sm">
                         Rp
                       </span>
                       <Input
@@ -555,7 +555,7 @@ export function ShiftDashboard({
                         value={formattedDisplayAmount}
                         onChange={handleAmountChange}
                         autoFocus
-                        className="pl-11 font-financial text-lg font-bold h-11 bg-background tabular-nums rounded-xl"
+                        className="pl-11 font-financial text-lg font-semibold h-11 bg-background tabular-nums rounded-xl"
                       />
                     </div>
                     <div className="flex flex-wrap gap-1.5 pt-1">
@@ -590,7 +590,7 @@ export function ShiftDashboard({
                                 const val = parseInt(e.target.value, 10) || 0;
                                 setBillCounts(prev => ({ ...prev, [bill.value]: val }));
                               }}
-                              className="w-20 h-8 text-xs text-center font-bold bg-background rounded-lg"
+                              className="w-20 h-8 text-xs text-center font-semibold bg-background rounded-lg"
                             />
                             <span className="text-[11px] text-muted-foreground font-sans">lbr</span>
                           </div>
@@ -600,7 +600,7 @@ export function ShiftDashboard({
                         </div>
                       ))}
                     </div>
-                    <div className="pt-3 border-t border-border/60 flex justify-between items-center text-xs font-bold">
+                    <div className="pt-3 border-t border-border/60 flex justify-between items-center text-xs font-semibold">
                       <span className="font-sans">Total Modal Kas:</span>
                       <span className="text-blue-600 dark:text-blue-400 text-lg">
                         {formatCurrency(calculatorTotal)}
@@ -626,7 +626,7 @@ export function ShiftDashboard({
           {/* Form Input Kas Masuk / Keluar */}
           <div className="bg-card rounded-2xl border border-border/70 p-6 shadow-xs space-y-5">
             <div className="pb-4 border-b border-border/60">
-              <h2 className="text-base font-bold text-foreground tracking-tight">
+              <h2 className="text-base font-semibold text-foreground tracking-tight">
                 Catat Kas Masuk / Kas Keluar Laci
               </h2>
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -662,7 +662,7 @@ export function ShiftDashboard({
                 <div className="space-y-1.5">
                   <Label htmlFor="movementAmount" className="text-xs font-semibold">Nominal Uang (Rp)</Label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-muted-foreground text-xs">Rp</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 font-semibold text-muted-foreground text-xs">Rp</span>
                     <Input
                       id="movementAmount"
                       type="text"
@@ -671,7 +671,7 @@ export function ShiftDashboard({
                       value={formattedDisplayAmount}
                       onChange={handleAmountChange}
                       required
-                      className="pl-9 font-financial text-sm font-bold h-9 bg-background tabular-nums rounded-xl"
+                      className="pl-9 font-financial text-sm font-semibold h-9 bg-background tabular-nums rounded-xl"
                     />
                   </div>
                 </div>
@@ -719,7 +719,7 @@ export function ShiftDashboard({
           {/* Tabel Log Mutasi Kas */}
           <div className="bg-card rounded-2xl border border-border/70 overflow-hidden shadow-xs">
             <div className="p-4 md:px-6 border-b border-border/60">
-              <h3 className="font-bold text-sm text-foreground">Log Mutasi Kas Laci Shift Ini</h3>
+              <h3 className="font-semibold text-sm text-foreground">Log Mutasi Kas Laci Shift Ini</h3>
             </div>
             <div className="overflow-x-auto">
               <Table>
@@ -758,7 +758,7 @@ export function ShiftDashboard({
                         <TableCell className="text-foreground font-medium">
                           {m.description}
                         </TableCell>
-                        <TableCell className={`text-right font-financial font-bold tabular-nums ${m.type === "IN" ? "text-emerald-600" : "text-rose-600"}`}>
+                        <TableCell className={`text-right font-financial font-semibold tabular-nums ${m.type === "IN" ? "text-emerald-600" : "text-rose-600"}`}>
                           {m.type === "IN" ? "+" : "-"}{formatCurrency(Number(m.amount))}
                         </TableCell>
                       </TableRow>
@@ -778,7 +778,7 @@ export function ShiftDashboard({
         <div className="bg-card rounded-2xl border border-border/70 overflow-hidden shadow-xs space-y-0">
           <div className="p-4 md:px-6 border-b border-border/60 flex items-center justify-between">
             <div>
-              <h2 className="font-bold text-sm md:text-base text-foreground">
+              <h2 className="font-semibold text-sm md:text-base text-foreground">
                 Transaksi Pada Shift Aktif ({activeShift?.transactions?.length || 0})
               </h2>
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -822,7 +822,7 @@ export function ShiftDashboard({
                           {tx.paymentMethod || "CASH"}
                         </span>
                       </TableCell>
-                      <TableCell className="text-right font-financial font-bold text-foreground tabular-nums">
+                      <TableCell className="text-right font-financial font-semibold text-foreground tabular-nums">
                         {formatCurrency(Number(tx.grandTotal || tx.totalAmount || 0))}
                       </TableCell>
                     </TableRow>
@@ -842,7 +842,7 @@ export function ShiftDashboard({
           {/* Table Card Header */}
           <div className="p-4 md:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/60">
             <div>
-              <h2 className="font-bold text-sm md:text-base text-foreground tracking-tight">
+              <h2 className="font-semibold text-sm md:text-base text-foreground tracking-tight">
                 Riwayat & Arsip Shift Kasir
               </h2>
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -893,7 +893,7 @@ export function ShiftDashboard({
                       >
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-muted text-foreground/80 font-bold flex items-center justify-center text-xs shrink-0 border border-border/60">
+                            <div className="w-8 h-8 rounded-full bg-muted text-foreground/80 font-semibold flex items-center justify-center text-xs shrink-0 border border-border/60">
                               {shift.cashierName ? shift.cashierName.charAt(0).toUpperCase() : "K"}
                             </div>
                             <div>
@@ -971,11 +971,11 @@ export function ShiftDashboard({
         <div className="bg-card rounded-2xl border border-border/70 p-6 shadow-xs space-y-6">
           <div className="flex items-center justify-between pb-4 border-b border-border/60">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
+              <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-semibold">
                 <IconCalendar className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="font-bold text-base text-foreground tracking-tight">
+                <h2 className="font-semibold text-base text-foreground tracking-tight">
                   Jadwal & Log Kronologis Hari Ini
                 </h2>
                 <p className="text-xs text-muted-foreground mt-0.5">
@@ -992,7 +992,7 @@ export function ShiftDashboard({
                 key={idx}
                 className={`flex flex-col items-center py-2.5 rounded-xl transition-all ${
                   day.isToday
-                    ? "bg-blue-600 text-white font-bold shadow-xs scale-105"
+                    ? "bg-blue-600 text-white font-semibold shadow-xs scale-105"
                     : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
                 }`}
               >
@@ -1023,7 +1023,7 @@ export function ShiftDashboard({
                     </div>
                   </div>
 
-                  <div className="font-financial font-bold text-foreground text-right shrink-0 tabular-nums">
+                  <div className="font-financial font-semibold text-foreground text-right shrink-0 tabular-nums">
                     {formatCurrency(act.amount)}
                   </div>
                 </div>
