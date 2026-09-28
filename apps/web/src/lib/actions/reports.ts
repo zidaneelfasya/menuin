@@ -214,29 +214,84 @@ export async function getSalesReport(outletKey: string, params?: DateFilterParam
         )
       );
 
-    // 1. Calculate COGS / HPP for current period
+    // Fetch all active products in tenant catalog to identify best sellers and deadstock/low-velocity items
+    const allTenantProducts = await db
+      .select({
+        id: products.id,
+        name: products.name,
+        price: products.price,
+        imageUrl: products.imageUrl,
+        costPrice: products.costPrice,
+        categoryId: products.categoryId,
+        categoryName: categories.name,
+      })
+      .from(products)
+      .leftJoin(categories, eq(products.categoryId, categories.id))
+      .where(eq(products.tenantId, tenant.id));
+
+    // 1. Calculate COGS / HPP, Top Products, Categories, and Items Sold for current period
     const trxIds = trxList.map((t) => t.id);
     let totalHpp = 0;
+    let totalItemsSold = 0;
+    const productSalesMap: Record<string, { id: string; name: string; categoryName: string; price: number; imageUrl?: string | null; totalQty: number; totalRevenue: number }> = {};
+    const categorySalesMap: Record<string, { name: string; totalQty: number; totalRevenue: number }> = {};
+
     if (trxIds.length > 0) {
       const allItems = await db
         .select({
+          productId: transactionItems.productId,
+          productName: products.name,
+          categoryName: categories.name,
+          imageUrl: products.imageUrl,
+          price: transactionItems.price,
+          subtotal: transactionItems.subtotal,
           quantity: transactionItems.quantity,
           costPrice: products.costPrice,
         })
         .from(transactionItems)
         .leftJoin(products, eq(transactionItems.productId, products.id))
+        .leftJoin(categories, eq(products.categoryId, categories.id))
         .where(inArray(transactionItems.transactionId, trxIds));
 
       allItems.forEach((it) => {
         const qty = it.quantity || 1;
         const cost = parseFloat(it.costPrice || '0') || 0;
+        const price = parseFloat(it.price || '0') || 0;
+        const subtotal = parseFloat(it.subtotal || '0') || (price * qty);
+
         totalHpp += cost * qty;
+        totalItemsSold += qty;
+
+        const pId = it.productId || 'unknown';
+        const pName = it.productName || 'Menu Tanpa Nama';
+        const catName = it.categoryName || 'Lainnya';
+
+        if (!productSalesMap[pId]) {
+          productSalesMap[pId] = {
+            id: pId,
+            name: pName,
+            categoryName: catName,
+            price,
+            imageUrl: it.imageUrl,
+            totalQty: 0,
+            totalRevenue: 0,
+          };
+        }
+        productSalesMap[pId].totalQty += qty;
+        productSalesMap[pId].totalRevenue += subtotal;
+
+        if (!categorySalesMap[catName]) {
+          categorySalesMap[catName] = { name: catName, totalQty: 0, totalRevenue: 0 };
+        }
+        categorySalesMap[catName].totalQty += qty;
+        categorySalesMap[catName].totalRevenue += subtotal;
       });
     }
 
-    // 2. Calculate COGS / HPP for previous period
+    // 2. Calculate COGS / HPP and Items Sold for previous period (for trend percentages)
     const prevTrxIds = prevTrxList.map((t) => t.id);
     let prevTotalHpp = 0;
+    let prevTotalItemsSold = 0;
     if (prevTrxIds.length > 0) {
       const prevItems = await db
         .select({
@@ -251,8 +306,48 @@ export async function getSalesReport(outletKey: string, params?: DateFilterParam
         const qty = it.quantity || 1;
         const cost = parseFloat(it.costPrice || '0') || 0;
         prevTotalHpp += cost * qty;
+        prevTotalItemsSold += qty;
       });
     }
+
+    const itemsSoldGrowth = prevTotalItemsSold > 0 ? ((totalItemsSold - prevTotalItemsSold) / prevTotalItemsSold) * 100 : (totalItemsSold > 0 ? 100 : 0);
+
+    // Return up to 20 products so client can dynamically toggle between Omzet (Revenue) and Porsi (Qty) perspectives
+    const topProducts = Object.values(productSalesMap)
+      .sort((a, b) => b.totalRevenue - a.totalRevenue || b.totalQty - a.totalQty)
+      .slice(0, 20);
+
+    // Worst Selling / Low Velocity Products (Products with lowest or 0 sales)
+    const bottomCandidates = allTenantProducts.map((p) => {
+      const sales = productSalesMap[p.id];
+      return {
+        id: p.id,
+        name: p.name,
+        categoryName: p.categoryName || 'Lainnya',
+        price: parseFloat(p.price || '0') || 0,
+        imageUrl: p.imageUrl,
+        totalQty: sales ? sales.totalQty : 0,
+        totalRevenue: sales ? sales.totalRevenue : 0,
+      };
+    });
+
+    const bottomProducts = bottomCandidates
+      .sort((a, b) => a.totalRevenue - b.totalRevenue || a.totalQty - b.totalQty)
+      .slice(0, 20);
+
+    // Top Categories Share (Revenue & Qty Dual-Perspective)
+    const totalCatRevenue = Object.values(categorySalesMap).reduce((sum, c) => sum + c.totalRevenue, 0) || 1;
+    const totalCatQty = Object.values(categorySalesMap).reduce((sum, c) => sum + c.totalQty, 0) || 1;
+    const topCategories = Object.values(categorySalesMap)
+      .map((c) => ({
+        name: c.name,
+        totalQty: c.totalQty,
+        totalRevenue: c.totalRevenue,
+        percentageRevenue: (c.totalRevenue / totalCatRevenue) * 100,
+        percentageQty: (c.totalQty / totalCatQty) * 100,
+        percentage: (c.totalRevenue / totalCatRevenue) * 100,
+      }))
+      .sort((a, b) => b.totalRevenue - a.totalRevenue);
 
     // Metrics aggregation
     let grossSales = 0;
@@ -263,29 +358,103 @@ export async function getSalesReport(outletKey: string, params?: DateFilterParam
     let totalCollected = 0;
     let totalOrders = 0;
 
-    const paymentMethodsMap: Record<string, { count: number; total: number }> = {};
+    const paymentMethodsMap: Record<string, { count: number; total: number; fee: number; net: number; tenderType: string }> = {};
     const channelMap: Record<string, { count: number; total: number }> = {
       'POS': { count: 0, total: 0 },
       'STOREFRONT': { count: 0, total: 0 },
     };
-
-    // Daily breakdown bucket for stacked rounded square chart
-    const dailyMap: Record<string, { date: string; label: string; netSales: number; orders: number; projected: number }> = {};
-
-    const formatLocalDateKey = (d: Date) => {
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
+    const orderTypesMap: Record<string, { type: string; count: number; total: number }> = {
+      'DINE_IN': { type: 'Makan di Tempat (Dine-In)', count: 0, total: 0 },
+      'TAKEAWAY': { type: 'Bawa Pulang (Takeaway)', count: 0, total: 0 },
+      'DELIVERY': { type: 'Delivery / Antar', count: 0, total: 0 },
     };
 
-    // Initialize days in interval
-    const stepDate = new Date(currentStart);
-    while (stepDate <= currentEnd) {
-      const dateKey = formatLocalDateKey(stepDate);
-      const label = `${stepDate.getDate()} ${stepDate.toLocaleDateString('id-ID', { month: 'short' })}`;
-      dailyMap[dateKey] = { date: dateKey, label, netSales: 0, orders: 0, projected: 0 };
-      stepDate.setDate(stepDate.getDate() + 1);
+    const daypartsMap: Record<string, { label: string; timeRange: string; orders: number; revenue: number; order: number }> = {
+      breakfast: { label: 'Pagi (Sarapan)', timeRange: '07:00 - 10:59', orders: 0, revenue: 0, order: 1 },
+      lunch: { label: 'Makan Siang (Rush)', timeRange: '11:00 - 14:59', orders: 0, revenue: 0, order: 2 },
+      afternoon: { label: 'Sore (Coffee & Santai)', timeRange: '15:00 - 17:59', orders: 0, revenue: 0, order: 3 },
+      dinner: { label: 'Makan Malam', timeRange: '18:00 - 21:59', orders: 0, revenue: 0, order: 4 },
+      latenight: { label: 'Larut Malam', timeRange: '22:00 - 06:59', orders: 0, revenue: 0, order: 5 },
+    };
+
+    // Dynamic Chart Buckets (Hourly: 24 points, Daily: 28-31 points, Monthly: 12 points)
+    const diffHours = (currentEnd.getTime() - currentStart.getTime()) / (1000 * 60 * 60);
+    const diffDays = Math.ceil(diffHours / 24);
+
+    type ChartBucket = {
+      key: string;
+      date: string;
+      label: string;
+      netSales: number;
+      grossSales: number;
+      discount: number;
+      orders: number;
+      projected: number;
+    };
+    const chartBucketsMap: Record<string, ChartBucket> = {};
+    const chartBucketsList: ChartBucket[] = [];
+
+    let chartGranularity: 'hourly' | 'daily' | 'monthly' = 'daily';
+
+    if (diffDays <= 1) {
+      chartGranularity = 'hourly';
+      for (let h = 0; h < 24; h++) {
+        const hourStr = String(h).padStart(2, '0') + ':00';
+        const label = h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`;
+        const bucket: ChartBucket = {
+          key: hourStr,
+          date: hourStr,
+          label,
+          netSales: 0,
+          grossSales: 0,
+          discount: 0,
+          orders: 0,
+          projected: 0,
+        };
+        chartBucketsMap[hourStr] = bucket;
+        chartBucketsList.push(bucket);
+      }
+    } else if (diffDays <= 35) {
+      chartGranularity = 'daily';
+      const cursor = new Date(currentStart);
+      while (cursor <= currentEnd) {
+        const ymd = cursor.toISOString().slice(0, 10);
+        const dayNum = cursor.getDate();
+        const monthShort = cursor.toLocaleDateString('id-ID', { month: 'short' });
+        const bucket: ChartBucket = {
+          key: ymd,
+          date: ymd,
+          label: `${dayNum} ${monthShort}`,
+          netSales: 0,
+          grossSales: 0,
+          discount: 0,
+          orders: 0,
+          projected: 0,
+        };
+        chartBucketsMap[ymd] = bucket;
+        chartBucketsList.push(bucket);
+        cursor.setDate(cursor.getDate() + 1);
+      }
+    } else {
+      chartGranularity = 'monthly';
+      const cursor = new Date(currentStart.getFullYear(), currentStart.getMonth(), 1);
+      while (cursor <= currentEnd) {
+        const ym = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`;
+        const monthName = cursor.toLocaleDateString('id-ID', { month: 'short' });
+        const bucket: ChartBucket = {
+          key: ym,
+          date: ym,
+          label: monthName,
+          netSales: 0,
+          grossSales: 0,
+          discount: 0,
+          orders: 0,
+          projected: 0,
+        };
+        chartBucketsMap[ym] = bucket;
+        chartBucketsList.push(bucket);
+        cursor.setMonth(cursor.getMonth() + 1);
+      }
     }
 
     trxList.forEach((t) => {
@@ -307,34 +476,89 @@ export async function getSalesReport(outletKey: string, params?: DateFilterParam
       totalCollected += gTotal;
       totalOrders += 1;
 
-      // Channel breakdown
-      const isStorefront = t.source === 'QR' || t.source === 'WEB_ORDER';
+      // Channel breakdown (Kasir POS vs Storefront Self QR)
+      const isStorefront = t.source === 'QR' || t.source === 'WEB_ORDER' || t.source === 'ONLINE';
       const channelKey = isStorefront ? 'STOREFRONT' : 'POS';
       channelMap[channelKey].count += 1;
       channelMap[channelKey].total += gTotal;
 
-      // Payment method label normalization
+      // Order type breakdown (Dine In vs Takeaway vs Delivery)
+      const rawOrderType = (t.orderType || 'DINE_IN').toUpperCase();
+      const mappedType = rawOrderType === 'TAKEAWAY' || rawOrderType === 'TAKE_AWAY' ? 'TAKEAWAY' : (rawOrderType === 'DELIVERY' ? 'DELIVERY' : 'DINE_IN');
+      if (orderTypesMap[mappedType]) {
+        orderTypesMap[mappedType].count += 1;
+        orderTypesMap[mappedType].total += gTotal;
+      }
+
+      // Payment tender method categorization
       const rawMethod = (t.paymentMethod || 'TUNAI').toUpperCase();
-      const normMethod = 
-        rawMethod === 'QRIS_STATIC' ? 'QRIS Statis Toko' :
-        rawMethod === 'QRIS_DYNAMIC' ? 'QRIS Dinamis' :
-        rawMethod === 'QRIS' ? 'QRIS' :
-        rawMethod === 'CARD' || rawMethod === 'EDC' ? 'Kartu EDC' :
-        rawMethod === 'TRANSFER' || rawMethod === 'BANK_TRANSFER' ? 'Transfer Bank' :
-        rawMethod === 'ONLINE' ? 'Self QR Online' :
-        (rawMethod === 'CASH' || rawMethod === 'TUNAI' ? 'Tunai' : rawMethod);
+      let normMethod = 'Tunai (Cash)';
+      let tenderType = 'CASH';
+
+      if (rawMethod === 'QRIS_STATIC') {
+        normMethod = 'QRIS Statis Toko';
+        tenderType = 'QRIS';
+      } else if (rawMethod === 'QRIS_DYNAMIC') {
+        normMethod = 'QRIS Dinamis Kasir';
+        tenderType = 'QRIS';
+      } else if (rawMethod === 'QRIS') {
+        normMethod = 'QRIS';
+        tenderType = 'QRIS';
+      } else if (rawMethod === 'CARD' || rawMethod === 'EDC' || rawMethod === 'DEBIT' || rawMethod === 'CREDIT') {
+        normMethod = 'Kartu EDC / Debit';
+        tenderType = 'CARD';
+      } else if (rawMethod === 'TRANSFER' || rawMethod === 'BANK_TRANSFER') {
+        normMethod = 'Transfer Bank';
+        tenderType = 'TRANSFER';
+      } else if (rawMethod === 'ONLINE' || rawMethod === 'MIDTRANS' || rawMethod === 'DOKU') {
+        normMethod = 'Online Gateway (QRIS/VA)';
+        tenderType = 'ONLINE';
+      } else if (rawMethod === 'CASH' || rawMethod === 'TUNAI') {
+        normMethod = 'Tunai (Cash)';
+        tenderType = 'CASH';
+      } else {
+        normMethod = t.paymentMethod || 'Lainnya';
+        tenderType = 'OTHER';
+      }
 
       if (!paymentMethodsMap[normMethod]) {
-        paymentMethodsMap[normMethod] = { count: 0, total: 0 };
+        paymentMethodsMap[normMethod] = { count: 0, total: 0, fee: 0, net: 0, tenderType };
       }
       paymentMethodsMap[normMethod].count += 1;
       paymentMethodsMap[normMethod].total += gTotal;
+      paymentMethodsMap[normMethod].fee += fee;
+      paymentMethodsMap[normMethod].net += Math.max(0, gTotal - fee);
 
-      // Daily bucket (Net Sales after discounts and gateway fee)
-      const dayKey = t.createdAt ? formatLocalDateKey(new Date(t.createdAt)) : '';
-      if (dailyMap[dayKey]) {
-        dailyMap[dayKey].netSales += Math.max(0, subTotal - disc - fee);
-        dailyMap[dayKey].orders += 1;
+      // Dynamic chart bucket aggregation
+      if (t.createdAt) {
+        const txDate = new Date(t.createdAt);
+        let bucketKey = '';
+        if (chartGranularity === 'hourly') {
+          bucketKey = String(txDate.getHours()).padStart(2, '0') + ':00';
+        } else if (chartGranularity === 'daily') {
+          bucketKey = txDate.toISOString().slice(0, 10);
+        } else {
+          bucketKey = `${txDate.getFullYear()}-${String(txDate.getMonth() + 1).padStart(2, '0')}`;
+        }
+
+        if (chartBucketsMap[bucketKey]) {
+          chartBucketsMap[bucketKey].netSales += Math.max(0, subTotal - disc - fee);
+          chartBucketsMap[bucketKey].grossSales += subTotal;
+          chartBucketsMap[bucketKey].discount += disc;
+          chartBucketsMap[bucketKey].orders += 1;
+        }
+
+        // Dayparts aggregation (Breakfast, Lunch, Afternoon, Dinner, Late Night)
+        const hour = txDate.getHours();
+        let dpKey = 'latenight';
+        if (hour >= 7 && hour < 11) dpKey = 'breakfast';
+        else if (hour >= 11 && hour < 15) dpKey = 'lunch';
+        else if (hour >= 15 && hour < 18) dpKey = 'afternoon';
+        else if (hour >= 18 && hour < 22) dpKey = 'dinner';
+        if (daypartsMap[dpKey]) {
+          daypartsMap[dpKey].orders += 1;
+          daypartsMap[dpKey].revenue += gTotal;
+        }
       }
     });
 
@@ -371,13 +595,101 @@ export async function getSalesReport(outletKey: string, params?: DateFilterParam
     const aovGrowth = prevAov > 0 ? ((aov - prevAov) / prevAov) * 100 : 0;
 
     // Average daily benchmark for projection/target line in rounded block chart
-    const dailyList = Object.values(dailyMap);
-    const daysWithDataCount = Math.max(1, dailyList.length);
-    const targetDailyBaseline = netSales > 0 ? Math.round(netSales / daysWithDataCount * 1.1) : 0;
-
-    dailyList.forEach((d) => {
+    const targetDailyBaseline = netSales > 0 ? Math.round((netSales / Math.max(1, chartBucketsList.length)) * 1.1) : 0;
+    chartBucketsList.forEach((d) => {
       d.projected = targetDailyBaseline;
     });
+
+    // Channel specific stats & percentages
+    const posOrders = channelMap['POS'].count;
+    const posRevenue = channelMap['POS'].total;
+    const posAov = posOrders > 0 ? Math.round(posRevenue / posOrders) : 0;
+    const posRevenuePercent = totalCollected > 0 ? (posRevenue / totalCollected) * 100 : 0;
+    const posOrdersPercent = totalOrders > 0 ? (posOrders / totalOrders) * 100 : 0;
+
+    const sfOrders = channelMap['STOREFRONT'].count;
+    const sfRevenue = channelMap['STOREFRONT'].total;
+    const sfAov = sfOrders > 0 ? Math.round(sfRevenue / sfOrders) : 0;
+    const sfRevenuePercent = totalCollected > 0 ? (sfRevenue / totalCollected) * 100 : 0;
+    const sfOrdersPercent = totalOrders > 0 ? (sfOrders / totalOrders) * 100 : 0;
+
+    const selfOrderAdoptionRate = totalOrders > 0 ? (sfOrders / totalOrders) * 100 : 0;
+    const aovUpliftRate = posAov > 0 ? ((sfAov - posAov) / posAov) * 100 : 0;
+    const basketSize = totalOrders > 0 ? Number((totalItemsSold / totalOrders).toFixed(1)) : 0;
+
+    // Payment method cashless vs cash analytics
+    let cashlessRevenue = 0;
+    let cashlessOrders = 0;
+    let cashRevenue = 0;
+    let cashOrders = 0;
+
+    Object.entries(paymentMethodsMap).forEach(([method, val]) => {
+      const isCash = val.tenderType === 'CASH' || method.toLowerCase().includes('tunai') || method.toLowerCase().includes('cash');
+      if (isCash) {
+        cashRevenue += val.total;
+        cashOrders += val.count;
+      } else {
+        cashlessRevenue += val.total;
+        cashlessOrders += val.count;
+      }
+    });
+
+    const paymentAnalytics = {
+      cashlessRevenue,
+      cashlessOrders,
+      cashlessRevenuePercent: totalCollected > 0 ? (cashlessRevenue / totalCollected) * 100 : 0,
+      cashlessOrdersPercent: totalOrders > 0 ? (cashlessOrders / totalOrders) * 100 : 0,
+      cashRevenue,
+      cashOrders,
+      cashRevenuePercent: totalCollected > 0 ? (cashRevenue / totalCollected) * 100 : 0,
+      cashOrdersPercent: totalOrders > 0 ? (cashOrders / totalOrders) * 100 : 0,
+      totalGatewayFee,
+      netSettlement: Math.max(0, totalCollected - totalGatewayFee),
+    };
+
+    // Dayparting list with peak indicators
+    const daypartsList = Object.entries(daypartsMap).map(([key, dp]) => ({
+      key,
+      label: dp.label,
+      timeRange: dp.timeRange,
+      orders: dp.orders,
+      revenue: dp.revenue,
+      percentageRevenue: totalCollected > 0 ? (dp.revenue / totalCollected) * 100 : 0,
+      percentageOrders: totalOrders > 0 ? (dp.orders / totalOrders) * 100 : 0,
+      isPeakRevenue: false,
+      isPeakOrders: false,
+    }));
+
+    let maxRev = -1;
+    let maxOrd = -1;
+    let peakRevIdx = -1;
+    let peakOrdIdx = -1;
+    daypartsList.forEach((dp, idx) => {
+      if (dp.revenue > maxRev) {
+        maxRev = dp.revenue;
+        peakRevIdx = idx;
+      }
+      if (dp.orders > maxOrd) {
+        maxOrd = dp.orders;
+        peakOrdIdx = idx;
+      }
+    });
+    if (peakRevIdx >= 0) daypartsList[peakRevIdx].isPeakRevenue = true;
+    if (peakOrdIdx >= 0) daypartsList[peakOrdIdx].isPeakOrders = true;
+
+    // Void and Cancel Rate for Loss Prevention
+    let voidCount = 0;
+    let voidAmount = 0;
+    trxList.forEach((t) => {
+      const isCanceled = t.status === 'CANCELLED' || t.status === 'CANCELED' || t.paymentStatus === 'CANCELED' || t.paymentStatus === 'REFUNDED';
+      if (isCanceled) {
+        voidCount += 1;
+        voidAmount += parseFloat(t.grandTotal || '0') || 0;
+      }
+    });
+    const totalAttempts = totalOrders + voidCount;
+    const voidRate = totalAttempts > 0 ? (voidCount / totalAttempts) * 100 : 0;
+    const discountRate = grossSales > 0 ? (totalDiscount / grossSales) * 100 : 0;
 
     return {
       success: true,
@@ -420,19 +732,62 @@ export async function getSalesReport(outletKey: string, params?: DateFilterParam
           aov,
           aovGrowth,
           prevAov,
+          totalItemsSold,
+          itemsSoldGrowth,
+          prevTotalItemsSold,
         },
-        chartData: dailyList,
+        channelMetrics: {
+          posOrders,
+          posRevenue,
+          posAov,
+          posRevenuePercent,
+          posOrdersPercent,
+          storefrontOrders: sfOrders,
+          storefrontRevenue: sfRevenue,
+          storefrontAov: sfAov,
+          sfRevenuePercent,
+          sfOrdersPercent,
+          selfOrderAdoptionRate,
+          aovUpliftRate,
+          basketSize,
+        },
+        chartGranularity,
+        chartData: chartBucketsList,
+        topProducts,
+        bottomProducts,
+        topCategories,
+        paymentAnalytics,
+        dayparting: daypartsList,
+        lossPrevention: {
+          voidCount,
+          voidAmount,
+          voidRate,
+          discountRate,
+        },
         paymentMethods: Object.entries(paymentMethodsMap).map(([method, val]) => ({
           method,
+          tenderType: val.tenderType,
           count: val.count,
           total: val.total,
+          gatewayFee: val.fee,
+          netAmount: val.net,
+          percentageRevenue: totalCollected > 0 ? (val.total / totalCollected) * 100 : 0,
+          percentageOrders: totalOrders > 0 ? (val.count / totalOrders) * 100 : 0,
           percentage: totalCollected > 0 ? (val.total / totalCollected) * 100 : 0,
-        })),
+        })).sort((a, b) => b.total - a.total),
         channels: [
-          { channel: 'Kasir POS', count: channelMap['POS'].count, total: channelMap['POS'].total },
-          { channel: 'Self QR Meja', count: channelMap['STOREFRONT'].count, total: channelMap['STOREFRONT'].total },
+          { channel: 'Kasir POS', count: channelMap['POS'].count, total: channelMap['POS'].total, aov: posAov, percentageRevenue: posRevenuePercent, percentageOrders: posOrdersPercent, percentage: posRevenuePercent },
+          { channel: 'Self QR Meja', count: channelMap['STOREFRONT'].count, total: channelMap['STOREFRONT'].total, aov: sfAov, percentageRevenue: sfRevenuePercent, percentageOrders: sfOrdersPercent, percentage: sfRevenuePercent },
         ],
-        recentTransactions: trxList.slice(0, 50),
+        orderTypes: Object.values(orderTypesMap).map((ot) => ({
+          type: ot.type,
+          count: ot.count,
+          total: ot.total,
+          percentageRevenue: totalCollected > 0 ? (ot.total / totalCollected) * 100 : 0,
+          percentageOrders: totalOrders > 0 ? (ot.count / totalOrders) * 100 : 0,
+          percentage: totalCollected > 0 ? (ot.total / totalCollected) * 100 : 0,
+        })),
+        recentTransactions: trxList.slice(0, 500),
       },
     };
   } catch (error: any) {
