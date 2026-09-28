@@ -45,6 +45,7 @@ import { ReceiptPrinter, ReceiptData, TenantReceiptSettings } from "@/features/p
 import { useBarcodeScanner } from "@/hooks/use-barcode-scanner";
 import { OrderCameraScannerDialog } from "./order-camera-scanner-dialog";
 import { playScanSuccessBeep, playScanErrorBeep, playScanWarningBeep } from "@/lib/utils/sound";
+import { formatPaymentMethodLabel } from "@/lib/utils/format";
 
 type OrderItem = {
   id: string;
@@ -806,8 +807,8 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
                         <span className="truncate max-w-[150px]">{order.customerName || "Tamu / Umum"}</span>
                       </div>
 
-                      <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 uppercase shrink-0">
-                        {order.paymentMethod || "CASH"}
+                      <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 shrink-0">
+                        {formatPaymentMethodLabel(order.paymentMethod)}
                       </span>
                     </div>
 
@@ -1250,7 +1251,7 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
                 <div>
                   <span className="text-muted-foreground block text-[11px] mb-0.5">Metode Bayar</span>
                   <span className="font-semibold text-foreground">
-                    {selectedOrder.paymentMethod || "CASH"}
+                    {formatPaymentMethodLabel(selectedOrder.paymentMethod)}
                   </span>
                 </div>
                 <div>

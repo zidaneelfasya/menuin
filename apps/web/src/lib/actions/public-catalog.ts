@@ -109,6 +109,10 @@ export async function createOnlineOrder(formData: z.infer<typeof orderSchema>) {
     
     const orderNumber = generateOrderNumber(tenant);
 
+    const isOnlineOrQris = data.paymentMethod?.toUpperCase().includes('QRIS') || data.paymentMethod?.toUpperCase() === 'ONLINE';
+    const gatewayFeeNum = isOnlineOrQris ? Math.round(grandTotal * 0.007) : 0;
+    const netAmountNum = Math.max(0, grandTotal - gatewayFeeNum);
+
     // 3. Create Transaction
     const [newTransaction] = await db.insert(transactions).values({
       tenantId: tenant.id,
@@ -120,6 +124,8 @@ export async function createOnlineOrder(formData: z.infer<typeof orderSchema>) {
       tax: taxAmount.toString(),
       serviceCharge: serviceChargeAmount.toString(),
       grandTotal: grandTotal.toString(),
+      gatewayFee: gatewayFeeNum.toString(),
+      netAmount: netAmountNum.toString(),
       paymentMethod: data.paymentMethod,
       status: initialStatus,
       source: 'ONLINE',

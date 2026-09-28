@@ -9,7 +9,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { formatCurrency } from '@/lib/utils/format';
+import { formatCurrency, formatPaymentMethodLabel } from '@/lib/utils/format';
 import { Check, Printer, ChefHat, ReceiptText, Plus } from 'lucide-react';
 import { ReceiptData, TenantReceiptSettings } from './receipt-printer';
 
@@ -66,7 +66,7 @@ export function PaymentSuccessModal({
           <div className="flex justify-between items-center">
             <span>Metode Pembayaran</span>
             <span className="font-semibold text-slate-800">
-              {receiptData.paymentMethod || 'TUNAI'}
+              {formatPaymentMethodLabel(receiptData.paymentMethod)}
             </span>
           </div>
 

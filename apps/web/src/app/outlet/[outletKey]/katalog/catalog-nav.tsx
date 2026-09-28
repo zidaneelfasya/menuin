@@ -12,7 +12,7 @@ export function CatalogNav() {
 
   const navItems = [
     { href: `/outlet/${outletKey}/katalog`, icon: Store, label: "Status & Overview", exact: true },
-    { href: `/outlet/${outletKey}/katalog/appearance`, icon: Paintbrush, label: "Tampilan Storefront" },
+    { href: `/outlet/${outletKey}/katalog/appearance`, icon: Paintbrush, label: "Tampilan Self QR" },
     { href: `/outlet/${outletKey}/katalog/visibility`, icon: Eye, label: "Visibilitas Produk" },
     { href: `/outlet/${outletKey}/katalog/ordering`, icon: Settings, label: "Pengaturan Pesanan" },
     { href: `/outlet/${outletKey}/katalog/tables`, icon: QrCode, label: "Meja & QR Code" },

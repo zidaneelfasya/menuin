@@ -66,6 +66,11 @@ export const tenants = pgTable('tenants', {
   midtransServerKey: text('midtrans_server_key'),
   midtransClientKey: text('midtrans_client_key'),
   midtransEnvironment: text('midtrans_environment').default('sandbox'),
+  // DOKU Payment Gateway Settings (Sub-Account & QRIS Dinamis)
+  dokuClientId: text('doku_client_id'),
+  dokuSecretKey: text('doku_secret_key'),
+  dokuSubAccountId: text('doku_sub_account_id'),
+  dokuEnvironment: text('doku_environment').default('sandbox'),
 
   // Custom Receipt & Kitchen Ticket Settings (OWNER / MANAGER)
   receiptHeader: text('receipt_header'),
@@ -339,6 +344,8 @@ export const transactions = pgTable('transactions', {
   serviceCharge: decimal('service_charge', { precision: 12, scale: 2 }).default('0'),
   platformFee: decimal('platform_fee', { precision: 12, scale: 2 }).default('0'),
   grandTotal: decimal('grand_total', { precision: 12, scale: 2 }).notNull(),
+  gatewayFee: decimal('gateway_fee', { precision: 12, scale: 2 }).default('0').notNull(),
+  netAmount: decimal('net_amount', { precision: 12, scale: 2 }),
   promoCode: text('promo_code'),
   paymentMethod: text('payment_method').notNull(),
   paymentStatus: text('payment_status').notNull().default('PENDING'), // PENDING, PAID, CANCELED, REFUNDED
