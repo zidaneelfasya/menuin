@@ -12,7 +12,7 @@ export function PricingCards() {
           key={plan.id}
           className={`relative flex flex-col rounded-[28px] p-7 sm:p-8 ${
             plan.highlight
-              ? "bg-[#0a0a0a] text-white shadow-[0_30px_60px_-30px_rgba(15,23,42,0.6)]"
+              ? "bg-[#f5f8ff] ring-2 ring-[#0E59F9] shadow-[0_30px_60px_-30px_rgba(14,89,249,0.45)]"
               : "bg-white ring-1 ring-black/[0.08]"
           }`}
         >
@@ -21,33 +21,19 @@ export function PricingCards() {
               Paling dipilih
             </span>
           )}
-          <h3 className={`text-[18px] font-semibold tracking-[-0.02em] ${plan.highlight ? "text-white" : "text-[#0a0a0a]"}`}>
+          <h3 className={`text-[18px] font-semibold tracking-[-0.02em] ${plan.highlight ? "text-[#0E59F9]" : "text-[#0a0a0a]"}`}>
             {plan.name}
           </h3>
-          <p className={`mt-1.5 text-[14px] ${plan.highlight ? "text-white/60" : "text-[#71717a]"}`}>{plan.tagline}</p>
+          <p className="mt-1.5 text-[14px] text-[#71717a]">{plan.tagline}</p>
 
-          <div className="mt-7 flex items-baseline gap-1.5">
+          <div className="mt-7 flex items-baseline gap-1.5 text-[#0a0a0a]">
             <span className="text-[clamp(28px,3vw,36px)] font-semibold tracking-[-0.035em] tabular-nums">{plan.price}</span>
-            {plan.period && (
-              <span className={`text-[13px] ${plan.highlight ? "text-white/55" : "text-[#71717a]"}`}>{plan.period}</span>
-            )}
+            {plan.period && <span className="text-[13px] text-[#71717a]">{plan.period}</span>}
           </div>
-
-          <ul className="mt-7 flex-1 space-y-3">
-            {plan.bullets.map((b) => (
-              <li key={b} className="flex items-start gap-3 text-[14px]">
-                <Check
-                  className={`mt-0.5 h-4 w-4 shrink-0 ${plan.highlight ? "text-[#7aa8ff]" : "text-[#0E59F9]"}`}
-                  strokeWidth={2.5}
-                />
-                <span className={plan.highlight ? "text-white/85" : "text-[#3f3f46]"}>{b}</span>
-              </li>
-            ))}
-          </ul>
 
           <Link
             href={plan.cta.href}
-            className={`mt-8 inline-flex h-11 items-center justify-center gap-1.5 rounded-full text-[14.5px] font-medium transition-colors ${
+            className={`mt-7 inline-flex h-11 items-center justify-center gap-1.5 rounded-full text-[14.5px] font-medium transition-colors ${
               plan.highlight
                 ? "bg-[#0E59F9] text-white hover:bg-[#0C4CD6]"
                 : "bg-[#0a0a0a]/[0.04] text-[#0a0a0a] hover:bg-[#0a0a0a]/[0.08]"
@@ -56,6 +42,20 @@ export function PricingCards() {
             {plan.cta.label}
             <ArrowRight className="h-4 w-4" />
           </Link>
+
+          <div className={`mt-8 border-t pt-7 ${plan.highlight ? "border-[#0E59F9]/15" : "border-black/[0.06]"}`}>
+            <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#52525b]">Fitur</p>
+            <ul className="mt-5 space-y-3.5">
+              {plan.bullets.map((b) => (
+                <li key={b} className="flex items-start gap-3 text-[14px] leading-snug">
+                  <span className="mt-px flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full bg-[#0E59F9]/10">
+                    <Check className="h-3 w-3 text-[#0E59F9]" strokeWidth={3} />
+                  </span>
+                  <span className="text-[#3f3f46]">{b}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </article>
       ))}
     </div>
