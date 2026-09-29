@@ -3,61 +3,106 @@ import Link from "next/link";
 import { ArrowRight, Check, Minus } from "lucide-react";
 import { comparison, plans, type Cell } from "@/components/landing/pricing-data";
 
+/**
+ * Warna kartu dari kiri ke kanan: makin ke kanan makin biru.
+ * Kartu terakhir (Custom) memakai biru penuh dengan teks putih.
+ */
+const tones = [
+  { card: "bg-white ring-1 ring-black/[0.08]", dark: false },
+  { card: "bg-[#f3f7ff] ring-1 ring-[#0E59F9]/15", dark: false },
+  { card: "bg-[#e4edff] ring-2 ring-[#0E59F9]", dark: false },
+  { card: "bg-[#0E59F9] ring-1 ring-[#0E59F9]", dark: true },
+];
+
 /** Kartu paket — dipakai di landing (ringkas) dan di /harga. */
 export function PricingCards() {
   return (
-    <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-      {plans.map((plan) => (
-        <article
-          key={plan.id}
-          className={`relative flex flex-col rounded-[28px] p-7 sm:p-8 ${
-            plan.highlight
-              ? "bg-[#f5f8ff] ring-2 ring-[#0E59F9] shadow-[0_30px_60px_-30px_rgba(14,89,249,0.45)]"
-              : "bg-white ring-1 ring-black/[0.08]"
-          }`}
-        >
-          {plan.highlight && (
-            <span className="absolute right-6 top-6 rounded-full bg-[#0E59F9] px-2.5 py-1 text-[11px] font-semibold text-white">
-              Paling dipilih
-            </span>
-          )}
-          <h3 className={`text-[18px] font-semibold tracking-[-0.02em] ${plan.highlight ? "text-[#0E59F9]" : "text-[#0a0a0a]"}`}>
-            {plan.name}
-          </h3>
-          <p className="mt-1.5 text-[14px] text-[#71717a]">{plan.tagline}</p>
-
-          <div className="mt-7 flex items-baseline gap-1.5 text-[#0a0a0a]">
-            <span className="text-[clamp(28px,3vw,36px)] font-semibold tracking-[-0.035em] tabular-nums">{plan.price}</span>
-            {plan.period && <span className="text-[13px] text-[#71717a]">{plan.period}</span>}
-          </div>
-
-          <Link
-            href={plan.cta.href}
-            className={`mt-7 inline-flex h-11 items-center justify-center gap-1.5 rounded-full text-[14.5px] font-medium transition-colors ${
+    <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4 lg:gap-4">
+      {plans.map((plan, i) => {
+        const tone = tones[Math.min(i, tones.length - 1)];
+        const dark = tone.dark;
+        return (
+          <article
+            key={plan.id}
+            className={`relative flex flex-col rounded-[28px] p-7 ${tone.card} ${
               plan.highlight
-                ? "bg-[#0E59F9] text-white hover:bg-[#0C4CD6]"
-                : "bg-[#0a0a0a]/[0.04] text-[#0a0a0a] hover:bg-[#0a0a0a]/[0.08]"
+                ? "shadow-[0_40px_80px_-40px_rgba(14,89,249,0.6)] lg:py-10"
+                : "lg:my-6"
             }`}
           >
-            {plan.cta.label}
-            <ArrowRight className="h-4 w-4" />
-          </Link>
+            {plan.highlight && (
+              <span className="absolute right-6 top-6 rounded-full bg-[#0E59F9] px-2.5 py-1 text-[11px] font-semibold text-white">
+                Paling lengkap
+              </span>
+            )}
+            <h3
+              className={`text-[18px] font-semibold tracking-[-0.02em] ${
+                dark ? "text-white" : plan.highlight ? "text-[#0E59F9]" : "text-[#0a0a0a]"
+              }`}
+            >
+              {plan.name}
+            </h3>
+            <p className={`mt-1.5 min-h-[42px] text-[14px] leading-snug ${dark ? "text-white/75" : "text-[#71717a]"}`}>
+              {plan.tagline}
+            </p>
 
-          <div className={`mt-8 border-t pt-7 ${plan.highlight ? "border-[#0E59F9]/15" : "border-black/[0.06]"}`}>
-            <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#52525b]">Fitur</p>
-            <ul className="mt-5 space-y-3.5">
-              {plan.bullets.map((b) => (
-                <li key={b} className="flex items-start gap-3 text-[14px] leading-snug">
-                  <span className="mt-px flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full bg-[#0E59F9]/10">
-                    <Check className="h-3 w-3 text-[#0E59F9]" strokeWidth={3} />
-                  </span>
-                  <span className="text-[#3f3f46]">{b}</span>
-                </li>
-              ))}
+            <div className="mt-6 min-h-[20px]">
+              {plan.originalPrice && (
+                <span className="text-[14px] text-[#a1a1aa] line-through decoration-[#ef4444]/70 tabular-nums">
+                  {plan.originalPrice}
+                </span>
+              )}
+            </div>
+            <div className={`flex flex-wrap items-baseline gap-x-1.5 ${dark ? "text-white" : "text-[#0a0a0a]"}`}>
+              <span className="text-[clamp(26px,2.4vw,32px)] font-semibold tracking-[-0.035em] tabular-nums">{plan.price}</span>
+              {plan.period && (
+                <span className={`text-[13px] ${dark ? "text-white/70" : "text-[#71717a]"}`}>{plan.period}</span>
+              )}
+            </div>
+
+            <ul className="mt-7 flex-1 space-y-3">
+              {plan.bullets.map((b) => {
+                const featured = plan.featured?.includes(b);
+                return (
+                  <li key={b} className="flex items-start gap-3 text-[14px] leading-snug">
+                    <span
+                      className={`mt-px flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full ${
+                        dark ? "bg-white/20" : featured ? "bg-[#0E59F9]" : "bg-[#0E59F9]/10"
+                      }`}
+                    >
+                      <Check
+                        className={`h-3 w-3 ${dark || featured ? "text-white" : "text-[#0E59F9]"}`}
+                        strokeWidth={3}
+                      />
+                    </span>
+                    <span
+                      className={
+                        dark ? "text-white/90" : featured ? "font-semibold text-[#0a0a0a]" : "text-[#3f3f46]"
+                      }
+                    >
+                      {b}
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
-          </div>
-        </article>
-      ))}
+
+            <Link
+              href={plan.cta.href}
+              className={`mt-8 inline-flex h-11 items-center justify-center gap-1.5 rounded-full text-[14.5px] font-medium transition-colors ${
+                dark
+                  ? "bg-white text-[#0E59F9] hover:bg-white/90"
+                  : plan.highlight
+                    ? "bg-[#0E59F9] text-white hover:bg-[#0C4CD6]"
+                    : "bg-white text-[#0a0a0a] ring-1 ring-black/[0.08] hover:bg-[#fafafa]"
+              }`}
+            >
+              {plan.cta.label}
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </article>
+        );
+      })}
     </div>
   );
 }
@@ -84,10 +129,10 @@ function CellValue({ value }: { value: Cell }) {
 export function PricingTable() {
   return (
     <div className="overflow-x-auto rounded-[28px] ring-1 ring-black/[0.08]">
-      <table className="w-full min-w-[720px] border-collapse text-left">
+      <table className="w-full min-w-[860px] border-collapse text-left">
         <thead className="sticky top-0">
           <tr className="bg-white">
-            <th className="w-[40%] px-6 py-5 text-[13px] font-medium text-[#71717a]">Fitur</th>
+            <th className="w-[32%] px-6 py-5 text-[13px] font-medium text-[#71717a]">Fitur</th>
             {plans.map((p) => (
               <th key={p.id} className="px-4 py-5 text-center">
                 <span className={`text-[15px] font-semibold ${p.highlight ? "text-[#0E59F9]" : "text-[#0a0a0a]"}`}>{p.name}</span>
@@ -100,7 +145,7 @@ export function PricingTable() {
           {comparison.map((g) => (
             <React.Fragment key={g.group}>
               <tr>
-                <td colSpan={4} className="bg-[#fafafa] px-6 py-3 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#52525b]">
+                <td colSpan={plans.length + 1} className="bg-[#fafafa] px-6 py-3 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#52525b]">
                   {g.group}
                 </td>
               </tr>
