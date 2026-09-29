@@ -11,10 +11,10 @@ export type Plan = {
   id: string;
   name: string;
   tagline: string;
-  price: string;
-  /** Harga normal yang ditampilkan dicoret di samping harga. */
-  originalPrice?: string;
-  period?: string;
+  /** Harga per bulan per outlet dalam rupiah; null = harga lewat diskusi. */
+  monthlyPrice: number | null;
+  /** Harga normal per bulan yang ditampilkan dicoret. */
+  originalMonthlyPrice?: number;
   cta: { label: string; href: string };
   highlight?: boolean;
   bullets: string[];
@@ -27,8 +27,7 @@ export const plans: Plan[] = [
     id: "kasir",
     name: "Kasir",
     tagline: "Kasir digital untuk outlet yang baru mulai.",
-    price: "Rp 75.000",
-    period: "/bulan per outlet",
+    monthlyPrice: 75000,
     cta: { label: "Mulai uji coba", href: "/auth/signup?plan=kasir" },
     bullets: [
       "Kasir POS dan cetak struk",
@@ -43,9 +42,8 @@ export const plans: Plan[] = [
     id: "kasir-plus",
     name: "Kasir Plus",
     tagline: "Untuk menu dengan banyak pilihan dan kasir lebih dari satu.",
-    price: "Rp 100.000",
-    originalPrice: "Rp 200.000",
-    period: "/bulan per outlet",
+    monthlyPrice: 100000,
+    originalMonthlyPrice: 200000,
     cta: { label: "Mulai uji coba", href: "/auth/signup?plan=kasir-plus" },
     bullets: [
       "Semua di paket Kasir",
@@ -61,9 +59,8 @@ export const plans: Plan[] = [
     id: "lengkap",
     name: "Lengkap",
     tagline: "Semua fitur Menuin, termasuk pesan mandiri dari meja.",
-    price: "Rp 150.000",
-    originalPrice: "Rp 300.000",
-    period: "/bulan per outlet",
+    monthlyPrice: 150000,
+    originalMonthlyPrice: 300000,
     cta: { label: "Mulai uji coba 14 hari", href: "/auth/signup?plan=lengkap" },
     highlight: true,
     bullets: [
@@ -86,7 +83,7 @@ export const plans: Plan[] = [
     id: "custom",
     name: "Custom",
     tagline: "Untuk jaringan outlet dan kebutuhan khusus.",
-    price: "Hubungi kami",
+    monthlyPrice: null,
     cta: { label: "Diskusikan kebutuhan", href: "/kontak" },
     bullets: [
       "Semua di paket Lengkap",
@@ -98,6 +95,32 @@ export const plans: Plan[] = [
     ],
   },
 ];
+
+export type BillingCycle = "monthly" | "annual";
+
+/** Langganan tahunan: bayar sekian bulan, dapat 12 bulan. */
+export const ANNUAL_PAID_MONTHS = 10;
+export const ANNUAL_FREE_MONTHS = 12 - ANNUAL_PAID_MONTHS;
+
+export const formatRupiah = (value: number) => `Rp ${String(value).replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
+
+/** Harga yang ditampilkan di kartu untuk siklus tagihan tertentu. */
+export function planPrice(plan: Plan, cycle: BillingCycle) {
+  if (plan.monthlyPrice === null) return { price: "Hubungi kami", original: undefined, period: undefined };
+  if (cycle === "monthly") {
+    return {
+      price: formatRupiah(plan.monthlyPrice),
+      original: plan.originalMonthlyPrice ? formatRupiah(plan.originalMonthlyPrice) : undefined,
+      period: "/bulan per outlet",
+    };
+  }
+  // Tahunan: harga coret = 12 bulan harga normal bulanan.
+  return {
+    price: formatRupiah(plan.monthlyPrice * ANNUAL_PAID_MONTHS),
+    original: formatRupiah(plan.monthlyPrice * 12),
+    period: "/tahun per outlet",
+  };
+}
 
 /** true = termasuk, false = tidak, string = keterangan khusus. */
 export type Cell = boolean | string;

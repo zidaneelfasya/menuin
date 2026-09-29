@@ -1,113 +1,8 @@
 import React from "react";
-import Link from "next/link";
-import { ArrowRight, Check, Minus } from "lucide-react";
-import { comparison, plans, type Cell } from "@/components/landing/pricing-data";
+import { Check, Minus } from "lucide-react";
+import { comparison, planPrice, plans, type Cell } from "@/components/landing/pricing-data";
 
-/**
- * Warna kartu: Kasir putih, Kasir Plus dan Custom biru muda,
- * Lengkap biru penuh sebagai paket unggulan.
- */
-const tones = [
-  { card: "bg-white ring-1 ring-black/[0.08]", dark: false, text: "" },
-  { card: "bg-[#f3f7ff] ring-1 ring-[#0E59F9]/15", dark: false, text: "" },
-  { card: "bg-[#0E59F9] ring-1 ring-[#0E59F9]", dark: true, text: "text-[#0E59F9]" },
-  { card: "bg-[#f3f7ff] ring-1 ring-[#0E59F9]/15", dark: false, text: "" },
-];
-
-/** Kartu paket — dipakai di landing (ringkas) dan di /harga. */
-export function PricingCards() {
-  return (
-    <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4 lg:gap-4">
-      {plans.map((plan, i) => {
-        const tone = tones[Math.min(i, tones.length - 1)];
-        const dark = tone.dark;
-        return (
-          <article
-            key={plan.id}
-            className={`relative flex flex-col rounded-[28px] p-7 ${tone.card} ${
-              plan.highlight
-                ? "shadow-[0_40px_80px_-40px_rgba(14,89,249,0.6)] lg:py-10"
-                : "lg:my-6"
-            }`}
-          >
-            {plan.highlight && (
-              <span className="absolute right-6 top-6 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-[#0E59F9]">
-                Paling lengkap
-              </span>
-            )}
-            <h3
-              className={`text-[18px] font-semibold tracking-[-0.02em] ${
-                dark ? "text-white" : plan.highlight ? "text-[#0E59F9]" : "text-[#0a0a0a]"
-              }`}
-            >
-              {plan.name}
-            </h3>
-            <p className={`mt-1.5 min-h-[42px] text-[14px] leading-snug ${dark ? "text-white/75" : "text-[#71717a]"}`}>
-              {plan.tagline}
-            </p>
-
-            <div className="mt-6 min-h-[20px]">
-              {plan.originalPrice && (
-                <span
-                  className={`text-[14px] line-through tabular-nums ${
-                    dark ? "text-white/60 decoration-white/60" : "text-[#a1a1aa] decoration-[#ef4444]/70"
-                  }`}
-                >
-                  {plan.originalPrice}
-                </span>
-              )}
-            </div>
-            <div className={`flex flex-wrap items-baseline gap-x-1.5 ${dark ? "text-white" : "text-[#0a0a0a]"}`}>
-              <span className="text-[clamp(26px,2.4vw,32px)] font-semibold tracking-[-0.035em] tabular-nums">{plan.price}</span>
-              {plan.period && (
-                <span className={`text-[13px] ${dark ? "text-white/70" : "text-[#71717a]"}`}>{plan.period}</span>
-              )}
-            </div>
-
-            <ul className="mt-7 flex-1 space-y-3">
-              {plan.bullets.map((b) => {
-                const featured = plan.featured?.includes(b);
-                return (
-                  <li key={b} className="flex items-start gap-3 text-[14px] leading-snug">
-                    <span
-                      className={`mt-px flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full ${
-                        dark ? (featured ? "bg-white" : "bg-white/20") : featured ? "bg-[#0E59F9]" : "bg-[#0E59F9]/10"
-                      }`}
-                    >
-                      <Check
-                        className={`h-3 w-3 ${dark ? (featured ? "text-[#0E59F9]" : "text-white") : featured ? "text-white" : "text-[#0E59F9]"}`}
-                        strokeWidth={3}
-                      />
-                    </span>
-                    <span
-                      className={
-                        dark ? (featured ? "font-semibold text-white" : "text-white/90") : featured ? "font-semibold text-[#0a0a0a]" : "text-[#3f3f46]"
-                      }
-                    >
-                      {b}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-
-            <Link
-              href={plan.cta.href}
-              className={`mt-8 inline-flex h-11 items-center justify-center gap-1.5 rounded-full text-[14.5px] font-medium transition-colors ${
-                dark
-                  ? `bg-white ${tone.text} hover:bg-white/90`
-                  : "bg-white text-[#0a0a0a] ring-1 ring-black/[0.08] hover:bg-[#fafafa]"
-              }`}
-            >
-              {plan.cta.label}
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </article>
-        );
-      })}
-    </div>
-  );
-}
+export { PricingCards } from "@/components/landing/pricing-cards";
 
 function CellValue({ value }: { value: Cell }) {
   if (value === true)
@@ -138,7 +33,7 @@ export function PricingTable() {
             {plans.map((p) => (
               <th key={p.id} className="px-4 py-5 text-center">
                 <span className={`text-[15px] font-semibold ${p.highlight ? "text-[#0E59F9]" : "text-[#0a0a0a]"}`}>{p.name}</span>
-                <span className="mt-0.5 block text-[12px] font-normal text-[#71717a]">{p.price}</span>
+                <span className="mt-0.5 block text-[12px] font-normal text-[#71717a]">{planPrice(p, "monthly").price}</span>
               </th>
             ))}
           </tr>
