@@ -5,13 +5,13 @@ import { comparison, plans, type Cell } from "@/components/landing/pricing-data"
 
 /**
  * Warna kartu dari kiri ke kanan: makin ke kanan makin biru.
- * Kartu terakhir (Custom) memakai biru penuh dengan teks putih.
+ * Kartu Lengkap memakai biru penuh, Custom biru tua yang lebih gelap.
  */
 const tones = [
-  { card: "bg-white ring-1 ring-black/[0.08]", dark: false },
-  { card: "bg-[#f3f7ff] ring-1 ring-[#0E59F9]/15", dark: false },
-  { card: "bg-[#e4edff] ring-2 ring-[#0E59F9]", dark: false },
-  { card: "bg-[#0E59F9] ring-1 ring-[#0E59F9]", dark: true },
+  { card: "bg-white ring-1 ring-black/[0.08]", dark: false, text: "" },
+  { card: "bg-[#f3f7ff] ring-1 ring-[#0E59F9]/15", dark: false, text: "" },
+  { card: "bg-[#0E59F9] ring-1 ring-[#0E59F9]", dark: true, text: "text-[#0E59F9]" },
+  { card: "bg-[#0B2A6F] ring-1 ring-[#0B2A6F]", dark: true, text: "text-[#0B2A6F]" },
 ];
 
 /** Kartu paket — dipakai di landing (ringkas) dan di /harga. */
@@ -31,7 +31,7 @@ export function PricingCards() {
             }`}
           >
             {plan.highlight && (
-              <span className="absolute right-6 top-6 rounded-full bg-[#0E59F9] px-2.5 py-1 text-[11px] font-semibold text-white">
+              <span className="absolute right-6 top-6 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-[#0E59F9]">
                 Paling lengkap
               </span>
             )}
@@ -48,7 +48,11 @@ export function PricingCards() {
 
             <div className="mt-6 min-h-[20px]">
               {plan.originalPrice && (
-                <span className="text-[14px] text-[#a1a1aa] line-through decoration-[#ef4444]/70 tabular-nums">
+                <span
+                  className={`text-[14px] line-through tabular-nums ${
+                    dark ? "text-white/60 decoration-white/60" : "text-[#a1a1aa] decoration-[#ef4444]/70"
+                  }`}
+                >
                   {plan.originalPrice}
                 </span>
               )}
@@ -67,17 +71,17 @@ export function PricingCards() {
                   <li key={b} className="flex items-start gap-3 text-[14px] leading-snug">
                     <span
                       className={`mt-px flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full ${
-                        dark ? "bg-white/20" : featured ? "bg-[#0E59F9]" : "bg-[#0E59F9]/10"
+                        dark ? (featured ? "bg-white" : "bg-white/20") : featured ? "bg-[#0E59F9]" : "bg-[#0E59F9]/10"
                       }`}
                     >
                       <Check
-                        className={`h-3 w-3 ${dark || featured ? "text-white" : "text-[#0E59F9]"}`}
+                        className={`h-3 w-3 ${dark ? (featured ? "text-[#0E59F9]" : "text-white") : featured ? "text-white" : "text-[#0E59F9]"}`}
                         strokeWidth={3}
                       />
                     </span>
                     <span
                       className={
-                        dark ? "text-white/90" : featured ? "font-semibold text-[#0a0a0a]" : "text-[#3f3f46]"
+                        dark ? (featured ? "font-semibold text-white" : "text-white/90") : featured ? "font-semibold text-[#0a0a0a]" : "text-[#3f3f46]"
                       }
                     >
                       {b}
@@ -91,10 +95,8 @@ export function PricingCards() {
               href={plan.cta.href}
               className={`mt-8 inline-flex h-11 items-center justify-center gap-1.5 rounded-full text-[14.5px] font-medium transition-colors ${
                 dark
-                  ? "bg-white text-[#0E59F9] hover:bg-white/90"
-                  : plan.highlight
-                    ? "bg-[#0E59F9] text-white hover:bg-[#0C4CD6]"
-                    : "bg-white text-[#0a0a0a] ring-1 ring-black/[0.08] hover:bg-[#fafafa]"
+                  ? `bg-white ${tone.text} hover:bg-white/90`
+                  : "bg-white text-[#0a0a0a] ring-1 ring-black/[0.08] hover:bg-[#fafafa]"
               }`}
             >
               {plan.cta.label}
