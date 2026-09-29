@@ -226,6 +226,9 @@ export const promotions = pgTable('promotions', {
   value: decimal('value', { precision: 12, scale: 2 }).notNull(),
   minOrder: decimal('min_order', { precision: 12, scale: 2 }).default('0').notNull(),
   maxDiscount: decimal('max_discount', { precision: 12, scale: 2 }),
+  targetType: text('target_type').default('ALL').notNull(), // 'ALL' | 'SPECIFIC_PRODUCTS'
+  applicableProductIds: jsonb('applicable_product_ids').default(sql`'[]'::jsonb`), // array of product IDs
+  minProductQty: integer('min_product_qty').default(1).notNull(),
   isActive: boolean('is_active').default(true).notNull(),
   startDate: timestamp('start_date', { withTimezone: true }),
   endDate: timestamp('end_date', { withTimezone: true }),
@@ -262,6 +265,7 @@ export const products = pgTable('products', {
   barcode: text('barcode'),
   price: decimal('price', { precision: 12, scale: 2 }).notNull(),
   costPrice: decimal('cost_price', { precision: 12, scale: 2 }).notNull(),
+  potongan: decimal('potongan', { precision: 12, scale: 2 }).default('0'),
   stock: integer('stock').notNull().default(0),
   minStock: integer('min_stock').notNull().default(5),
   trackStock: boolean('track_stock').default(true).notNull(),
@@ -347,6 +351,7 @@ export const transactions = pgTable('transactions', {
   gatewayFee: decimal('gateway_fee', { precision: 12, scale: 2 }).default('0').notNull(),
   netAmount: decimal('net_amount', { precision: 12, scale: 2 }),
   promoCode: text('promo_code'),
+  promotionId: uuid('promotion_id').references(() => promotions.id, { onDelete: 'set null' }),
   paymentMethod: text('payment_method').notNull(),
   paymentStatus: text('payment_status').notNull().default('PENDING'), // PENDING, PAID, CANCELED, REFUNDED
   status: text('status').notNull().default('COMPLETED'),

@@ -6,6 +6,7 @@ export const productSchema = z.object({
   categoryId: z.string().uuid('Kategori tidak valid').nullable(),
   price: z.coerce.number().min(0, 'Harga tidak boleh negatif'),
   costPrice: z.coerce.number().min(0, 'Harga modal tidak boleh negatif'),
+  potongan: z.coerce.number().min(0, 'Potongan tidak boleh negatif'),
   stock: z.coerce.number().min(0, 'Stok awal tidak boleh negatif'),
   minStock: z.coerce.number().min(0, 'Batas minimum stok tidak boleh negatif'),
   imageUrl: z.string().optional().nullable(),

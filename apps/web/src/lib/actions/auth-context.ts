@@ -133,6 +133,7 @@ export type AuthContext = {
     name: string;
     slug: string | null;
     outletKey: string;
+    storeLogoUrl?: string | null;
   };
   membership: {
     id: string;
@@ -176,6 +177,7 @@ export async function getCurrentContext(): Promise<AuthContext | null> {
         name: tenant.name,
         slug: tenant.slug,
         outletKey: tenant.outletKey,
+        storeLogoUrl: tenant.storeLogoUrl || null,
       },
       membership: {
         id: membership.id,

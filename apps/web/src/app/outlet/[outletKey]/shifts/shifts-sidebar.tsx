@@ -1,16 +1,14 @@
 'use client';
 
 import * as React from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { 
   IconClock, 
   IconArrowsExchange, 
   IconReceipt, 
   IconHistory, 
-  IconCalendarEvent, 
-  IconChevronRight,
-  IconBuildingStore
+  IconCalendarEvent
 } from '@tabler/icons-react';
 
 interface ShiftsSidebarProps {
@@ -18,73 +16,43 @@ interface ShiftsSidebarProps {
   hasActiveShift?: boolean;
 }
 
-interface ShiftNavItem {
-  id: string;
-  label: string;
-  description: string;
-  icon: React.ComponentType<{ className?: string }>;
-  tab: string;
-  badge?: string;
-}
-
-interface ShiftNavSection {
-  title: string;
-  items: ShiftNavItem[];
-}
-
 export function ShiftsSidebar({ outletKey, hasActiveShift }: ShiftsSidebarProps) {
-  const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
 
   const currentTab = searchParams.get('tab') || 'active';
 
-  const sections: ShiftNavSection[] = [
+  const navItems = [
     {
-      title: 'Operasional Kasir',
-      items: [
-        {
-          id: 'active',
-          label: 'Shift Aktif',
-          description: hasActiveShift ? 'Sesi berjalan & uang laci' : 'Buka sesi kasir baru',
-          icon: IconClock,
-          tab: 'active',
-          badge: hasActiveShift ? 'Aktif' : undefined,
-        },
-        {
-          id: 'movements',
-          label: 'Arus Kas Laci (In / Out)',
-          description: 'Catat kas masuk & kas keluar',
-          icon: IconArrowsExchange,
-          tab: 'movements',
-        },
-        {
-          id: 'transactions',
-          label: 'Transaksi Shift Berjalan',
-          description: 'Daftar order pada shift aktif',
-          icon: IconReceipt,
-          tab: 'transactions',
-        },
-      ],
+      id: 'active',
+      label: 'Shift Aktif',
+      icon: IconClock,
+      tab: 'active',
+      badge: hasActiveShift ? 'Aktif' : undefined,
     },
     {
-      title: 'Audit & Rekapitulasi',
-      items: [
-        {
-          id: 'history',
-          label: 'Riwayat & Rekap Shift',
-          description: 'Arsip shift kemarin & audit selisih',
-          icon: IconHistory,
-          tab: 'history',
-        },
-        {
-          id: 'schedule',
-          label: 'Jadwal & Log Aktivitas',
-          description: 'Kalender mingguan & timeline',
-          icon: IconCalendarEvent,
-          tab: 'schedule',
-        },
-      ],
+      id: 'movements',
+      label: 'Arus Kas Laci',
+      icon: IconArrowsExchange,
+      tab: 'movements',
+    },
+    {
+      id: 'transactions',
+      label: 'Transaksi Shift',
+      icon: IconReceipt,
+      tab: 'transactions',
+    },
+    {
+      id: 'history',
+      label: 'Riwayat & Rekap',
+      icon: IconHistory,
+      tab: 'history',
+    },
+    {
+      id: 'schedule',
+      label: 'Jadwal & Log',
+      icon: IconCalendarEvent,
+      tab: 'schedule',
     },
   ];
 
@@ -93,92 +61,54 @@ export function ShiftsSidebar({ outletKey, hasActiveShift }: ShiftsSidebarProps)
   };
 
   return (
-    <aside className="w-full lg:w-64 xl:w-72 shrink-0">
-      {/* Mobile Horizontal Scroll Strip */}
-      <div className="lg:hidden overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide mb-2">
-        <div className="flex gap-1.5 min-w-max p-1 bg-card border border-border/70 rounded-2xl shadow-xs">
-          {sections.flatMap((s) => s.items).map((item) => {
-            const isActive = item.tab === currentTab;
+    <div className="flex flex-col h-full p-2 md:p-3">
+      {/* Desktop Header */}
+      <div className="hidden md:flex items-center justify-between px-2 py-3 mb-2">
+        <div className="min-w-0">
+          <h2 className="text-lg font-semibold font-sans text-gray-900 truncate">Shift Kasir</h2>
+          <p className="text-[10px] text-gray-500 truncate">Sesi Kasir & Arus Kas</p>
+        </div>
+        {hasActiveShift && (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-600 border border-emerald-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            Aktif
+          </span>
+        )}
+      </div>
 
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => handleNavigate(item.tab)}
+      {/* Nav Items */}
+      <nav className="flex space-x-1.5 md:flex-col md:space-x-0 md:space-y-1 overflow-x-auto pb-1 md:pb-0 scrollbar-hide flex-1">
+        {navItems.map((item) => {
+          const isActive = item.tab === currentTab;
+
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => handleNavigate(item.tab)}
+              className={cn(
+                "flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-xs md:text-sm font-medium transition-all duration-150 whitespace-nowrap cursor-pointer text-left w-full",
+                isActive
+                  ? "bg-[#0e59f9]/10 text-[#0e59f9] font-semibold shadow-xs"
+                  : "text-gray-600 hover:bg-gray-100/70 hover:text-gray-900"
+              )}
+            >
+              <item.icon
                 className={cn(
-                  'flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer whitespace-nowrap',
-                  isActive
-                    ? 'bg-primary text-primary-foreground shadow-xs'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                  "h-4 w-4 flex-shrink-0",
+                  isActive ? "text-[#0e59f9]" : "text-gray-500"
                 )}
-              >
-                <item.icon className="w-4 h-4 shrink-0" />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Desktop Vertical Sidebar */}
-      <div className="hidden lg:block sticky top-2 bg-card border border-border/70 rounded-2xl p-3.5 shadow-xs min-h-[calc(100vh-12rem)]">
-        <div className="space-y-5">
-          {sections.map((section) => (
-            <div key={section.title} className="space-y-1">
-              <h3 className="px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground/80">
-                {section.title}
-              </h3>
-              <div className="space-y-1 pt-1">
-                {section.items.map((item) => {
-                  const isActive = item.tab === currentTab;
-
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => handleNavigate(item.tab)}
-                      className={cn(
-                        'w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-all duration-150 group cursor-pointer',
-                        isActive
-                          ? 'bg-primary/10 text-primary font-semibold shadow-xs'
-                          : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground font-medium'
-                      )}
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <item.icon
-                          className={cn(
-                            'w-5 h-5 shrink-0 transition-colors',
-                            isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
-                          )}
-                        />
-                        <div className="min-w-0">
-                          <p className="text-xs font-semibold truncate leading-tight">{item.label}</p>
-                          <p
-                            className={cn(
-                              'text-[11px] truncate mt-0.5',
-                              isActive ? 'text-primary/80 font-normal' : 'text-muted-foreground/70'
-                            )}
-                          >
-                            {item.description}
-                          </p>
-                        </div>
-                      </div>
-                      <IconChevronRight
-                        className={cn(
-                          'w-4 h-4 shrink-0 transition-transform duration-150',
-                          isActive
-                            ? 'text-primary translate-x-0.5 opacity-100'
-                            : 'text-muted-foreground/40 opacity-0 group-hover:opacity-100'
-                        )}
-                      />
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </aside>
+              />
+              <span className="flex-1 truncate">{item.label}</span>
+              {item.badge && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold bg-emerald-50 text-emerald-600 border border-emerald-200">
+                  {item.badge}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </nav>
+    </div>
   );
 }
