@@ -1330,11 +1330,6 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
                                   onMouseEnter={() => setHoveredPointIndex(idx)}
                                   onMouseLeave={() => setHoveredPointIndex(null)}
                                 >
-                                  {/* Hover Accent Dot above active bar (matching reference image) */}
-                                  {isHovered && isNonZero && (
-                                    <div className="w-1.5 h-1.5 rounded-full bg-[#0e59f9] mb-1.5 flex-shrink-0 transition-transform animate-in fade-in zoom-in duration-150" />
-                                  )}
-
                                   {/* Pill Capsule Bar */}
                                   <div
                                     style={{
@@ -1343,14 +1338,19 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
                                       maxWidth: '85%'
                                     }}
                                     className={cn(
-                                      "rounded-full transition-all duration-200",
+                                      "rounded-full transition-all duration-200 relative",
                                       isHovered
                                         ? "bg-[#0e59f9] shadow-[0_4px_14px_rgba(14,89,249,0.38)]"
                                         : isNonZero
                                           ? "bg-[#D8E8FE] group-hover:bg-[#BFDBFE]"
                                           : "bg-slate-200/50"
                                     )}
-                                  />
+                                  >
+                                    {/* Hover Accent Dot precisely above active bar */}
+                                    {isHovered && isNonZero && (
+                                      <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#0e59f9] pointer-events-none transition-transform animate-in fade-in zoom-in duration-150" />
+                                    )}
+                                  </div>
 
                                   {/* Date tick label under each bar */}
                                   <div className="absolute -bottom-6 w-full flex justify-center text-center">
