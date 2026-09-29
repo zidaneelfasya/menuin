@@ -986,8 +986,8 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
       {/* ==================================================== */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* KPI 1: Penjualan Bersih (Net Sales) */}
-        <Card className="border border-[#EAEFF8] shadow-sm rounded-2xl bg-white hover:border-[#d7e2f5] transition-all flex flex-col justify-between">
-          <CardContent className="p-5 flex flex-col justify-between h-full min-h-[148px]">
+        <Card className="border border-[#EAEFF8] shadow-sm rounded-2xl bg-white hover:border-[#d7e2f5] transition-all flex flex-col justify-between overflow-hidden">
+          <CardContent className="p-5 flex flex-col justify-between flex-1">
             {/* Top row: Label & Badge */}
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">
@@ -1013,7 +1013,7 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
             {/* Bottom row: Aligned Number (Left) & Sparkline (Right) */}
             <div className="mt-4 flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <div className="text-xl sm:text-2xl font-medium text-slate-900 tracking-tight whitespace-nowrap">
+                <div className="text-xl sm:text-2xl font-semibold text-slate-900 tracking-tight whitespace-nowrap">
                   {formatRupiah(heroKpis.netSales)}
                 </div>
                 <div className="text-[11px] text-slate-400 mt-1 whitespace-nowrap truncate">
@@ -1029,11 +1029,25 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
               </div>
             </div>
           </CardContent>
+
+          {/* Garis pemisah di bagian bawah + Full Interactive Button */}
+          <Link
+            href={`/outlet/${outletKey}/reports/sales`}
+            className="group flex items-center justify-between px-5 py-2.5 border-t border-[#EAEFF8] bg-slate-50/50 hover:bg-blue-50/70 active:bg-blue-100/70 active:scale-[0.99] transition-all duration-150 cursor-pointer select-none"
+          >
+            <span className="text-[11px] text-slate-500 font-medium group-hover:text-slate-700 transition-colors">
+              Bandingkan periode lalu
+            </span>
+            <span className="text-[11px] text-slate-600 font-medium group-hover:text-[#0e59f9] inline-flex items-center gap-1 transition-colors">
+              Lihat Rincian
+              <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+            </span>
+          </Link>
         </Card>
 
         {/* KPI 2: Laba Kotor (Gross Profit) - Subjudul: COGS */}
-        <Card className="border border-[#EAEFF8] shadow-sm rounded-2xl bg-white hover:border-[#d7e2f5] transition-all flex flex-col justify-between">
-          <CardContent className="p-5 flex flex-col justify-between h-full min-h-[148px]">
+        <Card className="border border-[#EAEFF8] shadow-sm rounded-2xl bg-white hover:border-[#d7e2f5] transition-all flex flex-col justify-between overflow-hidden">
+          <CardContent className="p-5 flex flex-col justify-between flex-1">
             {/* Top row: Label & Badge */}
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">
@@ -1049,7 +1063,7 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
             {/* Bottom row: Aligned Number (Left) & Sparkline (Right) */}
             <div className="mt-4 flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <div className="text-xl sm:text-2xl font-medium text-slate-900 tracking-tight whitespace-nowrap">
+                <div className="text-xl sm:text-2xl font-semibold text-slate-900 tracking-tight whitespace-nowrap">
                   {formatRupiah(heroKpis.grossProfit)}
                 </div>
                 <div className="text-[11px] text-slate-400 mt-1 whitespace-nowrap truncate">
@@ -1065,11 +1079,25 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
               </div>
             </div>
           </CardContent>
+
+          {/* Garis pemisah di bagian bawah + Full Interactive Button */}
+          <Link
+            href={`/outlet/${outletKey}/reports/sales`}
+            className="group flex items-center justify-between px-5 py-2.5 border-t border-[#EAEFF8] bg-slate-50/50 hover:bg-blue-50/70 active:bg-blue-100/70 active:scale-[0.99] transition-all duration-150 cursor-pointer select-none"
+          >
+            <span className="text-[11px] text-slate-500 font-medium group-hover:text-slate-700 transition-colors">
+              Estimasi HPP &amp; margin
+            </span>
+            <span className="text-[11px] text-slate-600 font-medium group-hover:text-[#0e59f9] inline-flex items-center gap-1 transition-colors">
+              Lihat Rincian
+              <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+            </span>
+          </Link>
         </Card>
 
         {/* KPI 3: Arus Kas Bersih (Net Flow) - Subjudul: Expenses */}
-        <Card className="border border-[#EAEFF8] shadow-sm rounded-2xl bg-white hover:border-[#d7e2f5] transition-all flex flex-col justify-between">
-          <CardContent className="p-5 flex flex-col justify-between h-full min-h-[148px]">
+        <Card className="border border-[#EAEFF8] shadow-sm rounded-2xl bg-white hover:border-[#d7e2f5] transition-all flex flex-col justify-between overflow-hidden">
+          <CardContent className="p-5 flex flex-col justify-between flex-1">
             {/* Top row: Label & Badge */}
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">
@@ -1090,7 +1118,7 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
             {/* Bottom row: Aligned Number (Left) & Sparkline (Right) */}
             <div className="mt-4 flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <div className={cn("text-xl sm:text-2xl font-medium tracking-tight whitespace-nowrap", heroKpis.netCashFlow >= 0 ? "text-slate-900" : "text-rose-600")}>
+                <div className={cn("text-xl sm:text-2xl font-semibold tracking-tight whitespace-nowrap", heroKpis.netCashFlow >= 0 ? "text-slate-900" : "text-rose-600")}>
                   {formatRupiah(heroKpis.netCashFlow)}
                 </div>
                 <div className="text-[11px] text-slate-400 mt-1 whitespace-nowrap truncate">
@@ -1106,11 +1134,25 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
               </div>
             </div>
           </CardContent>
+
+          {/* Garis pemisah di bagian bawah + Full Interactive Button */}
+          <Link
+            href={`/outlet/${outletKey}/reports/finance`}
+            className="group flex items-center justify-between px-5 py-2.5 border-t border-[#EAEFF8] bg-slate-50/50 hover:bg-blue-50/70 active:bg-blue-100/70 active:scale-[0.99] transition-all duration-150 cursor-pointer select-none"
+          >
+            <span className="text-[11px] text-slate-500 font-medium group-hover:text-slate-700 transition-colors">
+              Arus kas &amp; beban keluar
+            </span>
+            <span className="text-[11px] text-slate-600 font-medium group-hover:text-[#0e59f9] inline-flex items-center gap-1 transition-colors">
+              Lihat Rincian
+              <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+            </span>
+          </Link>
         </Card>
 
         {/* KPI 4: Total Pesanan (Orders) - Subjudul: AOV */}
-        <Card className="border border-[#EAEFF8] shadow-sm rounded-2xl bg-white hover:border-[#d7e2f5] transition-all flex flex-col justify-between">
-          <CardContent className="p-5 flex flex-col justify-between h-full min-h-[148px]">
+        <Card className="border border-[#EAEFF8] shadow-sm rounded-2xl bg-white hover:border-[#d7e2f5] transition-all flex flex-col justify-between overflow-hidden">
+          <CardContent className="p-5 flex flex-col justify-between flex-1">
             {/* Top row: Label & Badge */}
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">
@@ -1136,7 +1178,7 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
             {/* Bottom row: Aligned Number (Left) & Sparkline (Right) */}
             <div className="mt-4 flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <div className="text-xl sm:text-2xl font-medium text-slate-900 tracking-tight whitespace-nowrap">
+                <div className="text-xl sm:text-2xl font-semibold text-slate-900 tracking-tight whitespace-nowrap">
                   {formatNumber(heroKpis.totalOrders)} <span className="text-sm font-normal text-slate-400">Order</span>
                 </div>
                 <div className="text-[11px] text-slate-400 mt-1 whitespace-nowrap truncate">
@@ -1152,6 +1194,20 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
               </div>
             </div>
           </CardContent>
+
+          {/* Garis pemisah di bagian bawah + Full Interactive Button */}
+          <Link
+            href={`/outlet/${outletKey}/reports/operations`}
+            className="group flex items-center justify-between px-5 py-2.5 border-t border-[#EAEFF8] bg-slate-50/50 hover:bg-blue-50/70 active:bg-blue-100/70 active:scale-[0.99] transition-all duration-150 cursor-pointer select-none"
+          >
+            <span className="text-[11px] text-slate-500 font-medium group-hover:text-slate-700 transition-colors">
+              Aktivitas pesanan outlet
+            </span>
+            <span className="text-[11px] text-slate-600 font-medium group-hover:text-[#0e59f9] inline-flex items-center gap-1 transition-colors">
+              Lihat Rincian
+              <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+            </span>
+          </Link>
         </Card>
       </div>
 
@@ -1239,22 +1295,11 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
                   </div>
                   <div className="flex items-center justify-between text-xs border-b border-slate-100 pb-2">
                     <span className="text-slate-500">Margin</span>
-                    <span className="font-semibold text-slate-900">
+                    <span className="font-semibold text-emerald-700">
                       {heroKpis.profitMargin.toFixed(1)}%
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-xs border-b border-slate-100 pb-2">
-                    <span className="text-slate-500">AOV (Rata-rata)</span>
-                    <span className="font-semibold text-slate-900">
-                      {formatRupiah(heroKpis.aov)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-slate-500">Top Transaksi</span>
-                    <span className="font-semibold text-[#0e59f9]">
-                      {formatRupiah(heroKpis.highestTransaction || 0)}
-                    </span>
-                  </div>
+                  
                 </div>
               </div>              {/* Right Graph Canvas Area - Dynamic Rounded Capsule Bar Chart */}
               <div className="flex-1 min-w-0 relative flex flex-col justify-between">
@@ -1389,37 +1434,65 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
             </div>
           </div>
 
-          {/* Segmented Channel Pills (Under Hero Chart) */}
-          <div className="pt-3 border-t border-slate-100">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-              {/* Channels */}
+          {/* Segmented Channel Pills with Progress Bar (Under Hero Chart) */}
+          <div className="pt-4 border-t border-slate-100">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+              {/* Channels (Kasir POS & Self QR Meja) */}
               {salesSnapshot.channels.map((ch) => (
-                <div key={ch.channel} className="p-2.5 rounded-xl border border-slate-100 bg-slate-50/50">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-medium text-slate-900 truncate">{ch.channel}</span>
-                    <span className="font-semibold text-slate-900">{ch.percentage.toFixed(0)}%</span>
+                <div key={ch.channel} className="p-4 sm:p-4.5 rounded-2xl border border-slate-100 bg-slate-50/70 hover:border-slate-200 transition-colors flex flex-col justify-between min-h-[120px]">
+                  <div>
+                    <div className="flex items-center justify-between text-xs sm:text-[13px]">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="w-2 h-2 rounded-full bg-[#0e59f9] flex-shrink-0" />
+                        <span className="font-medium text-slate-800 truncate">{ch.channel}</span>
+                      </div>
+                      <span className="font-semibold text-[#0e59f9] ml-2 text-xs sm:text-[13px]">{ch.percentage.toFixed(0)}%</span>
+                    </div>
+                    <div className="flex items-baseline justify-between mt-3 mb-2.5">
+                      <div className="text-sm sm:text-base font-semibold text-slate-900 tracking-tight" title={formatRupiah(ch.total)}>
+                        {formatRupiah(ch.total)}
+                      </div>
+                      <div className="text-[11px] text-slate-400">{ch.count} transaksi</div>
+                    </div>
                   </div>
-                  <div className="text-[11px] font-semibold text-slate-900 mt-1">
-                    {formatRupiah(ch.total)}
+                  {/* Progress Bar (Menuin Blue Theme) */}
+                  <div className="h-1.5 sm:h-2 w-full bg-slate-200/60 rounded-full overflow-hidden mt-auto">
+                    <div
+                      className="h-full rounded-full bg-[#0e59f9] transition-all duration-500"
+                      style={{ width: `${Math.min(100, Math.max(ch.total > 0 ? 3 : 0, ch.percentage))}%` }}
+                    />
                   </div>
-                  <div className="text-[10px] text-slate-400">{ch.count} transaksi</div>
                 </div>
               ))}
 
-              {/* Dominant Payment Method */}
+              {/* Dominant Payment Method (Single Card - Solid Menuin Blue with White Progress Bar) */}
               {salesSnapshot.topPaymentMethods.length > 0 && (
-                <div className="p-2.5 rounded-xl border border-[#0e59f9] bg-[#0e59f9] shadow-sm shadow-blue-500/20">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-medium text-white truncate">Metode Pembayaran</span>
-                    <span className="font-semibold text-white uppercase tracking-wider">
-                      {salesSnapshot.topPaymentMethods[0].method}
-                    </span>
+                <div className="p-4 sm:p-4.5 rounded-2xl border border-[#0e59f9] bg-[#0e59f9] shadow-sm shadow-blue-500/20 flex flex-col justify-between min-h-[120px]">
+                  <div>
+                    <div className="flex items-center justify-between text-xs sm:text-[13px]">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="w-2 h-2 rounded-full bg-white flex-shrink-0" />
+                        <span className="font-medium text-white truncate">Metode Pembayaran</span>
+                      </div>
+                      <span className="font-semibold text-white uppercase tracking-wider ml-2 text-xs">
+                        {salesSnapshot.topPaymentMethods[0].method}
+                      </span>
+                    </div>
+                    <div className="flex items-baseline justify-between mt-3 mb-2.5">
+                      <div className="text-sm sm:text-base font-semibold text-white tracking-tight" title={formatRupiah(salesSnapshot.topPaymentMethods[0].total)}>
+                        {formatRupiah(salesSnapshot.topPaymentMethods[0].total)}
+                      </div>
+                      <div className="text-[11px] text-blue-100">
+                        {salesSnapshot.topPaymentMethods[0].percentage.toFixed(0)}% dari total masuk
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-[11px] font-semibold text-white mt-1">
-                    {formatRupiah(salesSnapshot.topPaymentMethods[0].total)}
-                  </div>
-                  <div className="text-[10px] text-blue-100">
-                    {salesSnapshot.topPaymentMethods[0].percentage.toFixed(0)}% dari total masuk
+                  {/* Progress Bar (White on Blue Track) */}
+                  <div className="h-1.5 sm:h-2 w-full bg-white/25 rounded-full overflow-hidden mt-auto">
+                    <div
+                      className="h-full rounded-full bg-white transition-all duration-500"
+                      style={{ width: `${Math.min(100, Math.max(3, salesSnapshot.topPaymentMethods[0].percentage))}%` }}
+                    />
                   </div>
                 </div>
               )}
@@ -1715,7 +1788,7 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
                 <div className="p-3 rounded-xl border border-slate-100 bg-slate-50/50 space-y-1">
                   <div className="flex items-center gap-1.5 text-xs text-slate-500">
                     <span className="w-2 h-2 rounded-full bg-[#0e59f9]" />
-                    <span>QRIS Dinamis</span>
+                    <span>Rekening Digital (QRIS &amp; EDC)</span>
                   </div>
                   <div className="text-sm font-semibold text-[#0e59f9] font-mono">
                     {formatRupiah(financeSnapshot.digitalNetFlow)}

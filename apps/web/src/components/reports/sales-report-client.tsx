@@ -424,7 +424,7 @@ function PaymentDoughnutChart({
           ) : (
             <>
               <span className="text-xs font-medium text-slate-400 tracking-tight">
-                {viewMode === "revenue" ? "Non-Tunai (Digital)" : "Preferensi Digital"}
+                {viewMode === "revenue" ? "Non-Tunai" : "Preferensi Digital"}
               </span>
               <span className="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight mt-0.5 font-sans">
                 {viewMode === "revenue"

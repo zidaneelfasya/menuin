@@ -147,6 +147,7 @@ function calculateGatewayFee(t: { gatewayFee?: string | null; platformFee?: stri
     method === 'CASH' || 
     method === 'TUNAI' || 
     method === 'QRIS_STATIC' || 
+    method === 'QRIS' || 
     method === 'CARD' || 
     method === 'EDC' || 
     method === 'TRANSFER' || 
@@ -787,7 +788,7 @@ export async function getSalesReport(outletKey: string, params?: DateFilterParam
           percentageOrders: totalOrders > 0 ? (ot.count / totalOrders) * 100 : 0,
           percentage: totalCollected > 0 ? (ot.total / totalCollected) * 100 : 0,
         })),
-        recentTransactions: trxList.slice(0, 500),
+        recentTransactions: trxList,
       },
     };
   } catch (error: any) {
