@@ -28,9 +28,13 @@ export const plans: Plan[] = [
     cta: { label: "Mulai uji coba", href: "/auth/signup?plan=basic" },
     bullets: [
       "Kasir POS dan cetak struk",
-      "QR pesan dari meja",
-      "Laporan penjualan",
-      "1 kasir aktif",
+      "QR pesan dari meja tanpa unduh aplikasi",
+      "Varian, topping, dan catatan pesanan",
+      "Papan pesanan & tiket dapur",
+      "Printer Bluetooth & LAN",
+      "Laporan penjualan harian",
+      "1 outlet, 1 kasir aktif",
+      "Bantuan lewat WhatsApp",
     ],
   },
   {
@@ -43,9 +47,14 @@ export const plans: Plan[] = [
     highlight: true,
     bullets: [
       "Semua di paket Basic",
-      "Pembayaran QRIS & e-wallet dari meja",
-      "Shift & kas, stok, diskon & promo",
+      "Bayar QRIS & e-wallet langsung dari meja",
+      "Shift & kas dengan rekap selisih",
+      "Stok & HPP dengan peringatan stok menipis",
+      "Diskon & promo",
       "Laporan penjualan, operasional, keuangan",
+      "Ekspor laporan ke PDF",
+      "Kasir aktif tanpa batas",
+      "Peran Owner, Manajer, dan Kasir",
     ],
   },
   {
@@ -56,9 +65,12 @@ export const plans: Plan[] = [
     cta: { label: "Diskusikan kebutuhan", href: "/kontak" },
     bullets: [
       "Semua di paket Pro",
-      "Outlet tanpa batas",
-      "Integrasi API & onboarding",
+      "Outlet & cabang tanpa batas",
+      "Integrasi API & sistem eksternal",
+      "Onboarding & migrasi data menu",
+      "Pelatihan staf di lokasi",
       "Dukungan prioritas",
+      "Pendamping akun khusus",
     ],
   },
 ];
