@@ -424,7 +424,7 @@ function PaymentDoughnutChart({
           ) : (
             <>
               <span className="text-xs font-medium text-slate-400 tracking-tight">
-                {viewMode === "revenue" ? "Non-Tunai (Digital)" : "Preferensi Digital"}
+                {viewMode === "revenue" ? "Non-Tunai" : "Preferensi Digital"}
               </span>
               <span className="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight mt-0.5 font-sans">
                 {viewMode === "revenue"
@@ -1482,11 +1482,6 @@ export function SalesReportClient({ initialData, outletKey }: SalesReportClientP
                       onMouseEnter={() => setHoveredPointIndex(bar.idx)}
                       onMouseLeave={() => setHoveredPointIndex(null)}
                     >
-                      {/* Active Accent Dot above bar */}
-                      {isHovered && (
-                        <div className="absolute -top-3 w-1.5 h-1.5 rounded-full bg-[#0e59f9] animate-pulse" />
-                      )}
-
                       {/* Capsule Bar */}
                       <div
                         className={cn(
@@ -1502,7 +1497,12 @@ export function SalesReportClient({ initialData, outletKey }: SalesReportClientP
                           width: `${dynamicBarWidth}px`,
                           maxWidth: "85%",
                         }}
-                      />
+                      >
+                        {/* Active Accent Dot precisely above the hovered bar */}
+                        {isHovered && (
+                          <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#0e59f9] pointer-events-none transition-transform animate-in fade-in zoom-in duration-150" />
+                        )}
+                      </div>
                     </div>
                   );
                 })}

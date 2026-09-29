@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import PageHero from "@/components/landing/page-hero";
 import { PricingCards, PricingTable } from "@/components/landing/pricing";
 import FaqEditorial from "@/components/ui/faq-editorial";
+import { ANNUAL_FREE_MONTHS } from "@/components/landing/pricing-data";
 
 export const metadata: Metadata = {
   title: "Harga - Menuin",
-  description: "Langganan bulanan per outlet, tanpa kontrak tahunan dan tanpa komisi per transaksi.",
+  description: "Langganan per outlet, bulanan atau tahunan. Tanpa biaya pemasangan dan tanpa komisi per transaksi.",
 };
 
 export default function HargaPage() {
@@ -13,8 +14,8 @@ export default function HargaPage() {
     <>
       <PageHero
         eyebrow="Harga"
-        title="Bayar bulanan, tanpa kontrak tahunan."
-        description="Dihitung per outlet per bulan. Tidak ada biaya pemasangan dan tidak ada potongan komisi per transaksi."
+        title="Harga jelas, bayar bulanan atau tahunan."
+        description={`Dihitung per outlet. Bayar bulanan tanpa ikatan, atau tahunan dan hemat ${ANNUAL_FREE_MONTHS} bulan. Tidak ada biaya pemasangan dan tidak ada potongan komisi per transaksi.`}
       />
       <section className="px-6 pb-20">
         <div className="mx-auto max-w-[1240px]">

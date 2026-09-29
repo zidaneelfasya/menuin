@@ -12,6 +12,8 @@
     "db:seed": "tsx --env-file=.env.local src/lib/db/seed-tenants.ts"
   },
   "dependencies": {
+    "@dicebear/collection": "^9.4.2",
+    "@dicebear/core": "^9.4.3",
     "@hookform/resolvers": "^5.5.7",
     "@menuin/permissions": "*",
     "@menuin/types": "*",

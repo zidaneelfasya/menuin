@@ -1,66 +1,8 @@
 import React from "react";
-import Link from "next/link";
-import { ArrowRight, Check, Minus } from "lucide-react";
-import { comparison, plans, type Cell } from "@/components/landing/pricing-data";
+import { Check, Minus } from "lucide-react";
+import { comparison, planPrice, plans, type Cell } from "@/components/landing/pricing-data";
 
-/** Kartu paket — dipakai di landing (ringkas) dan di /harga. */
-export function PricingCards() {
-  return (
-    <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-      {plans.map((plan) => (
-        <article
-          key={plan.id}
-          className={`relative flex flex-col rounded-[28px] p-7 sm:p-8 ${
-            plan.highlight
-              ? "bg-[#0a0a0a] text-white shadow-[0_30px_60px_-30px_rgba(15,23,42,0.6)]"
-              : "bg-white ring-1 ring-black/[0.08]"
-          }`}
-        >
-          {plan.highlight && (
-            <span className="absolute right-6 top-6 rounded-full bg-[#0E59F9] px-2.5 py-1 text-[11px] font-semibold text-white">
-              Paling dipilih
-            </span>
-          )}
-          <h3 className={`text-[18px] font-semibold tracking-[-0.02em] ${plan.highlight ? "text-white" : "text-[#0a0a0a]"}`}>
-            {plan.name}
-          </h3>
-          <p className={`mt-1.5 text-[14px] ${plan.highlight ? "text-white/60" : "text-[#71717a]"}`}>{plan.tagline}</p>
-
-          <div className="mt-7 flex items-baseline gap-1.5">
-            <span className="text-[clamp(28px,3vw,36px)] font-semibold tracking-[-0.035em] tabular-nums">{plan.price}</span>
-            {plan.period && (
-              <span className={`text-[13px] ${plan.highlight ? "text-white/55" : "text-[#71717a]"}`}>{plan.period}</span>
-            )}
-          </div>
-
-          <ul className="mt-7 flex-1 space-y-3">
-            {plan.bullets.map((b) => (
-              <li key={b} className="flex items-start gap-3 text-[14px]">
-                <Check
-                  className={`mt-0.5 h-4 w-4 shrink-0 ${plan.highlight ? "text-[#7aa8ff]" : "text-[#0E59F9]"}`}
-                  strokeWidth={2.5}
-                />
-                <span className={plan.highlight ? "text-white/85" : "text-[#3f3f46]"}>{b}</span>
-              </li>
-            ))}
-          </ul>
-
-          <Link
-            href={plan.cta.href}
-            className={`mt-8 inline-flex h-11 items-center justify-center gap-1.5 rounded-full text-[14.5px] font-medium transition-colors ${
-              plan.highlight
-                ? "bg-[#0E59F9] text-white hover:bg-[#0C4CD6]"
-                : "bg-[#0a0a0a]/[0.04] text-[#0a0a0a] hover:bg-[#0a0a0a]/[0.08]"
-            }`}
-          >
-            {plan.cta.label}
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </article>
-      ))}
-    </div>
-  );
-}
+export { PricingCards } from "@/components/landing/pricing-cards";
 
 function CellValue({ value }: { value: Cell }) {
   if (value === true)
@@ -84,14 +26,14 @@ function CellValue({ value }: { value: Cell }) {
 export function PricingTable() {
   return (
     <div className="overflow-x-auto rounded-[28px] ring-1 ring-black/[0.08]">
-      <table className="w-full min-w-[720px] border-collapse text-left">
+      <table className="w-full min-w-[860px] border-collapse text-left">
         <thead className="sticky top-0">
           <tr className="bg-white">
-            <th className="w-[40%] px-6 py-5 text-[13px] font-medium text-[#71717a]">Fitur</th>
+            <th className="w-[32%] px-6 py-5 text-[13px] font-medium text-[#71717a]">Fitur</th>
             {plans.map((p) => (
               <th key={p.id} className="px-4 py-5 text-center">
                 <span className={`text-[15px] font-semibold ${p.highlight ? "text-[#0E59F9]" : "text-[#0a0a0a]"}`}>{p.name}</span>
-                <span className="mt-0.5 block text-[12px] font-normal text-[#71717a]">{p.price}</span>
+                <span className="mt-0.5 block text-[12px] font-normal text-[#71717a]">{planPrice(p, "monthly").price}</span>
               </th>
             ))}
           </tr>
@@ -100,7 +42,7 @@ export function PricingTable() {
           {comparison.map((g) => (
             <React.Fragment key={g.group}>
               <tr>
-                <td colSpan={4} className="bg-[#fafafa] px-6 py-3 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#52525b]">
+                <td colSpan={plans.length + 1} className="bg-[#fafafa] px-6 py-3 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#52525b]">
                   {g.group}
                 </td>
               </tr>

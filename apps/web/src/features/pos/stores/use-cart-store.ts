@@ -20,7 +20,7 @@ interface CartStore {
   orderType: string;
   customerName: string;
   tableNumber: string;
-  appliedPromo: { id: string; name: string; discountAmount: number } | null;
+  appliedPromo: { id: string; code?: string; name: string; discountAmount: number } | null;
   displayMode: 'image' | 'color';
   setDisplayMode: (mode: 'image' | 'color') => void;
   addItem: (item: Omit<CartItem, 'id' | 'quantity'>) => void;
@@ -30,7 +30,7 @@ interface CartStore {
   setOrderType: (orderType: string) => void;
   setCustomerName: (name: string) => void;
   setTableNumber: (tableNumber: string) => void;
-  setAppliedPromo: (promo: { id: string; name: string; discountAmount: number } | null) => void;
+  setAppliedPromo: (promo: { id: string; code?: string; name: string; discountAmount: number } | null) => void;
   clearCart: () => void;
   getSubtotal: () => number;
   getTaxAmount: () => number;

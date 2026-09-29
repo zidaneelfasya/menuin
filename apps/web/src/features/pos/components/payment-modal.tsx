@@ -171,7 +171,7 @@ export function PaymentModal({
       customerName: customerName || undefined,
       tableNumber: tableNumber || undefined,
       discount: discountAmount,
-      promoCode: appliedPromo?.name,
+      promoCode: appliedPromo?.code || appliedPromo?.name || undefined,
       tax: taxAmount,
       serviceCharge: serviceChargeAmount,
       platformFee: platformFeeAmount,
