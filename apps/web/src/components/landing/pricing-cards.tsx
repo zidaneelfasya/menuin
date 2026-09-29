@@ -33,7 +33,11 @@ export function PricingCards() {
   return (
     <div>
       <div className="mb-10 flex justify-center">
-        <div role="radiogroup" aria-label="Siklus tagihan" className="inline-flex rounded-full bg-[#0a0a0a]/[0.04] p-1">
+        <div
+          role="radiogroup"
+          aria-label="Siklus tagihan"
+          className="grid w-full max-w-[520px] grid-cols-[2fr_3fr] rounded-full sm:grid-cols-2 bg-white p-1.5 ring-1 ring-black/[0.06] shadow-[0_10px_30px_-18px_rgba(14,89,249,0.35)]"
+        >
           {cycles.map((c) => (
             <button
               key={c.id}
@@ -41,16 +45,12 @@ export function PricingCards() {
               role="radio"
               aria-checked={cycle === c.id}
               onClick={() => setCycle(c.id)}
-              className={`inline-flex h-10 items-center gap-2 rounded-full px-5 text-[14px] font-medium transition-colors ${
-                cycle === c.id ? "bg-white text-[#0a0a0a] shadow-sm" : "text-[#52525b] hover:text-[#0a0a0a]"
+              className={`h-12 whitespace-nowrap rounded-full px-3 text-[13px] font-medium transition-colors sm:px-4 sm:text-[15px] ${
+                cycle === c.id ? "bg-[#0E59F9] text-white" : "text-[#52525b] hover:text-[#0a0a0a]"
               }`}
             >
               {c.label}
-              {c.id === "annual" && (
-                <span className="rounded-full bg-[#0E59F9]/10 px-2 py-0.5 text-[11px] font-semibold text-[#0E59F9]">
-                  Hemat {ANNUAL_FREE_MONTHS} bulan
-                </span>
-              )}
+              {c.id === "annual" && ` (hemat ${ANNUAL_FREE_MONTHS} bulan)`}
             </button>
           ))}
         </div>
