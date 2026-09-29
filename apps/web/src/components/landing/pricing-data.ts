@@ -27,7 +27,7 @@ export const plans: Plan[] = [
     id: "kasir",
     name: "Kasir",
     tagline: "Kasir digital untuk outlet yang baru mulai.",
-    monthlyPrice: 50000,
+    monthlyPrice: 49900,
     cta: { label: "Mulai uji coba", href: "/auth/signup?plan=kasir" },
     bullets: [
       "Kasir POS dan cetak struk",
@@ -42,7 +42,7 @@ export const plans: Plan[] = [
     id: "kasir-plus",
     name: "Kasir Plus",
     tagline: "Untuk menu dengan banyak pilihan dan kasir lebih dari satu.",
-    monthlyPrice: 75000,
+    monthlyPrice: 74900,
     originalMonthlyPrice: 150000,
     cta: { label: "Mulai uji coba", href: "/auth/signup?plan=kasir-plus" },
     bullets: [
@@ -59,7 +59,7 @@ export const plans: Plan[] = [
     id: "lengkap",
     name: "Lengkap",
     tagline: "Semua fitur Menuin, termasuk pesan mandiri dari meja.",
-    monthlyPrice: 150000,
+    monthlyPrice: 149000,
     originalMonthlyPrice: 300000,
     cta: { label: "Mulai uji coba 14 hari", href: "/auth/signup?plan=lengkap" },
     highlight: true,
