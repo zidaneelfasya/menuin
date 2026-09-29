@@ -4,14 +4,14 @@ import { ArrowRight, Check, Minus } from "lucide-react";
 import { comparison, plans, type Cell } from "@/components/landing/pricing-data";
 
 /**
- * Warna kartu dari kiri ke kanan: makin ke kanan makin biru.
- * Kartu Lengkap memakai biru penuh, Custom biru tua yang lebih gelap.
+ * Warna kartu: Kasir putih, Kasir Plus dan Custom biru muda,
+ * Lengkap biru penuh sebagai paket unggulan.
  */
 const tones = [
   { card: "bg-white ring-1 ring-black/[0.08]", dark: false, text: "" },
   { card: "bg-[#f3f7ff] ring-1 ring-[#0E59F9]/15", dark: false, text: "" },
   { card: "bg-[#0E59F9] ring-1 ring-[#0E59F9]", dark: true, text: "text-[#0E59F9]" },
-  { card: "bg-[#0B2A6F] ring-1 ring-[#0B2A6F]", dark: true, text: "text-[#0B2A6F]" },
+  { card: "bg-[#f3f7ff] ring-1 ring-[#0E59F9]/15", dark: false, text: "" },
 ];
 
 /** Kartu paket — dipakai di landing (ringkas) dan di /harga. */
