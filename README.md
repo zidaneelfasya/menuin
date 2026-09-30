@@ -4,10 +4,6 @@
 
 Sistem ini mengintegrasikan aplikasi Kasir (POS) berkecepatan tinggi dengan sistem **QR Order Mandiri** (Self-Service) di meja pelanggan, yang semuanya saling sinkron secara real-time ke dapur (Kitchen Display) dan laporan analitik *owner* (Dashboard).
 
-> 🍏 **Dokumen Desain & Prompt Landing Page (Gaya Apple Product Showcase):**  
-> Lihat [README_LANDING_PAGE.md](file:///d:/menuin/README_LANDING_PAGE.md) untuk prompt AI siap pakai, blueprint komponen interaktif, dan master copywriting Bahasa Indonesia lengkap.
-
----
 
 ## ✨ Fitur Unggulan
 

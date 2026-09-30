@@ -66,6 +66,11 @@ export const tenants = pgTable('tenants', {
   midtransServerKey: text('midtrans_server_key'),
   midtransClientKey: text('midtrans_client_key'),
   midtransEnvironment: text('midtrans_environment').default('sandbox'),
+  // DOKU Payment Gateway Settings (Sub-Account & QRIS Dinamis)
+  dokuClientId: text('doku_client_id'),
+  dokuSecretKey: text('doku_secret_key'),
+  dokuSubAccountId: text('doku_sub_account_id'),
+  dokuEnvironment: text('doku_environment').default('sandbox'),
 
   // Custom Receipt & Kitchen Ticket Settings (OWNER / MANAGER)
   receiptHeader: text('receipt_header'),
@@ -343,6 +348,8 @@ export const transactions = pgTable('transactions', {
   serviceCharge: decimal('service_charge', { precision: 12, scale: 2 }).default('0'),
   platformFee: decimal('platform_fee', { precision: 12, scale: 2 }).default('0'),
   grandTotal: decimal('grand_total', { precision: 12, scale: 2 }).notNull(),
+  gatewayFee: decimal('gateway_fee', { precision: 12, scale: 2 }).default('0').notNull(),
+  netAmount: decimal('net_amount', { precision: 12, scale: 2 }),
   promoCode: text('promo_code'),
   promotionId: uuid('promotion_id').references(() => promotions.id, { onDelete: 'set null' }),
   paymentMethod: text('payment_method').notNull(),
@@ -523,4 +530,19 @@ export const devicePairingCodes = pgTable('device_pairing_codes', {
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
+
+export const expenses = pgTable('expenses', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
+  category: text('category').notNull(), // 'BAHAN_BAKU', 'PACKAGING', 'OPERASIONAL', 'GAJI', 'PEMELIHARAAN', 'MARKETING', 'LAINNYA'
+  amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
+  paymentMethod: text('payment_method').default('TUNAI').notNull(), // 'TUNAI', 'BANK_TRANSFER', 'EWALLET'
+  description: text('description').notNull(),
+  date: timestamp('date', { withTimezone: true }).defaultNow().notNull(),
+  receiptUrl: text('receipt_url'),
+  createdByMembershipId: uuid('created_by_membership_id'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
 

@@ -29,6 +29,9 @@ export function VisibilityClient({ products }: { products: ProductDto[] }) {
       ));
     } else {
       toast.success(`Produk berhasil diperbarui`);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('catalog-updated'));
+      }
     }
   };
 

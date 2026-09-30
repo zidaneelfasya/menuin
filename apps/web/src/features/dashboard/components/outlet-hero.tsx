@@ -92,11 +92,11 @@ export function OutletHero({ outlet, activeShift, onScrollToAttention }: OutletH
                 variant="ghost"
                 size="sm"
                 className="h-6 text-[11px] px-1.5 text-gray-500 hover:text-gray-900 active:scale-[0.97] transition-transform"
-                title="Buka Halaman Publik Storefront"
+                title="Buka Halaman Publik Self QR"
               >
                 <Link href={`/store/${outlet.slug || outlet.outletKey}`} target="_blank">
                   <ExternalLink className="w-3 h-3 mr-1" />
-                  Storefront
+                  Self QR
                 </Link>
               </Button>
             )}

@@ -41,7 +41,10 @@ export function AppearanceClient({ initialSettings }: AppearanceClientProps) {
       if (res?.error) {
         toast.error(res.error);
       } else {
-        toast.success('Tampilan storefront berhasil disimpan');
+        toast.success('Tampilan Self QR berhasil disimpan');
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('catalog-updated'));
+        }
       }
     });
   };
@@ -50,9 +53,9 @@ export function AppearanceClient({ initialSettings }: AppearanceClientProps) {
     <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl">
       <Card className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-xs">
         <CardHeader className="pb-4">
-          <CardTitle className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
+          <CardTitle className="text-xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
             <Store className="w-5 h-5 text-primary" />
-            <span>Branding & Media Storefront</span>
+            <span>Branding & Media Self QR</span>
           </CardTitle>
           <CardDescription className="text-xs text-muted-foreground">
             Semua logo dan banner diunggah langsung ke Supabase Storage Bucket dan tampil di katalog publik Anda.
@@ -75,7 +78,7 @@ export function AppearanceClient({ initialSettings }: AppearanceClientProps) {
           {/* 2. Banner Toko */}
           <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
             <ImageUploader
-              label="Banner / Cover Storefront (Supabase Storage)"
+              label="Banner / Cover Self QR (Supabase Storage)"
               description="Rasio 16:9 atau lebar direkomendasikan. Tampil sebagai header utama toko online."
               value={storeBannerUrl}
               onChange={setStoreBannerUrl}
@@ -130,10 +133,10 @@ export function AppearanceClient({ initialSettings }: AppearanceClientProps) {
         <Button 
           type="submit" 
           disabled={isPending} 
-          className="gap-2 rounded-xl font-bold h-10 px-5 shadow-xs bg-primary hover:bg-primary/90 text-primary-foreground"
+          className="gap-2 rounded-xl font-semibold h-10 px-5 shadow-xs bg-primary hover:bg-primary/90 text-primary-foreground"
         >
           {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          {isPending ? 'Menyimpan...' : 'Simpan Tampilan Storefront'}
+          {isPending ? 'Menyimpan...' : 'Simpan Tampilan Self QR'}
         </Button>
       </div>
     </form>

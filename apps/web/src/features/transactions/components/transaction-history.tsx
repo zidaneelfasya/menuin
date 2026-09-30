@@ -12,6 +12,9 @@ import {
   ChefHat, 
   ReceiptText,
   X,
+  Coins,
+  Landmark,
+  QrCode,
   Globe,
   Monitor,
   Copy,
@@ -56,6 +59,8 @@ type Transaction = {
   totalAmount: string;
   discount: string | null;
   tax: string | null;
+  gatewayFee?: string | null;
+  netAmount?: string | null;
   grandTotal: string;
   paymentMethod: string;
   paymentStatus?: string | null;
@@ -77,12 +82,20 @@ type SourceFilter = 'all' | 'pos' | 'storefront';
 const paymentMethodMap: Record<string, string> = {
   CASH: 'Tunai',
   cash: 'Tunai',
+  TUNAI: 'Tunai',
+  QRIS_STATIC: 'QRIS Statis Toko',
+  qris_static: 'QRIS Statis Toko',
+  QRIS_DYNAMIC: 'QRIS Dinamis',
+  qris_dynamic: 'QRIS Dinamis',
   QRIS: 'QRIS',
   qris: 'QRIS',
-  TRANSFER: 'Transfer',
-  transfer: 'Transfer',
-  CARD: 'Kartu',
-  card: 'Kartu',
+  TRANSFER: 'Transfer Bank',
+  transfer: 'Transfer Bank',
+  BANK_TRANSFER: 'Transfer Bank',
+  CARD: 'Kartu EDC',
+  card: 'Kartu EDC',
+  EDC: 'Kartu EDC',
+  ONLINE: 'Self QR Online',
 };
 
 const getOrderSourceInfo = (source?: string | null) => {
@@ -493,33 +506,65 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
       header: 'Pembayaran',
       cell: ({ row }) => {
         const method = (row.getValue('paymentMethod') as string) || 'TUNAI';
+        const rawUpper = method.toUpperCase();
+        const isCash = rawUpper === 'CASH' || rawUpper === 'TUNAI';
+        const isStaticQris = rawUpper === 'QRIS_STATIC';
+        const isDynamicQris = rawUpper === 'QRIS_DYNAMIC';
+        const isDirectBank = rawUpper === 'CARD' || rawUpper === 'EDC' || rawUpper === 'TRANSFER' || rawUpper === 'BANK_TRANSFER';
+        
+        let feeLabel = 'MDR 0.7%';
+        if (isCash) feeLabel = 'Tunai (0% Fee)';
+        else if (isStaticQris) feeLabel = 'Statis Toko (0% Fee)';
+        else if (isDirectBank) feeLabel = 'Rekening Toko (0% Fee)';
+        else if (isDynamicQris) feeLabel = 'MDR DOKU 0.7%';
+
         return (
-          <span className="text-xs font-medium text-slate-700 dark:text-slate-300 uppercase">
-            {paymentMethodMap[method] || method}
-          </span>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              {paymentMethodMap[method] || method}
+            </span>
+            <span className="text-[10px] text-muted-foreground font-sans">
+              {feeLabel}
+            </span>
+          </div>
         );
       }
     },
     {
       accessorKey: 'grandTotal',
-      header: 'Total Tagihan',
+      header: 'Total & Net',
       cell: ({ row }) => {
         const total = parseFloat(row.getValue('grandTotal') || '0');
         const discount = parseFloat(row.original.discount || '0');
         const isCanceled = row.original.status === 'CANCELLED' || row.original.paymentStatus === 'CANCELED';
+        const rawMethod = (row.original.paymentMethod || 'TUNAI').toUpperCase();
+        const isCash = rawMethod === 'CASH' || rawMethod === 'TUNAI';
+        const isStaticQris = rawMethod === 'QRIS_STATIC';
+        const isDirectBank = rawMethod === 'CARD' || rawMethod === 'EDC' || rawMethod === 'TRANSFER' || rawMethod === 'BANK_TRANSFER';
+        const isZeroFee = isCash || isStaticQris || isDirectBank;
+
+        const fee = row.original.gatewayFee 
+          ? parseFloat(row.original.gatewayFee) 
+          : (isZeroFee ? 0 : Math.round(total * 0.007));
+        const net = row.original.netAmount ? parseFloat(row.original.netAmount) : Math.max(0, total - fee);
         
         return (
-          <div className="flex flex-col text-xs font-inter">
+          <div className="flex flex-col font-financial tabular-nums text-xs">
             <span className={cn(
-              "font-normal font-inter flex items-center gap-0.5",
+              "font-semibold flex items-center gap-0.5",
               isCanceled ? 'line-through text-slate-400' : 'text-slate-900 dark:text-slate-100'
             )}>
-              {!isCanceled && <span className="text-emerald-600 font-normal text-xs">+</span>}
+              {!isCanceled && <span className="text-emerald-600 text-xs">+</span>}
               <span>{formatCurrency(total)}</span>
             </span>
             {discount > 0 && !isCanceled && (
-              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-inter font-normal">
+              <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
                 Diskon -{formatCurrency(discount)}
+              </span>
+            )}
+            {!isCanceled && fee > 0 && (
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                Net: {formatCurrency(net)}
               </span>
             )}
           </div>
@@ -850,7 +895,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Riwayat Penjualan</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">Riwayat Penjualan</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Menampilkan <span className="font-semibold text-slate-700 dark:text-slate-300">{filteredData.length}</span> transaksi
             {timeRangeFilter !== 'all' && (
@@ -1127,17 +1172,131 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                     </div>
                   )}
                   <div className="pt-2.5 border-t border-slate-200 dark:border-slate-800 flex justify-between items-baseline">
-                    <span className="font-medium text-sm text-slate-900 dark:text-slate-100">Total Pembayaran</span>
-                    <span className="font-normal text-lg font-inter text-primary">
+                    <span className="font-semibold text-sm text-slate-900 dark:text-slate-100">Total Pembayaran</span>
+                    <span className="font-semibold text-lg font-mono text-primary">
                       {formatCurrency(parseFloat(selectedTxDetail.transaction.grandTotal || '0'))}
                     </span>
                   </div>
                 </div>
 
+                {/* Settlement Breakdown Card */}
+                {(() => {
+                  const tx = selectedTxDetail.transaction;
+                  const rawMethod = (tx.paymentMethod || 'TUNAI').trim().toUpperCase();
+                  const isCash = rawMethod === 'CASH' || rawMethod === 'TUNAI';
+                  const isStaticQris = rawMethod === 'QRIS_STATIC';
+                  const isDirectBank = isStaticQris || rawMethod === 'CARD' || rawMethod === 'EDC' || rawMethod === 'TRANSFER' || rawMethod === 'BANK_TRANSFER';
+                  const grandTotalVal = parseFloat(tx.grandTotal || '0') || 0;
+                  const feeVal = tx.gatewayFee != null 
+                    ? parseFloat(tx.gatewayFee) 
+                    : (isCash || isDirectBank ? 0 : Math.round(grandTotalVal * 0.007));
+                  const netVal = tx.netAmount != null ? parseFloat(tx.netAmount) : Math.max(0, grandTotalVal - feeVal);
+
+                  if (isCash) {
+                    return (
+                      <div className="bg-emerald-50/70 dark:bg-emerald-950/20 rounded-xl p-4 border border-emerald-100 dark:border-emerald-900/40 space-y-2 text-xs">
+                        <div className="flex items-center justify-between pb-2 border-b border-emerald-100 dark:border-emerald-900/30">
+                          <div className="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300 font-semibold">
+                            <Coins className="w-4 h-4 text-emerald-600" />
+                            <span>Penyelesaian Kasir Tunai</span>
+                          </div>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300">
+                            100% Utuh Bebas MDR
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                          <span>Biaya Gateway / MDR</span>
+                          <span className="font-mono font-medium text-emerald-700 dark:text-emerald-400">Rp 0 (0%)</span>
+                        </div>
+                        <div className="flex justify-between items-baseline pt-1 border-t border-emerald-100 dark:border-emerald-900/30">
+                          <span className="font-semibold text-slate-800 dark:text-slate-200">Uang Fisik Diterima di Laci</span>
+                          <span className="font-semibold text-sm font-mono text-emerald-700 dark:text-emerald-300">
+                            {formatCurrency(grandTotalVal)}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                          Uang tunai termasuk titipan pajak PB1 masuk ke laci kasir dan dipertanggungjawabkan saat tutup shift.
+                        </p>
+                      </div>
+                    );
+                  }
+
+                  if (isDirectBank) {
+                    const channelName = isStaticQris 
+                      ? 'QRIS Statis Toko (Stiker Merchant)' 
+                      : (rawMethod === 'CARD' || rawMethod === 'EDC' ? 'Mesin EDC Bank Toko' : 'Transfer Rekening Bank Toko');
+
+                    return (
+                      <div className="bg-teal-50/70 dark:bg-teal-950/20 rounded-xl p-4 border border-teal-100 dark:border-teal-900/40 space-y-2 text-xs">
+                        <div className="flex items-center justify-between pb-2 border-b border-teal-100 dark:border-teal-900/30">
+                          <div className="flex items-center gap-1.5 text-teal-800 dark:text-teal-300 font-semibold">
+                            <Landmark className="w-4 h-4 text-teal-600" />
+                            <span>Penerimaan Rekening Langsung Toko</span>
+                          </div>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300">
+                            100% Utuh Bebas Fee Menuin
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                          <span>Kanal Pembayaran</span>
+                          <span className="font-medium text-slate-800 dark:text-slate-200">{channelName}</span>
+                        </div>
+                        <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                          <span>Potongan Biaya MDR Menuin</span>
+                          <span className="font-mono font-medium text-teal-700 dark:text-teal-400">Rp 0 (0%)</span>
+                        </div>
+                        <div className="flex justify-between items-baseline pt-1 border-t border-teal-100 dark:border-teal-900/30">
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-slate-800 dark:text-slate-200">Dana Masuk Rekening Toko</span>
+                            <span className="text-[10px] text-muted-foreground">Langsung masuk mutasi rekening bank merchant</span>
+                          </div>
+                          <span className="font-semibold text-sm font-mono text-teal-700 dark:text-teal-300">
+                            +{formatCurrency(grandTotalVal)}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                          Dana langsung diterima toko Anda tanpa melalui perantara payment gateway Menuin.
+                        </p>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="bg-blue-50/70 dark:bg-blue-950/20 rounded-xl p-4 border border-blue-100 dark:border-blue-900/40 space-y-2 text-xs">
+                      <div className="flex items-center justify-between pb-2 border-b border-blue-100 dark:border-blue-900/30">
+                        <div className="flex items-center gap-1.5 text-blue-900 dark:text-blue-300 font-semibold">
+                          <QrCode className="w-4 h-4 text-[#0e59f9]" />
+                          <span>Penyelesaian Payment Gateway DOKU</span>
+                        </div>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+                          MDR DOKU QRIS 0.7%
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                        <span>Total Tagihan Pelanggan</span>
+                        <span className="font-mono">{formatCurrency(grandTotalVal)}</span>
+                      </div>
+                      <div className="flex justify-between text-rose-600 dark:text-rose-400">
+                        <span>Potongan MDR Gateway (0.7%)</span>
+                        <span className="font-mono font-medium">-{formatCurrency(feeVal)}</span>
+                      </div>
+                      <div className="flex justify-between items-baseline pt-1 border-t border-blue-100 dark:border-blue-900/30">
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-slate-900 dark:text-slate-100">Saldo Bersih Masuk Rekening</span>
+                          <span className="text-[10px] text-muted-foreground">Pencairan otomatis ke rekening bank outlet</span>
+                        </div>
+                        <span className="font-semibold text-sm font-mono text-emerald-600 dark:text-emerald-400">
+                          +{formatCurrency(netVal)}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 {/* Audit Void Alert */}
                 {(selectedTxDetail.transaction.status === 'CANCELLED' || selectedTxDetail.transaction.paymentStatus === 'CANCELED') && selectedTxDetail.transaction.voidReason && (
                   <div className="border-l-4 border-l-red-500 bg-red-500/10 rounded-r-xl p-3.5 text-xs space-y-1">
-                    <div className="font-bold text-red-600 dark:text-red-400 flex items-center gap-1.5">
+                    <div className="font-semibold text-red-600 dark:text-red-400 flex items-center gap-1.5">
                       <AlertTriangle className="w-3.5 h-3.5" />
                       Informasi Pembatalan (Void)
                     </div>
@@ -1268,17 +1427,17 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                 <div className="border-l-4 border-l-red-500 bg-red-500/10 rounded-r-xl p-3.5 space-y-2 text-xs">
                   <div className="flex justify-between">
                     <span className="text-slate-600 dark:text-slate-400">ID Transaksi</span>
-                    <span className="font-inter font-normal text-slate-800 dark:text-slate-200">{selectedTxForVoid.id.slice(0, 8).toUpperCase()}</span>
+                    <span className="font-mono font-semibold text-slate-800 dark:text-slate-200">{selectedTxForVoid.id.slice(0, 8).toUpperCase()}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-600 dark:text-slate-400">No. Order / Meja</span>
-                    <span className="font-medium">
+                    <span className="font-medium text-slate-800 dark:text-slate-200">
                       {selectedTxForVoid.orderNumber || '-'} {selectedTxForVoid.tableNumber ? `(Meja ${selectedTxForVoid.tableNumber})` : ''}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-600 dark:text-slate-400">Nominal Transaksi</span>
-                    <span className="font-normal font-inter text-slate-900 dark:text-slate-100">{formatCurrency(parseFloat(selectedTxForVoid.grandTotal))}</span>
+                    <span className="font-semibold font-mono text-slate-900 dark:text-slate-100">{formatCurrency(parseFloat(selectedTxForVoid.grandTotal))}</span>
                   </div>
                 </div>
 

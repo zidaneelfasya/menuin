@@ -47,7 +47,7 @@ const faqData: FAQItem[] = [
   {
     question: 'Bisakah berhenti berlangganan kapan saja?',
     answer:
-      'Bisa. Langganan diperpanjang bulanan tanpa kontrak berjangka. Anda dapat menaikkan, menurunkan, atau menghentikan paket kapan pun tanpa biaya penalti.',
+      'Bisa. Paket bulanan diperpanjang tiap bulan tanpa kontrak, jadi bisa dihentikan kapan pun tanpa biaya penalti. Paket tahunan berlaku sampai masa langganannya habis. Anda juga bisa menaikkan atau menurunkan paket kapan saja.',
   },
 ];
 
