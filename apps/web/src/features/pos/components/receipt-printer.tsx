@@ -15,6 +15,7 @@ export type ReceiptData = {
   promoCode?: string;
   tax?: number;
   serviceCharge?: number;
+  rounding?: number;
   totalAmount: number;
   cashReceived: number;
   change: number;
@@ -292,6 +293,13 @@ export const ReceiptPrinter = React.forwardRef<HTMLDivElement, ReceiptPrinterPro
                   <div className="receipt-flex-between">
                     <span>Layanan</span>
                     <span>+{formatCurrency(data.serviceCharge || 0).replace('Rp','').trim()}</span>
+                  </div>
+                )}
+
+                {(data.rounding ?? 0) > 0 && (
+                  <div className="receipt-flex-between">
+                    <span>Pembulatan</span>
+                    <span>+{formatCurrency(data.rounding || 0).replace('Rp','').trim()}</span>
                   </div>
                 )}
               </div>

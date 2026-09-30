@@ -305,6 +305,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
           promoCode: transaction.promoCode || undefined,
           tax: parseFloat(transaction.tax || '0'),
           serviceCharge: parseFloat(transaction.serviceCharge || '0'),
+          rounding: parseFloat(transaction.rounding || '0'),
           totalAmount: parseFloat(transaction.grandTotal || '0'),
           cashReceived: parseFloat(transaction.grandTotal || '0'),
           change: 0,
@@ -1169,6 +1170,12 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                     <div className="flex justify-between text-muted-foreground">
                       <span>Biaya Layanan</span>
                       <span className="font-inter font-normal">{formatCurrency(parseFloat(selectedTxDetail.transaction.serviceCharge || '0'))}</span>
+                    </div>
+                  )}
+                  {parseFloat(selectedTxDetail.transaction.rounding || '0') > 0 && (
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Pembulatan (Rounding)</span>
+                      <span className="font-inter font-normal">+{formatCurrency(parseFloat(selectedTxDetail.transaction.rounding || '0'))}</span>
                     </div>
                   )}
                   <div className="pt-2.5 border-t border-slate-200 dark:border-slate-800 flex justify-between items-baseline">

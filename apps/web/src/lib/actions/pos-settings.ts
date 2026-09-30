@@ -22,6 +22,7 @@ export async function updatePosSettings(formData: FormData) {
   const shopeeFoodFeeRate = parseFloat(formData.get("shopeeFoodFeeRate") as string) || 0;
   const goFoodFeeRate = parseFloat(formData.get("goFoodFeeRate") as string) || 0;
   const posPinBestSellers = formData.get("posPinBestSellers") === "true";
+  const posRounding = formData.get("posRounding") === "true";
 
   try {
     await db.update(tenants)
@@ -35,6 +36,7 @@ export async function updatePosSettings(formData: FormData) {
         shopeeFoodFeeRate: shopeeFoodFeeRate.toString(),
         goFoodFeeRate: goFoodFeeRate.toString(),
         posPinBestSellers,
+        posRounding,
         updatedAt: new Date()
       })
       .where(eq(tenants.id, user.tenantId));

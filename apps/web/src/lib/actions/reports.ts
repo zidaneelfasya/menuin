@@ -234,12 +234,14 @@ export async function getSalesReport(outletKey: string, params?: DateFilterParam
     const trxIds = trxList.map((t) => t.id);
     let totalHpp = 0;
     let totalItemsSold = 0;
+    const itemsSoldByTrxId: Record<string, number> = {};
     const productSalesMap: Record<string, { id: string; name: string; categoryName: string; price: number; imageUrl?: string | null; totalQty: number; totalRevenue: number }> = {};
     const categorySalesMap: Record<string, { name: string; totalQty: number; totalRevenue: number }> = {};
 
     if (trxIds.length > 0) {
       const allItems = await db
         .select({
+          transactionId: transactionItems.transactionId,
           productId: transactionItems.productId,
           productName: products.name,
           categoryName: categories.name,
@@ -262,6 +264,9 @@ export async function getSalesReport(outletKey: string, params?: DateFilterParam
 
         totalHpp += cost * qty;
         totalItemsSold += qty;
+        if (it.transactionId) {
+          itemsSoldByTrxId[it.transactionId] = (itemsSoldByTrxId[it.transactionId] || 0) + qty;
+        }
 
         const pId = it.productId || 'unknown';
         const pName = it.productName || 'Menu Tanpa Nama';
@@ -289,14 +294,18 @@ export async function getSalesReport(outletKey: string, params?: DateFilterParam
       });
     }
 
-    // 2. Calculate COGS / HPP and Items Sold for previous period (for trend percentages)
+    // 2. Calculate COGS / HPP, Items Sold, and Product Sales for previous period (for trend & product growth)
     const prevTrxIds = prevTrxList.map((t) => t.id);
     let prevTotalHpp = 0;
     let prevTotalItemsSold = 0;
+    const prevProductSalesMap: Record<string, { totalQty: number; totalRevenue: number }> = {};
     if (prevTrxIds.length > 0) {
       const prevItems = await db
         .select({
+          productId: transactionItems.productId,
           quantity: transactionItems.quantity,
+          price: transactionItems.price,
+          subtotal: transactionItems.subtotal,
           costPrice: products.costPrice,
         })
         .from(transactionItems)
@@ -306,8 +315,18 @@ export async function getSalesReport(outletKey: string, params?: DateFilterParam
       prevItems.forEach((it) => {
         const qty = it.quantity || 1;
         const cost = parseFloat(it.costPrice || '0') || 0;
+        const price = parseFloat(it.price || '0') || 0;
+        const subtotal = parseFloat(it.subtotal || '0') || (price * qty);
+
         prevTotalHpp += cost * qty;
         prevTotalItemsSold += qty;
+
+        const pId = it.productId || 'unknown';
+        if (!prevProductSalesMap[pId]) {
+          prevProductSalesMap[pId] = { totalQty: 0, totalRevenue: 0 };
+        }
+        prevProductSalesMap[pId].totalQty += qty;
+        prevProductSalesMap[pId].totalRevenue += subtotal;
       });
     }
 
@@ -315,20 +334,53 @@ export async function getSalesReport(outletKey: string, params?: DateFilterParam
 
     // Return up to 20 products so client can dynamically toggle between Omzet (Revenue) and Porsi (Qty) perspectives
     const topProducts = Object.values(productSalesMap)
+      .map((p) => {
+        const prevSales = prevProductSalesMap[p.id];
+        const prevRev = prevSales ? prevSales.totalRevenue : 0;
+        const prevQty = prevSales ? prevSales.totalQty : 0;
+        const growthRevenue = prevRev > 0
+          ? Math.round(((p.totalRevenue - prevRev) / prevRev) * 100)
+          : (p.totalRevenue > 0 ? 100 : 0);
+        const growthQty = prevQty > 0
+          ? Math.round(((p.totalQty - prevQty) / prevQty) * 100)
+          : (p.totalQty > 0 ? 100 : 0);
+
+        return {
+          ...p,
+          growthRevenue,
+          growthQty,
+          growth: growthRevenue,
+        };
+      })
       .sort((a, b) => b.totalRevenue - a.totalRevenue || b.totalQty - a.totalQty)
       .slice(0, 20);
 
     // Worst Selling / Low Velocity Products (Products with lowest or 0 sales)
     const bottomCandidates = allTenantProducts.map((p) => {
       const sales = productSalesMap[p.id];
+      const prevSales = prevProductSalesMap[p.id];
+      const curRevenue = sales ? sales.totalRevenue : 0;
+      const curQty = sales ? sales.totalQty : 0;
+      const prevRev = prevSales ? prevSales.totalRevenue : 0;
+      const prevQty = prevSales ? prevSales.totalQty : 0;
+      const growthRevenue = prevRev > 0
+        ? Math.round(((curRevenue - prevRev) / prevRev) * 100)
+        : (curRevenue > 0 ? 100 : (prevRev > 0 ? -100 : 0));
+      const growthQty = prevQty > 0
+        ? Math.round(((curQty - prevQty) / prevQty) * 100)
+        : (curQty > 0 ? 100 : (prevQty > 0 ? -100 : 0));
+
       return {
         id: p.id,
         name: p.name,
         categoryName: p.categoryName || 'Lainnya',
         price: parseFloat(p.price || '0') || 0,
         imageUrl: p.imageUrl,
-        totalQty: sales ? sales.totalQty : 0,
-        totalRevenue: sales ? sales.totalRevenue : 0,
+        totalQty: curQty,
+        totalRevenue: curRevenue,
+        growthRevenue,
+        growthQty,
+        growth: growthRevenue,
       };
     });
 
@@ -390,6 +442,7 @@ export async function getSalesReport(outletKey: string, params?: DateFilterParam
       grossSales: number;
       discount: number;
       orders: number;
+      itemsSold: number;
       projected: number;
     };
     const chartBucketsMap: Record<string, ChartBucket> = {};
@@ -410,6 +463,7 @@ export async function getSalesReport(outletKey: string, params?: DateFilterParam
           grossSales: 0,
           discount: 0,
           orders: 0,
+          itemsSold: 0,
           projected: 0,
         };
         chartBucketsMap[hourStr] = bucket;
@@ -430,6 +484,7 @@ export async function getSalesReport(outletKey: string, params?: DateFilterParam
           grossSales: 0,
           discount: 0,
           orders: 0,
+          itemsSold: 0,
           projected: 0,
         };
         chartBucketsMap[ymd] = bucket;
@@ -450,6 +505,7 @@ export async function getSalesReport(outletKey: string, params?: DateFilterParam
           grossSales: 0,
           discount: 0,
           orders: 0,
+          itemsSold: 0,
           projected: 0,
         };
         chartBucketsMap[ym] = bucket;
@@ -547,6 +603,7 @@ export async function getSalesReport(outletKey: string, params?: DateFilterParam
           chartBucketsMap[bucketKey].grossSales += subTotal;
           chartBucketsMap[bucketKey].discount += disc;
           chartBucketsMap[bucketKey].orders += 1;
+          chartBucketsMap[bucketKey].itemsSold += itemsSoldByTrxId[t.id] || 0;
         }
 
         // Dayparts aggregation (Breakfast, Lunch, Afternoon, Dinner, Late Night)

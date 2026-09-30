@@ -10,7 +10,11 @@ import {
   Calendar as CalendarIcon,
   Printer,
   FileSpreadsheet,
-  RefreshCw
+  RefreshCw,
+  ShoppingBag,
+  TrendingUp,
+  Wallet,
+  Store
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -102,6 +106,20 @@ function formatCompactCurrency(val: number | string | undefined | null): string 
   return Math.round(num).toLocaleString("id-ID");
 }
 
+/**
+ * Smart KPI currency formatter:
+ * Abbreviates to e.g. "Rp 176,5 Jt" or "Rp 1,5 M" if >= 1 million,
+ * otherwise displays full nominal (e.g. "Rp 92.133").
+ */
+function formatKpiCurrency(val: number | string | undefined | null): string {
+  const num = typeof val === "number" ? val : parseFloat(val || "0") || 0;
+  const abs = Math.abs(num);
+  if (abs >= 1_000_000) {
+    return `Rp ${formatCompactCurrency(num)}`;
+  }
+  return formatRupiah(num);
+}
+
 // ==========================================
 // SVG VISUAL HELPERS (MINIMALIST & LIGHTWEIGHT)
 // ==========================================
@@ -158,23 +176,36 @@ function MiniSparkline({
   const gradId = React.useId().replace(/:/g, "_");
 
   // Determine positive status
-  const positive = isPositive !== undefined ? isPositive : (percentage ?? 0) >= 0;
+  const positive = isPositive !== undefined
+    ? isPositive
+    : (data && data.length >= 2)
+      ? data[data.length - 1] >= data[0]
+      : (percentage ?? 0) >= 0;
   const strokeColor = color || (positive ? "#10b981" : "#f43f5e");
 
   const { lineD, areaD, lastPoint } = React.useMemo(() => {
-    const numPoints = 32;
     const pts: { x: number; y: number }[] = [];
 
-    if (percentage !== undefined) {
+    // Prioritize REAL DATA when provided!
+    if (data && data.length >= 2) {
+      const dataMin = Math.min(...data);
+      const dataMax = Math.max(...data);
+      const min = dataMin > 0 ? Math.max(0, dataMin * 0.7) : Math.min(0, dataMin);
+      const max = Math.max(dataMax, min + 1);
+      const range = max - min || 1;
+
+      data.forEach((val, idx) => {
+        const x = padX + (idx / (data.length - 1)) * (width - 2 * padX);
+        const clampedVal = Math.max(min, Math.min(max, val));
+        const y = height - 5 - ((clampedVal - min) / range) * (height - 10);
+        pts.push({ x, y });
+      });
+    } else if (percentage !== undefined) {
+      const numPoints = 32;
       const absP = Math.abs(percentage);
       const isUp = percentage >= 0;
 
-      // Cap at 50%: If percentage >= 50% (or <= -50%), it reaches the maximum height/depth.
-      // Any percentage exceeding 50% reaches the exact same peak height as 50%.
       const ratio = Math.min(absP / 50, 1.0);
-
-      // Peak climb is calibrated so the top dot (yEnd) aligns directly flush with the top of the nominal text
-      // At ratio = 1.0 (50%+): yEnd = 2.5px (aligned with the very top of nominal digits)
       const maxClimb = 33;
       const actualClimb = ratio * maxClimb;
 
@@ -188,32 +219,18 @@ function MiniSparkline({
         const x = padX + t * (width - 2 * padX);
         const linearY = yStart + (yEnd - yStart) * t;
 
-        // Organic multi-harmonic financial fluctuations ("lebih acak dan seperti asli")
-        // Uses asynchronous non-integer harmonics so the curve is completely irregular and natural
         const oct1 = Math.sin((t * 4.3 + phase * 2.1) * Math.PI * 2) * 2.3;
         const oct2 = Math.cos((t * 8.7 + phase * 4.3) * Math.PI * 2) * 1.5;
         const oct3 = Math.sin((t * 13.1 + phase * 1.7) * Math.PI * 2) * 0.8;
         const drift = Math.sin((t * 2.1 + phase) * Math.PI * 2) * 0.9;
         const rawNoise = oct1 + oct2 + oct3 + drift;
 
-        // Window function ensures wave is strictly 0 at endpoints t=0 and t=1
-        // while remaining full and lively across the entire span
         const windowFactor = Math.pow(Math.sin(t * Math.PI), 0.65);
         const wave = rawNoise * windowFactor;
 
         const y = Math.max(2.0, Math.min(height - 2.5, linearY + wave));
         pts.push({ x, y });
       }
-    } else if (data && data.length >= 2) {
-      const max = Math.max(...data, 1);
-      const min = Math.min(...data, 0);
-      const range = max - min || 1;
-
-      data.forEach((val, idx) => {
-        const x = padX + (idx / (data.length - 1)) * (width - 2 * padX);
-        const y = height - 4 - ((val - min) / range) * (height - 8);
-        pts.push({ x, y });
-      });
     }
 
     if (pts.length < 2) return { lineD: "", areaD: "", lastPoint: null };
@@ -345,6 +362,16 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
   const [customRange, setCustomRange] = React.useState<DateRange | undefined>(undefined);
   const [tempRange, setTempRange] = React.useState<DateRange | undefined>(undefined);
   const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
+
+  const [isBarChartAnimated, setIsBarChartAnimated] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsBarChartAnimated(false);
+    const timer = setTimeout(() => {
+      setIsBarChartAnimated(true);
+    }, 35);
+    return () => clearTimeout(timer);
+  }, [currentTab, monthParam, yearParam, customRange, data.salesSnapshot?.miniChartData]);
 
   const todayDateStr = format(new Date(), "yyyy-MM-dd");
   const hasCustomDate = React.useMemo(() => {
@@ -507,7 +534,7 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
       const summaryRows = [
         { Indikator: "Outlet", Nilai: data.tenant.name },
         { Indikator: "Periode", Nilai: `${data.period.formattedStart} - ${data.period.formattedEnd}` },
-        { Indikator: "Penjualan Bersih (Net Sales)", Nilai: Math.round(data.heroKpis.netSales) },
+        { Indikator: "Net Sales", Nilai: Math.round(data.heroKpis.netSales) },
         { Indikator: "Pertumbuhan Penjualan (%)", Nilai: data.heroKpis.netSalesGrowth.toFixed(1) + "%" },
         { Indikator: "Total Pesanan", Nilai: data.heroKpis.totalOrders },
         { Indikator: "Pertumbuhan Pesanan (%)", Nilai: data.heroKpis.ordersGrowth.toFixed(1) + "%" },
@@ -594,12 +621,14 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
   // Dynamic bar width calculation based on data point density
   const dynamicBarWidth = React.useMemo(() => {
     const n = salesSnapshot.miniChartData.length;
-    if (n <= 7) return 32;   // 7 days
-    if (n <= 12) return 24;  // 12 months (matches the reference image!)
-    if (n <= 16) return 18;  // ~2 weeks
-    if (n <= 24) return 13;  // 24 hours
-    if (n <= 31) return 10;  // 30-31 days
-    return 7;
+    if (n <= 3) return 68;
+    if (n <= 5) return 56;
+    if (n <= 8) return 46;
+    if (n <= 12) return 32;
+    if (n <= 16) return 24;
+    if (n <= 24) return 16;
+    if (n <= 31) return 12;
+    return 8;
   }, [salesSnapshot.miniChartData.length]);
 
   // Rounded Capsule Bars data
@@ -671,6 +700,18 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
   const chartOrdersData = React.useMemo(() => {
     return salesSnapshot.miniChartData.map((d) => d.orders);
   }, [salesSnapshot.miniChartData]);
+
+  const chartGrossProfitData = React.useMemo(() => {
+    const margin = (heroKpis.profitMargin || 0) / 100;
+    return salesSnapshot.miniChartData.map((d) => Math.max(0, Math.round(d.netSales * margin)));
+  }, [salesSnapshot.miniChartData, heroKpis.profitMargin]);
+
+  const chartCashFlowData = React.useMemo(() => {
+    const inTotal = financeSnapshot.totalCashIn || 1;
+    const outTotal = financeSnapshot.totalCashOut || 0;
+    const flowRatio = inTotal > 0 ? (inTotal - outTotal) / inTotal : 0;
+    return salesSnapshot.miniChartData.map((d) => Math.round(d.netSales * flowRatio));
+  }, [salesSnapshot.miniChartData, financeSnapshot.totalCashIn, financeSnapshot.totalCashOut]);
 
   // Cash flow surplus/deficit percentage for KPI 3 sparkline
   const cashFlowPercentage = React.useMemo(() => {
@@ -985,93 +1026,90 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
       {/* 4. 4 TOP KPI CARDS (NET SALES, GROSS PROFIT, NET CASH FLOW, TOTAL ORDERS) */}
       {/* ==================================================== */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* KPI 1: Penjualan Bersih (Net Sales) */}
-        <Card className="border border-[#EAEFF8] shadow-sm rounded-2xl bg-white hover:border-[#d7e2f5] transition-all flex flex-col justify-between overflow-hidden">
-          <CardContent className="p-5 flex flex-col justify-between flex-1">
-            {/* Top row: Label & Badge */}
+        {/* KPI 1: Penjualan Bersih (Net Sales) - Hero Blue Card */}
+        <Card className="border border-[#0e59f9] shadow-md shadow-blue-500/20 rounded-2xl bg-[#0e59f9] text-white hover:shadow-blue-500/30 transition-all flex flex-col justify-between overflow-hidden min-h-[190px]">
+          <CardContent className="p-5 sm:p-6 flex flex-col justify-between flex-1 h-full">
+            {/* Top row: Icon (Top-Left) & Percentage (Top-Right) */}
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">
-                Penjualan Bersih
-              </span>
+              <div className="w-10 h-10 rounded-full bg-white text-[#0e59f9] flex items-center justify-center shadow-xs flex-shrink-0">
+                <ShoppingBag className="w-5 h-5 text-[#0e59f9]" />
+              </div>
               <div
                 className={cn(
-                  "inline-flex items-center gap-0.5 text-xs font-medium px-2 py-0.5 rounded-full",
+                  "inline-flex items-center gap-0.5 text-xs font-semibold px-2.5 py-1 rounded-full backdrop-blur-xs",
                   heroKpis.netSalesGrowth >= 0
-                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                    : "bg-rose-50 text-rose-700 border border-rose-200"
+                    ? "bg-white/20 text-white border border-white/25"
+                    : "bg-rose-500/30 text-rose-100 border border-rose-300/30"
                 )}
               >
                 {heroKpis.netSalesGrowth >= 0 ? (
-                  <ArrowUpRight className="h-3 w-3" />
+                  <ArrowUpRight className="h-3.5 w-3.5 text-white" />
                 ) : (
-                  <ArrowDownRight className="h-3 w-3" />
+                  <ArrowDownRight className="h-3.5 w-3.5 text-white" />
                 )}
-                <span>{heroKpis.netSalesGrowth >= 0 ? `+${heroKpis.netSalesGrowth.toFixed(1)}%` : `${heroKpis.netSalesGrowth.toFixed(1)}%`}</span>
+                <span>
+                  {heroKpis.netSalesGrowth >= 0
+                    ? `+${heroKpis.netSalesGrowth.toFixed(1)}%`
+                    : `${heroKpis.netSalesGrowth.toFixed(1)}%`}
+                </span>
               </div>
             </div>
 
-            {/* Bottom row: Aligned Number (Left) & Sparkline (Right) */}
-            <div className="mt-4 flex items-start justify-between gap-3">
+            {/* Bottom row: Title + Nominal (Bottom-Left) & White Sparkline (Bottom-Right) */}
+            <div className="mt-8 flex items-end justify-between gap-3">
               <div className="min-w-0">
-                <div className="text-xl sm:text-2xl font-semibold text-slate-900 tracking-tight whitespace-nowrap">
-                  {formatRupiah(heroKpis.netSales)}
-                </div>
-                <div className="text-[11px] text-slate-400 mt-1 whitespace-nowrap truncate">
-                  Kotor: {formatRupiah(salesSnapshot.grossSales)}
+                <span className="text-[11px] font-semibold text-white/80 uppercase tracking-wider block">
+                  Net Sales
+                </span>
+                <div
+                  className="text-xl sm:text-2xl font-semibold text-white tracking-tight whitespace-nowrap mt-1"
+                  title={formatRupiah(heroKpis.netSales)}
+                >
+                  {formatKpiCurrency(heroKpis.netSales)}
                 </div>
               </div>
-              <div className="flex-shrink-0 pt-0.5">
+              <div className="flex-shrink-0 pb-0.5">
                 <MiniSparkline
+                  data={chartPointsData}
                   percentage={heroKpis.netSalesGrowth}
                   isPositive={heroKpis.netSalesGrowth >= 0}
                   metricSeed={1}
+                  color="#ffffff"
                 />
               </div>
             </div>
           </CardContent>
-
-          {/* Garis pemisah di bagian bawah + Full Interactive Button */}
-          <Link
-            href={`/outlet/${outletKey}/reports/sales`}
-            className="group flex items-center justify-between px-5 py-2.5 border-t border-[#EAEFF8] bg-slate-50/50 hover:bg-blue-50/70 active:bg-blue-100/70 active:scale-[0.99] transition-all duration-150 cursor-pointer select-none"
-          >
-            <span className="text-[11px] text-slate-500 font-medium group-hover:text-slate-700 transition-colors">
-              Bandingkan periode lalu
-            </span>
-            <span className="text-[11px] text-slate-600 font-medium group-hover:text-[#0e59f9] inline-flex items-center gap-1 transition-colors">
-              Lihat Rincian
-              <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-            </span>
-          </Link>
         </Card>
 
         {/* KPI 2: Laba Kotor (Gross Profit) - Subjudul: COGS */}
-        <Card className="border border-[#EAEFF8] shadow-sm rounded-2xl bg-white hover:border-[#d7e2f5] transition-all flex flex-col justify-between overflow-hidden">
-          <CardContent className="p-5 flex flex-col justify-between flex-1">
-            {/* Top row: Label & Badge */}
+        <Card className="border border-[#EAEFF8] shadow-sm rounded-2xl bg-white hover:border-[#d7e2f5] transition-all flex flex-col justify-between overflow-hidden min-h-[190px]">
+          <CardContent className="p-5 sm:p-6 flex flex-col justify-between flex-1 h-full">
+            {/* Top row: Icon (Top-Left) & Badge (Top-Right) */}
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">
-                Laba Kotor
-              </span>
-              <div
-                className="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200"
-              >
+              <div className="w-10 h-10 rounded-full bg-[#0e59f9] text-white flex items-center justify-center shadow-xs flex-shrink-0">
+                <TrendingUp className="w-5 h-5 text-white" />
+              </div>
+              <div className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                 {heroKpis.profitMargin.toFixed(1)}% Margin
               </div>
             </div>
 
-            {/* Bottom row: Aligned Number (Left) & Sparkline (Right) */}
-            <div className="mt-4 flex items-start justify-between gap-3">
+            {/* Bottom row: Title + Nominal (Bottom-Left) & Sparkline (Bottom-Right) */}
+            <div className="mt-8 flex items-end justify-between gap-3">
               <div className="min-w-0">
-                <div className="text-xl sm:text-2xl font-semibold text-slate-900 tracking-tight whitespace-nowrap">
-                  {formatRupiah(heroKpis.grossProfit)}
-                </div>
-                <div className="text-[11px] text-slate-400 mt-1 whitespace-nowrap truncate">
-                  COGS: {formatRupiah(financeSnapshot.totalHpp)}
+                <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+                  Laba Kotor
+                </span>
+                <div
+                  className="text-xl sm:text-2xl font-semibold text-slate-900 tracking-tight whitespace-nowrap mt-1"
+                  title={formatRupiah(heroKpis.grossProfit)}
+                >
+                  {formatKpiCurrency(heroKpis.grossProfit)}
                 </div>
               </div>
-              <div className="flex-shrink-0 pt-0.5">
+              <div className="flex-shrink-0 pb-0.5">
                 <MiniSparkline
+                  data={chartGrossProfitData}
                   percentage={heroKpis.profitMargin}
                   isPositive={heroKpis.grossProfit >= 0}
                   metricSeed={2}
@@ -1079,33 +1117,19 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
               </div>
             </div>
           </CardContent>
-
-          {/* Garis pemisah di bagian bawah + Full Interactive Button */}
-          <Link
-            href={`/outlet/${outletKey}/reports/sales`}
-            className="group flex items-center justify-between px-5 py-2.5 border-t border-[#EAEFF8] bg-slate-50/50 hover:bg-blue-50/70 active:bg-blue-100/70 active:scale-[0.99] transition-all duration-150 cursor-pointer select-none"
-          >
-            <span className="text-[11px] text-slate-500 font-medium group-hover:text-slate-700 transition-colors">
-              Estimasi HPP &amp; margin
-            </span>
-            <span className="text-[11px] text-slate-600 font-medium group-hover:text-[#0e59f9] inline-flex items-center gap-1 transition-colors">
-              Lihat Rincian
-              <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-            </span>
-          </Link>
         </Card>
 
         {/* KPI 3: Arus Kas Bersih (Net Flow) - Subjudul: Expenses */}
-        <Card className="border border-[#EAEFF8] shadow-sm rounded-2xl bg-white hover:border-[#d7e2f5] transition-all flex flex-col justify-between overflow-hidden">
-          <CardContent className="p-5 flex flex-col justify-between flex-1">
-            {/* Top row: Label & Badge */}
+        <Card className="border border-[#EAEFF8] shadow-sm rounded-2xl bg-white hover:border-[#d7e2f5] transition-all flex flex-col justify-between overflow-hidden min-h-[190px]">
+          <CardContent className="p-5 sm:p-6 flex flex-col justify-between flex-1 h-full">
+            {/* Top row: Icon (Top-Left) & Badge (Top-Right) */}
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">
-                Arus Kas Bersih
-              </span>
+              <div className="w-10 h-10 rounded-full bg-[#0e59f9] text-white flex items-center justify-center shadow-xs flex-shrink-0">
+                <Wallet className="w-5 h-5 text-white" />
+              </div>
               <div
                 className={cn(
-                  "inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full",
+                  "inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full",
                   heroKpis.netCashFlow >= 0
                     ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                     : "bg-rose-50 text-rose-700 border border-rose-200"
@@ -1115,18 +1139,22 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
               </div>
             </div>
 
-            {/* Bottom row: Aligned Number (Left) & Sparkline (Right) */}
-            <div className="mt-4 flex items-start justify-between gap-3">
+            {/* Bottom row: Title + Nominal (Bottom-Left) & Sparkline (Bottom-Right) */}
+            <div className="mt-8 flex items-end justify-between gap-3">
               <div className="min-w-0">
-                <div className={cn("text-xl sm:text-2xl font-semibold tracking-tight whitespace-nowrap", heroKpis.netCashFlow >= 0 ? "text-slate-900" : "text-rose-600")}>
-                  {formatRupiah(heroKpis.netCashFlow)}
-                </div>
-                <div className="text-[11px] text-slate-400 mt-1 whitespace-nowrap truncate">
-                  Expenses: {formatRupiah(financeSnapshot.totalCashOut)}
+                <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+                  Arus Kas Bersih
+                </span>
+                <div
+                  className={cn("text-xl sm:text-2xl font-semibold tracking-tight whitespace-nowrap mt-1", heroKpis.netCashFlow >= 0 ? "text-slate-900" : "text-rose-600")}
+                  title={formatRupiah(heroKpis.netCashFlow)}
+                >
+                  {formatKpiCurrency(heroKpis.netCashFlow)}
                 </div>
               </div>
-              <div className="flex-shrink-0 pt-0.5">
+              <div className="flex-shrink-0 pb-0.5">
                 <MiniSparkline
+                  data={chartCashFlowData}
                   percentage={cashFlowPercentage}
                   isPositive={heroKpis.netCashFlow >= 0}
                   metricSeed={3}
@@ -1134,59 +1162,46 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
               </div>
             </div>
           </CardContent>
-
-          {/* Garis pemisah di bagian bawah + Full Interactive Button */}
-          <Link
-            href={`/outlet/${outletKey}/reports/finance`}
-            className="group flex items-center justify-between px-5 py-2.5 border-t border-[#EAEFF8] bg-slate-50/50 hover:bg-blue-50/70 active:bg-blue-100/70 active:scale-[0.99] transition-all duration-150 cursor-pointer select-none"
-          >
-            <span className="text-[11px] text-slate-500 font-medium group-hover:text-slate-700 transition-colors">
-              Arus kas &amp; beban keluar
-            </span>
-            <span className="text-[11px] text-slate-600 font-medium group-hover:text-[#0e59f9] inline-flex items-center gap-1 transition-colors">
-              Lihat Rincian
-              <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-            </span>
-          </Link>
         </Card>
 
         {/* KPI 4: Total Pesanan (Orders) - Subjudul: AOV */}
-        <Card className="border border-[#EAEFF8] shadow-sm rounded-2xl bg-white hover:border-[#d7e2f5] transition-all flex flex-col justify-between overflow-hidden">
-          <CardContent className="p-5 flex flex-col justify-between flex-1">
-            {/* Top row: Label & Badge */}
+        <Card className="border border-[#EAEFF8] shadow-sm rounded-2xl bg-white hover:border-[#d7e2f5] transition-all flex flex-col justify-between overflow-hidden min-h-[190px]">
+          <CardContent className="p-5 sm:p-6 flex flex-col justify-between flex-1 h-full">
+            {/* Top row: Icon (Top-Left) & Badge (Top-Right) */}
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">
-                Total Pesanan
-              </span>
+              <div className="w-10 h-10 rounded-full bg-[#0e59f9] text-white flex items-center justify-center shadow-xs flex-shrink-0">
+                <Store className="w-5 h-5 text-white" />
+              </div>
               <div
                 className={cn(
-                  "inline-flex items-center gap-0.5 text-xs font-medium px-2 py-0.5 rounded-full",
+                  "inline-flex items-center gap-0.5 text-xs font-semibold px-2.5 py-1 rounded-full",
                   heroKpis.ordersGrowth >= 0
                     ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                     : "bg-rose-50 text-rose-700 border border-rose-200"
                 )}
               >
                 {heroKpis.ordersGrowth >= 0 ? (
-                  <ArrowUpRight className="h-3 w-3" />
+                  <ArrowUpRight className="h-3.5 w-3.5" />
                 ) : (
-                  <ArrowDownRight className="h-3 w-3" />
+                  <ArrowDownRight className="h-3.5 w-3.5" />
                 )}
                 <span>{heroKpis.ordersGrowth >= 0 ? `+${Math.round(heroKpis.ordersGrowth)}%` : `${Math.round(heroKpis.ordersGrowth)}%`}</span>
               </div>
             </div>
 
-            {/* Bottom row: Aligned Number (Left) & Sparkline (Right) */}
-            <div className="mt-4 flex items-start justify-between gap-3">
+            {/* Bottom row: Title + Nominal (Bottom-Left) & Sparkline (Bottom-Right) */}
+            <div className="mt-8 flex items-end justify-between gap-3">
               <div className="min-w-0">
-                <div className="text-xl sm:text-2xl font-semibold text-slate-900 tracking-tight whitespace-nowrap">
+                <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+                  Total Pesanan
+                </span>
+                <div className="text-xl sm:text-2xl font-semibold text-slate-900 tracking-tight whitespace-nowrap mt-1">
                   {formatNumber(heroKpis.totalOrders)} <span className="text-sm font-normal text-slate-400">Order</span>
                 </div>
-                <div className="text-[11px] text-slate-400 mt-1 whitespace-nowrap truncate">
-                  AOV: {formatRupiah(heroKpis.aov)}
-                </div>
               </div>
-              <div className="flex-shrink-0 pt-0.5">
+              <div className="flex-shrink-0 pb-0.5">
                 <MiniSparkline
+                  data={chartOrdersData}
                   percentage={heroKpis.ordersGrowth}
                   isPositive={heroKpis.ordersGrowth >= 0}
                   metricSeed={4}
@@ -1194,20 +1209,6 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
               </div>
             </div>
           </CardContent>
-
-          {/* Garis pemisah di bagian bawah + Full Interactive Button */}
-          <Link
-            href={`/outlet/${outletKey}/reports/operations`}
-            className="group flex items-center justify-between px-5 py-2.5 border-t border-[#EAEFF8] bg-slate-50/50 hover:bg-blue-50/70 active:bg-blue-100/70 active:scale-[0.99] transition-all duration-150 cursor-pointer select-none"
-          >
-            <span className="text-[11px] text-slate-500 font-medium group-hover:text-slate-700 transition-colors">
-              Aktivitas pesanan outlet
-            </span>
-            <span className="text-[11px] text-slate-600 font-medium group-hover:text-[#0e59f9] inline-flex items-center gap-1 transition-colors">
-              Lihat Rincian
-              <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-            </span>
-          </Link>
         </Card>
       </div>
 
@@ -1226,7 +1227,7 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
                   Ringkasan Penjualan
                 </div>
                 <div className="text-xs text-slate-500 mt-0.5">
-                  Realisasi performa omset penjualan bersih outlet
+                  Realisasi performa net sales outlet
                 </div>
               </div>
               <div className="flex items-center gap-4 text-xs">
@@ -1247,7 +1248,7 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
               <div className="w-full md:w-56 lg:w-60 flex-shrink-0 flex flex-col justify-between py-1  pb-4 md:pb-0 md:pr-4">
                 <div>
                   <div className="text-sm font-sans font-medium text-slate-400">
-                    Penjualan Bersih
+                    Net Sales
                   </div>
                   <div 
                     className="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight mt-1 whitespace-nowrap cursor-default"
@@ -1375,15 +1376,18 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
                                   onMouseEnter={() => setHoveredPointIndex(idx)}
                                   onMouseLeave={() => setHoveredPointIndex(null)}
                                 >
-                                  {/* Pill Capsule Bar */}
+                                  {/* Pill Capsule Bar (Flat Bottom & Dome Arch Top) */}
                                   <div
                                     style={{
-                                      height: `${bar.heightPercent}%`,
+                                      height: isBarChartAnimated ? `${bar.heightPercent}%` : "0%",
                                       width: `${dynamicBarWidth}px`,
-                                      maxWidth: '85%'
+                                      maxWidth: '82%',
+                                      transition: isBarChartAnimated
+                                        ? `height 750ms cubic-bezier(0.23, 1, 0.32, 1) ${Math.min(idx * 20, 260)}ms, background-color 200ms ease, box-shadow 200ms ease`
+                                        : 'none',
                                     }}
                                     className={cn(
-                                      "rounded-full transition-all duration-200 relative",
+                                      "rounded-t-full rounded-b-none relative",
                                       isHovered
                                         ? "bg-[#0e59f9] shadow-[0_4px_14px_rgba(14,89,249,0.38)]"
                                         : isNonZero

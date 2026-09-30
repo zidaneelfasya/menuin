@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { transactions, transactionItems, products, tenants } from "@/lib/db/schema";
+import { transactions, transactionItems, products, tenants, shifts } from "@/lib/db/schema";
 import { eq, and, or, desc, inArray, ilike } from "drizzle-orm";
 import { getCurrentUser } from "./auth";
 import { revalidatePath } from "next/cache";
@@ -135,6 +135,94 @@ export async function syncOrderPaymentStatus(orderId: string) {
   } catch (error: any) {
     console.error("Failed to sync Midtrans payment status:", error);
     return { error: error.message || "Gagal sinkronisasi status pembayaran." };
+  }
+}
+
+export async function confirmOrderPaymentAtCashier(
+  transactionId: string,
+  payload: {
+    paymentMethod: 'CASH' | 'QRIS_STATIC' | 'QRIS_DYNAMIC' | 'CARD' | 'TRANSFER' | string;
+    cashReceived?: number;
+    change?: number;
+    rounding?: number;
+    grandTotal?: number;
+  }
+) {
+  const user = await getCurrentUser();
+  if (!user || !user.tenantId) throw new Error("Unauthorized");
+
+  try {
+    const [tx] = await db
+      .select()
+      .from(transactions)
+      .where(and(eq(transactions.id, transactionId), eq(transactions.tenantId, user.tenantId)))
+      .limit(1);
+
+    if (!tx) return { error: "Pesanan tidak ditemukan." };
+
+    // Find active shift for this tenant/cashier
+    const activeShifts = await db
+      .select()
+      .from(shifts)
+      .where(
+        and(
+          eq(shifts.tenantId, user.tenantId),
+          eq(shifts.status, 'ACTIVE')
+        )
+      )
+      .limit(1);
+
+    const shiftId = activeShifts.length > 0 ? activeShifts[0].id : tx.shiftId;
+
+    const grandTotalNum = payload.grandTotal != null ? payload.grandTotal : (parseFloat(tx.grandTotal || '0') || 0);
+    const payMethod = (payload.paymentMethod || 'CASH').toUpperCase();
+
+    // Only QRIS_DYNAMIC and online gateway transactions incur 0.7% MDR.
+    // QRIS_STATIC, CARD (EDC), TRANSFER, and CASH have 0 gateway fee.
+    const isGateway = payMethod === 'QRIS_DYNAMIC' || payMethod === 'ONLINE' || payMethod === 'DOKU';
+    const gatewayFeeNum = isGateway ? Math.round(grandTotalNum * 0.007) : 0;
+    const netAmountNum = Math.max(0, grandTotalNum - gatewayFeeNum);
+
+    const updates: any = {
+      status: 'NEW',
+      paymentStatus: 'PAID',
+      paymentMethod: payMethod,
+      gatewayFee: gatewayFeeNum.toString(),
+      netAmount: netAmountNum.toString(),
+      cashierMembershipId: user.id,
+    };
+
+    if (payload.rounding != null) {
+      updates.rounding = payload.rounding.toString();
+    }
+    if (payload.grandTotal != null) {
+      updates.grandTotal = payload.grandTotal.toString();
+    }
+
+    if (shiftId) {
+      updates.shiftId = shiftId;
+    }
+
+    await db
+      .update(transactions)
+      .set(updates)
+      .where(and(eq(transactions.id, transactionId), eq(transactions.tenantId, user.tenantId)));
+
+    if (user?.outletKey) {
+      revalidatePath(`/outlet/${user.outletKey}/orders`, "page");
+      revalidatePath(`/outlet/${user.outletKey}/reports`, "page");
+      revalidatePath(`/outlet/${user.outletKey}`, "layout");
+    }
+
+    return { 
+      success: true, 
+      paymentMethod: payMethod,
+      gatewayFee: gatewayFeeNum,
+      netAmount: netAmountNum
+    };
+  } catch (error: any) {
+    console.error("Failed to confirm order payment at cashier:", error);
+    return { error: error?.message || "Gagal mengonfirmasi pembayaran pesanan." };
   }
 }
 

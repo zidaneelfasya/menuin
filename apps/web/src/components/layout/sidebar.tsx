@@ -69,8 +69,8 @@ function SidebarContent({ collapsed, setCollapsed, user }: { collapsed: boolean;
   const outletKey = user.outletKey || 'unknown';
   const navItems = getNavItems(outletKey).filter(item => !item.roles || item.roles.includes(user.role as any));
 
-  // Determine if the current page has a sub-sidebar (e.g. Katalog Menu, Shift Kasir, or Settings)
-  const hasSubSidebar = pathname.includes('/katalog') || pathname.includes('/shifts') || pathname.includes('/settings');
+  // Determine if the current page has a sub-sidebar (e.g. Katalog Menu, Shift Kasir, Settings, or Reports)
+  const hasSubSidebar = pathname.includes('/katalog') || pathname.includes('/shifts') || pathname.includes('/settings') || pathname.includes('/reports');
   const curvedTabBg = hasSubSidebar ? '#ffffff' : '#F9FBFF';
 
   const userAvatarUri = React.useMemo(() => {

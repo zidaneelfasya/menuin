@@ -58,6 +58,7 @@ type CheckoutClientProps = {
     taxRate?: number;
     taxName?: string;
     serviceChargeRate?: number;
+    posRounding?: boolean;
   };
   products?: Product[];
   modifierGroups?: ModifierGroup[];
@@ -389,7 +390,16 @@ export function CheckoutClient({
   const serviceChargeRate = settings.serviceChargeRate || 0;
   const taxAmount = (taxableSubtotal * taxRate) / 100;
   const serviceChargeAmount = (taxableSubtotal * serviceChargeRate) / 100;
-  const grandTotal = Math.max(0, taxableSubtotal + taxAmount + serviceChargeAmount);
+  const rawTotal = Math.max(0, taxableSubtotal + taxAmount + serviceChargeAmount);
+  let roundingAmount = 0;
+  if (settings.posRounding) {
+    const roundedInt = Math.round(rawTotal);
+    const remainder = roundedInt % 100;
+    if (remainder > 0) {
+      roundingAmount = 100 - remainder;
+    }
+  }
+  const grandTotal = Math.round(rawTotal) + roundingAmount;
 
   if (!mounted) return null;
 
@@ -1038,6 +1048,15 @@ export function CheckoutClient({
                     {settings.taxName || "Pajak (PB1)"} ({taxRate}%)
                   </span>
                   <span className="font-semibold text-gray-800">{formatCurrency(taxAmount)}</span>
+                </div>
+              )}
+
+              {roundingAmount > 0 && (
+                <div className="flex justify-between text-gray-600">
+                  <span>Pembulatan (Rounding)</span>
+                  <span className="font-semibold text-gray-800">
+                    +{formatCurrency(roundingAmount)}
+                  </span>
                 </div>
               )}
 

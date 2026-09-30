@@ -41,6 +41,7 @@ interface PaymentModalProps {
     tax: number;
     serviceCharge: number;
     platformFee: number;
+    rounding?: number;
     grandTotal: number;
   }) => Promise<void>;
   posSettings: any;
@@ -76,7 +77,16 @@ export function PaymentModal({
   const taxableSubtotal = Math.max(0, subtotalAmount - discountAmount);
   const taxAmount = taxRate > 0 ? (taxableSubtotal * taxRate) / 100 : 0;
   const serviceChargeAmount = serviceRate > 0 ? (taxableSubtotal * serviceRate) / 100 : 0;
-  const grandTotal = Math.round(taxableSubtotal + taxAmount + serviceChargeAmount);
+  const rawTotal = taxableSubtotal + taxAmount + serviceChargeAmount;
+  let roundingAmount = 0;
+  if (posSettings?.posRounding) {
+    const roundedInt = Math.round(rawTotal);
+    const remainder = roundedInt % 100;
+    if (remainder > 0) {
+      roundingAmount = 100 - remainder;
+    }
+  }
+  const grandTotal = Math.round(rawTotal) + roundingAmount;
 
   // Platform commissions (for online food orders)
   let platformCommissionRate = 0;
@@ -159,25 +169,33 @@ export function PaymentModal({
     return sorted.slice(0, 3);
   }, [grandTotal]);
 
-  const handleSubmit = async () => {
-    if (!isCashSufficient || isProcessing) return;
+  const submittingRef = React.useRef(false);
 
+  const handleSubmit = async () => {
+    if (!isCashSufficient || isProcessing || submittingRef.current) return;
+
+    submittingRef.current = true;
     setIsProcessing(true);
-    await onConfirm({
-      cashReceived: paymentMethod === 'cash' ? cashReceived : grandTotal,
-      change: Math.max(0, change),
-      paymentMethod,
-      orderType: orderType || 'DINE_IN',
-      customerName: customerName || undefined,
-      tableNumber: tableNumber || undefined,
-      discount: discountAmount,
-      promoCode: appliedPromo?.code || appliedPromo?.name || undefined,
-      tax: taxAmount,
-      serviceCharge: serviceChargeAmount,
-      platformFee: platformFeeAmount,
-      grandTotal,
-    });
-    setIsProcessing(false);
+    try {
+      await onConfirm({
+        cashReceived: paymentMethod === 'cash' ? cashReceived : grandTotal,
+        change: Math.max(0, change),
+        paymentMethod,
+        orderType: orderType || 'DINE_IN',
+        customerName: customerName || undefined,
+        tableNumber: tableNumber || undefined,
+        discount: discountAmount,
+        promoCode: appliedPromo?.code || appliedPromo?.name || undefined,
+        tax: taxAmount,
+        serviceCharge: serviceChargeAmount,
+        platformFee: platformFeeAmount,
+        rounding: roundingAmount,
+        grandTotal,
+      });
+    } finally {
+      setIsProcessing(false);
+      submittingRef.current = false;
+    }
   };
 
   // Human-readable Order Type description

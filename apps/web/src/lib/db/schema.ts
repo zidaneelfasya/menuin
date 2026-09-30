@@ -60,6 +60,7 @@ export const tenants = pgTable('tenants', {
   
   // Preferensi Tampilan
   posPinBestSellers: boolean('pos_pin_best_sellers').default(true).notNull(),
+  posRounding: boolean('pos_rounding').default(false).notNull(), // Pembulatan nominal ratusan (1-99) ke atas
   
   // Payment settings
   onlinePaymentEnabled: boolean('online_payment_enabled').default(false).notNull(),
@@ -347,6 +348,7 @@ export const transactions = pgTable('transactions', {
   tax: decimal('tax', { precision: 12, scale: 2 }).default('0'),
   serviceCharge: decimal('service_charge', { precision: 12, scale: 2 }).default('0'),
   platformFee: decimal('platform_fee', { precision: 12, scale: 2 }).default('0'),
+  rounding: decimal('rounding', { precision: 12, scale: 2 }).default('0'),
   grandTotal: decimal('grand_total', { precision: 12, scale: 2 }).notNull(),
   gatewayFee: decimal('gateway_fee', { precision: 12, scale: 2 }).default('0').notNull(),
   netAmount: decimal('net_amount', { precision: 12, scale: 2 }),

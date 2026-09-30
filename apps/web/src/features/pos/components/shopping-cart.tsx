@@ -213,7 +213,16 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
   const taxableSubtotal = Math.max(0, subtotal - discount);
   const serviceChargeAmount = serviceRate > 0 ? (taxableSubtotal * serviceRate) / 100 : 0;
   const taxAmount = taxRate > 0 ? (taxableSubtotal * taxRate) / 100 : 0;
-  const total = taxableSubtotal + serviceChargeAmount + taxAmount;
+  const rawTotal = taxableSubtotal + serviceChargeAmount + taxAmount;
+  let roundingAmount = 0;
+  if (posSettings?.posRounding) {
+    const roundedInt = Math.round(rawTotal);
+    const remainder = roundedInt % 100;
+    if (remainder > 0) {
+      roundingAmount = 100 - remainder;
+    }
+  }
+  const total = Math.round(rawTotal) + roundingAmount;
 
   const handleMinus = (itemId: string, currentQty: number) => {
     if (currentQty <= 1) {
@@ -516,6 +525,13 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
             <div className="flex justify-between text-muted-foreground">
               <span>{taxName} ({taxRate}%):</span>
               <span className="font-medium text-foreground">+{formatCurrency(taxAmount)}</span>
+            </div>
+          )}
+
+          {roundingAmount > 0 && (
+            <div className="flex justify-between text-muted-foreground">
+              <span>Pembulatan (Rounding):</span>
+              <span className="font-medium text-foreground">+{formatCurrency(roundingAmount)}</span>
             </div>
           )}
 
