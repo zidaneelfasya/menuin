@@ -92,7 +92,7 @@ const SETTINGS_SECTIONS: NavSection[] = [
       },
       {
         id: 'payment',
-        label: 'Integrasi Midtrans',
+        label: 'Pembayaran Online',
         icon: IconCreditCard,
         href: (k) => `/outlet/${k}/settings?tab=payment`,
         tab: 'payment',

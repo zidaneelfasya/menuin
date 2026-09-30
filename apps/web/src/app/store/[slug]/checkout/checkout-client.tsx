@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createOnlineOrder } from "@/lib/actions/public-catalog";
 import { getPublicPromotions, validatePublicPromoCode } from "@/lib/actions/promotions";
-import Script from "next/script";
 import {
   ArrowLeft,
   Loader2,
@@ -36,12 +35,6 @@ import {
   type Modifier,
 } from "@/components/shared/product-detail-sheet";
 
-declare global {
-  interface Window {
-    snap: any;
-  }
-}
-
 type CheckoutClientProps = {
   tenantSlug: string;
   settings: {
@@ -52,8 +45,6 @@ type CheckoutClientProps = {
     customerNameRequired: boolean;
     customerPhoneRequired: boolean;
     tableNumberRequired: boolean;
-    midtransEnvironment: string | null;
-    midtransClientKey: string | null;
     onlinePaymentEnabled?: boolean;
     taxRate?: number;
     taxName?: string;
@@ -393,11 +384,6 @@ export function CheckoutClient({
 
   if (!mounted) return null;
 
-  const snapScriptUrl =
-    settings.midtransEnvironment === "production"
-      ? "https://app.midtrans.com/snap/snap.js"
-      : "https://app.sandbox.midtrans.com/snap/snap.js";
-
   const handleApplyPromoCode = async (codeToApply?: string) => {
     const code = (codeToApply ?? promoCodeInput).trim().toUpperCase();
     if (!code) {
@@ -529,13 +515,6 @@ export function CheckoutClient({
 
   return (
     <>
-      {settings.midtransClientKey && (
-        <Script
-          src={snapScriptUrl}
-          data-client-key={settings.midtransClientKey}
-          strategy="afterInteractive"
-        />
-      )}
 
       {/* Floating Cart Top Navigation Header (Edge-to-edge with shadow) */}
       <header className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.08)] pt-[env(safe-area-inset-top)]">
@@ -1102,7 +1081,7 @@ export function CheckoutClient({
                 </div>
               </button>
 
-              {/* Option 2: Bayar Online (Midtrans) */}
+              {/* Option 2: Bayar Online (DOKU Checkout) */}
               {settings.onlinePaymentEnabled && (
                 <button
                   type="button"

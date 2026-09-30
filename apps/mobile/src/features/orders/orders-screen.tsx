@@ -352,7 +352,7 @@ const OrderCardItem = React.memo(function OrderCardItem({
               ) : (
                 <RefreshCw size={11} color="#2563eb" />
               )}
-              <Text className="text-[11px] font-semibold text-blue-700">Cek Midtrans</Text>
+              <Text className="text-[11px] font-semibold text-blue-700">Cek Pembayaran</Text>
             </TouchableOpacity>
           )}
 
@@ -706,7 +706,7 @@ export function OrdersScreen() {
         if (res?.isPaid) {
           Alert.alert(
             'Pembayaran Berhasil',
-            'Pembayaran Midtrans telah berhasil diverifikasi dan pesanan otomatis masuk antrean dapur.'
+            'Pembayaran online telah berhasil diverifikasi dan pesanan otomatis masuk antrean dapur.'
           );
           if (selectedOrder && selectedOrder.id === orderId) {
             setSelectedOrder((prev) =>
@@ -716,13 +716,13 @@ export function OrdersScreen() {
         } else {
           Alert.alert(
             'Belum Dibayar',
-            res?.error || res?.message || 'Pembayaran belum diselesaikan oleh pelanggan di Midtrans.'
+            res?.error || res?.message || 'Pembayaran online belum diselesaikan oleh pelanggan.'
           );
         }
       },
       onError: (err: any) => {
         setCheckingMidtransOrderId(null);
-        Alert.alert('Gagal', err?.message || 'Gagal memeriksa status pembayaran Midtrans.');
+        Alert.alert('Gagal', err?.message || 'Gagal memeriksa status pembayaran online.');
       },
     });
   };
@@ -1581,8 +1581,8 @@ export function OrdersScreen() {
                       )}
                       <Text className="text-xs font-semibold text-blue-700">
                         {syncPaymentMutation.isPending
-                          ? 'Memeriksa Midtrans...'
-                          : 'Periksa Status Pembayaran Midtrans'}
+                          ? 'Memeriksa pembayaran...'
+                          : 'Periksa Status Pembayaran Online'}
                       </Text>
                     </TouchableOpacity>
                   )}

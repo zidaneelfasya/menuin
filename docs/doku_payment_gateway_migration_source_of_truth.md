@@ -1,156 +1,178 @@
-# Menuin Payment Gateway Migration: Source of Truth (Midtrans to DOKU)
+# Menuin × DOKU — Source of Truth Integrasi Pembayaran
 
-Dokumen ini merupakan **panduan sumber kebenaran (*Source of Truth*)** teknis dan arsitektural untuk proses migrasi payment gateway Menuin dari **Midtrans** ke **DOKU**. Dokumen ini dirancang sebagai acuan tetap saat pendaftaran akun DOKU Anda telah selesai dan siap diintegrasikan.
-
----
-
-## 1. Latar Belakang & Alasan Strategis Migrasi
-
-### 1.1 Keterbatasan Midtrans untuk Model Multi-Tenant SaaS
-* **Struktur Akun Tunggal (*Single-Merchant Bound*):** Midtrans Snap secara *default* mengikat seluruh pembayaran ke satu akun utama merchant (*Master Merchant*).
-* **Fitur Sub-Account Terbatas:** Fitur split pembayaran atau pengelolaan sub-merchant (*Marketplace/Multi-Tenant*) di Midtrans memerlukan persetujuan khusus (*Enterprise Iris Payout*) yang rumit, tidak fleksibel, dan memiliki biaya per transfer terpisah yang membebani UMKM.
-* **Kebutuhan Menuin:** Sebagai platform SaaS F&B multi-outlet, Menuin membutuhkan arsitektur di mana setiap outlet/tenant dapat memiliki rekening penampungan *settlement* sendiri atau dana hasil transaksi QRIS dapat dipisahkan secara otomatis per outlet tanpa campur aduk.
-
-### 1.2 Mengapa DOKU Lebih Unggul untuk Menuin?
-1. **DOKU Sub-Account / Multi-Tenant Ready:** DOKU mendukung hierarki *Aggregator / Marketplace* yang memungkinkan Menuin mendaftarkan *Sub-Account* untuk tiap cabang/outlet.
-2. **Dukungan QRIS Dinamis Asli (*Native Dynamic QRIS*):** DOKU menyediakan API pembuatan QRIS Dinamis langsung per pesanan (*per transaction*) yang dapat di-scan oleh seluruh aplikasi perbankan (BCA, Mandiri, BRI, BNI) dan e-wallet (GoPay, OVO, Dana, ShopeePay).
-3. **MDR Standar Regulasi Bank Indonesia:** Mendukung tarif resmi BI sebesar **0.7%** dengan pemotongan langsung di awal (*Nett Settlement*), sehingga dana yang ditransfer ke rekening pemilik outlet sudah bersih.
+Dokumen acuan teknis integrasi DOKU di Menuin. Isinya mengikuti kode yang sudah
+ada di repo; bila ada perbedaan, **kode adalah sumber kebenaran** dan dokumen ini
+harus diperbarui.
 
 ---
 
-## 2. Arsitektur Integrasi DOKU QRIS Dinamis Menuin
+## 1. Keputusan arsitektur
+
+| Keputusan | Pilihan | Alasan |
+|---|---|---|
+| Model akun | **Platform + Sub Account** (Model A) | Menuin memegang satu kredensial DOKU (env). Tiap outlet cukup punya `doku_sub_account_id`, tidak ada secret per tenant di DB. |
+| Produk untuk pesanan online (storefront) | **DOKU Checkout** (hosted page, Non-SNAP) | Satu integrasi untuk QRIS, VA, e-wallet, dan kartu. |
+| POS QRIS dinamis | **SNAP QRIS MPM** (Fase 3) | Kasir butuh QR string mentah. Checkout hanya memberi URL. |
+| Lingkungan | **Sandbox dulu** sampai semua fase selesai | Pindah ke production cukup dengan mengganti env. |
+
+## 2. Status fase
+
+| Fase | Isi | Status |
+|---|---|---|
+| 1 | Modul `lib/payments`, migrasi DB, Checkout storefront, webhook, cron rekonsiliasi, aktivasi Sub Account | ✅ Selesai (menunggu uji live di sandbox) |
+| 2 | Subscription Menuin via DOKU (menggantikan `/api/checkout` + webhook Midtrans subscription) | ⏳ |
+| 3 | POS QRIS dinamis via SNAP (RSA key pair, token B2B) | ⏳ |
+| 4 | Rekonsiliasi settlement (fee riil), refund, dashboard review | ⏳ |
+
+## 3. Alur pembayaran (Fase 1)
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Pelanggan as Pelanggan / Kasir
-    participant Frontend as Menuin (Storefront / POS)
-    participant Backend as Menuin Backend (Next.js)
-    participant DOKU as DOKU API Gateway
-    participant Bank as Rekening Bank Pemilik Outlet
-
-    Pelanggan->>Frontend: Buat Pesanan (Grand Total: Rp 55.500)
-    Frontend->>Backend: Request Pembayaran QRIS DOKU
-    Backend->>DOKU: POST /qris-merchant-host/generate-qr (Sub-Account ID, Amount: 55500)
-    DOKU-->>Backend: Return QR String / QR Code URL
-    Backend-->>Frontend: Tampilkan QRIS Dinamis di Layar
-    Pelanggan->>DOKU: Scan QRIS via Mobile Banking / E-Wallet
-    Note over DOKU: Potong MDR 0.7% (Rp 389)<br>Net Settlement: Rp 55.111
-    DOKU->>Backend: Webhook Notification (Status: SUCCESS, Fee: 389, Net: 55111)
-    Backend->>Backend: Update DB (gatewayFee = 389, netAmount = 55111, status = PAID)
-    Backend-->>Frontend: WebSocket / SSE: Pembayaran Diterima (Pesanan Masuk Kitchen)
-    DOKU->>Bank: Payout Settlement H+1 (Rp 55.111)
+    actor P as Pelanggan
+    participant S as Storefront
+    participant B as Menuin Backend
+    participant D as DOKU
+    P->>S: Checkout → pilih Bayar Online
+    S->>B: startOnlinePayment(orderNumber, slug)
+    B->>B: Lock order, buat payment_attempt (CREATED), amount dari DB
+    B->>D: POST /checkout/v1/payment (invoice unik, sub account)
+    D-->>B: payment.url
+    B->>B: attempt → PENDING
+    B-->>S: redirect ke payment.url
+    P->>D: Bayar (QRIS / VA / e-wallet / kartu)
+    D->>B: POST /api/webhook/doku (signed)
+    B->>B: Verifikasi signature, dedupe, cek amount, state machine
+    B->>B: attempt → PAID, order → PAID + NEW/COMPLETED
+    D-->>P: Redirect ke /store/{slug}/status?order=…
+    Note over B: Cron /api/cron/payment-reconcile menjadi jaring pengaman jika webhook tidak sampai
 ```
 
----
+## 4. Peta kode
 
-## 3. Spesifikasi Teknis API DOKU (Jokul / DOKU API v2)
+| File | Fungsi |
+|---|---|
+| `apps/web/src/lib/payments/doku/config.ts` | Membaca env dan memvalidasinya dengan zod. Fail-closed: tanpa kredensial, pembayaran online nonaktif. |
+| `apps/web/src/lib/payments/doku/signature.ts` | Signature Non-SNAP (HMAC-SHA256 + Digest) dengan perbandingan constant-time. |
+| `apps/web/src/lib/payments/doku/client.ts` | HTTP client: timeout, `Request-Id` unik, error API vs network (outcome unknown). |
+| `apps/web/src/lib/payments/doku/checkout.ts` | Create Checkout dan Check Status. |
+| `apps/web/src/lib/payments/doku/sub-account.ts` | Membuat Sub Account outlet. |
+| `apps/web/src/lib/payments/doku/notification.ts` | Parsing header dan payload webhook. |
+| `apps/web/src/lib/payments/state-machine.ts` | Aturan transisi status (murni, diuji unit). |
+| `apps/web/src/lib/payments/payment.service.ts` | Create, apply outcome, sync, webhook, dan rekonsiliasi. Satu-satunya pintu ke DB pembayaran. |
+| `apps/web/src/app/api/webhook/doku/route.ts` | Endpoint notifikasi DOKU. |
+| `apps/web/src/app/api/cron/payment-reconcile/route.ts` | Endpoint cron rekonsiliasi. |
+| `apps/web/drizzle/doku_payments.sql` + `scripts/migrate-doku-payments.mjs` | Migrasi DB (idempotent). |
 
-### 3.1 Endpoint Server DOKU
-| Lingkungan | Base URL |
-| :--- | :--- |
-| **Sandbox (Uji Coba)** | `https://api-sandbox.doku.com` |
-| **Production (Live)** | `https://api.doku.com` |
+## 5. Spesifikasi DOKU yang dipakai
 
-### 3.2 Header Otentikasi & Keamanan (DOKU Signature)
-Setiap panggilan API ke DOKU wajib menyertakan 4 header standar:
-* `Client-Id`: Diberikan oleh DOKU Dashboard.
-* `Request-Id`: UUID unik untuk setiap request (mencegah *replay attack*).
-* `Request-Timestamp`: Format ISO 8601 UTC (contoh: `2026-09-28T05:00:00Z`).
-* `Signature`: `HMAC-SHA256` dari komponen request yang di-hash menggunakan `Secret-Key`.
+**Base URL:** sandbox `https://api-sandbox.doku.com`, production `https://api.doku.com`.
 
-Rumus Signature DOKU:
+**Signature Non-SNAP** (untuk request keluar maupun webhook masuk):
 ```
-ComponentToSign = "Client-Id:" + clientId + "\n" +
-                  "Request-Id:" + requestId + "\n" +
-                  "Request-Timestamp:" + requestTimestamp + "\n" +
-                  "Request-Target:" + targetPath + "\n" +
-                  "Digest:" + Base64(SHA256(requestBody));
-Signature = Base64(HMAC-SHA256(secretKey, ComponentToSign));
+Component = "Client-Id:{id}\nRequest-Id:{rid}\nRequest-Timestamp:{ts}\nRequest-Target:{path}"
+            + "\nDigest:{base64(sha256(rawBody))}"   (hanya jika ada body)
+Signature = "HMACSHA256=" + base64(HMAC-SHA256(secretKey, Component))
 ```
+- `Request-Timestamp`: ISO-8601 UTC tanpa milidetik, contoh `2026-09-30T08:00:00Z`.
+- Untuk webhook, `Request-Target` = **path notification URL milik Menuin** (`DOKU_NOTIFICATION_PATH`, default `/api/webhook/doku`).
+- Digest dihitung dari **body mentah**. Body tidak boleh di-parse lalu di-stringify ulang sebelum diverifikasi.
 
----
+**Endpoint:**
+| Aksi | Endpoint |
+|---|---|
+| Buat pembayaran | `POST /checkout/v1/payment`, lalu ambil `response.payment.url` |
+| Cek status | `GET /orders/v1/status/{invoice_number}`, lalu baca `transaction.status` |
+| Buat Sub Account | `POST /sac-merchant/v1/accounts`, lalu ambil `account.id` (`SAC-…`) |
+| Routing dana ke outlet | tambahkan `additional_info.account.id = "SAC-…"` di request Checkout |
 
-## 4. Pemetaan Skema Database Menuin untuk DOKU
+**Pemetaan status:** `SUCCESS → PAID`, `PENDING → PENDING`, `FAILED → FAILED`, `EXPIRED → EXPIRED`. Status lain diabaikan.
 
-Tabel database Menuin telah diperbarui dan siap digunakan:
+## 6. Data
 
-### 4.1 Tabel `tenants` (Kredensial Gateway Outlet)
-* `dokuClientId`: Client ID dari dasbor DOKU.
-* `dokuSecretKey`: Secret Key / Shared Key DOKU.
-* `dokuSubAccountId`: ID Sub-Account outlet (jika menggunakan fitur multi-tenant aggregator).
-* `dokuEnvironment`: `'sandbox'` (saat tes) atau `'production'` (saat live).
+**`payment_attempts`**: satu baris per percobaan bayar.
+- `invoice_number` unik per attempt, format `MNU-{time36}-{rand}`.
+- `amount` berupa integer rupiah.
+- Status: `CREATED → PENDING → PAID | FAILED | EXPIRED | CANCELED`.
+- Unique index parsial menjamin **maksimal satu attempt aktif per order**.
+- Kolom review: `requires_review` dan `review_reason` (`LATE_PAYMENT`, `ALREADY_PAID_OTHER_METHOD`, `ORDER_CLOSED_BEFORE_PAYMENT`, `AMOUNT_MISMATCH`, `SUB_ACCOUNT_MISMATCH`).
+- `fee_amount`/`net_amount` untuk sementara berupa estimasi (`fee_source = ESTIMATED`, 0,7%) sampai rekonsiliasi settlement di Fase 4.
 
-### 4.2 Tabel `transactions` (Pencatatan MDR & Saldo Riil)
-* `grandTotal`: Total yang dibayarkan pelanggan di struk (termasuk PB1 jika ada).
-* `gatewayFee`: Potongan biaya MDR gateway (0.7% atau nilai riil dari webhook DOKU).
-* `netAmount`: Saldo riil masuk kas/rekening (`grandTotal - gatewayFee`).
-* `paymentMethod`: `'QRIS'` / `'DOKU'`.
-* `paymentStatus`: `'PENDING'` $\rightarrow$ `'PAID'`.
+**`payment_webhook_events`**: log mentah notifikasi. Unik per `(provider, request_id)`, dipakai untuk dedupe, audit, dan replay.
 
----
+**`tenants`**: `doku_sub_account_id` dan `doku_sub_account_status`. Kolom `doku_client_id`, `doku_secret_key`, dan `doku_environment` adalah legacy dan tidak dipakai.
 
-## 5. Webhook Notification DOKU (`/api/webhook/doku`)
+**`transactions`**: `gateway_fee` dan `net_amount` baru diisi saat pembayaran online **sukses**. Saat order dibuat, nilainya 0 dan grand total.
 
-DOKU akan mengirimkan notifikasi HTTP POST ke URL Menuin saat pelanggan menyelesaikan pembayaran QRIS:
+## 7. Aturan penanganan kondisi
 
-```json
-{
-  "service": {
-    "id": "QRIS"
-  },
-  "acquirer": {
-    "id": "DOKU"
-  },
-  "order": {
-    "invoice_number": "TRX-244ae4d4-0012",
-    "amount": 55500
-  },
-  "transaction": {
-    "status": "SUCCESS",
-    "date": "2026-09-28T05:15:00Z",
-    "original_request_id": "req-uuid-1234"
-  },
-  "additional_info": {
-    "fee_amount": 389,
-    "net_amount": 55111,
-    "sub_account_id": "SUB-OUTLET-01"
-  }
-}
+| Kondisi | Perilaku |
+|---|---|
+| Pelanggan klik "Bayar" berkali-kali atau paralel | Row order dikunci dan attempt aktif dipakai ulang. Tidak pernah ada invoice ganda. |
+| Webhook dikirim ulang (Request-Id sama) | 200 `duplicate`, tanpa efek. |
+| Webhook sukses dengan Request-Id baru untuk invoice yang sudah PAID | `NO_CHANGE` (state machine). |
+| Webhook dan cek status datang bersamaan | Lock baris `transactions` lalu `payment_attempts` (urutan tetap), sehingga hanya satu yang mencatat. |
+| Amount di webhook ≠ amount attempt | **Tidak** ditandai PAID, diberi flag `AMOUNT_MISMATCH`. |
+| Signature salah atau Client-Id beda | 401, tidak menyentuh DB. |
+| Invoice tidak dikenal | 200 dan dicatat (agar DOKU tidak retry tanpa henti). |
+| Error DB saat memproses webhook | 500, event belum ditandai processed, DOKU akan retry. |
+| Bayar setelah attempt expired atau pelanggan pindah ke tunai | Tetap dicatat PAID, `paymentMethod` kembali `ONLINE`, flag `LATE_PAYMENT`. |
+| Order sudah dibayar tunai lalu uang online masuk | Order tidak diubah, attempt diberi flag `ALREADY_PAID_OTHER_METHOD` (perlu refund manual). |
+| Order dibatalkan lalu uang masuk | `paymentStatus = PAID`, status order tetap batal, flag `ORDER_CLOSED_BEFORE_PAYMENT`. |
+| Timeout saat create ke DOKU | Attempt `FAILED` dengan catatan `[outcome unknown]`, pelanggan bisa coba lagi. |
+| Webhook tidak pernah datang | Cron memanggil Check Status. Kalau lewat batas waktu + 30 menit, attempt ditandai `EXPIRED`. |
+| Attempt macet di `CREATED` lebih dari 5 menit | Cron menandainya `FAILED`. |
+| Halaman status di-polling pelanggan | Cek ke DOKU dibatasi minimal 15 detik per attempt. Tombol kasir dibatasi 5 detik. |
+| Callback URL | Dibangun di server dari `APP_BASE_URL` (bukan dari client), untuk mencegah open redirect. |
+
+## 8. Konfigurasi (env server)
+
+| Variabel | Wajib | Keterangan |
+|---|---|---|
+| `DOKU_ENV` | ✅ | `sandbox` / `production` |
+| `DOKU_CLIENT_ID` | ✅ | Client ID dari dashboard DOKU (`BRN-…`) |
+| `DOKU_SECRET_KEY` | ✅ | Secret Key (`SK-…`) |
+| `DOKU_NOTIFICATION_PATH` | – | Default `/api/webhook/doku` |
+| `DOKU_REQUIRE_SUB_ACCOUNT` | – | Default `true` di production, `false` di sandbox |
+| `DOKU_PAYMENT_DUE_MINUTES` | – | Default `15` |
+| `DOKU_ESTIMATED_MDR_PERCENT` | – | Default `0.7` |
+| `APP_BASE_URL` | disarankan | Origin publik, mis. `https://app.menuin.id` |
+| `CRON_SECRET` | ✅ untuk cron | Header `Authorization: Bearer <CRON_SECRET>` |
+
+Kredensial **tidak boleh** di-commit, ditempel di chat, atau disimpan di DB. Gunakan secret manager atau env deployment.
+
+## 9. Setup sandbox
+
+1. Isi env di atas di deployment (dan di `.env.local` untuk dev).
+2. Jalankan migrasi: `DATABASE_URL=… npm run db:migrate:doku --workspace=web`.
+3. Di dashboard DOKU sandbox, set **Notification URL** ke `https://<domain>/api/webhook/doku`. Untuk dev lokal, pakai tunnel HTTPS (ngrok atau cloudflared).
+4. Minta DOKU mengaktifkan **Checkout** dan **Sub Account** di akun sandbox kalau belum aktif.
+5. Jadwalkan cron `GET /api/cron/payment-reconcile` setiap 5 menit dengan header Authorization. Bisa lewat Vercel Cron (paket Pro), Supabase `pg_cron` + `pg_net`, atau scheduler eksternal.
+6. Sebagai OWNER: buka **Pengaturan → Pembayaran Online → Aktifkan Akun Pembayaran** (membuat Sub Account), lalu aktifkan **Katalog → Pemesanan → Pembayaran Non-Tunai**.
+
+## 10. Checklist uji sandbox (end-to-end)
+
+- [ ] Bayar sukses via simulator (QRIS dan VA): order menjadi PAID dan masuk antrean dapur, fee estimasi tercatat.
+- [ ] Klik "Bayar Sekarang" berulang: URL yang sama dipakai ulang.
+- [ ] Biarkan expired: attempt EXPIRED, bayar ulang membuat invoice baru.
+- [ ] Pindah ke "Bayar di Kasir" lalu tetap bayar online: PAID dengan flag `LATE_PAYMENT`.
+- [ ] Kirim ulang notifikasi dari dashboard DOKU: tidak ada pencatatan ganda.
+- [ ] Kirim notifikasi palsu (signature salah): 401.
+- [ ] Matikan webhook (URL salah) lalu jalankan cron: status tetap tersinkron.
+- [ ] Dana masuk ke Sub Account outlet yang benar (cek `additional_info.account.id`).
+
+## 11. Pengujian otomatis
+
+```bash
+npm test --workspace=web                                   # unit test (tanpa DB)
+TEST_DATABASE_URL=postgres://… npm test --workspace=web    # + integration test ke Postgres uji
 ```
+Integration test membutuhkan database **uji** yang sudah berisi skema dan migrasi. Jangan arahkan ke DB produksi.
 
-### Logika Penanganan Webhook:
-1. Verifikasi header `Signature` dari DOKU menggunakan `tenant.dokuSecretKey`.
-2. Jika status adalah `SUCCESS`:
-   * Set `paymentStatus = 'PAID'`.
-   * Set `gatewayFee = payload.additional_info.fee_amount` (atau `Math.round(amount * 0.007)`).
-   * Set `netAmount = payload.additional_info.net_amount` (atau `amount - gatewayFee`).
-   * Teruskan pesanan ke antrean kasir / dapur (*kitchen display*).
-   * Catat bukti di tabel `payments`.
+## 12. Go-live (setelah semua fase lulus di sandbox)
 
----
-
-## 6. Checklist Pendaftaran & Aktivasi Akun DOKU
-
-Ketika Anda siap mendaftar ke DOKU, berikut tahapan yang perlu dilalui:
-
-1. **Pendaftaran Akun Bisnis DOKU:**
-   * Kunjungi portal pendaftaran: [doku.com/bisnis](https://www.doku.com).
-   * Pilih tipe akun: **Bisnis / Korporasi / Platform**.
-2. **Dokumen Persyaratan:**
-   * KTP Pemilik / Direktur.
-   * NPWP Pribadi atau Badan Usaha.
-   * NIB (Nomor Induk Berusaha) / Izin Usaha Restoran/F&B.
-   * Buku Tabungan / Rekening Koran untuk pencairan dana settlement.
-3. **Pengajuan Fitur Sub-Account & QRIS:**
-   * Ajukan permohonan fitur **QRIS Dinamis API** dan **Sub-Account Aggregator** kepada Account Manager DOKU.
-4. **Penyambungan ke Menuin:**
-   * Salin `Client ID` dan `Secret Key` dari DOKU Dashboard.
-   * Masukkan ke menu **Pengaturan Toko &rarr; Integrasi Pembayaran** di Menuin.
-   * Masukkan Notification URL Webhook di DOKU Dashboard:  
-     `https://app.menuin.id/api/webhook/doku`.
-5. **Uji Coba Sandbox:**
-   * Lakukan simulasi scan QRIS menggunakan simulator pembayaran DOKU.
-   * Verifikasi bahwa `gatewayFee` (0.7%) dan `netAmount` tercatat sempurna pada laporan Menuin.
-6. **Aktivasi Production (Live):**
-   * Ubah environment menjadi `production`.
+1. Lengkapi dokumen legal dan kontrak platform dengan DOKU.
+2. Buat kredensial production **baru**. Jangan pakai ulang kredensial yang pernah dibagikan.
+3. Ganti env ke production (`DOKU_ENV=production`, key production). `DOKU_REQUIRE_SUB_ACCOUNT` otomatis `true`.
+4. Daftarkan Notification URL production, lalu buat Sub Account production untuk tiap outlet.
+5. Pantau log `scope=payments` dan attempt dengan `requires_review = true`.

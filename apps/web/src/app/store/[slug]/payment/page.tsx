@@ -3,9 +3,8 @@
 import { use, useEffect, useState, useRef, useCallback } from "react";
 import { getPublicOrderByNumber } from "@/lib/actions/orders";
 import {
-  generatePaymentToken,
+  startOnlinePayment,
   updateOrderPaymentToCash,
-  verifyOnlinePaymentStatus,
 } from "@/lib/actions/public-catalog";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -20,13 +19,6 @@ import {
 import Link from "next/link";
 import { formatCurrency } from "@/lib/utils/format";
 import { toast } from "sonner";
-import Script from "next/script";
-
-declare global {
-  interface Window {
-    snap: any;
-  }
-}
 
 function PaymentItemThumbnail({
   src,
@@ -76,7 +68,6 @@ export default function OnlinePaymentPage({
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSwitchingToCash, setIsSwitchingToCash] = useState(false);
   const [error, setError] = useState("");
-  const [snapReady, setSnapReady] = useState(false);
 
   const hasAutoStarted = useRef(false);
 
@@ -139,74 +130,42 @@ export default function OnlinePaymentPage({
     setIsProcessing(true);
 
     try {
-      const returnUrl = `${window.location.origin}/store/${unwrappedParams.slug}/status?order=${encodeURIComponent(
-        orderNumber
-      )}`;
-      const res = await generatePaymentToken(orderNumber, unwrappedParams.slug, returnUrl);
+      const res = await startOnlinePayment(orderNumber, unwrappedParams.slug);
 
-      if (res.error) {
-        toast.error(res.error);
+      if (!res.success || !res.paymentUrl) {
+        toast.error(res.error || "Gagal memproses pembayaran online.");
         setIsProcessing(false);
         return;
       }
 
-      if (res.snapToken && window.snap) {
-        window.snap.pay(res.snapToken, {
-          onSuccess: async function () {
-            toast.loading("Memverifikasi pembayaran...");
-            const verifyRes = await verifyOnlinePaymentStatus(orderNumber, unwrappedParams.slug);
-            toast.dismiss();
-            if (verifyRes.success && verifyRes.paymentStatus === "PAID") {
-              toast.success("Pembayaran berhasil dikonfirmasi!");
-            } else {
-              toast.info("Pembayaran sedang diproses, silakan cek status berkala.");
-            }
-            window.location.href = returnUrl;
-          },
-          onPending: function () {
-            toast.info("Menunggu penyelesaian pembayaran Anda");
-            window.location.href = returnUrl;
-          },
-          onError: function () {
-            toast.error("Pembayaran gagal atau dibatalkan");
-            setIsProcessing(false);
-          },
-          onClose: function () {
-            toast.info("Jendela pembayaran ditutup. Tekan tombol di bawah untuk membuka kembali.");
-            setIsProcessing(false);
-          },
-        });
-      } else {
-        toast.error("Sistem pembayaran belum siap atau pesanan tidak valid.");
-        setIsProcessing(false);
-      }
+      // Halaman pembayaran DOKU (QRIS, VA, e-wallet, kartu). Setelah selesai,
+      // DOKU mengarahkan kembali ke halaman status; status final tetap dari webhook.
+      window.location.assign(res.paymentUrl);
     } catch (err) {
       toast.error("Gagal memproses pembayaran online.");
       setIsProcessing(false);
     }
   }, [orderNumber, unwrappedParams.slug, isProcessing]);
 
-  // Auto trigger Midtrans Snap popup as soon as order and snap.js are ready
+  // Arahkan otomatis ke halaman pembayaran DOKU sekali saja per pesanan per sesi,
+  // agar tombol "kembali" dari DOKU tidak memicu redirect berulang.
   useEffect(() => {
-    if (
-      order &&
-      order.paymentMethod === "ONLINE" &&
-      snapReady &&
-      !hasAutoStarted.current &&
-      !isProcessing
-    ) {
-      hasAutoStarted.current = true;
-      const timer = setTimeout(() => {
-        handlePayOnline();
-      }, 300);
-      return () => clearTimeout(timer);
-    }
-  }, [order, snapReady, handlePayOnline, isProcessing]);
+    if (!order || order.paymentMethod !== "ONLINE" || hasAutoStarted.current || isProcessing) return;
+    hasAutoStarted.current = true;
 
-  const snapScriptUrl =
-    order?.tenantSettings?.midtransEnvironment === "production"
-      ? "https://app.midtrans.com/snap/snap.js"
-      : "https://app.sandbox.midtrans.com/snap/snap.js";
+    const storageKey = `menuin_payment_autostart_${order.orderNumber}`;
+    try {
+      if (sessionStorage.getItem(storageKey)) return;
+      sessionStorage.setItem(storageKey, "1");
+    } catch {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      handlePayOnline();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [order, handlePayOnline, isProcessing]);
 
   if (isLoading) {
     return (
@@ -240,15 +199,6 @@ export default function OnlinePaymentPage({
 
   return (
     <>
-      {order?.tenantSettings?.midtransClientKey && (
-        <Script
-          src={snapScriptUrl}
-          data-client-key={order.tenantSettings.midtransClientKey}
-          strategy="afterInteractive"
-          onReady={() => setSnapReady(true)}
-        />
-      )}
-
       {/* Floating Payment Top Navigation Header (Edge-to-edge with shadow) */}
       <header className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.08)] pt-[env(safe-area-inset-top)]">
         <div className="max-w-md mx-auto px-4 h-14 sm:h-16 flex items-center justify-between">

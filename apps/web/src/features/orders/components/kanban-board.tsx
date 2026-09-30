@@ -589,9 +589,9 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
     }
   };
 
-  const handleCheckMidtransPayment = async (order: Order) => {
+  const handleCheckOnlinePayment = async (order: Order) => {
     setSyncingOrderId(order.id);
-    const toastId = toast.loading("Memeriksa status pembayaran di Midtrans...");
+    const toastId = toast.loading("Memeriksa status pembayaran online...");
     try {
       const res = await syncOrderPaymentStatus(order.id);
       toast.dismiss(toastId);
@@ -602,7 +602,7 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
           setSelectedOrder(prev => prev ? { ...prev, paymentStatus: 'PAID', status: res.status || 'NEW' } : null);
         }
       } else if (res.success && !res.isPaid) {
-        toast.info("Belum ada pembayaran lunas yang tercatat di Midtrans.");
+        toast.info("Belum ada pembayaran online yang lunas untuk pesanan ini.");
       } else {
         toast.error(res.error || "Gagal sinkronisasi pembayaran.");
       }
@@ -858,18 +858,18 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
                           variant="outline"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleCheckMidtransPayment(order);
+                            handleCheckOnlinePayment(order);
                           }}
                           disabled={syncingOrderId === order.id}
                           className="h-7 text-[11px] px-2 border-blue-200 hover:bg-blue-50 text-blue-700 dark:border-blue-900 dark:text-blue-300"
-                          title="Periksa status pembayaran Midtrans"
+                          title="Periksa status pembayaran online"
                         >
                           {syncingOrderId === order.id ? (
                             <Loader2 className="w-3 h-3 animate-spin mr-1" />
                           ) : (
                             <RefreshCw className="w-3 h-3 mr-1" />
                           )}
-                          Cek Midtrans
+                          Cek Pembayaran
                         </Button>
                       )}
 
@@ -1409,12 +1409,12 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => handleCheckMidtransPayment(selectedOrder)}
+                      onClick={() => handleCheckOnlinePayment(selectedOrder)}
                       disabled={isUpdatingStatus || syncingOrderId === selectedOrder.id}
                       className="w-full h-9 text-xs border-blue-200 text-blue-700 bg-blue-50/50 hover:bg-blue-100/60 font-semibold gap-1.5 disabled:opacity-50"
                     >
                       {syncingOrderId === selectedOrder.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-                      Periksa Status Pembayaran Midtrans
+                      Periksa Status Pembayaran Online
                     </Button>
                   )}
 

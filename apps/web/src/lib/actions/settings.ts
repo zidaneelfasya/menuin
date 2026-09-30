@@ -2,9 +2,29 @@
 
 import { db } from '@/lib/db';
 import { tenants } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull, lt, ne, or } from 'drizzle-orm';
 import { getCurrentUser } from './auth';
 import { revalidatePath } from 'next/cache';
+import { DokuApiError } from '@/lib/payments/doku/client';
+import { getDokuConfig } from '@/lib/payments/doku/config';
+import { createSubAccount } from '@/lib/payments/doku/sub-account';
+
+function getPaymentGatewayInfo(tenant: typeof tenants.$inferSelect) {
+  let config: ReturnType<typeof getDokuConfig> | null = null;
+  try {
+    config = getDokuConfig();
+  } catch {
+    config = null;
+  }
+  return {
+    provider: 'DOKU' as const,
+    platformConfigured: config !== null,
+    environment: config?.environment ?? null,
+    subAccountRequired: config?.requireSubAccount ?? true,
+    subAccountId: tenant.dokuSubAccountId,
+    subAccountStatus: tenant.dokuSubAccountStatus,
+  };
+}
 
 export async function getTenantSettings() {
   try {
@@ -23,7 +43,16 @@ export async function getTenantSettings() {
       return { success: false, error: 'Tenant tidak ditemukan' };
     }
 
-    return { success: true, data: tenant };
+    // Kolom kredensial tidak pernah dikirim ke browser.
+    const {
+      midtransServerKey: _midtransServerKey,
+      midtransClientKey: _midtransClientKey,
+      dokuClientId: _dokuClientId,
+      dokuSecretKey: _dokuSecretKey,
+      ...safeTenant
+    } = tenant;
+
+    return { success: true, data: { ...safeTenant, paymentGateway: getPaymentGatewayInfo(tenant) } };
   } catch (error) {
     console.error('Error fetching tenant settings:', error);
     return { success: false, error: 'Gagal mengambil data pengaturan' };
@@ -158,34 +187,88 @@ export async function updateStoreGeneralSettings(formData: FormData) {
   }
 }
 
-export async function updatePaymentIntegration(formData: FormData) {
+const SUB_ACCOUNT_PROVISIONING = 'PROVISIONING';
+const PROVISIONING_STALE_MS = 2 * 60_000;
+
+/**
+ * Membuat DOKU Sub Account untuk outlet ini (Model Platform). Hanya OWNER.
+ * Dijaga agar klik ganda tidak membuat dua Sub Account.
+ */
+export async function activateDokuSubAccount() {
   try {
     const user = await getCurrentUser();
     if (!user || !user.tenantId) return { success: false, error: 'Unauthorized' };
-
     if (user.role !== 'OWNER' && (user.role as string) !== 'SYSTEM_ADMIN') {
-      return { success: false, error: 'Hanya OWNER yang memiliki izin untuk mengubah kredensial pembayaran Midtrans.' };
+      return { success: false, error: 'Hanya OWNER yang dapat mengaktifkan akun pembayaran.' };
     }
 
-    const midtransEnvironment = formData.get('midtransEnvironment') as string;
-    const midtransServerKey = formData.get('midtransServerKey') as string;
-    const midtransClientKey = formData.get('midtransClientKey') as string;
+    try {
+      getDokuConfig();
+    } catch {
+      return { success: false, error: 'Payment gateway platform belum dikonfigurasi. Hubungi tim Menuin.' };
+    }
 
-    await db.update(tenants)
-      .set({
-        midtransEnvironment: midtransEnvironment || 'sandbox',
-        midtransServerKey: midtransServerKey || null,
-        midtransClientKey: midtransClientKey || null,
-        updatedAt: new Date(),
-      })
-      .where(eq(tenants.id, user.tenantId));
+    const [tenant] = await db.select().from(tenants).where(eq(tenants.id, user.tenantId)).limit(1);
+    if (!tenant) return { success: false, error: 'Tenant tidak ditemukan' };
+    if (tenant.dokuSubAccountId) return { success: true, subAccountId: tenant.dokuSubAccountId };
 
-    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
-    revalidatePath('/store/[slug]', 'layout');
-    return { success: true };
+    // Klaim "lock" di DB: hanya satu request yang boleh membuat Sub Account.
+    const staleBefore = new Date(Date.now() - PROVISIONING_STALE_MS);
+    const claimed = await db
+      .update(tenants)
+      .set({ dokuSubAccountStatus: SUB_ACCOUNT_PROVISIONING, updatedAt: new Date() })
+      .where(
+        and(
+          eq(tenants.id, tenant.id),
+          isNull(tenants.dokuSubAccountId),
+          or(
+            isNull(tenants.dokuSubAccountStatus),
+            ne(tenants.dokuSubAccountStatus, SUB_ACCOUNT_PROVISIONING),
+            lt(tenants.updatedAt, staleBefore)
+          )
+        )
+      )
+      .returning({ id: tenants.id });
+
+    if (claimed.length === 0) {
+      return { success: false, error: 'Aktivasi sedang diproses. Muat ulang halaman dalam beberapa saat.' };
+    }
+
+    try {
+      const result = await createSubAccount({
+        name: tenant.name,
+        email: user.email,
+      });
+
+      await db
+        .update(tenants)
+        .set({
+          dokuSubAccountId: result.accountId,
+          dokuSubAccountStatus: result.status ?? 'ACTIVE',
+          updatedAt: new Date(),
+        })
+        .where(eq(tenants.id, tenant.id));
+
+      if (user && typeof user === 'object' && 'outletKey' in user) { revalidatePath(`/outlet/${user.outletKey}`, 'layout'); }
+      return { success: true, subAccountId: result.accountId };
+    } catch (error) {
+      await db
+        .update(tenants)
+        .set({ dokuSubAccountStatus: 'FAILED', updatedAt: new Date() })
+        .where(eq(tenants.id, tenant.id));
+
+      console.error(JSON.stringify({
+        scope: 'payments',
+        event: 'sub_account_create_failed',
+        tenantId: tenant.id,
+        status: error instanceof DokuApiError ? error.status : null,
+        error: error instanceof Error ? error.message : String(error),
+      }));
+      return { success: false, error: 'Gagal membuat akun pembayaran di DOKU. Silakan coba lagi.' };
+    }
   } catch (error) {
-    console.error('Error updating payment integration settings:', error);
-    return { success: false, error: 'Gagal menyimpan integrasi pembayaran' };
+    console.error('Error activating DOKU sub account:', error);
+    return { success: false, error: 'Gagal mengaktifkan akun pembayaran' };
   }
 }
 

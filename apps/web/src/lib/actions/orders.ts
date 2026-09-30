@@ -5,6 +5,8 @@ import { transactions, transactionItems, products, tenants } from "@/lib/db/sche
 import { eq, and, or, desc, inArray, ilike } from "drizzle-orm";
 import { getCurrentUser } from "./auth";
 import { revalidatePath } from "next/cache";
+import { isOnlinePaymentAvailable } from "@/lib/payments/availability";
+import { syncOrderPayment } from "@/lib/payments/payment.service";
 
 import { OrderDto } from "@menuin/types";
 
@@ -64,77 +66,24 @@ export async function syncOrderPaymentStatus(orderId: string) {
   if (!user || !user.tenantId) throw new Error("Unauthorized");
 
   try {
-    const [order] = await db.select().from(transactions).where(and(eq(transactions.id, orderId), eq(transactions.tenantId, user.tenantId))).limit(1);
-    if (!order) return { error: "Pesanan tidak ditemukan." };
-
-    if (order.paymentStatus === 'PAID') {
-      return { success: true, paymentStatus: 'PAID', status: order.status };
-    }
-
-    const [tenant] = await db.select().from(tenants).where(eq(tenants.id, user.tenantId)).limit(1);
-    if (!tenant || !tenant.midtransServerKey) {
-      return { error: "Midtrans Server Key belum dikonfigurasi pada Pengaturan Toko." };
-    }
-
-    const authString = Buffer.from(`${tenant.midtransServerKey}:`).toString('base64');
-    const apiUrl = tenant.midtransEnvironment === 'production' 
-      ? `https://api.midtrans.com/v2/${order.id}/status`
-      : `https://api.sandbox.midtrans.com/v2/${order.id}/status`;
-
-    const response = await fetch(apiUrl, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Authorization': `Basic ${authString}`
-      },
-      cache: 'no-store'
-    });
-
-    if (!response.ok) {
-      return { error: "Pembayaran belum tercatat di Midtrans / belum dibayar oleh pelanggan." };
-    }
-
-    const midtransData = await response.json();
-    const transactionStatus = midtransData.transaction_status;
-    const fraudStatus = midtransData.fraud_status;
-
-    let newStatus = order.status;
-    let newPaymentStatus = order.paymentStatus || 'PENDING';
-
-    if (transactionStatus === 'capture') {
-      if (fraudStatus === 'accept') {
-        newPaymentStatus = 'PAID';
-        if (order.status === 'PENDING') newStatus = 'NEW';
-      }
-    } else if (transactionStatus === 'settlement') {
-      newPaymentStatus = 'PAID';
-      if (order.status === 'PENDING') newStatus = 'NEW';
-    } else if (transactionStatus === 'cancel' || transactionStatus === 'deny' || transactionStatus === 'expire') {
-      newPaymentStatus = 'CANCELED';
-      newStatus = 'FAILED';
-    }
-
-    if (newStatus !== order.status || newPaymentStatus !== order.paymentStatus) {
-      await db.update(transactions)
-        .set({ status: newStatus, paymentStatus: newPaymentStatus })
-        .where(eq(transactions.id, order.id));
-    }
+    // Tombol "Cek Status" kasir: interval minimum lebih pendek dari polling pelanggan.
+    const synced = await syncOrderPayment({ tenantId: user.tenantId, transactionId: orderId, minIntervalMs: 5_000 });
+    if (!synced) return { error: "Pesanan tidak ditemukan." };
 
     if (user?.outletKey) {
       revalidatePath(`/outlet/${user.outletKey}/orders`, "page");
       revalidatePath(`/outlet/${user.outletKey}`, "layout");
     }
 
-    return { 
-      success: true, 
-      paymentStatus: newPaymentStatus, 
-      status: newStatus,
-      isPaid: newPaymentStatus === 'PAID'
+    return {
+      success: true,
+      paymentStatus: synced.paymentStatus,
+      status: synced.status,
+      isPaid: synced.paymentStatus === 'PAID'
     };
   } catch (error: any) {
-    console.error("Failed to sync Midtrans payment status:", error);
-    return { error: error.message || "Gagal sinkronisasi status pembayaran." };
+    console.error("Failed to sync payment status:", error);
+    return { error: "Gagal sinkronisasi status pembayaran." };
   }
 }
 
@@ -301,9 +250,7 @@ export async function getPublicOrderByNumber(orderNumber: string, tenantSlug: st
     ...tx,
     items,
     tenantSettings: {
-      midtransClientKey: tenant.midtransClientKey,
-      midtransEnvironment: tenant.midtransEnvironment,
-      onlinePaymentEnabled: tenant.onlinePaymentEnabled,
+      onlinePaymentEnabled: isOnlinePaymentAvailable(tenant),
       primaryColor: tenant.primaryColor,
     }
   };

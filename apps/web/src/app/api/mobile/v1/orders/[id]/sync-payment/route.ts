@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { transactions, tenants } from '@/lib/db/schema';
+import { transactions } from '@/lib/db/schema';
+import { syncOrderPayment } from '@/lib/payments/payment.service';
 import { eq, and } from 'drizzle-orm';
 import * as jwt from 'jsonwebtoken';
 
@@ -59,83 +60,19 @@ export async function POST(
       });
     }
 
-    const [tenant] = await db
-      .select()
-      .from(tenants)
-      .where(eq(tenants.id, tenantId))
-      .limit(1);
-
-    if (!tenant || !tenant.midtransServerKey) {
-      return NextResponse.json(
-        { error: 'Midtrans Server Key belum dikonfigurasi pada Pengaturan Toko.' },
-        { status: 400 }
-      );
-    }
-
-    const authString = Buffer.from(`${tenant.midtransServerKey}:`).toString('base64');
-    const apiUrl =
-      tenant.midtransEnvironment === 'production'
-        ? `https://api.midtrans.com/v2/${order.id}/status`
-        : `https://api.sandbox.midtrans.com/v2/${order.id}/status`;
-
-    const response = await fetch(apiUrl, {
-      method: 'GET',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        Authorization: `Basic ${authString}`,
-      },
-      cache: 'no-store',
-    });
-
-    if (!response.ok) {
-      return NextResponse.json(
-        { error: 'Pembayaran belum tercatat di Midtrans / belum dibayar oleh pelanggan.' },
-        { status: 400 }
-      );
-    }
-
-    const midtransData = await response.json();
-    const transactionStatus = midtransData.transaction_status;
-    const fraudStatus = midtransData.fraud_status;
-
-    let newStatus = order.status;
-    let newPaymentStatus = order.paymentStatus || 'PENDING';
-
-    if (transactionStatus === 'capture') {
-      if (fraudStatus === 'accept') {
-        newPaymentStatus = 'PAID';
-        if (order.status === 'PENDING') newStatus = 'NEW';
-      }
-    } else if (transactionStatus === 'settlement') {
-      newPaymentStatus = 'PAID';
-      if (order.status === 'PENDING') newStatus = 'NEW';
-    } else if (
-      transactionStatus === 'cancel' ||
-      transactionStatus === 'deny' ||
-      transactionStatus === 'expire'
-    ) {
-      newPaymentStatus = 'CANCELED';
-      newStatus = 'FAILED';
-    }
-
-    if (newStatus !== order.status || newPaymentStatus !== order.paymentStatus) {
-      await db
-        .update(transactions)
-        .set({ status: newStatus, paymentStatus: newPaymentStatus })
-        .where(eq(transactions.id, order.id));
-    }
+    const synced = await syncOrderPayment({ tenantId, transactionId: order.id, minIntervalMs: 5_000 });
+    const paymentStatus = synced?.paymentStatus ?? order.paymentStatus;
 
     return NextResponse.json({
       success: true,
-      paymentStatus: newPaymentStatus,
-      status: newStatus,
-      isPaid: newPaymentStatus === 'PAID',
+      paymentStatus,
+      status: synced?.status ?? order.status,
+      isPaid: paymentStatus === 'PAID',
     });
   } catch (error: any) {
     console.error('Mobile Orders API Sync Payment Error:', error);
     return NextResponse.json(
-      { error: error?.message || 'Gagal sinkronisasi status pembayaran Midtrans.' },
+      { error: 'Gagal sinkronisasi status pembayaran.' },
       { status: 500 }
     );
   }

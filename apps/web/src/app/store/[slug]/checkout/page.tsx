@@ -4,6 +4,7 @@ import { tenants, products, productModifierGroups, modifierGroups } from "@/lib/
 import { eq, and } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { CheckoutClient } from "./checkout-client";
+import { isOnlinePaymentAvailable } from "@/lib/payments/availability";
 
 import { connection } from "next/server";
 
@@ -31,9 +32,7 @@ export default async function CheckoutPage({
     customerNameRequired: tenant.customerNameRequired,
     customerPhoneRequired: tenant.customerPhoneRequired,
     tableNumberRequired: tenant.tableNumberRequired,
-    midtransEnvironment: tenant.midtransEnvironment,
-    midtransClientKey: tenant.midtransClientKey,
-    onlinePaymentEnabled: tenant.onlinePaymentEnabled,
+    onlinePaymentEnabled: isOnlinePaymentAvailable(tenant),
     taxRate: parseFloat(tenant.posTaxRate || '0'),
     taxName: tenant.taxName || 'Pajak (PB1)',
     serviceChargeRate: parseFloat(tenant.serviceChargeRate || '0'),

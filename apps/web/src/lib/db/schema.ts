@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer, decimal, boolean, uuid, uniqueIndex, unique, foreignKey, pgEnum, jsonb, pgSchema } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, integer, decimal, boolean, uuid, uniqueIndex, unique, foreignKey, pgEnum, jsonb, pgSchema, index, check } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
 
 // Supabase Auth Schema Reference
@@ -69,7 +69,10 @@ export const tenants = pgTable('tenants', {
   // DOKU Payment Gateway Settings (Sub-Account & QRIS Dinamis)
   dokuClientId: text('doku_client_id'),
   dokuSecretKey: text('doku_secret_key'),
+  // Model Platform: kredensial DOKU ada di env platform; tenant cukup punya Sub Account.
+  // dokuClientId/dokuSecretKey/dokuEnvironment tidak dipakai lagi (legacy).
   dokuSubAccountId: text('doku_sub_account_id'),
+  dokuSubAccountStatus: text('doku_sub_account_status'),
   dokuEnvironment: text('doku_environment').default('sandbox'),
 
   // Custom Receipt & Kitchen Ticket Settings (OWNER / MANAGER)
@@ -492,6 +495,75 @@ export const payments = pgTable('payments', {
     })
   };
 });
+
+// Satu baris per percobaan pembayaran ke gateway. Satu order bisa punya beberapa
+// attempt (mis. attempt pertama expired lalu pelanggan bayar ulang).
+export const paymentAttempts = pgTable('payment_attempts', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
+  transactionId: uuid('transaction_id').notNull(),
+  provider: text('provider').notNull(), // DOKU
+  product: text('product').notNull(), // CHECKOUT, SNAP_QRIS
+  environment: text('environment').notNull(), // sandbox, production
+  invoiceNumber: text('invoice_number').notNull(),
+  amount: integer('amount').notNull(), // rupiah, bilangan bulat
+  status: text('status').notNull().default('CREATED'), // CREATED, PENDING, PAID, FAILED, EXPIRED, CANCELED
+  subAccountId: text('sub_account_id'),
+  paymentUrl: text('payment_url'),
+  providerReference: text('provider_reference'),
+  providerStatus: text('provider_status'),
+  paymentChannel: text('payment_channel'),
+  expiresAt: timestamp('expires_at', { withTimezone: true }),
+  paidAt: timestamp('paid_at', { withTimezone: true }),
+  feeAmount: integer('fee_amount'),
+  netAmount: integer('net_amount'),
+  feeSource: text('fee_source'), // ESTIMATED, SETTLEMENT
+  requiresReview: boolean('requires_review').default(false).notNull(),
+  reviewReason: text('review_reason'),
+  lastError: text('last_error'),
+  lastCheckedAt: timestamp('last_checked_at', { withTimezone: true }),
+  rawCreateResponse: jsonb('raw_create_response'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => {
+  return {
+    transactionFk: foreignKey({
+      name: 'payment_attempts_transaction_fk',
+      columns: [table.tenantId, table.transactionId],
+      foreignColumns: [transactions.tenantId, transactions.id]
+    }),
+    invoiceUnique: uniqueIndex('payment_attempts_provider_invoice_uq').on(table.provider, table.invoiceNumber),
+    // Maksimal satu attempt aktif per order: mencegah invoice ganda saat pelanggan klik berkali-kali.
+    oneActivePerTransaction: uniqueIndex('payment_attempts_one_active_per_tx_uq')
+      .on(table.transactionId)
+      .where(sql`status in ('CREATED', 'PENDING')`),
+    statusIdx: index('payment_attempts_status_created_idx').on(table.status, table.createdAt),
+    amountCheck: check('payment_attempts_amount_check', sql`${table.amount} > 0`),
+    statusCheck: check(
+      'payment_attempts_status_check',
+      sql`${table.status} in ('CREATED', 'PENDING', 'PAID', 'FAILED', 'EXPIRED', 'CANCELED')`
+    ),
+  };
+}).enableRLS();
+
+// Log mentah setiap notifikasi gateway: audit, dedupe, dan bahan replay/debug.
+export const paymentWebhookEvents = pgTable('payment_webhook_events', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  provider: text('provider').notNull(),
+  requestId: text('request_id').notNull(),
+  invoiceNumber: text('invoice_number'),
+  signatureValid: boolean('signature_valid').notNull(),
+  headers: jsonb('headers'),
+  rawBody: text('raw_body').notNull(),
+  processedAt: timestamp('processed_at', { withTimezone: true }),
+  result: text('result'),
+  error: text('error'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => {
+  return {
+    requestUnique: uniqueIndex('payment_webhook_events_provider_request_uq').on(table.provider, table.requestId),
+  };
+}).enableRLS();
 
 export const tables = pgTable('tables', {
   id: uuid('id').primaryKey().defaultRandom(),

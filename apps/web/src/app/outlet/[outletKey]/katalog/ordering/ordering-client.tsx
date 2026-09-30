@@ -146,7 +146,7 @@ export function OrderingClient({ settings }: { settings: any }) {
               <Label htmlFor="onlinePaymentEnabled" className="text-base font-bold cursor-pointer">Aktifkan Pembayaran Non-Tunai (Online)</Label>
               <p className="text-sm text-muted-foreground max-w-md">
                 Mengizinkan pelanggan membayar menggunakan GoPay, OVO, QRIS, dll. <br/>
-                <span className="text-xs text-emerald-600 font-medium">Syarat: Anda harus sudah mengisi Kunci API Midtrans di menu <strong>Pengaturan</strong> utama.</span>
+                <span className="text-xs text-emerald-600 font-medium">Syarat: akun pembayaran outlet sudah diaktifkan di <strong>Pengaturan → Pembayaran Online</strong>.</span>
               </p>
             </div>
             <Switch 
