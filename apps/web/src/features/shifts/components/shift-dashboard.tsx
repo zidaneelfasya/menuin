@@ -723,8 +723,8 @@ export function ShiftDashboard({
             </div>
             <div className="overflow-x-auto">
               <Table>
-                <TableHeader className="bg-muted/30">
-                  <TableRow className="text-xs border-border/60">
+                <TableHeader>
+                  <TableRow className="text-xs border-none bg-transparent hover:bg-transparent">
                     <TableHead className="w-[100px]">Waktu</TableHead>
                     <TableHead className="w-[140px]">Jenis</TableHead>
                     <TableHead>Keterangan / Keperluan</TableHead>

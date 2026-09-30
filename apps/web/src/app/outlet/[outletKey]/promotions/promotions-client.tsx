@@ -20,6 +20,14 @@ const DataTable = dynamic(
   () => import('@/components/ui/data-table').then((mod) => mod.DataTable),
   { ssr: false, loading: () => <div className="h-64 w-full bg-muted/40 animate-pulse rounded-xl" /> }
 );
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+} from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { formatCurrency } from '@/lib/utils/format';
@@ -1357,80 +1365,78 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                   </div>
                 ) : (
                   /* PRODUCT TABLE */
-                  <div className="rounded-lg border border-border overflow-hidden bg-background">
-                    <div className="overflow-x-auto w-full">
-                      <table className="w-full text-left text-xs border-collapse min-w-[620px] font-sans">
-                        <thead className="bg-muted/40 border-b border-border text-muted-foreground text-[11px] font-medium uppercase tracking-wider">
-                          <tr>
-                            <th className="py-2.5 px-3 font-medium">Nama Produk</th>
-                            <th className="py-2.5 px-3 font-medium text-right">Harga Asli</th>
-                            <th className="py-2.5 px-3 font-medium text-right">Potongan Diskon</th>
-                            <th className="py-2.5 px-3 font-medium text-right">Harga Setelah Diskon</th>
-                            <th className="py-2.5 px-3 font-medium text-center">Status Produk</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-border">
-                          {filteredEligibleProducts.map((prod) => {
-                            const { discountAmount, finalPrice } = calculateDiscountedPrice(prod.price, selectedPromoForHistory);
-                            const origPrice = parseFloat(prod.price || '0');
+                  <div className="rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs">
+                    <Table className="w-full text-left text-xs min-w-[620px]">
+                      <TableHeader>
+                        <TableRow className="border-none bg-transparent hover:bg-transparent">
+                          <TableHead className="py-2.5 px-3">Nama Produk</TableHead>
+                          <TableHead className="py-2.5 px-3 text-right">Harga Asli</TableHead>
+                          <TableHead className="py-2.5 px-3 text-right">Potongan Diskon</TableHead>
+                          <TableHead className="py-2.5 px-3 text-right">Harga Setelah Diskon</TableHead>
+                          <TableHead className="py-2.5 px-3 text-center">Status Produk</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody className="divide-y divide-border">
+                        {filteredEligibleProducts.map((prod) => {
+                          const { discountAmount, finalPrice } = calculateDiscountedPrice(prod.price, selectedPromoForHistory);
+                          const origPrice = parseFloat(prod.price || '0');
 
-                            return (
-                              <tr key={prod.id} className="hover:bg-muted/20 transition-colors">
-                                <td className="py-2.5 px-3">
-                                  <div className="flex items-center gap-2.5">
-                                    {prod.imageUrl ? (
-                                      <img
-                                        src={prod.imageUrl}
-                                        alt={prod.name}
-                                        className="w-8 h-8 rounded object-cover border border-border shrink-0"
-                                      />
-                                    ) : (
-                                      <div className="w-8 h-8 rounded bg-muted flex items-center justify-center text-[10px] text-muted-foreground border border-border shrink-0">
-                                        P
-                                      </div>
-                                    )}
-                                    <div>
-                                      <span className="font-medium text-foreground block">{prod.name}</span>
-                                      {prod.sku && (
-                                        <span className="text-[10px] text-muted-foreground">SKU: {prod.sku}</span>
-                                      )}
+                          return (
+                            <TableRow key={prod.id} className="hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-colors">
+                              <TableCell className="py-2.5 px-3">
+                                <div className="flex items-center gap-2.5">
+                                  {prod.imageUrl ? (
+                                    <img
+                                      src={prod.imageUrl}
+                                      alt={prod.name}
+                                      className="w-8 h-8 rounded object-cover border border-border shrink-0"
+                                    />
+                                  ) : (
+                                    <div className="w-8 h-8 rounded bg-muted flex items-center justify-center text-[10px] text-muted-foreground border border-border shrink-0">
+                                      P
                                     </div>
-                                  </div>
-                                </td>
-
-                                <td className="py-2.5 px-3 text-right text-muted-foreground font-normal">
-                                  {formatCurrency(origPrice)}
-                                </td>
-
-                                <td className="py-2.5 px-3 text-right font-medium text-emerald-600 dark:text-emerald-400">
-                                  -{formatCurrency(discountAmount)}
-                                  {selectedPromoForHistory?.type === 'PERCENTAGE' && (
-                                    <span className="text-[10px] text-muted-foreground ml-1 font-normal">
-                                      ({parseFloat(selectedPromoForHistory.value || '0')}%)
-                                    </span>
                                   )}
-                                </td>
+                                  <div>
+                                    <span className="font-medium text-foreground block">{prod.name}</span>
+                                    {prod.sku && (
+                                      <span className="text-[10px] text-muted-foreground">SKU: {prod.sku}</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </TableCell>
 
-                                <td className="py-2.5 px-3 text-right font-semibold text-emerald-600 dark:text-emerald-400">
-                                  {formatCurrency(finalPrice)}
-                                </td>
+                              <TableCell className="py-2.5 px-3 text-right text-muted-foreground font-normal">
+                                {formatCurrency(origPrice)}
+                              </TableCell>
 
-                                <td className="py-2.5 px-3 text-center">
-                                  <span className={cn(
-                                    "px-2 py-0.5 rounded text-[10px] font-medium border",
-                                    prod.isActive
-                                      ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200/60 dark:border-emerald-900/60"
-                                      : "bg-muted text-muted-foreground border-border"
-                                  )}>
-                                    {prod.isActive ? 'Tersedia' : 'Nonaktif'}
+                              <TableCell className="py-2.5 px-3 text-right font-medium text-emerald-600 dark:text-emerald-400">
+                                -{formatCurrency(discountAmount)}
+                                {selectedPromoForHistory?.type === 'PERCENTAGE' && (
+                                  <span className="text-[10px] text-muted-foreground ml-1 font-normal">
+                                    ({parseFloat(selectedPromoForHistory.value || '0')}%)
                                   </span>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
+                                )}
+                              </TableCell>
+
+                              <TableCell className="py-2.5 px-3 text-right font-semibold text-emerald-600 dark:text-emerald-400">
+                                {formatCurrency(finalPrice)}
+                              </TableCell>
+
+                              <TableCell className="py-2.5 px-3 text-center">
+                                <span className={cn(
+                                  "px-2 py-0.5 rounded text-[10px] font-medium border",
+                                  prod.isActive
+                                    ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200/60 dark:border-emerald-900/60"
+                                    : "bg-muted text-muted-foreground border-border"
+                                )}>
+                                  {prod.isActive ? 'Tersedia' : 'Nonaktif'}
+                                </span>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
 
                     <div className="py-2 px-3 bg-muted/20 border-t border-border flex items-center justify-between text-[11px] text-muted-foreground">
                       <span>Menampilkan {filteredEligibleProducts.length} dari {eligibleProductsForDetail.length} produk</span>
@@ -1489,67 +1495,65 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                   </p>
                 </div>
               ) : (
-                <div className="rounded-lg border border-border overflow-hidden bg-background">
-                  <div className="overflow-x-auto w-full">
-                    <table className="w-full text-left text-xs border-collapse min-w-[620px] font-sans">
-                      <thead className="bg-muted/40 border-b border-border text-muted-foreground text-[11px] font-medium uppercase tracking-wider">
-                        <tr>
-                          <th className="py-2.5 px-3 font-medium">No. Order</th>
-                          <th className="py-2.5 px-3 font-medium">Waktu</th>
-                          <th className="py-2.5 px-3 font-medium">Pelanggan / Tipe</th>
-                          <th className="py-2.5 px-3 font-medium text-right">Total Pesanan</th>
-                          <th className="py-2.5 px-3 font-medium text-right">Potongan</th>
-                          <th className="py-2.5 px-3 font-medium text-center">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border">
-                        {filteredHistory.map((tx) => {
-                          const discountAmount = parseFloat(tx.discount || '0');
-                          const grandTotal = parseFloat(tx.grandTotal || '0');
-                          const dateStr = tx.createdAt ? new Date(tx.createdAt).toLocaleString('id-ID', {
-                            day: '2-digit',
-                            month: 'short',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          }) : '-';
+                <div className="rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs">
+                  <Table className="w-full text-left text-xs min-w-[620px]">
+                    <TableHeader>
+                      <TableRow className="border-none bg-transparent hover:bg-transparent">
+                        <TableHead className="py-2.5 px-3">No. Order</TableHead>
+                        <TableHead className="py-2.5 px-3">Waktu</TableHead>
+                        <TableHead className="py-2.5 px-3">Pelanggan / Tipe</TableHead>
+                        <TableHead className="py-2.5 px-3 text-right">Total Pesanan</TableHead>
+                        <TableHead className="py-2.5 px-3 text-right">Potongan</TableHead>
+                        <TableHead className="py-2.5 px-3 text-center">Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody className="divide-y divide-border">
+                      {filteredHistory.map((tx) => {
+                        const discountAmount = parseFloat(tx.discount || '0');
+                        const grandTotal = parseFloat(tx.grandTotal || '0');
+                        const dateStr = tx.createdAt ? new Date(tx.createdAt).toLocaleString('id-ID', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }) : '-';
 
-                          return (
-                            <tr key={tx.id} className="hover:bg-muted/20 transition-colors">
-                              <td className="py-2.5 px-3 font-medium text-foreground">
-                                {tx.orderNumber || tx.id.substring(0, 8)}
-                              </td>
-                              <td className="py-2.5 px-3 text-muted-foreground">
-                                {dateStr}
-                              </td>
-                              <td className="py-2.5 px-3">
-                                <span className="font-medium text-foreground block">{tx.customerName || 'Pelanggan POS'}</span>
-                                <span className="text-[10px] text-muted-foreground uppercase">{tx.orderType || 'DINE_IN'}</span>
-                              </td>
-                              <td className="py-2.5 px-3 text-right font-medium text-foreground">
-                                {formatCurrency(grandTotal)}
-                              </td>
-                              <td className="py-2.5 px-3 text-right font-semibold text-emerald-600 dark:text-emerald-400">
-                                -{formatCurrency(discountAmount)}
-                              </td>
-                              <td className="py-2.5 px-3 text-center">
-                                <span className={cn(
-                                  "px-2 py-0.5 rounded text-[10px] font-medium border",
-                                  tx.status === 'COMPLETED'
-                                    ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200/60 dark:border-emerald-900/60"
-                                    : tx.status === 'CANCELED'
-                                    ? "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border-rose-200/60 dark:border-rose-900/60"
-                                    : "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200/60 dark:border-blue-900/60"
-                                )}>
-                                  {tx.status || 'PAID'}
-                                </span>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+                        return (
+                          <TableRow key={tx.id} className="hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-colors">
+                            <TableCell className="py-2.5 px-3 font-medium text-foreground">
+                              {tx.orderNumber || tx.id.substring(0, 8)}
+                            </TableCell>
+                            <TableCell className="py-2.5 px-3 text-muted-foreground">
+                              {dateStr}
+                            </TableCell>
+                            <TableCell className="py-2.5 px-3">
+                              <span className="font-medium text-foreground block">{tx.customerName || 'Pelanggan POS'}</span>
+                              <span className="text-[10px] text-muted-foreground uppercase">{tx.orderType || 'DINE_IN'}</span>
+                            </TableCell>
+                            <TableCell className="py-2.5 px-3 text-right font-medium text-foreground">
+                              {formatCurrency(grandTotal)}
+                            </TableCell>
+                            <TableCell className="py-2.5 px-3 text-right font-semibold text-emerald-600 dark:text-emerald-400">
+                              -{formatCurrency(discountAmount)}
+                            </TableCell>
+                            <TableCell className="py-2.5 px-3 text-center">
+                              <span className={cn(
+                                "px-2 py-0.5 rounded text-[10px] font-medium border",
+                                tx.status === 'COMPLETED'
+                                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200/60 dark:border-emerald-900/60"
+                                  : tx.status === 'CANCELED'
+                                  ? "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border-rose-200/60 dark:border-rose-900/60"
+                                  : "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200/60 dark:border-blue-900/60"
+                              )}>
+                                {tx.status || 'PAID'}
+                              </span>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
                 </div>
               )}
             </div>

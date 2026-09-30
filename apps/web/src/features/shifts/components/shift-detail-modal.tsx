@@ -356,8 +356,8 @@ export function ShiftDetailModal({
               <TabsContent value="transactions" className="m-0 border rounded-2xl bg-card overflow-hidden shadow-2xs">
                 <div className="max-h-[320px] overflow-auto">
                   <Table>
-                    <TableHeader className="bg-muted/40 sticky top-0 z-10">
-                      <TableRow className="text-xs">
+                    <TableHeader className="sticky top-0 z-10">
+                      <TableRow className="text-xs border-none bg-transparent hover:bg-transparent">
                         <TableHead className="w-[80px]">Jam</TableHead>
                         <TableHead className="w-[140px]">No. Order</TableHead>
                         <TableHead className="w-[100px]">Channel</TableHead>
@@ -412,8 +412,8 @@ export function ShiftDetailModal({
               <TabsContent value="products" className="m-0 border rounded-2xl bg-card overflow-hidden shadow-2xs">
                 <div className="max-h-[320px] overflow-auto">
                   <Table>
-                    <TableHeader className="bg-muted/40 sticky top-0 z-10">
-                      <TableRow className="text-xs">
+                    <TableHeader className="sticky top-0 z-10">
+                      <TableRow className="text-xs border-none bg-transparent hover:bg-transparent">
                         <TableHead className="w-[50px] text-center">No</TableHead>
                         <TableHead>Nama Produk / Menu</TableHead>
                         <TableHead className="text-center w-[120px]">Qty Terjual</TableHead>
@@ -452,8 +452,8 @@ export function ShiftDetailModal({
               <TabsContent value="cash" className="m-0 border rounded-2xl bg-card overflow-hidden shadow-2xs">
                 <div className="max-h-[320px] overflow-auto">
                   <Table>
-                    <TableHeader className="bg-muted/40 sticky top-0 z-10">
-                      <TableRow className="text-xs">
+                    <TableHeader className="sticky top-0 z-10">
+                      <TableRow className="text-xs border-none bg-transparent hover:bg-transparent">
                         <TableHead className="w-[80px]">Jam</TableHead>
                         <TableHead className="w-[120px]">Tipe Kas</TableHead>
                         <TableHead>Keterangan / Keperluan</TableHead>

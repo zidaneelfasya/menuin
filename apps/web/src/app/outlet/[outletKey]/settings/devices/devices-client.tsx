@@ -2,6 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+} from '@/components/ui/table';
 import { QRCodeSVG } from 'qrcode.react';
 import { 
   IconPlus, 
@@ -102,19 +110,19 @@ export function DevicesClient({ initialDevices, canManage }: { initialDevices: D
             Belum ada perangkat kasir yang tertaut ke outlet ini.
           </div>
         ) : (
-          <table className="w-full text-sm text-left">
-            <thead className="bg-muted/40 text-xs uppercase text-muted-foreground font-semibold">
-              <tr>
-                <th className="px-6 py-4">Perangkat</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4">Terakhir Aktif</th>
-                <th className="px-6 py-4 text-right">Aksi</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border/50">
+          <Table className="w-full text-sm text-left">
+            <TableHeader>
+              <TableRow className="border-none bg-transparent hover:bg-transparent">
+                <TableHead className="px-6 py-4">Perangkat</TableHead>
+                <TableHead className="px-6 py-4">Status</TableHead>
+                <TableHead className="px-6 py-4">Terakhir Aktif</TableHead>
+                <TableHead className="px-6 py-4 text-right">Aksi</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody className="divide-y divide-border/50">
               {devices.map((device) => (
-                <tr key={device.id} className="hover:bg-muted/30 transition-colors">
-                  <td className="px-6 py-4">
+                <TableRow key={device.id} className="hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-colors">
+                  <TableCell className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 text-primary">
                         <IconDeviceLaptop className="w-5 h-5" />
@@ -124,8 +132,8 @@ export function DevicesClient({ initialDevices, canManage }: { initialDevices: D
                         <div className="text-xs text-muted-foreground font-mono">ID: {device.deviceIdentifier}</div>
                       </div>
                     </div>
-                  </td>
-                  <td className="px-6 py-4">
+                  </TableCell>
+                  <TableCell className="px-6 py-4">
                     {device.status === 'ACTIVE' ? (
                       <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
                         Aktif
@@ -135,11 +143,11 @@ export function DevicesClient({ initialDevices, canManage }: { initialDevices: D
                         {device.status}
                       </span>
                     )}
-                  </td>
-                  <td className="px-6 py-4 text-muted-foreground text-xs">
+                  </TableCell>
+                  <TableCell className="px-6 py-4 text-muted-foreground text-xs">
                     {device.lastSeenAt ? new Date(device.lastSeenAt).toLocaleString('id-ID') : '-'}
-                  </td>
-                  <td className="px-6 py-4 text-right">
+                  </TableCell>
+                  <TableCell className="px-6 py-4 text-right">
                     {canManage && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -159,11 +167,11 @@ export function DevicesClient({ initialDevices, canManage }: { initialDevices: D
                         </DropdownMenuContent>
                       </DropdownMenu>
                     )}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         )}
       </div>
 

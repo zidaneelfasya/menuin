@@ -102,8 +102,8 @@ const getOrderSourceInfo = (source?: string | null) => {
   const s = (source || 'POS').toUpperCase();
   if (s === 'ONLINE' || s === 'WEB_ORDER' || s === 'STOREFRONT' || s === 'QR') {
     return {
-      label: 'Storefront Online',
-      shortLabel: 'Storefront',
+      label: 'Self Order',
+      shortLabel: 'Self Order',
       badgeClass: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20',
       isStorefront: true,
     };
@@ -232,6 +232,37 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
       .filter(tx => tx.status !== 'CANCELLED' && tx.paymentStatus !== 'CANCELED')
       .reduce((acc, curr) => acc + parseFloat(curr.grandTotal || '0'), 0);
   }, [filteredData]);
+
+  // Tab counts for clean header filter tabs
+  const counts = React.useMemo(() => {
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfYesterday = new Date(startOfToday);
+    startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    let today = 0;
+    let yesterday = 0;
+    let sevenDays = 0;
+    let thisMonth = 0;
+
+    data.forEach((tx) => {
+      const d = new Date(tx.createdAt);
+      if (d >= startOfToday) today++;
+      if (d >= startOfYesterday && d < startOfToday) yesterday++;
+      if (d >= sevenDaysAgo) sevenDays++;
+      if (d >= startOfMonth) thisMonth++;
+    });
+
+    return {
+      all: data.length,
+      today,
+      yesterday,
+      sevenDays,
+      thisMonth,
+    };
+  }, [data]);
 
   const handleCopyId = (e: React.MouseEvent, text: string) => {
     e.stopPropagation();
@@ -468,33 +499,25 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
       accessorKey: 'source',
       header: 'Channel & Meja',
       cell: ({ row }) => {
-        const sourceInfo = getOrderSourceInfo(row.original.source);
-        const orderType = (row.original.orderType || 'DINE_IN').toUpperCase();
-        // Kalau storefront, nama pelanggan tidak ditampilkan
-        const customer = sourceInfo.isStorefront ? null : row.original.customerName;
+        const isStorefront = row.original.source === 'STOREFRONT' || row.original.source === 'QR';
+        const rawOrderType = (row.original.orderType || '').toUpperCase();
+        const isTakeaway = rawOrderType.includes('TAKE') || rawOrderType.includes('BUNGKUS');
         const table = row.original.tableNumber;
+        const customer = row.original.customerName;
+
+        const channelLabel = isStorefront ? 'Self Order' : 'Kasir Manual';
+        const serviceLabel = table ? `Meja ${table}` : isTakeaway ? 'Takeaway' : 'Dine In';
 
         return (
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className={cn(
-                "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium",
-                sourceInfo.badgeClass
-              )}>
-                {sourceInfo.isStorefront ? (
-                  <Globe className="w-3 h-3" />
-                ) : (
-                  <Monitor className="w-3 h-3" />
-                )}
-                {sourceInfo.shortLabel}
-              </span>
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                {orderType.replace('_', ' ')}
-              </span>
+          <div className="flex flex-col text-xs leading-snug">
+            <div className="flex items-center gap-1.5 font-medium text-slate-800 dark:text-slate-200">
+              <span>{channelLabel}</span>
+              <span className="text-slate-300 dark:text-slate-600 font-normal">•</span>
+              <span className="text-slate-600 dark:text-slate-400 font-normal">{serviceLabel}</span>
             </div>
-            {(customer || table) && (
-              <span className="text-[11px] text-muted-foreground">
-                {customer ? customer : ''}{customer && table ? ' • ' : ''}{table ? `Meja ${table}` : ''}
+            {customer && (
+              <span className="text-[11px] text-muted-foreground truncate max-w-[170px] mt-0.5">
+                {customer}
               </span>
             )}
           </div>
@@ -675,70 +698,6 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
 
   const toolbarContent = (
     <div className="flex items-center gap-2 flex-wrap">
-      {/* Quick Time Range Presets (Shortcut Waktu) */}
-      <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl text-xs">
-        <button
-          type="button"
-          onClick={() => handlePresetClick('all')}
-          className={cn(
-            "px-2.5 py-1 rounded-lg transition-all text-xs",
-            timeRangeFilter === 'all'
-              ? "bg-white dark:bg-slate-900 shadow-xs font-semibold text-slate-900 dark:text-slate-100"
-              : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          Semua
-        </button>
-        <button
-          type="button"
-          onClick={() => handlePresetClick('today')}
-          className={cn(
-            "px-2.5 py-1 rounded-lg transition-all text-xs",
-            timeRangeFilter === 'today'
-              ? "bg-white dark:bg-slate-900 shadow-xs font-semibold text-slate-900 dark:text-slate-100"
-              : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          Hari Ini
-        </button>
-        <button
-          type="button"
-          onClick={() => handlePresetClick('yesterday')}
-          className={cn(
-            "px-2.5 py-1 rounded-lg transition-all text-xs",
-            timeRangeFilter === 'yesterday'
-              ? "bg-white dark:bg-slate-900 shadow-xs font-semibold text-slate-900 dark:text-slate-100"
-              : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          Kemarin
-        </button>
-        <button
-          type="button"
-          onClick={() => handlePresetClick('7days')}
-          className={cn(
-            "px-2.5 py-1 rounded-lg transition-all text-xs",
-            timeRangeFilter === '7days'
-              ? "bg-white dark:bg-slate-900 shadow-xs font-semibold text-slate-900 dark:text-slate-100"
-              : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          7 Hari
-        </button>
-        <button
-          type="button"
-          onClick={() => handlePresetClick('this_month')}
-          className={cn(
-            "px-2.5 py-1 rounded-lg transition-all text-xs",
-            timeRangeFilter === 'this_month'
-              ? "bg-white dark:bg-slate-900 shadow-xs font-semibold text-slate-900 dark:text-slate-100"
-              : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          Bulan Ini
-        </button>
-      </div>
-
       {/* Date Range Picker (Pilih Rentang Tanggal Kalender) */}
       <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
         <PopoverTrigger asChild>
@@ -788,13 +747,13 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                     setTimeRangeFilter('all');
                     setIsCalendarOpen(false);
                   }}
-                  className="text-[11px] text-muted-foreground hover:text-foreground font-medium"
+                  className="text-[11px] text-muted-foreground hover:text-foreground font-medium cursor-pointer"
                 >
                   Reset
                 </button>
                 <Button
                   size="sm"
-                  className="h-7 text-xs rounded-lg px-3"
+                  className="h-7 text-xs rounded-lg px-3 cursor-pointer"
                   onClick={() => setIsCalendarOpen(false)}
                 >
                   Selesai
@@ -851,7 +810,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Channel Filter (Kasir vs Storefront) */}
+      {/* Channel Filter (Kasir vs Self Order) */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
@@ -863,7 +822,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
             <span>
               {sourceFilter === 'all' && 'Semua Channel'}
               {sourceFilter === 'pos' && 'Kasir POS'}
-              {sourceFilter === 'storefront' && 'Storefront Online'}
+              {sourceFilter === 'storefront' && 'Self Order'}
             </span>
           </Button>
         </DropdownMenuTrigger>
@@ -884,7 +843,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
             className={cn("text-xs py-2 px-3 rounded-lg cursor-pointer", sourceFilter === 'storefront' && "font-semibold text-blue-600 dark:text-blue-400")}
             onClick={() => setSourceFilter('storefront')}
           >
-            Storefront Online
+            Self Order
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -919,6 +878,104 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
         </div>
       </div>
 
+      {/* Filter Tabs Periode Waktu (Menyamakan layout dengan Daftar Menu) */}
+      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 flex-wrap">
+        <button
+          type="button"
+          onClick={() => handlePresetClick('all')}
+          className={cn(
+            "px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer",
+            timeRangeFilter === 'all'
+              ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-semibold shadow-xs"
+              : "text-muted-foreground hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800"
+          )}
+        >
+          <span>Semua Transaksi</span>
+          <span className={cn(
+            "text-[10px] px-1.5 py-0.2 rounded-full",
+            timeRangeFilter === 'all' ? "bg-white/20 text-white dark:bg-slate-900/20 dark:text-slate-900" : "bg-slate-200/60 dark:bg-slate-800"
+          )}>
+            {counts.all}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handlePresetClick('today')}
+          className={cn(
+            "px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer",
+            timeRangeFilter === 'today'
+              ? "bg-blue-600 text-white font-semibold shadow-xs"
+              : "text-slate-600 dark:text-slate-400 hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800"
+          )}
+        >
+          <span>Hari Ini</span>
+          <span className={cn(
+            "text-[10px] px-1.5 py-0.2 rounded-full",
+            timeRangeFilter === 'today' ? "bg-white/25 text-white" : "bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300"
+          )}>
+            {counts.today}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handlePresetClick('yesterday')}
+          className={cn(
+            "px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer",
+            timeRangeFilter === 'yesterday'
+              ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-semibold shadow-xs"
+              : "text-muted-foreground hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800"
+          )}
+        >
+          <span>Kemarin</span>
+          <span className={cn(
+            "text-[10px] px-1.5 py-0.2 rounded-full",
+            timeRangeFilter === 'yesterday' ? "bg-white/20 text-white dark:bg-slate-900/20 dark:text-slate-900" : "bg-slate-200/60 dark:bg-slate-800"
+          )}>
+            {counts.yesterday}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handlePresetClick('7days')}
+          className={cn(
+            "px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer",
+            timeRangeFilter === '7days'
+              ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-semibold shadow-xs"
+              : "text-muted-foreground hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800"
+          )}
+        >
+          <span>7 Hari Terakhir</span>
+          <span className={cn(
+            "text-[10px] px-1.5 py-0.2 rounded-full",
+            timeRangeFilter === '7days' ? "bg-white/20 text-white dark:bg-slate-900/20 dark:text-slate-900" : "bg-slate-200/60 dark:bg-slate-800"
+          )}>
+            {counts.sevenDays}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handlePresetClick('this_month')}
+          className={cn(
+            "px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer",
+            timeRangeFilter === 'this_month'
+              ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-semibold shadow-xs"
+              : "text-muted-foreground hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800"
+          )}
+        >
+          <span>Bulan Ini</span>
+          <span className={cn(
+            "text-[10px] px-1.5 py-0.2 rounded-full",
+            timeRangeFilter === 'this_month' ? "bg-white/20 text-white dark:bg-slate-900/20 dark:text-slate-900" : "bg-slate-200/60 dark:bg-slate-800"
+          )}>
+            {counts.thisMonth}
+          </span>
+        </button>
+      </div>
+
       <DataTable 
         columns={columns} 
         data={filteredData} 
@@ -931,6 +988,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
         rowSelection={rowSelection}
         onRowSelectionChange={setRowSelection}
         toolbar={toolbarContent}
+        headerTheme="blue"
       />
 
       {/* DETAIL TRANSAKSI MODAL (Clean Center Modal ala Fintech) */}
@@ -962,349 +1020,271 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
               className="relative w-full max-w-lg bg-white dark:bg-slate-950 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xl overflow-hidden z-10 flex flex-col max-h-[90vh]"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Top Bar with Channel & Close Button */}
-              <div className="p-6 pb-4 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <span className={cn(
-                    "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium",
-                    getOrderSourceInfo(selectedTxDetail.transaction.source).badgeClass
-                  )}>
-                    {getOrderSourceInfo(selectedTxDetail.transaction.source).isStorefront ? (
-                      <Globe className="w-3.5 h-3.5" />
-                    ) : (
-                      <Monitor className="w-3.5 h-3.5" />
-                    )}
-                    {getOrderSourceInfo(selectedTxDetail.transaction.source).label}
-                  </span>
-                  <span className="text-xs text-muted-foreground">•</span>
-                  <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                    {(selectedTxDetail.transaction.orderType || 'DINE_IN').replace('_', ' ')}
-                    {selectedTxDetail.transaction.tableNumber ? ` (Meja ${selectedTxDetail.transaction.tableNumber})` : ''}
-                  </span>
+              {/* Header: Clean, minimalist, no heavy badges */}
+              <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <div>
+                  <h3 id="tx-detail-title" className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                    Rincian Transaksi
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {selectedTxDetail.transaction.orderNumber || `#${selectedTxDetail.transaction.id.slice(0, 8).toUpperCase()}`}
+                  </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setIsDetailOpen(false)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                  aria-label="Tutup panel"
+                  className="p-1.5 -mr-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  aria-label="Tutup dialog"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
               {/* Scrollable Content */}
-              <div className="p-6 space-y-6 overflow-y-auto flex-1">
-                {/* Hero Incoming Amount (Transaksi Masuk) */}
-                <div className="space-y-1">
-                  <span className="text-xs text-muted-foreground uppercase font-medium tracking-wider">
-                    Total Pembayaran
+              <div className="p-6 space-y-5 overflow-y-auto flex-1">
+                {/* Hero Total Amount */}
+                <div className="space-y-0.5">
+                  <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">
+                    Total Transaksi
                   </span>
-                  <div className="flex items-baseline gap-2">
-                    <div id="tx-detail-title" className={cn(
-                      "text-3xl sm:text-4xl font-normal font-inter tracking-tight",
-                      selectedTxDetail.transaction.status === 'CANCELLED' || selectedTxDetail.transaction.paymentStatus === 'CANCELED'
-                        ? 'line-through text-slate-400 dark:text-slate-600'
-                        : 'text-slate-900 dark:text-slate-100'
-                    )}>
-                      {selectedTxDetail.transaction.status !== 'CANCELLED' && selectedTxDetail.transaction.paymentStatus !== 'CANCELED' && (
-                        <span className="text-emerald-600 font-normal mr-1">+</span>
-                      )}
-                      {formatCurrency(parseFloat(selectedTxDetail.transaction.grandTotal || '0'))}
-                    </div>
+                  <div className={cn(
+                    "text-3xl sm:text-4xl font-semibold tracking-tight",
+                    selectedTxDetail.transaction.status === 'CANCELLED' || selectedTxDetail.transaction.paymentStatus === 'CANCELED'
+                      ? 'line-through text-slate-400 dark:text-slate-600'
+                      : 'text-slate-900 dark:text-slate-100'
+                  )}>
+                    {formatCurrency(parseFloat(selectedTxDetail.transaction.grandTotal || '0'))}
                   </div>
                 </div>
 
-                {/* Clean Key-Value Properties (Like Reference Image) */}
-                <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800/80 text-xs">
-                  {/* Status */}
-                  <div className="space-y-1">
-                    <span className="text-muted-foreground block text-[11px]">Status</span>
-                    {selectedTxDetail.transaction.status === 'CANCELLED' || selectedTxDetail.transaction.paymentStatus === 'CANCELED' ? (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-red-500/10 text-red-600 dark:text-red-400">
-                        Batal / Void
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                        Sukses
-                      </span>
-                    )}
+                {/* Flat Key-Value Metadata Grid (Minimalist, No Cards) */}
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3 pt-4 border-t border-slate-100 dark:border-slate-800 text-xs">
+                  <div>
+                    <span className="text-[11px] text-muted-foreground block">Status</span>
+                    <div className="mt-1">
+                      {selectedTxDetail.transaction.status === 'CANCELLED' || selectedTxDetail.transaction.paymentStatus === 'CANCELED' ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300">
+                          Batal
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                          Sukses
+                        </span>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Time */}
-                  <div className="space-y-1">
-                    <span className="text-muted-foreground block text-[11px]">Waktu Transaksi</span>
-                    <span className="font-medium text-slate-800 dark:text-slate-200">
+                  <div>
+                    <span className="text-[11px] text-muted-foreground block">Waktu Transaksi</span>
+                    <span className="font-medium text-slate-800 dark:text-slate-200 block mt-0.5">
                       {(() => {
                         const d = new Date(selectedTxDetail.transaction.createdAt);
                         const { dateStr, timeStr } = formatFriendlyDate(d);
-                        return `${dateStr} • ${timeStr}`;
+                        return `${dateStr}, ${timeStr}`;
                       })()}
                     </span>
                   </div>
 
-                  {/* Customer (Hanya untuk Kasir POS, jika Storefront nama tidak ditampilkan) */}
-                  {!getOrderSourceInfo(selectedTxDetail.transaction.source).isStorefront && (
-                    <div className="space-y-1">
-                      <span className="text-muted-foreground block text-[11px]">Pelanggan</span>
-                      <span className="font-semibold text-blue-600 dark:text-blue-400">
-                        {selectedTxDetail.transaction.customerName || 'Pelanggan Umum (Guest)'}
-                      </span>
-                    </div>
-                  )}
+                  <div>
+                    <span className="text-[11px] text-muted-foreground block">Channel & Layanan</span>
+                    <span className="font-medium text-slate-800 dark:text-slate-200 block mt-0.5">
+                      {getOrderSourceInfo(selectedTxDetail.transaction.source).isStorefront ? 'Self Order' : 'Kasir Manual'}
+                      {' • '}
+                      {(selectedTxDetail.transaction.orderType || 'DINE_IN').replace('_', ' ')}
+                      {selectedTxDetail.transaction.tableNumber ? ` (Meja ${selectedTxDetail.transaction.tableNumber})` : ''}
+                    </span>
+                  </div>
 
-                  {/* Payment Method */}
-                  <div className="space-y-1">
-                    <span className="text-muted-foreground block text-[11px]">Metode Pembayaran</span>
-                    <span className="font-semibold uppercase text-slate-800 dark:text-slate-200">
+                  <div>
+                    <span className="text-[11px] text-muted-foreground block">Metode Pembayaran</span>
+                    <span className="font-medium text-slate-800 dark:text-slate-200 block mt-0.5">
                       {paymentMethodMap[selectedTxDetail.transaction.paymentMethod] || selectedTxDetail.transaction.paymentMethod || 'TUNAI'}
                     </span>
                   </div>
 
-                  {/* Order Number & Transaction Hash with Copy */}
-                  <div className="space-y-1">
-                    <span className="text-muted-foreground block text-[11px]">No. Pesanan / ID Transaksi</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-inter font-normal text-blue-600 dark:text-blue-400 text-xs">
-                        {selectedTxDetail.transaction.orderNumber || `#${selectedTxDetail.transaction.id.slice(0, 8).toUpperCase()}`}
+                  {selectedTxDetail.transaction.customerName && (
+                    <div>
+                      <span className="text-[11px] text-muted-foreground block">Pelanggan</span>
+                      <span className="font-medium text-slate-800 dark:text-slate-200 block mt-0.5">
+                        {selectedTxDetail.transaction.customerName}
                       </span>
-                      <button
-                        type="button"
-                        onClick={(e) => handleCopyId(e, selectedTxDetail.transaction.orderNumber || selectedTxDetail.transaction.id)}
-                        className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-muted-foreground hover:text-foreground transition-colors"
-                        title="Salin No. Transaksi"
-                      >
-                        {copiedId ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                      </button>
                     </div>
-                  </div>
+                  )}
 
-                  {/* Cashier / PIC (Hanya untuk Kasir POS, jika Storefront tidak perlu) */}
-                  {!getOrderSourceInfo(selectedTxDetail.transaction.source).isStorefront && (
-                    <div className="space-y-1">
-                      <span className="text-muted-foreground block text-[11px]">Kasir / Petugas</span>
-                      <span className="font-medium text-slate-800 dark:text-slate-200">
-                        {selectedTxDetail.transaction.cashierName || 'Kasir Toko'}
+                  {!getOrderSourceInfo(selectedTxDetail.transaction.source).isStorefront && selectedTxDetail.transaction.cashierName && (
+                    <div>
+                      <span className="text-[11px] text-muted-foreground block">Kasir / Petugas</span>
+                      <span className="font-medium text-slate-800 dark:text-slate-200 block mt-0.5">
+                        {selectedTxDetail.transaction.cashierName}
                       </span>
                     </div>
                   )}
                 </div>
 
                 {/* Items Breakdown */}
-                <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
                   <div className="flex items-center justify-between pb-2">
-                    <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                       Item Pesanan
-                    </h4>
-                    <span className="text-xs text-muted-foreground font-inter font-normal">
-                      {isLoadingDetail ? 'Memuat...' : `${selectedTxDetail.items.length} item`}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {isLoadingDetail ? '...' : `${selectedTxDetail.items.length} item`}
                     </span>
                   </div>
 
                   {isLoadingDetail ? (
-                    <div className="py-3 space-y-3">
-                      {[1, 2, 3].map((i) => (
+                    <div className="py-2 space-y-2">
+                      {[1, 2].map((i) => (
                         <div key={i} className="flex justify-between items-center animate-pulse">
-                          <div className="space-y-1.5 flex-1">
-                            <div className="h-3.5 bg-slate-200 dark:bg-slate-800 rounded w-2/3" />
-                            <div className="h-2.5 bg-slate-100 dark:bg-slate-800/60 rounded w-1/3" />
-                          </div>
-                          <div className="h-3.5 bg-slate-200 dark:bg-slate-800 rounded w-16" />
+                          <div className="h-3.5 bg-slate-100 dark:bg-slate-800 rounded w-1/2" />
+                          <div className="h-3.5 bg-slate-100 dark:bg-slate-800 rounded w-16" />
                         </div>
                       ))}
                     </div>
                   ) : selectedTxDetail.items.length === 0 ? (
-                    <p className="py-3 text-xs text-muted-foreground italic">Tidak ada item tercatat.</p>
+                    <p className="py-2 text-xs text-muted-foreground italic">Tidak ada item tercatat.</p>
                   ) : (
-                    <div className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                    <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
                       {selectedTxDetail.items.map((item: any, idx: number) => (
-                        <div key={idx} className="py-2.5 flex items-start justify-between text-xs gap-3">
-                          <div className="space-y-1 flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-slate-900 dark:text-slate-100">{item.quantity}×</span>
+                        <div key={idx} className="py-2 flex items-start justify-between text-xs gap-3">
+                          <div className="space-y-0.5 flex-1 min-w-0">
+                            <div className="flex items-baseline gap-1.5">
+                              <span className="font-medium text-slate-500 dark:text-slate-400">{item.quantity}×</span>
                               <span className="font-medium text-slate-800 dark:text-slate-200">{item.name}</span>
                             </div>
                             {Array.isArray(item.modifiers) && item.modifiers.length > 0 && (
-                              <div className="text-[11px] text-muted-foreground pl-5 flex flex-wrap gap-1">
-                                {item.modifiers.map((m: any, mIdx: number) => (
-                                  <span key={mIdx} className="inline-block bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-[10px] font-inter font-normal">
-                                    {m.name || m.optionName} {m.price ? `(+${formatCurrency(m.price)})` : ''}
-                                  </span>
-                                ))}
+                              <div className="text-[11px] text-muted-foreground pl-4">
+                                {item.modifiers.map((m: any) => `${m.name || m.optionName}${m.price ? ` (+${formatCurrency(m.price)})` : ''}`).join(', ')}
                               </div>
                             )}
                             {item.notes && (
-                              <p className="text-[11px] text-amber-600 dark:text-amber-400 italic pl-5">
+                              <p className="text-[11px] text-slate-500 italic pl-4">
                                 Catatan: {item.notes}
                               </p>
                             )}
                           </div>
-                          <div className="font-normal font-inter text-slate-900 dark:text-slate-100 text-right shrink-0">
+                          <span className="font-medium text-slate-800 dark:text-slate-200 text-right shrink-0">
                             {formatCurrency(item.subtotal)}
-                          </div>
+                          </span>
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
 
-                {/* Financial Summary */}
-                <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 space-y-2 text-xs">
+                {/* Flat Financial & Settlement Breakdown (No Nested Cards!) */}
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2 text-xs">
                   <div className="flex justify-between text-muted-foreground">
                     <span>Subtotal Produk</span>
-                    <span className="font-inter font-normal">{formatCurrency(parseFloat(selectedTxDetail.transaction.totalAmount || '0'))}</span>
+                    <span className="font-medium text-slate-700 dark:text-slate-300">{formatCurrency(parseFloat(selectedTxDetail.transaction.totalAmount || '0'))}</span>
                   </div>
                   {parseFloat(selectedTxDetail.transaction.discount || '0') > 0 && (
-                    <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-medium">
+                    <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
                       <span>Diskon {selectedTxDetail.transaction.promoCode ? `(${selectedTxDetail.transaction.promoCode})` : ''}</span>
-                      <span className="font-inter font-normal">-{formatCurrency(parseFloat(selectedTxDetail.transaction.discount || '0'))}</span>
+                      <span className="font-medium">-{formatCurrency(parseFloat(selectedTxDetail.transaction.discount || '0'))}</span>
                     </div>
                   )}
                   {parseFloat(selectedTxDetail.transaction.tax || '0') > 0 && (
                     <div className="flex justify-between text-muted-foreground">
                       <span>Pajak (PB1)</span>
-                      <span className="font-inter font-normal">{formatCurrency(parseFloat(selectedTxDetail.transaction.tax || '0'))}</span>
+                      <span className="font-medium text-slate-700 dark:text-slate-300">{formatCurrency(parseFloat(selectedTxDetail.transaction.tax || '0'))}</span>
                     </div>
                   )}
                   {parseFloat(selectedTxDetail.transaction.serviceCharge || '0') > 0 && (
                     <div className="flex justify-between text-muted-foreground">
                       <span>Biaya Layanan</span>
-                      <span className="font-inter font-normal">{formatCurrency(parseFloat(selectedTxDetail.transaction.serviceCharge || '0'))}</span>
+                      <span className="font-medium text-slate-700 dark:text-slate-300">{formatCurrency(parseFloat(selectedTxDetail.transaction.serviceCharge || '0'))}</span>
                     </div>
                   )}
-                  <div className="pt-2.5 border-t border-slate-200 dark:border-slate-800 flex justify-between items-baseline">
-                    <span className="font-semibold text-sm text-slate-900 dark:text-slate-100">Total Pembayaran</span>
-                    <span className="font-semibold text-lg font-mono text-primary">
+
+                  {/* Total Tagihan */}
+                  <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex justify-between items-baseline">
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">Total Pembayaran</span>
+                    <span className="font-semibold text-base text-slate-900 dark:text-slate-100">
                       {formatCurrency(parseFloat(selectedTxDetail.transaction.grandTotal || '0'))}
                     </span>
                   </div>
+
+                  {/* Settlement Breakdown (Integrated Clean Lines, No Cards) */}
+                  {(() => {
+                    const tx = selectedTxDetail.transaction;
+                    const rawMethod = (tx.paymentMethod || 'TUNAI').trim().toUpperCase();
+                    const isCash = rawMethod === 'CASH' || rawMethod === 'TUNAI';
+                    const isStaticQris = rawMethod === 'QRIS_STATIC';
+                    const isDirectBank = isStaticQris || rawMethod === 'CARD' || rawMethod === 'EDC' || rawMethod === 'TRANSFER' || rawMethod === 'BANK_TRANSFER';
+                    const grandTotalVal = parseFloat(tx.grandTotal || '0') || 0;
+                    const feeVal = tx.gatewayFee != null 
+                      ? parseFloat(tx.gatewayFee) 
+                      : (isCash || isDirectBank ? 0 : Math.round(grandTotalVal * 0.007));
+                    const netVal = tx.netAmount != null ? parseFloat(tx.netAmount) : Math.max(0, grandTotalVal - feeVal);
+
+                    if (isCash) {
+                      return (
+                        <div className="pt-2 border-t border-dashed border-slate-200 dark:border-slate-800 space-y-1.5 text-muted-foreground">
+                          <div className="flex justify-between">
+                            <span>Biaya Gateway (Tunai)</span>
+                            <span className="font-medium text-slate-600 dark:text-slate-400">Rp 0 (0%)</span>
+                          </div>
+                          <div className="flex justify-between font-medium text-slate-800 dark:text-slate-200">
+                            <span>Penerimaan Uang Tunai di Laci</span>
+                            <span className="font-semibold text-slate-900 dark:text-slate-100">{formatCurrency(grandTotalVal)}</span>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    if (isDirectBank) {
+                      const channelName = isStaticQris 
+                        ? 'QRIS Statis Toko' 
+                        : (rawMethod === 'CARD' || rawMethod === 'EDC' ? 'Mesin EDC Bank Toko' : 'Transfer Bank Toko');
+
+                      return (
+                        <div className="pt-2 border-t border-dashed border-slate-200 dark:border-slate-800 space-y-1.5 text-muted-foreground">
+                          <div className="flex justify-between">
+                            <span>Kanal Penerimaan</span>
+                            <span className="text-slate-700 dark:text-slate-300 font-medium">{channelName}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Biaya Gateway</span>
+                            <span className="font-medium text-slate-600 dark:text-slate-400">Rp 0 (0%)</span>
+                          </div>
+                          <div className="flex justify-between font-medium text-slate-800 dark:text-slate-200">
+                            <span>Dana Langsung ke Rekening Toko</span>
+                            <span className="font-semibold text-slate-900 dark:text-slate-100">+{formatCurrency(grandTotalVal)}</span>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="pt-2 border-t border-dashed border-slate-200 dark:border-slate-800 space-y-1.5 text-muted-foreground">
+                        <div className="flex justify-between text-slate-500">
+                          <span>Biaya MDR Gateway (0.7%)</span>
+                          <span className="font-medium text-slate-600 dark:text-slate-400">-{formatCurrency(feeVal)}</span>
+                        </div>
+                        <div className="flex justify-between font-medium text-slate-900 dark:text-slate-100">
+                          <span>Saldo Bersih ke Rekening Toko</span>
+                          <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                            +{formatCurrency(netVal)}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
 
-                {/* Settlement Breakdown Card */}
-                {(() => {
-                  const tx = selectedTxDetail.transaction;
-                  const rawMethod = (tx.paymentMethod || 'TUNAI').trim().toUpperCase();
-                  const isCash = rawMethod === 'CASH' || rawMethod === 'TUNAI';
-                  const isStaticQris = rawMethod === 'QRIS_STATIC';
-                  const isDirectBank = isStaticQris || rawMethod === 'CARD' || rawMethod === 'EDC' || rawMethod === 'TRANSFER' || rawMethod === 'BANK_TRANSFER';
-                  const grandTotalVal = parseFloat(tx.grandTotal || '0') || 0;
-                  const feeVal = tx.gatewayFee != null 
-                    ? parseFloat(tx.gatewayFee) 
-                    : (isCash || isDirectBank ? 0 : Math.round(grandTotalVal * 0.007));
-                  const netVal = tx.netAmount != null ? parseFloat(tx.netAmount) : Math.max(0, grandTotalVal - feeVal);
-
-                  if (isCash) {
-                    return (
-                      <div className="bg-emerald-50/70 dark:bg-emerald-950/20 rounded-xl p-4 border border-emerald-100 dark:border-emerald-900/40 space-y-2 text-xs">
-                        <div className="flex items-center justify-between pb-2 border-b border-emerald-100 dark:border-emerald-900/30">
-                          <div className="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300 font-semibold">
-                            <Coins className="w-4 h-4 text-emerald-600" />
-                            <span>Penyelesaian Kasir Tunai</span>
-                          </div>
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300">
-                            100% Utuh Bebas MDR
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                          <span>Biaya Gateway / MDR</span>
-                          <span className="font-mono font-medium text-emerald-700 dark:text-emerald-400">Rp 0 (0%)</span>
-                        </div>
-                        <div className="flex justify-between items-baseline pt-1 border-t border-emerald-100 dark:border-emerald-900/30">
-                          <span className="font-semibold text-slate-800 dark:text-slate-200">Uang Fisik Diterima di Laci</span>
-                          <span className="font-semibold text-sm font-mono text-emerald-700 dark:text-emerald-300">
-                            {formatCurrency(grandTotalVal)}
-                          </span>
-                        </div>
-                        <p className="text-[10px] text-muted-foreground mt-1">
-                          Uang tunai termasuk titipan pajak PB1 masuk ke laci kasir dan dipertanggungjawabkan saat tutup shift.
-                        </p>
-                      </div>
-                    );
-                  }
-
-                  if (isDirectBank) {
-                    const channelName = isStaticQris 
-                      ? 'QRIS Statis Toko (Stiker Merchant)' 
-                      : (rawMethod === 'CARD' || rawMethod === 'EDC' ? 'Mesin EDC Bank Toko' : 'Transfer Rekening Bank Toko');
-
-                    return (
-                      <div className="bg-teal-50/70 dark:bg-teal-950/20 rounded-xl p-4 border border-teal-100 dark:border-teal-900/40 space-y-2 text-xs">
-                        <div className="flex items-center justify-between pb-2 border-b border-teal-100 dark:border-teal-900/30">
-                          <div className="flex items-center gap-1.5 text-teal-800 dark:text-teal-300 font-semibold">
-                            <Landmark className="w-4 h-4 text-teal-600" />
-                            <span>Penerimaan Rekening Langsung Toko</span>
-                          </div>
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300">
-                            100% Utuh Bebas Fee Menuin
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                          <span>Kanal Pembayaran</span>
-                          <span className="font-medium text-slate-800 dark:text-slate-200">{channelName}</span>
-                        </div>
-                        <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                          <span>Potongan Biaya MDR Menuin</span>
-                          <span className="font-mono font-medium text-teal-700 dark:text-teal-400">Rp 0 (0%)</span>
-                        </div>
-                        <div className="flex justify-between items-baseline pt-1 border-t border-teal-100 dark:border-teal-900/30">
-                          <div className="flex flex-col">
-                            <span className="font-semibold text-slate-800 dark:text-slate-200">Dana Masuk Rekening Toko</span>
-                            <span className="text-[10px] text-muted-foreground">Langsung masuk mutasi rekening bank merchant</span>
-                          </div>
-                          <span className="font-semibold text-sm font-mono text-teal-700 dark:text-teal-300">
-                            +{formatCurrency(grandTotalVal)}
-                          </span>
-                        </div>
-                        <p className="text-[10px] text-muted-foreground mt-1">
-                          Dana langsung diterima toko Anda tanpa melalui perantara payment gateway Menuin.
-                        </p>
-                      </div>
-                    );
-                  }
-
-                  return (
-                    <div className="bg-blue-50/70 dark:bg-blue-950/20 rounded-xl p-4 border border-blue-100 dark:border-blue-900/40 space-y-2 text-xs">
-                      <div className="flex items-center justify-between pb-2 border-b border-blue-100 dark:border-blue-900/30">
-                        <div className="flex items-center gap-1.5 text-blue-900 dark:text-blue-300 font-semibold">
-                          <QrCode className="w-4 h-4 text-[#0e59f9]" />
-                          <span>Penyelesaian Payment Gateway DOKU</span>
-                        </div>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
-                          MDR DOKU QRIS 0.7%
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                        <span>Total Tagihan Pelanggan</span>
-                        <span className="font-mono">{formatCurrency(grandTotalVal)}</span>
-                      </div>
-                      <div className="flex justify-between text-rose-600 dark:text-rose-400">
-                        <span>Potongan MDR Gateway (0.7%)</span>
-                        <span className="font-mono font-medium">-{formatCurrency(feeVal)}</span>
-                      </div>
-                      <div className="flex justify-between items-baseline pt-1 border-t border-blue-100 dark:border-blue-900/30">
-                        <div className="flex flex-col">
-                          <span className="font-semibold text-slate-900 dark:text-slate-100">Saldo Bersih Masuk Rekening</span>
-                          <span className="text-[10px] text-muted-foreground">Pencairan otomatis ke rekening bank outlet</span>
-                        </div>
-                        <span className="font-semibold text-sm font-mono text-emerald-600 dark:text-emerald-400">
-                          +{formatCurrency(netVal)}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {/* Audit Void Alert */}
+                {/* Void Alert: Minimalist & Clean */}
                 {(selectedTxDetail.transaction.status === 'CANCELLED' || selectedTxDetail.transaction.paymentStatus === 'CANCELED') && selectedTxDetail.transaction.voidReason && (
-                  <div className="border-l-4 border-l-red-500 bg-red-500/10 rounded-r-xl p-3.5 text-xs space-y-1">
-                    <div className="font-semibold text-red-600 dark:text-red-400 flex items-center gap-1.5">
+                  <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs space-y-1">
+                    <div className="font-medium text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
                       <AlertTriangle className="w-3.5 h-3.5" />
-                      Informasi Pembatalan (Void)
+                      Transaksi Dibatalkan (Void)
                     </div>
-                    <p className="text-red-700 dark:text-red-300">
-                      Alasan: <span className="italic font-medium">{selectedTxDetail.transaction.voidReason}</span>
+                    <p className="text-slate-600 dark:text-slate-400">
+                      Alasan: <span className="text-slate-800 dark:text-slate-200">{selectedTxDetail.transaction.voidReason}</span>
                     </p>
                     {selectedTxDetail.transaction.voidedAt && (
-                      <p className="text-[10px] text-muted-foreground">
+                      <p className="text-[11px] text-muted-foreground">
                         Dibatalkan pada: {new Date(selectedTxDetail.transaction.voidedAt).toLocaleString('id-ID')}
                       </p>
                     )}
@@ -1437,7 +1417,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-600 dark:text-slate-400">Nominal Transaksi</span>
-                    <span className="font-semibold font-mono text-slate-900 dark:text-slate-100">{formatCurrency(parseFloat(selectedTxForVoid.grandTotal))}</span>
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">{formatCurrency(parseFloat(selectedTxForVoid.grandTotal))}</span>
                   </div>
                 </div>
 
