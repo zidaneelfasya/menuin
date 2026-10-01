@@ -54,8 +54,10 @@ import {
   Loader2,
   XCircle,
   AlertTriangle,
-  RotateCw
+  RotateCw,
+  PackageSearch
 } from "lucide-react";
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { createAvatar } from '@dicebear/core';
 import { openPeeps } from '@dicebear/collection';
@@ -124,7 +126,7 @@ function DoodleAvatar({ name, email }: { name?: string | null; email: string }) 
 function RoleBadge({ role }: { role: string }) {
   if (role === 'OWNER') {
     return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-100/80 text-blue-800 border border-blue-300/80 dark:bg-blue-950/70 dark:text-blue-200 dark:border-blue-700">
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-medium bg-blue-100/80 text-blue-800 border border-blue-300/80 dark:bg-blue-950/70 dark:text-blue-200 dark:border-blue-700">
         <span className="h-2 w-2 rounded-full border-2 border-blue-600 bg-blue-200 dark:bg-blue-400 shrink-0" />
         <span>Owner</span>
       </span>
@@ -132,7 +134,7 @@ function RoleBadge({ role }: { role: string }) {
   }
   if (role === 'MANAGER') {
     return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/80">
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/80">
         <span className="h-2 w-2 rounded-full border-2 border-blue-500 bg-blue-200 dark:bg-blue-400 shrink-0" />
         <span>Manager</span>
       </span>
@@ -140,14 +142,14 @@ function RoleBadge({ role }: { role: string }) {
   }
   if (role === 'CASHIER') {
     return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/80">
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/80">
         <span className="h-2 w-2 rounded-full border-2 border-blue-500 bg-blue-200 dark:bg-blue-400 shrink-0" />
         <span>Kasir POS</span>
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-50 text-slate-600 border border-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800">
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-medium bg-slate-50 text-slate-600 border border-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800">
       <span className="h-2 w-2 rounded-full border-2 border-slate-400 bg-slate-200 dark:bg-slate-600 shrink-0" />
       <span>Staff</span>
     </span>
@@ -158,7 +160,7 @@ function RoleBadge({ role }: { role: string }) {
 function StatusBadge({ status }: { status: 'ACTIVE' | 'PENDING' }) {
   if (status === 'ACTIVE') {
     return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800/80 text-blue-700 dark:text-blue-300 shadow-xs">
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-medium bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800/80 text-blue-700 dark:text-blue-300 shadow-xs">
         <span className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-blue-600 text-white shrink-0">
           <Check className="w-2 h-2 stroke-[3]" />
         </span>
@@ -167,7 +169,7 @@ function StatusBadge({ status }: { status: 'ACTIVE' | 'PENDING' }) {
     );
   }
   return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 shadow-xs">
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 shadow-xs">
       <span className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-slate-400 dark:bg-slate-600 text-white shrink-0">
         <Clock className="w-2 h-2 stroke-[3]" />
       </span>
@@ -606,88 +608,92 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
       </div>
 
       {/* Search Bar & Unified Blue Filter Tabs */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-1">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-2">
+        {/* Tab Filters (Underline style with live counters) */}
+        <div className="flex items-center gap-6 overflow-x-auto pb-1 sm:pb-0">
+          {[
+            { key: 'ALL', label: 'Semua Anggota', count: totalMembersCount + pendingCount },
+            { key: 'ACTIVE', label: 'Aktif', count: totalMembersCount },
+            { key: 'PENDING', label: 'Pending', count: pendingCount },
+            { key: 'CASHIER', label: 'Kasir POS', count: cashierCount },
+          ].map((tab) => {
+            const isActive = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveTab(tab.key as 'ALL' | 'ACTIVE' | 'PENDING' | 'CASHIER')}
+                className={cn(
+                  "relative pb-2.5 text-xs font-medium transition-colors flex items-center gap-2 cursor-pointer whitespace-nowrap",
+                  isActive
+                    ? "text-blue-600 dark:text-blue-400 font-semibold"
+                    : "text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
+                )}
+              >
+                <span>{tab.label}</span>
+                <span className={cn(
+                  "text-xs px-2 py-0.5 rounded-lg font-medium transition-colors",
+                  isActive
+                    ? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300"
+                    : "text-slate-400 dark:text-slate-500"
+                )}>
+                  {tab.count}
+                </span>
+                {isActive && (
+                  <motion.div
+                    layoutId="activeTeamTabUnderline"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-500 rounded-full"
+                    transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                  />
+                )}
+              </button>
+            );
+          })}
+        </div>
+
         {/* Search Input */}
-        <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+        <div className="relative w-full sm:w-72">
+          <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
           <Input 
             placeholder="Cari nama, email, atau role..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 h-9 text-xs rounded-xl bg-card border-slate-200 dark:border-slate-800 focus-visible:ring-1 focus-visible:ring-[#2563EB]"
+            className="pl-9 h-9 text-xs rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus-visible:ring-blue-600"
           />
-        </div>
-
-        {/* Tab Filters */}
-        <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0">
-          <button
-            type="button"
-            onClick={() => setActiveTab('ALL')}
-            className={cn(
-              "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors shrink-0 cursor-pointer",
-              activeTab === 'ALL'
-                ? "bg-[#2563EB] text-white shadow-xs"
-                : "text-muted-foreground hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30"
-            )}
-          >
-            Semua ({totalMembersCount + pendingCount})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('ACTIVE')}
-            className={cn(
-              "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors shrink-0 cursor-pointer",
-              activeTab === 'ACTIVE'
-                ? "bg-[#2563EB] text-white shadow-xs"
-                : "text-muted-foreground hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30"
-            )}
-          >
-            Aktif ({totalMembersCount})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('PENDING')}
-            className={cn(
-              "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors shrink-0 cursor-pointer",
-              activeTab === 'PENDING'
-                ? "bg-[#2563EB] text-white shadow-xs"
-                : "text-muted-foreground hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30"
-            )}
-          >
-            Pending ({pendingCount})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('CASHIER')}
-            className={cn(
-              "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors shrink-0 cursor-pointer",
-              activeTab === 'CASHIER'
-                ? "bg-[#2563EB] text-white shadow-xs"
-                : "text-muted-foreground hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30"
-            )}
-          >
-            Kasir POS ({cashierCount})
-          </button>
         </div>
       </div>
 
-      {/* Main Table with Doodle Avatars, Unified Blue Badges, and Clean Hierarchy */}
+      {/* Main Table */}
       {hasRows ? (
-        <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-card overflow-hidden shadow-xs">
-          <Table className="min-w-[760px]">
-            {/* Header */}
-            <TableHeader>
-              <TableRow className="border-none bg-transparent hover:bg-transparent">
-                <TableHead className="px-5 w-[260px]">User</TableHead>
-                <TableHead className="px-4">Email Address</TableHead>
-                <TableHead className="px-4">Role</TableHead>
-                <TableHead className="px-4">POS PIN</TableHead>
-                <TableHead className="px-4">Date Added</TableHead>
-                <TableHead className="px-4">Status</TableHead>
-                <TableHead className="px-4 text-right w-[60px]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+        <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-950 overflow-hidden shadow-xs">
+          <div className="relative w-full overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="bg-slate-50/70 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-200/80 dark:border-slate-800">
+                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-slate-500 dark:text-slate-400 tracking-tight w-[240px]">
+                    User
+                  </th>
+                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-slate-500 dark:text-slate-400 tracking-tight">
+                    Email Address
+                  </th>
+                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-slate-500 dark:text-slate-400 tracking-tight">
+                    Role
+                  </th>
+                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-slate-500 dark:text-slate-400 tracking-tight">
+                    POS PIN
+                  </th>
+                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-slate-500 dark:text-slate-400 tracking-tight">
+                    Date Added
+                  </th>
+                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-slate-500 dark:text-slate-400 tracking-tight">
+                    Status
+                  </th>
+                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-right text-slate-500 dark:text-slate-400 tracking-tight w-[60px]">
+                    Aksi
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
                 {/* Active Members */}
                 {filteredMembers.map((member) => (
                   <TableRow 
@@ -933,16 +939,17 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
                     </TableCell>
                   </TableRow>
                 ))}
-              </TableBody>
-            </Table>
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : (
         /* Empty State */
-        <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-card p-12 text-center space-y-3">
+        <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-950 p-12 text-center space-y-3">
           <div className="w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center mx-auto text-blue-600 dark:text-blue-400">
             <Users className="w-6 h-6" />
           </div>
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
             {searchQuery ? 'Tidak ada anggota ditemukan' : 'Belum ada anggota tim'}
           </h3>
           <p className="text-xs text-muted-foreground max-w-sm mx-auto">

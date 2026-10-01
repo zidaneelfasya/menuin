@@ -26,8 +26,10 @@ import {
   Trash2, 
   MoreVertical, 
   AlertTriangle,
-  Loader2
+  Loader2,
+  PackageSearch
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { generatePairingCodeAction, revokeDeviceAction } from '@/lib/actions/devices';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
@@ -247,45 +249,46 @@ export function DevicesClient({
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        {/* Status Filter Tabs */}
-        <div className="flex items-center gap-1 p-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl border border-slate-200/60 dark:border-slate-700/60 self-start">
-          <button
-            type="button"
-            onClick={() => setStatusFilter('ALL')}
-            className={cn(
-              "px-3 py-1.5 text-xs font-medium rounded-lg transition-all cursor-pointer",
-              statusFilter === 'ALL'
-                ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs font-semibold"
-                : "text-muted-foreground hover:text-slate-900 dark:hover:text-slate-100"
-            )}
-          >
-            Semua ({totalCount})
-          </button>
-          <button
-            type="button"
-            onClick={() => setStatusFilter('ACTIVE')}
-            className={cn(
-              "px-3 py-1.5 text-xs font-medium rounded-lg transition-all cursor-pointer",
-              statusFilter === 'ACTIVE'
-                ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs font-semibold"
-                : "text-muted-foreground hover:text-slate-900 dark:hover:text-slate-100"
-            )}
-          >
-            Aktif ({activeCount})
-          </button>
-          <button
-            type="button"
-            onClick={() => setStatusFilter('REVOKED')}
-            className={cn(
-              "px-3 py-1.5 text-xs font-medium rounded-lg transition-all cursor-pointer",
-              statusFilter === 'REVOKED'
-                ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs font-semibold"
-                : "text-muted-foreground hover:text-slate-900 dark:hover:text-slate-100"
-            )}
-          >
-            Nonaktif ({inactiveCount})
-          </button>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-2">
+        {/* Status Filter Tabs (Underline style with live counters) */}
+        <div className="flex items-center gap-6 overflow-x-auto pb-1 sm:pb-0">
+          {[
+            { key: 'ALL', label: 'Semua Perangkat', count: totalCount },
+            { key: 'ACTIVE', label: 'Aktif', count: activeCount },
+            { key: 'REVOKED', label: 'Nonaktif', count: inactiveCount },
+          ].map((tab) => {
+            const isActive = statusFilter === tab.key;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setStatusFilter(tab.key as 'ALL' | 'ACTIVE' | 'REVOKED')}
+                className={cn(
+                  "relative pb-2.5 text-xs font-medium transition-colors flex items-center gap-2 cursor-pointer whitespace-nowrap",
+                  isActive
+                    ? "text-blue-600 dark:text-blue-400 font-semibold"
+                    : "text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
+                )}
+              >
+                <span>{tab.label}</span>
+                <span className={cn(
+                  "text-xs px-2 py-0.5 rounded-lg font-medium transition-colors",
+                  isActive
+                    ? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300"
+                    : "text-slate-400 dark:text-slate-500"
+                )}>
+                  {tab.count}
+                </span>
+                {isActive && (
+                  <motion.div
+                    layoutId="activeDeviceTabUnderline"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-500 rounded-full"
+                    transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                  />
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {/* Search Input */}
@@ -295,26 +298,26 @@ export function DevicesClient({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Cari nama atau ID perangkat..."
-            className="pl-9 h-9 text-xs rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+            className="pl-9 h-9 text-xs rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus-visible:ring-blue-600"
           />
         </div>
       </div>
 
       {/* Devices Data Table */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden">
+      <div className="bg-white dark:bg-slate-950 border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden">
         {filteredDevices.length === 0 ? (
           <div className="py-16 px-4 text-center">
-            <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto mb-3">
-              <Smartphone className="w-6 h-6" />
+            <div className="flex flex-col items-center justify-center space-y-2">
+              <PackageSearch className="w-9 h-9 text-slate-300 dark:text-slate-600" />
+              <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                {searchQuery ? 'Tidak ada perangkat ditemukan' : 'Belum ada perangkat kasir'}
+              </p>
+              <p className="text-xs text-muted-foreground max-w-sm">
+                {searchQuery 
+                  ? 'Coba gunakan kata kunci pencarian lain atau ubah filter status.' 
+                  : 'Tautkan tablet atau smartphone kasir untuk mulai menjalankan aplikasi POS.'}
+              </p>
             </div>
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-              {searchQuery ? 'Tidak Ada Perangkat yang Cocok' : 'Belum Ada Perangkat Kasir'}
-            </h3>
-            <p className="text-xs text-muted-foreground max-w-sm mx-auto mt-1">
-              {searchQuery 
-                ? 'Coba gunakan kata kunci pencarian lain atau ubah filter status.' 
-                : 'Tautkan tablet atau smartphone kasir untuk mulai menjalankan aplikasi POS.'}
-            </p>
             {canManage && !searchQuery && (
               <Button 
                 onClick={handleGenerateCode} 
@@ -326,133 +329,144 @@ export function DevicesClient({
             )}
           </div>
         ) : (
-          <Table className="min-w-full">
-            <TableHeader>
-              <TableRow className="border-none bg-transparent hover:bg-transparent">
-                <TableHead className="px-5 py-3.5">
-                  Perangkat
-                </TableHead>
-                <TableHead className="px-5 py-3.5">
-                  Status
-                </TableHead>
-                <TableHead className="px-5 py-3.5">
-                  Terakhir Aktif
-                </TableHead>
-                <TableHead className="px-5 py-3.5">
-                  Terdaftar Pada
-                </TableHead>
-                {canManage && (
-                  <TableHead className="px-5 py-3.5 text-right">
-                    Aksi
-                  </TableHead>
-                )}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredDevices.map((device) => {
-                const isActive = device.status === 'ACTIVE';
+          <div className="relative w-full overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="bg-slate-50/70 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-200/80 dark:border-slate-800">
+                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-slate-500 dark:text-slate-400 tracking-tight">
+                    Perangkat
+                  </th>
+                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-slate-500 dark:text-slate-400 tracking-tight">
+                    Status
+                  </th>
+                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-slate-500 dark:text-slate-400 tracking-tight">
+                    Terakhir Aktif
+                  </th>
+                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-slate-500 dark:text-slate-400 tracking-tight">
+                    Terdaftar Pada
+                  </th>
+                  {canManage && (
+                    <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-right text-slate-500 dark:text-slate-400 tracking-tight">
+                      Aksi
+                    </th>
+                  )}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                {filteredDevices.map((device) => {
+                  const isActive = device.status === 'ACTIVE';
 
-                return (
-                  <TableRow 
-                    key={device.id} 
-                    className="hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-colors"
-                  >
-                    {/* Device info */}
-                    <TableCell className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className={cn(
-                          "w-9 h-9 rounded-xl flex items-center justify-center shrink-0",
-                          isActive 
-                            ? "bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400" 
-                            : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
-                        )}>
-                          <Tablet className="w-4 h-4" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-semibold text-slate-900 dark:text-slate-100 text-xs truncate">
-                            {device.name}
-                          </p>
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="text-[11px] text-muted-foreground font-mono truncate max-w-[180px]">
-                              ID: {device.deviceIdentifier}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => copyDeviceId(device.deviceIdentifier)}
-                              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-0.5 rounded cursor-pointer"
-                              title="Salin ID Perangkat"
-                            >
-                              {copiedId === device.deviceIdentifier ? (
-                                <Check className="w-3 h-3 text-emerald-600" />
-                              ) : (
-                                <Copy className="w-3 h-3" />
-                              )}
-                            </button>
+                  return (
+                    <tr 
+                      key={device.id} 
+                      className="transition-colors hover:bg-blue-50/50 dark:hover:bg-blue-950/25"
+                    >
+                      {/* Device info */}
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className={cn(
+                            "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+                            isActive 
+                              ? "bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400" 
+                              : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                          )}>
+                            <Tablet className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-slate-900 dark:text-slate-100 text-xs tracking-tight truncate">
+                              {device.name}
+                            </p>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <span className="text-[10px] text-muted-foreground font-mono truncate max-w-[180px]">
+                                ID: {device.deviceIdentifier}
+                              </span>
+                              <span className="text-slate-300 dark:text-slate-700 text-[10px]">•</span>
+                              <button
+                                type="button"
+                                onClick={() => copyDeviceId(device.deviceIdentifier)}
+                                className="inline-flex items-center gap-1 text-[10px] text-blue-600 hover:text-blue-700 dark:text-blue-400 font-medium cursor-pointer hover:underline"
+                                title="Salin ID Perangkat"
+                              >
+                                {copiedId === device.deviceIdentifier ? (
+                                  <>
+                                    <Check className="w-2.5 h-2.5 text-emerald-600" />
+                                    <span>Tersalin</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="w-2.5 h-2.5" />
+                                    <span>Copy</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </TableCell>
+                      </td>
 
-                    {/* Status */}
-                    <TableCell className="px-5 py-4 whitespace-nowrap">
-                      {isActive ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200/60">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                          Aktif
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                          Dicabut
-                        </span>
+                      {/* Status */}
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        {isActive ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200/60">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            Aktif
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                            Dicabut
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Last Seen */}
+                      <td className="py-3.5 px-4 whitespace-nowrap text-slate-600 dark:text-slate-300">
+                        <div className="flex items-center gap-1.5 text-xs">
+                          <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                          <span>{formatDate(device.lastSeenAt)}</span>
+                        </div>
+                      </td>
+
+                      {/* Registered Date */}
+                      <td className="py-3.5 px-4 whitespace-nowrap text-slate-600 dark:text-slate-300">
+                        <div className="flex items-center gap-1.5 text-xs">
+                          <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+                          <span>{formatDate(device.createdAt)}</span>
+                        </div>
+                      </td>
+
+                      {/* Actions */}
+                      {canManage && (
+                        <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                className="h-8 w-8 p-0 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-950/30 rounded-lg cursor-pointer"
+                              >
+                                <span className="sr-only">Menu aksi</span>
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48 p-1 rounded-xl shadow-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                              <DropdownMenuItem 
+                                onClick={() => setSelectedDeviceToRevoke(device)}
+                                className="text-xs font-medium py-2 px-3 rounded-lg cursor-pointer text-rose-600 focus:text-rose-600 focus:bg-rose-50 dark:focus:bg-rose-950/40 flex items-center gap-2"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>Putuskan Perangkat</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </td>
                       )}
-                    </TableCell>
-
-                    {/* Last Seen */}
-                    <TableCell className="px-5 py-4 whitespace-nowrap text-slate-600 dark:text-slate-300">
-                      <div className="flex items-center gap-1.5 text-[11px]">
-                        <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-                        <span>{formatDate(device.lastSeenAt)}</span>
-                      </div>
-                    </TableCell>
-
-                    {/* Registered Date */}
-                    <TableCell className="px-5 py-4 whitespace-nowrap text-slate-600 dark:text-slate-300">
-                      <div className="flex items-center gap-1.5 text-[11px]">
-                        <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
-                        <span>{formatDate(device.createdAt)}</span>
-                      </div>
-                    </TableCell>
-
-                    {/* Actions */}
-                    {canManage && (
-                      <TableCell className="px-5 py-4 text-right whitespace-nowrap">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              className="h-8 w-8 p-0 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                            >
-                              <MoreVertical className="w-4 h-4 text-slate-500" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48 rounded-xl p-1 shadow-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                            <DropdownMenuItem
-                              onClick={() => setSelectedDeviceToRevoke(device)}
-                              className="flex items-center gap-2 px-3 py-2 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg cursor-pointer transition-colors"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                              <span>Putuskan Sambungan</span>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 

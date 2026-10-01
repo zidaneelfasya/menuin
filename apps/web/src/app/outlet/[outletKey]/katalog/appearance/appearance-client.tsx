@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Save, Loader2, Store, Image as ImageIcon } from 'lucide-react';
 import { ImageUploader } from '@/components/ui/image-uploader';
+import { ColorPicker } from '@/components/ui/color-picker';
 import { updateCatalogAppearance } from '@/lib/actions/catalog';
 import { toast } from 'sonner';
 
@@ -105,23 +106,13 @@ export function AppearanceClient({ initialSettings }: AppearanceClientProps) {
 
           {/* 4. Warna Utama */}
           <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-            <Label htmlFor="primaryColor" className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-              Warna Tema Utama (Hex)
+            <Label className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+              Warna Tema Utama
             </Label>
-            <div className="flex items-center gap-3">
-              <div
-                className="w-10 h-10 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs flex-shrink-0"
-                style={{ backgroundColor: primaryColor }}
-              />
-              <Input
-                id="primaryColor"
-                type="text"
-                value={primaryColor}
-                onChange={(e) => setPrimaryColor(e.target.value)}
-                placeholder="#2563EB"
-                className="font-mono max-w-[150px] uppercase rounded-xl"
-              />
-            </div>
+            <ColorPicker
+              value={primaryColor}
+              onChange={setPrimaryColor}
+            />
             <p className="text-xs text-muted-foreground">
               Digunakan untuk warna tombol, aksen badge, dan highlight pada katalog publik.
             </p>

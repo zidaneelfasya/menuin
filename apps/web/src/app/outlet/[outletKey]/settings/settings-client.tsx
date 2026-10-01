@@ -52,15 +52,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Sparkles, Shuffle, Check as CheckIcon } from 'lucide-react';
-
-const COLOR_PRESETS = [
-  { name: 'Royal Blue', hex: '#2563EB' },
-  { name: 'Emerald', hex: '#10B981' },
-  { name: 'Violet', hex: '#8B5CF6' },
-  { name: 'Amber', hex: '#F59E0B' },
-  { name: 'Rose', hex: '#F43F5E' },
-  { name: 'Slate Dark', hex: '#1E293B' },
-];
+import { ColorPicker } from '@/components/ui/color-picker';
 import { OrderPrefixPicker } from '@/components/shared/order-prefix-picker';
 
 export function SettingsClient({ 
@@ -117,22 +109,22 @@ export function SettingsClient({
   const [primaryColor, setPrimaryColor] = React.useState(tenant?.primaryColor || '#2563EB');
   const [orderPrefix, setOrderPrefix] = React.useState(tenant?.orderPrefix || '');
 
-  // DiceBear Waves Randomizer (Hanya varian Waves, diacak otomatis)
-  const handleRandomizeWaves = () => {
+  // DiceBear Avatar Randomizer (Acak avatar otomatis)
+  const handleRandomizeAvatar = () => {
     const adjectives = [
       'Ocean', 'Sunset', 'Cosmic', 'Golden', 'Electric', 'Velvet',
       'Tropical', 'Midnight', 'Aurora', 'Neon', 'Aqua', 'Coral',
       'Azure', 'Amber', 'Mystic', 'Breeze', 'Zenith', 'Solar'
     ];
     const nouns = [
-      'Waves', 'Brew', 'Flavor', 'Kitchen', 'Cafe', 'Diner',
+      'Brew', 'Flavor', 'Kitchen', 'Cafe', 'Diner',
       'Eats', 'Roast', 'Bite', 'Table', 'Pulse', 'Drift',
       'Tide', 'Flow', 'Blend', 'Sip', 'Coast', 'Surf'
     ];
     const randomSeed = `${adjectives[Math.floor(Math.random() * adjectives.length)]}${nouns[Math.floor(Math.random() * nouns.length)]}${Math.floor(Math.random() * 999)}`;
-    const url = `https://api.dicebear.com/10.x/waves/svg?seed=${encodeURIComponent(randomSeed)}&radius=16`;
+    const url = `https://api.dicebear.com/10.x/shapes/svg?seed=${encodeURIComponent(randomSeed)}&radius=16`;
     setStoreLogoUrl(url);
-    toast.success('Avatar Waves baru berhasil diacak! Klik "Simpan Perubahan" untuk menyimpan.');
+    toast.success('Avatar baru berhasil diacak! Klik "Simpan Profil Toko" untuk menyimpan.');
   };
 
   // Tax and Fees Form State
@@ -447,96 +439,108 @@ export function SettingsClient({
                 </div>
 
                 {/* TOP BANNER & AVATAR CONTAINER */}
-                <div className="relative rounded-2xl border border-border/70 bg-gradient-to-b from-muted/40 to-muted/15 p-5 sm:p-6 overflow-hidden">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
-                    {/* Left: Avatar / Logo Card */}
-                    <div className="flex items-center gap-4">
-                      <div className="relative shrink-0">
-                        <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl overflow-hidden border-2 border-background shadow-md bg-muted/70 flex items-center justify-center">
-                          {storeLogoUrl ? (
-                            <img
-                              src={storeLogoUrl}
-                              alt="Logo Toko"
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <span className="text-foreground text-xl font-bold tracking-wider">
-                              {storeName ? storeName.slice(0, 2).toUpperCase() : 'MN'}
-                            </span>
+                <div className="relative rounded-2xl border border-border/70 overflow-hidden shadow-xs bg-muted/20">
+                  {storeBannerUrl && (
+                    <div className="absolute inset-0 z-0">
+                      <img
+                        src={storeBannerUrl}
+                        alt="Cover Toko"
+                        className="w-full h-full object-cover object-center"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/85 to-background/40 backdrop-blur-[2px]" />
+                    </div>
+                  )}
+
+                  <div className="relative z-10 p-5 sm:p-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+                      {/* Left: Avatar / Logo Card */}
+                      <div className="flex items-center gap-4">
+                        <div className="relative shrink-0">
+                          <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl overflow-hidden border-2 border-background shadow-md bg-muted/80 flex items-center justify-center">
+                            {storeLogoUrl ? (
+                              <img
+                                src={storeLogoUrl}
+                                alt="Logo Toko"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-foreground text-xl font-bold tracking-wider">
+                                {storeName ? storeName.slice(0, 2).toUpperCase() : 'MN'}
+                              </span>
+                            )}
+                          </div>
+                          {isUploadingLogo && (
+                            <div className="absolute inset-0 rounded-2xl bg-black/40 flex items-center justify-center backdrop-blur-xs">
+                              <IconLoader2 className="w-5 h-5 text-white animate-spin" />
+                            </div>
                           )}
                         </div>
-                        {isUploadingLogo && (
-                          <div className="absolute inset-0 rounded-2xl bg-black/40 flex items-center justify-center backdrop-blur-xs">
-                            <IconLoader2 className="w-5 h-5 text-white animate-spin" />
-                          </div>
-                        )}
-                      </div>
 
-                      <div className="space-y-1">
-                        <h3 className="text-base sm:text-lg font-bold text-foreground">
-                          {storeName || 'Nama Outlet Anda'}
-                        </h3>
-                        <p className="text-xs text-muted-foreground flex items-center gap-1.5 font-mono">
-                          <span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />
-                          menuin.id/store/{storeSlug || 'outlet'}
-                        </p>
-                        <div className="pt-2 flex flex-wrap items-center gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => logoInputRef.current?.click()}
-                            disabled={isUploadingLogo}
-                            className="h-8 text-xs font-medium rounded-xl hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all cursor-pointer"
-                          >
-                            <IconUpload className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
-                            Upload Foto
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={handleRandomizeWaves}
-                            className="h-8 text-xs font-medium rounded-xl bg-blue-50/70 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border-blue-200/80 dark:border-blue-800 hover:bg-blue-100/70 transition-all cursor-pointer gap-1.5"
-                          >
-                            <Shuffle className="w-3.5 h-3.5" />
-                            Acak Avatar Waves
-                          </Button>
-                          {storeLogoUrl && (
+                        <div className="space-y-1">
+                          <h3 className="text-base sm:text-lg font-bold text-foreground">
+                            {storeName || 'Nama Outlet Anda'}
+                          </h3>
+                          <p className="text-xs text-muted-foreground flex items-center gap-1.5 font-mono">
+                            <span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />
+                            menuin.id/store/{storeSlug || 'outlet'}
+                          </p>
+                          <div className="pt-2 flex flex-wrap items-center gap-2">
                             <Button
                               type="button"
-                              variant="ghost"
+                              variant="outline"
                               size="sm"
-                              onClick={() => setStoreLogoUrl(null)}
+                              onClick={() => logoInputRef.current?.click()}
                               disabled={isUploadingLogo}
-                              className="h-8 text-xs font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl cursor-pointer"
+                              className="h-8 text-xs font-medium rounded-xl hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all cursor-pointer bg-background/80"
                             >
-                              <IconTrash className="w-3.5 h-3.5 mr-1.5" />
-                              Hapus
+                              <IconUpload className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
+                              Upload Foto
                             </Button>
-                          )}
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={handleRandomizeAvatar}
+                              className="h-8 text-xs font-medium rounded-xl bg-blue-50/80 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 border-blue-200/80 dark:border-blue-800 hover:bg-blue-100/70 transition-all cursor-pointer gap-1.5"
+                            >
+                              <Shuffle className="w-3.5 h-3.5" />
+                              Acak Avatar
+                            </Button>
+                            {storeLogoUrl && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setStoreLogoUrl(null)}
+                                disabled={isUploadingLogo}
+                                className="h-8 text-xs font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl cursor-pointer"
+                              >
+                                <IconTrash className="w-3.5 h-3.5 mr-1.5" />
+                                Hapus
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Right: Add Cover Image Button */}
-                    <div className="flex items-center">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => bannerInputRef.current?.click()}
-                        disabled={isUploadingBanner}
-                        className="h-9 text-xs font-medium rounded-xl hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all cursor-pointer"
-                      >
-                        {isUploadingBanner ? (
-                          <><IconLoader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Mengunggah...</>
-                        ) : (
-                          <><IconCamera className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" /> {storeBannerUrl ? 'Ganti Cover' : 'Tambah Cover Toko'}</>
-                        )}
-                      </Button>
+                      {/* Right: Add Cover Image Button */}
+                      <div className="flex items-center">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => bannerInputRef.current?.click()}
+                          disabled={isUploadingBanner}
+                          className="h-9 text-xs font-medium rounded-xl hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all cursor-pointer bg-background/80"
+                        >
+                          {isUploadingBanner ? (
+                            <><IconLoader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Mengunggah...</>
+                          ) : (
+                            <><IconCamera className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" /> {storeBannerUrl ? 'Ganti Cover' : 'Tambah Cover Toko'}</>
+                          )}
+                        </Button>
+                      </div>
                     </div>
-                  </div>
 
                   {storeBannerUrl && (
                     <div className="mt-4 pt-3.5 border-t border-border/60 flex items-center justify-between text-xs text-muted-foreground">
@@ -551,6 +555,7 @@ export function SettingsClient({
                     </div>
                   )}
                 </div>
+              </div>
 
                 {/* 2-COLUMN FORM ROWS */}
                 <div className="divide-y divide-border/60">
@@ -612,7 +617,7 @@ export function SettingsClient({
                         Logo & Avatar Toko
                       </Label>
                       <p className="text-xs text-muted-foreground leading-relaxed">
-                        Tampil di header aplikasi, katalog digital, dan struk kasir. Anda dapat mengunggah file logo sendiri atau mengacak avatar DiceBear Waves.
+                        Tampil di header aplikasi, katalog digital, dan struk kasir. Anda dapat mengunggah file logo sendiri atau membuat avatar unik secara otomatis.
                       </p>
                     </div>
                     <div className="md:col-span-8">
@@ -651,7 +656,7 @@ export function SettingsClient({
                               )}
                             </div>
                             <p className="text-xs text-muted-foreground leading-relaxed">
-                              Format file: PNG, JPG, WebP (Rasio 1:1, Maks 2MB). Atau acak avatar DiceBear varian Waves secara otomatis dengan satu kali klik.
+                              Format file: PNG, JPG, WebP (Rasio 1:1, Maks 2MB). Atau acak avatar secara otomatis dengan satu kali klik.
                             </p>
                           </div>
                         </div>
@@ -672,11 +677,11 @@ export function SettingsClient({
                             type="button"
                             variant="outline"
                             size="sm"
-                            onClick={handleRandomizeWaves}
+                            onClick={handleRandomizeAvatar}
                             className="h-9 px-4 text-xs font-medium rounded-xl bg-blue-50/70 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border-blue-200/80 dark:border-blue-800 hover:bg-blue-100/70 transition-all cursor-pointer gap-1.5"
                           >
                             <Shuffle className="w-3.5 h-3.5" />
-                            Acak Avatar Waves
+                            Acak Avatar
                           </Button>
                           {storeLogoUrl && (
                             <Button
@@ -727,42 +732,11 @@ export function SettingsClient({
                         Warna aksen utama tema dan katalog toko.
                       </p>
                     </div>
-                    <div className="md:col-span-8 space-y-3">
-                      <div className="flex flex-wrap items-center gap-2.5">
-                        {COLOR_PRESETS.map((preset) => {
-                          const isSelected = primaryColor.toUpperCase() === preset.hex.toUpperCase();
-                          return (
-                            <button
-                              key={preset.hex}
-                              type="button"
-                              onClick={() => setPrimaryColor(preset.hex)}
-                              className={cn(
-                                "w-9 h-9 rounded-xl flex items-center justify-center transition-all relative border cursor-pointer",
-                                isSelected ? "border-foreground ring-2 ring-primary/30 scale-105 shadow-sm" : "border-transparent opacity-85 hover:opacity-100 hover:scale-105"
-                              )}
-                              style={{ backgroundColor: preset.hex }}
-                              title={preset.name}
-                            >
-                              {isSelected && <IconCheck className="w-4 h-4 text-white" />}
-                            </button>
-                          );
-                        })}
-
-                        <div className="flex items-center gap-2 pl-2 border-l border-border/80">
-                          <Input
-                            type="color"
-                            value={primaryColor}
-                            onChange={(e) => setPrimaryColor(e.target.value)}
-                            className="w-9 h-9 p-0.5 rounded-xl cursor-pointer bg-background/80 border-border/80"
-                          />
-                          <Input
-                            value={primaryColor}
-                            onChange={(e) => setPrimaryColor(e.target.value)}
-                            maxLength={7}
-                            className="w-24 h-9 font-mono text-xs uppercase bg-background/80 border-border/80 rounded-xl px-2.5"
-                          />
-                        </div>
-                      </div>
+                    <div className="md:col-span-8">
+                      <ColorPicker
+                        value={primaryColor}
+                        onChange={setPrimaryColor}
+                      />
                     </div>
                   </div>
 
