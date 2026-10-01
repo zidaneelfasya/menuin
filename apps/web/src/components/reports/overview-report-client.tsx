@@ -13,6 +13,9 @@ import {
   RefreshCw,
   ShoppingBag,
   TrendingUp,
+  TrendingDown,
+  Table,
+  BarChart2,
   Wallet,
   Store
 } from "lucide-react";
@@ -166,6 +169,43 @@ function MiniSparkline({
   color?: string;
   data?: number[];
 }) {
+  const svgRef = React.useRef<SVGSVGElement>(null);
+  const [isInView, setIsInView] = React.useState(false);
+  const [isAnimated, setIsAnimated] = React.useState(false);
+
+  React.useEffect(() => {
+    const el = svgRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      setIsInView(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(true);
+          observer.unobserve(el);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  React.useEffect(() => {
+    if (!isInView) {
+      setIsAnimated(false);
+      return;
+    }
+    setIsAnimated(false);
+    const timer = setTimeout(() => {
+      setIsAnimated(true);
+    }, 40 + metricSeed * 25);
+    return () => clearTimeout(timer);
+  }, [isInView, percentage, data, metricSeed]);
+
   // Shortened width for better balance next to the nominal numbers
   const width = 76;
   const height = 40;
@@ -246,7 +286,7 @@ function MiniSparkline({
   if (!lineD) return null;
 
   return (
-    <svg width={width} height={height} className="overflow-visible flex-shrink-0">
+    <svg ref={svgRef} width={width} height={height} className="overflow-visible flex-shrink-0">
       <defs>
         <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={strokeColor} stopOpacity="0.22" />
@@ -254,7 +294,14 @@ function MiniSparkline({
         </linearGradient>
       </defs>
       {/* Soft gradient area fill below curve */}
-      <path d={areaD} fill={`url(#${gradId})`} />
+      <path
+        d={areaD}
+        fill={`url(#${gradId})`}
+        style={{
+          opacity: isAnimated ? 1 : 0,
+          transition: "opacity 800ms cubic-bezier(0.23, 1, 0.32, 1)",
+        }}
+      />
       {/* Silky-smooth spline stroke line */}
       <path
         d={lineD}
@@ -263,6 +310,12 @@ function MiniSparkline({
         strokeWidth="1.8"
         strokeLinecap="round"
         strokeLinejoin="round"
+        pathLength={100}
+        strokeDasharray={100}
+        strokeDashoffset={isAnimated ? 0 : 100}
+        style={{
+          transition: "stroke-dashoffset 850ms cubic-bezier(0.23, 1, 0.32, 1)",
+        }}
       />
       {/* Terminal tip circle indicator exactly aligned with nominal top */}
       {lastPoint && (
@@ -271,6 +324,12 @@ function MiniSparkline({
           cy={lastPoint.y}
           r="2.5"
           fill={strokeColor}
+          style={{
+            opacity: isAnimated ? 1 : 0,
+            transform: isAnimated ? "scale(1)" : "scale(0)",
+            transformOrigin: `${lastPoint.x}px ${lastPoint.y}px`,
+            transition: "all 350ms cubic-bezier(0.34, 1.56, 0.64, 1) 600ms",
+          }}
         />
       )}
     </svg>
@@ -281,6 +340,43 @@ function MiniSparkline({
  * Minimalist Speedometer Radial Arc Gauge (0 - 100%)
  */
 function SpeedometerGauge({ percentage }: { percentage: number }) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [isInView, setIsInView] = React.useState(false);
+  const [isAnimated, setIsAnimated] = React.useState(false);
+
+  React.useEffect(() => {
+    const el = containerRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      setIsInView(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(true);
+          observer.unobserve(el);
+        }
+      },
+      { threshold: 0.15, rootMargin: "0px 0px -20px 0px" }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  React.useEffect(() => {
+    if (!isInView) {
+      setIsAnimated(false);
+      return;
+    }
+    setIsAnimated(false);
+    const timer = setTimeout(() => {
+      setIsAnimated(true);
+    }, 40);
+    return () => clearTimeout(timer);
+  }, [isInView, percentage]);
+
   const clamped = Math.min(Math.max(percentage, 0), 100);
   const radius = 64;
   const strokeWidth = 9;
@@ -294,7 +390,7 @@ function SpeedometerGauge({ percentage }: { percentage: number }) {
   else if (clamped < 50) strokeColor = "#f59e0b"; // Amber
 
   return (
-    <div className="relative flex flex-col items-center justify-center">
+    <div ref={containerRef} className="relative flex flex-col items-center justify-center">
       <svg width="160" height="92" viewBox="0 0 160 92" className="overflow-visible">
         {/* Background Arc */}
         <path
@@ -304,27 +400,192 @@ function SpeedometerGauge({ percentage }: { percentage: number }) {
           strokeWidth={strokeWidth}
           strokeLinecap="round"
         />
-        {/* Value Arc */}
+        {/* Value Arc with animated sweep */}
         <path
           d={`M ${cx - radius},${cy} A ${radius},${radius} 0 0,1 ${cx + radius},${cy}`}
           fill="none"
           stroke={strokeColor}
           strokeWidth={strokeWidth}
           strokeDasharray={circumference}
-          strokeDashoffset={strokeDashoffset}
+          strokeDashoffset={isAnimated ? strokeDashoffset : circumference}
           strokeLinecap="round"
-          className="transition-all duration-700 ease-out"
+          style={{
+            transition: "stroke-dashoffset 900ms cubic-bezier(0.23, 1, 0.32, 1)",
+          }}
         />
       </svg>
       {/* Centered Metric in Half-Circle */}
-      <div className="absolute top-10 text-center">
-        <div className="text-2xl font-semibold text-slate-900 tracking-tight font-mono">
+      <div
+        className={cn(
+          "absolute top-10 text-center transition-opacity duration-700",
+          isAnimated ? "opacity-100" : "opacity-0"
+        )}
+      >
+        <div className="text-2xl font-semibold text-slate-900 tracking-tight font-sans">
           {clamped.toFixed(1)}%
         </div>
         <div className="text-[10px] font-medium text-slate-400 uppercase tracking-wider mt-0.5">
           Laba Kotor
         </div>
       </div>
+    </div>
+  );
+}
+
+function AnimatedHorizontalBar({
+  widthPercent,
+  colorClass,
+  backgroundColor,
+  trackClass,
+  heightClass = "h-1.5",
+  delayMs = 0,
+}: {
+  widthPercent: number;
+  colorClass?: string;
+  backgroundColor?: string;
+  trackClass?: string;
+  heightClass?: string;
+  delayMs?: number;
+}) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [isInView, setIsInView] = React.useState(false);
+  const [filled, setFilled] = React.useState(false);
+
+  React.useEffect(() => {
+    const el = containerRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      setIsInView(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(true);
+          observer.unobserve(el);
+        }
+      },
+      { threshold: 0.1, rootMargin: "0px 0px -20px 0px" }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  React.useEffect(() => {
+    if (!isInView) {
+      setFilled(false);
+      return;
+    }
+
+    setFilled(false);
+    const timer = setTimeout(() => {
+      setFilled(true);
+    }, 25 + delayMs);
+    return () => clearTimeout(timer);
+  }, [isInView, widthPercent, delayMs]);
+
+  return (
+    <div
+      ref={containerRef}
+      className={cn("w-full rounded-full overflow-hidden", trackClass || "bg-slate-100", heightClass)}
+    >
+      <div
+        className={cn(
+          "h-full rounded-full transition-all ease-out",
+          colorClass
+        )}
+        style={{
+          width: filled ? `${widthPercent}%` : "0%",
+          backgroundColor: backgroundColor,
+          transitionDuration: "800ms",
+          transitionTimingFunction: "cubic-bezier(0.23, 1, 0.32, 1)",
+        }}
+      />
+    </div>
+  );
+}
+
+function AnimatedSegmentedBar({
+  leftPercent,
+  rightPercent,
+  leftColorClass = "bg-amber-400",
+  rightColorClass = "bg-[#0e59f9]",
+  leftTitle,
+  rightTitle,
+  heightClass = "h-3",
+  delayMs = 0,
+}: {
+  leftPercent: number;
+  rightPercent: number;
+  leftColorClass?: string;
+  rightColorClass?: string;
+  leftTitle?: string;
+  rightTitle?: string;
+  heightClass?: string;
+  delayMs?: number;
+}) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [isInView, setIsInView] = React.useState(false);
+  const [filled, setFilled] = React.useState(false);
+
+  React.useEffect(() => {
+    const el = containerRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      setIsInView(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(true);
+          observer.unobserve(el);
+        }
+      },
+      { threshold: 0.1, rootMargin: "0px 0px -20px 0px" }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  React.useEffect(() => {
+    if (!isInView) {
+      setFilled(false);
+      return;
+    }
+
+    setFilled(false);
+    const timer = setTimeout(() => {
+      setFilled(true);
+    }, 30 + delayMs);
+    return () => clearTimeout(timer);
+  }, [isInView, leftPercent, rightPercent, delayMs]);
+
+  return (
+    <div
+      ref={containerRef}
+      className={cn("w-full bg-slate-100 rounded-full overflow-hidden flex shadow-inner", heightClass)}
+    >
+      <div
+        className={cn("h-full transition-all ease-out", leftColorClass)}
+        style={{
+          width: filled ? `${leftPercent}%` : "0%",
+          transitionDuration: "800ms",
+          transitionTimingFunction: "cubic-bezier(0.23, 1, 0.32, 1)",
+        }}
+        title={leftTitle}
+      />
+      <div
+        className={cn("h-full transition-all ease-out", rightColorClass)}
+        style={{
+          width: filled ? `${rightPercent}%` : "0%",
+          transitionDuration: "800ms",
+          transitionTimingFunction: "cubic-bezier(0.23, 1, 0.32, 1)",
+        }}
+        title={rightTitle}
+      />
     </div>
   );
 }
@@ -353,6 +614,8 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
     revenue: number;
   } | null>(null);
 
+  const [topMenuViewMode, setTopMenuViewMode] = React.useState<"bar" | "table">("bar");
+
   // Filter State (Harian, Bulanan, Tahunan) matching Screenshot 3
   const [currentTab, setCurrentTab] = React.useState<"harian" | "bulanan" | "tahunan">("bulanan");
   const [monthParam, setMonthParam] = React.useState<string>(() => format(new Date(), "yyyy-MM"));
@@ -363,15 +626,43 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
   const [tempRange, setTempRange] = React.useState<DateRange | undefined>(undefined);
   const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
 
+  const heroChartRef = React.useRef<HTMLDivElement>(null);
+  const [isHeroChartInView, setIsHeroChartInView] = React.useState(false);
   const [isBarChartAnimated, setIsBarChartAnimated] = React.useState(false);
 
   React.useEffect(() => {
+    const el = heroChartRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      setIsHeroChartInView(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsHeroChartInView(true);
+          observer.unobserve(el);
+        }
+      },
+      { threshold: 0.1, rootMargin: "0px 0px -20px 0px" }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  React.useEffect(() => {
+    if (!isHeroChartInView) {
+      setIsBarChartAnimated(false);
+      return;
+    }
+
     setIsBarChartAnimated(false);
     const timer = setTimeout(() => {
       setIsBarChartAnimated(true);
-    }, 35);
+    }, 40);
     return () => clearTimeout(timer);
-  }, [currentTab, monthParam, yearParam, customRange, data.salesSnapshot?.miniChartData]);
+  }, [isHeroChartInView, currentTab, monthParam, yearParam, customRange, data.salesSnapshot?.miniChartData]);
 
   const todayDateStr = format(new Date(), "yyyy-MM-dd");
   const hasCustomDate = React.useMemo(() => {
@@ -736,7 +1027,7 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
   }).toUpperCase();
 
   return (
-    <div className="space-y-6 print:p-0">
+    <div className="space-y-6 print:p-0 font-sans">
       {/* ==================================================== */}
       {/* 1. PRINTABLE HEADER */}
       {/* ==================================================== */}
@@ -1218,7 +1509,7 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* HERO SALES SPLINE AREA CHART (8 COLS - IMAGE 2 REFERENCE LAYOUT) */}
-        <div className="lg:col-span-8 bg-white rounded-2xl border border-[#EAEFF8] p-5 sm:p-6 shadow-sm flex flex-col justify-between space-y-4">
+        <div ref={heroChartRef} className="lg:col-span-8 bg-white rounded-2xl border border-[#EAEFF8] p-5 sm:p-6 shadow-sm flex flex-col justify-between space-y-4">
           <div>
             {/* Top Bar Header with Title & Legend */}
             <div className="flex items-center justify-between pb-3 ">
@@ -1442,7 +1733,7 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
           <div className="pt-4 border-t border-slate-100">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
               {/* Channels (Kasir POS & Self QR Meja) */}
-              {salesSnapshot.channels.map((ch) => (
+              {salesSnapshot.channels.map((ch, idx) => (
                 <div key={ch.channel} className="p-4 sm:p-4.5 rounded-2xl border border-slate-100 bg-slate-50/70 hover:border-slate-200 transition-colors flex flex-col justify-between min-h-[120px]">
                   <div>
                     <div className="flex items-center justify-between text-xs sm:text-[13px]">
@@ -1460,10 +1751,12 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
                     </div>
                   </div>
                   {/* Progress Bar (Menuin Blue Theme) */}
-                  <div className="h-1.5 sm:h-2 w-full bg-slate-200/60 rounded-full overflow-hidden mt-auto">
-                    <div
-                      className="h-full rounded-full bg-[#0e59f9] transition-all duration-500"
-                      style={{ width: `${Math.min(100, Math.max(ch.total > 0 ? 3 : 0, ch.percentage))}%` }}
+                  <div className="mt-auto">
+                    <AnimatedHorizontalBar
+                      widthPercent={Math.min(100, Math.max(ch.total > 0 ? 3 : 0, ch.percentage))}
+                      colorClass="bg-[#0e59f9]"
+                      heightClass="h-1.5 sm:h-2"
+                      delayMs={idx * 60}
                     />
                   </div>
                 </div>
@@ -1492,10 +1785,13 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
                     </div>
                   </div>
                   {/* Progress Bar (White on Blue Track) */}
-                  <div className="h-1.5 sm:h-2 w-full bg-white/25 rounded-full overflow-hidden mt-auto">
-                    <div
-                      className="h-full rounded-full bg-white transition-all duration-500"
-                      style={{ width: `${Math.min(100, Math.max(3, salesSnapshot.topPaymentMethods[0].percentage))}%` }}
+                  <div className="mt-auto">
+                    <AnimatedHorizontalBar
+                      widthPercent={Math.min(100, Math.max(3, salesSnapshot.topPaymentMethods[0].percentage))}
+                      colorClass="bg-white"
+                      trackClass="bg-white/25"
+                      heightClass="h-1.5 sm:h-2"
+                      delayMs={120}
                     />
                   </div>
                 </div>
@@ -1517,67 +1813,123 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
                   <span className="text-xs font-normal text-slate-400">item terjual</span>
                 </div>
               </div>
-              <Link
-                href={`/outlet/${outletKey}/reports/operations`}
-                className="inline-flex items-center gap-1 text-xs font-medium text-[#0e59f9] hover:text-[#0c4cd4] transition-colors"
-              >
-                <span>Lihat Semua</span>
-                <ChevronRight className="h-3.5 w-3.5" />
-              </Link>
+
+              <div className="flex items-center gap-2">
+                {/* Single Icon View Toggle: Horizontal Bar vs Table */}
+                <button
+                  type="button"
+                  onClick={() => setTopMenuViewMode((prev) => (prev === "bar" ? "table" : "bar"))}
+                  title={topMenuViewMode === "bar" ? "Tampilan Tabel" : "Tampilan Grafik Batang"}
+                  aria-label={topMenuViewMode === "bar" ? "Tampilan Tabel" : "Tampilan Grafik Batang"}
+                  className={cn(
+                    "w-7 h-7 flex items-center justify-center rounded-lg border transition-all cursor-pointer",
+                    topMenuViewMode === "table"
+                      ? "bg-blue-50 border-blue-200 text-[#0e59f9] shadow-xs"
+                      : "bg-white border-slate-200/80 text-slate-500 hover:text-slate-900 hover:bg-slate-50"
+                  )}
+                >
+                  {topMenuViewMode === "bar" ? (
+                    <Table className="w-3.5 h-3.5" />
+                  ) : (
+                    <BarChart2 className="w-3.5 h-3.5" />
+                  )}
+                </button>
+
+                <Link
+                  href={`/outlet/${outletKey}/reports/operations`}
+                  className="inline-flex items-center gap-0.5 text-xs font-medium text-[#0e59f9] hover:text-[#0c4cd4] transition-colors"
+                >
+                  <span>Lihat Semua</span>
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
             </div>
 
-            {/* Ranked Products List with Heatmap Gradient Ramp */}
-            <div className="pt-3 space-y-3.5">
-              {operationsSnapshot.topProducts.length === 0 ? (
-                <div className="py-8 text-center text-xs text-slate-400">
-                  Belum ada data menu terjual pada rentang tanggal ini.
-                </div>
-              ) : (
-                operationsSnapshot.topProducts.slice(0, 5).map((item, idx) => {
-                  const percentOfTop = Math.max(8, Math.round((item.totalQty / maxProductQty) * 100));
-                  const theme = RANK_THEMES[idx] || RANK_THEMES[RANK_THEMES.length - 1];
+            {/* Duality: Table View vs Ranked Products List with Animated Horizontal Bars */}
+            {topMenuViewMode === "table" ? (
+              <div className="overflow-x-auto -mx-2 sm:mx-0 pt-1 min-h-[220px] flex flex-col justify-between">
+                <table className="w-full text-left border-collapse min-w-[280px]">
+                  <thead>
+                    <tr className="border-b border-slate-100 text-[11px] font-medium text-slate-400 h-[28px]">
+                      <th className="pb-1.5 px-2 text-left font-medium">Menu</th>
+                      <th className="pb-1.5 px-2 text-right font-medium">Porsi</th>
+                      <th className="pb-1.5 px-2 text-right font-medium">Omzet</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {operationsSnapshot.topProducts.slice(0, 5).map((item, idx) => (
+                      <tr key={item.id || item.name} className="hover:bg-slate-50/60 transition-colors h-[38px]">
+                        <td className="py-1.5 px-2 align-middle">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className={cn("w-4 h-4 rounded-full text-[10px] font-semibold flex items-center justify-center flex-shrink-0", RANK_THEMES[idx]?.badge || "bg-slate-100 text-slate-700")}>
+                              {idx + 1}
+                            </span>
+                            <span className="text-xs font-semibold text-slate-900 truncate max-w-[130px]" title={item.name}>
+                              {item.name}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-1.5 px-2 text-right text-xs font-medium text-slate-700 tabular-nums align-middle">
+                          {formatNumber(item.totalQty)}
+                        </td>
+                        <td className="py-1.5 px-2 text-right text-xs font-semibold text-slate-900 tabular-nums align-middle">
+                          {formatRupiah(item.totalRevenue)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              /* Ranked Products List with Heatmap Gradient Ramp and Animated Horizontal Bars */
+              <div className="pt-3 space-y-3.5 min-h-[220px]">
+                {operationsSnapshot.topProducts.length === 0 ? (
+                  <div className="py-8 text-center text-xs text-slate-400 min-h-[220px] flex items-center justify-center">
+                    Belum ada data menu terjual pada rentang tanggal ini.
+                  </div>
+                ) : (
+                  operationsSnapshot.topProducts.slice(0, 5).map((item, idx) => {
+                    const percentOfTop = Math.max(8, Math.round((item.totalQty / maxProductQty) * 100));
+                    const theme = RANK_THEMES[idx] || RANK_THEMES[RANK_THEMES.length - 1];
 
-                  return (
-                    <div key={item.id || item.name} className="space-y-1.5 group">
-                      <div className="flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span
-                            className={cn(
-                              "w-5 h-5 rounded-full text-[11px] font-semibold flex items-center justify-center flex-shrink-0 transition-colors",
-                              theme.badge
-                            )}
-                          >
-                            {idx + 1}
-                          </span>
-                          <span className="font-medium text-slate-900 truncate">
-                            {item.name}
-                          </span>
+                    return (
+                      <div key={item.id || item.name} className="space-y-1.5 group">
+                        <div className="flex items-center justify-between text-xs">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span
+                              className={cn(
+                                "w-5 h-5 rounded-full text-[11px] font-semibold flex items-center justify-center flex-shrink-0 transition-colors",
+                                theme.badge
+                              )}
+                            >
+                              {idx + 1}
+                            </span>
+                            <span className="font-medium text-slate-900 truncate">
+                              {item.name}
+                            </span>
+                          </div>
+                          <div className="text-right flex-shrink-0 ml-2">
+                            <span className="font-semibold text-slate-900 font-sans text-[11px]">
+                              {formatRupiah(item.totalRevenue)}
+                            </span>
+                            <span className="text-[10px] text-slate-400 ml-1.5">
+                              ({item.totalQty})
+                            </span>
+                          </div>
                         </div>
-                        <div className="text-right flex-shrink-0 ml-2">
-                          <span className="font-semibold text-slate-900 font-sans text-[11px]">
-                            {formatRupiah(item.totalRevenue)}
-                          </span>
-                          <span className="text-[10px] text-slate-400 ml-1.5">
-                            ({item.totalQty})
-                          </span>
-                        </div>
-                      </div>
 
-                      {/* Heatmap-Style Progress Bar Ramp */}
-                      <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                        <div
-                          className={cn(
-                            "h-full rounded-full transition-all duration-300",
-                            theme.bar
-                          )}
-                          style={{ width: `${percentOfTop}%` }}
+                        {/* Animated Horizontal Bar */}
+                        <AnimatedHorizontalBar
+                          widthPercent={percentOfTop}
+                          colorClass={theme.bar}
+                          delayMs={idx * 45}
                         />
                       </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
+                    );
+                  })
+                )}
+              </div>
+            )}
           </div>
 
           {/* Quick Metrics Strip: AOV & Top Transaksi (Fills empty space) */}
@@ -1658,7 +2010,7 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
                 return (
                   <div
                     key={h}
-                    className="text-[9px] font-mono text-slate-400 text-center truncate"
+                    className="text-[9px] font-sans text-slate-400 text-center truncate"
                     title={`${h}:00`}
                   >
                     {label}
@@ -1761,18 +2113,15 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
               </div>
 
               {/* Horizontal Comparative Bar */}
-              <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden flex">
-                <div
-                  className="h-full bg-amber-400 transition-all duration-500"
-                  style={{ width: `${cashRatio}%` }}
-                  title={`Kas Laci: ${cashRatio}%`}
-                />
-                <div
-                  className="h-full bg-[#0e59f9] transition-all duration-500"
-                  style={{ width: `${digitalRatio}%` }}
-                  title={`Rekening Digital: ${digitalRatio}%`}
-                />
-              </div>
+              <AnimatedSegmentedBar
+                leftPercent={cashRatio}
+                rightPercent={digitalRatio}
+                leftColorClass="bg-amber-400"
+                rightColorClass="bg-[#0e59f9]"
+                leftTitle={`Kas Laci: ${cashRatio}%`}
+                rightTitle={`Rekening Digital: ${digitalRatio}%`}
+                heightClass="h-2.5"
+              />
 
               {/* 2 Columns: Laci vs Bank */}
               <div className="grid grid-cols-2 gap-3 pt-2">
@@ -1781,7 +2130,7 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
                     <span className="w-2 h-2 rounded-full bg-amber-400" />
                     <span>Kas Fisik Laci Toko</span>
                   </div>
-                  <div className="text-sm font-semibold text-slate-900 font-mono">
+                  <div className="text-sm font-semibold text-slate-900 font-sans">
                     {formatRupiah(financeSnapshot.drawerNetFlow)}
                   </div>
                   <div className="text-[10px] text-slate-400">
@@ -1794,7 +2143,7 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
                     <span className="w-2 h-2 rounded-full bg-[#0e59f9]" />
                     <span>Rekening Digital (QRIS &amp; EDC)</span>
                   </div>
-                  <div className="text-sm font-semibold text-[#0e59f9] font-mono">
+                  <div className="text-sm font-semibold text-[#0e59f9] font-sans">
                     {formatRupiah(financeSnapshot.digitalNetFlow)}
                   </div>
                   <div className="text-[10px] text-slate-400">
@@ -1848,13 +2197,13 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
               <div className="w-full grid grid-cols-2 gap-3 pt-3">
                 <div className="p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 text-center">
                   <div className="text-[10px] text-slate-400">Estimasi Laba Kotor</div>
-                  <div className="text-xs font-semibold text-slate-900 font-mono mt-0.5">
+                  <div className="text-xs font-semibold text-slate-900 font-sans mt-0.5">
                     {formatRupiah(heroKpis.grossProfit)}
                   </div>
                 </div>
                 <div className="p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 text-center">
                   <div className="text-[10px] text-slate-400">Modal HPP Bahan Resep</div>
-                  <div className="text-xs font-semibold text-slate-600 font-mono mt-0.5">
+                  <div className="text-xs font-semibold text-slate-600 font-sans mt-0.5">
                     {formatRupiah(financeSnapshot.totalHpp)}
                   </div>
                 </div>

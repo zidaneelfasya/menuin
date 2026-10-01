@@ -172,15 +172,42 @@ function MiniSparkline({
   color?: string;
   data?: number[];
 }) {
+  const svgRef = React.useRef<SVGSVGElement>(null);
+  const [isInView, setIsInView] = React.useState(false);
   const [isAnimated, setIsAnimated] = React.useState(false);
 
   React.useEffect(() => {
+    const el = svgRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      setIsInView(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(true);
+          observer.unobserve(el);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  React.useEffect(() => {
+    if (!isInView) {
+      setIsAnimated(false);
+      return;
+    }
     setIsAnimated(false);
     const timer = setTimeout(() => {
       setIsAnimated(true);
     }, 40 + metricSeed * 25);
     return () => clearTimeout(timer);
-  }, [percentage, data, metricSeed]);
+  }, [isInView, percentage, data, metricSeed]);
 
   const width = 76;
   const height = 40;
@@ -258,7 +285,7 @@ function MiniSparkline({
   if (!lineD) return null;
 
   return (
-    <svg width={width} height={height} className="overflow-visible flex-shrink-0">
+    <svg ref={svgRef} width={width} height={height} className="overflow-visible flex-shrink-0">
       <defs>
         <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={strokeColor} stopOpacity="0.22" />
@@ -382,16 +409,43 @@ function PaymentDoughnutChart({
   hoveredIndex?: number | null;
   onHoverIndex?: (idx: number | null) => void;
 }) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [isInView, setIsInView] = React.useState(false);
   const [internalHoveredIndex, setInternalHoveredIndex] = React.useState<number | null>(null);
   const [isAnimated, setIsAnimated] = React.useState(false);
 
   React.useEffect(() => {
+    const el = containerRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      setIsInView(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(true);
+          observer.unobserve(el);
+        }
+      },
+      { threshold: 0.15, rootMargin: "0px 0px -20px 0px" }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  React.useEffect(() => {
+    if (!isInView) {
+      setIsAnimated(false);
+      return;
+    }
     setIsAnimated(false);
     const timer = setTimeout(() => {
       setIsAnimated(true);
     }, 35);
     return () => clearTimeout(timer);
-  }, [viewMode, totalCollected, totalOrders, methods]);
+  }, [isInView, viewMode, totalCollected, totalOrders, methods]);
 
   const hoveredIndex = externalHoveredIndex !== undefined ? externalHoveredIndex : internalHoveredIndex;
   const handleHover = (idx: number | null) => {
@@ -481,7 +535,7 @@ function PaymentDoughnutChart({
       : null;
 
   return (
-    <div className="flex flex-col items-center">
+    <div ref={containerRef} className="flex flex-col items-center">
       <div className="relative w-48 h-48 flex items-center justify-center">
         <svg width="192" height="192" viewBox="0 0 192 192" className="transform -rotate-90 overflow-visible">
           {/* Subtle background track */}
@@ -586,15 +640,42 @@ function CompositionDoughnutChart({
   hoveredIndex: number | null;
   onHoverIndex: (idx: number | null) => void;
 }) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [isInView, setIsInView] = React.useState(false);
   const [isAnimated, setIsAnimated] = React.useState(false);
 
   React.useEffect(() => {
+    const el = containerRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      setIsInView(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(true);
+          observer.unobserve(el);
+        }
+      },
+      { threshold: 0.15, rootMargin: "0px 0px -20px 0px" }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  React.useEffect(() => {
+    if (!isInView) {
+      setIsAnimated(false);
+      return;
+    }
     setIsAnimated(false);
     const timer = setTimeout(() => {
       setIsAnimated(true);
     }, 35);
     return () => clearTimeout(timer);
-  }, [grossTotal, segments]);
+  }, [isInView, grossTotal, segments]);
 
   const activeSegments = React.useMemo(() => {
     return segments.filter((s) => s.amount > 0 || s.pct > 0);
@@ -663,7 +744,7 @@ function CompositionDoughnutChart({
   const activeSlice = hoveredIndex !== null && hoveredIndex >= 0 ? slices.find((s) => s.originalIndex === hoveredIndex) : null;
 
   return (
-    <div className="flex flex-col items-center">
+    <div ref={containerRef} className="flex flex-col items-center">
       <div className="relative w-48 h-48 flex items-center justify-center">
         <svg width="192" height="192" viewBox="0 0 192 192" className="transform -rotate-90 overflow-visible">
           {/* Subtle background track */}
@@ -747,28 +828,60 @@ function AnimatedHorizontalBar({
   widthPercent,
   colorClass,
   backgroundColor,
+  trackClass,
   heightClass = "h-1.5",
   delayMs = 0,
 }: {
   widthPercent: number;
   colorClass?: string;
   backgroundColor?: string;
+  trackClass?: string;
   heightClass?: string;
   delayMs?: number;
 }) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [isInView, setIsInView] = React.useState(false);
   const [filled, setFilled] = React.useState(false);
 
   React.useEffect(() => {
-    // Reset to 0% first, then smoothly glide to target width in next tick
+    const el = containerRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      setIsInView(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(true);
+          observer.unobserve(el);
+        }
+      },
+      { threshold: 0.1, rootMargin: "0px 0px -20px 0px" }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  React.useEffect(() => {
+    if (!isInView) {
+      setFilled(false);
+      return;
+    }
+
     setFilled(false);
     const timer = setTimeout(() => {
       setFilled(true);
     }, 25 + delayMs);
     return () => clearTimeout(timer);
-  }, [widthPercent, delayMs]);
+  }, [isInView, widthPercent, delayMs]);
 
   return (
-    <div className={cn("w-full bg-slate-100 rounded-full overflow-hidden", heightClass)}>
+    <div
+      ref={containerRef}
+      className={cn("w-full rounded-full overflow-hidden", trackClass || "bg-slate-100", heightClass)}
+    >
       <div
         className={cn(
           "h-full rounded-full transition-all ease-out",
@@ -804,18 +917,49 @@ function AnimatedSegmentedBar({
   heightClass?: string;
   delayMs?: number;
 }) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [isInView, setIsInView] = React.useState(false);
   const [filled, setFilled] = React.useState(false);
 
   React.useEffect(() => {
+    const el = containerRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      setIsInView(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(true);
+          observer.unobserve(el);
+        }
+      },
+      { threshold: 0.1, rootMargin: "0px 0px -20px 0px" }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  React.useEffect(() => {
+    if (!isInView) {
+      setFilled(false);
+      return;
+    }
+
     setFilled(false);
     const timer = setTimeout(() => {
       setFilled(true);
     }, 30 + delayMs);
     return () => clearTimeout(timer);
-  }, [leftPercent, rightPercent, delayMs]);
+  }, [isInView, leftPercent, rightPercent, delayMs]);
 
   return (
-    <div className={cn("w-full bg-slate-100 rounded-full overflow-hidden flex shadow-inner", heightClass)}>
+    <div
+      ref={containerRef}
+      className={cn("w-full bg-slate-100 rounded-full overflow-hidden flex shadow-inner", heightClass)}
+    >
       <div
         className={cn("h-full transition-all ease-out", leftColorClass)}
         style={{
@@ -1000,15 +1144,43 @@ export function SalesReportClient({ initialData, outletKey }: SalesReportClientP
   const [hoveredPointIndex, setHoveredPointIndex] = React.useState<number | null>(null);
   const [compHoveredIndex, setCompHoveredIndex] = React.useState<number | null>(null);
   const [paymentHoveredIndex, setPaymentHoveredIndex] = React.useState<number | null>(null);
+  const heroChartRef = React.useRef<HTMLDivElement>(null);
+  const [isHeroChartInView, setIsHeroChartInView] = React.useState(false);
   const [isBarChartAnimated, setIsBarChartAnimated] = React.useState(false);
 
   React.useEffect(() => {
+    const el = heroChartRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      setIsHeroChartInView(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsHeroChartInView(true);
+          observer.unobserve(el);
+        }
+      },
+      { threshold: 0.1, rootMargin: "0px 0px -20px 0px" }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  React.useEffect(() => {
+    if (!isHeroChartInView) {
+      setIsBarChartAnimated(false);
+      return;
+    }
+
     setIsBarChartAnimated(false);
     const timer = setTimeout(() => {
       setIsBarChartAnimated(true);
-    }, 35);
+    }, 40);
     return () => clearTimeout(timer);
-  }, [chartMetric, currentTab, monthParam, yearParam, customRange, data.chartData]);
+  }, [isHeroChartInView, chartMetric, currentTab, monthParam, yearParam, customRange, data.chartData]);
 
   // Dual-perspective state switchers
   const [topMenuMetric, setTopMenuMetric] = React.useState<"revenue" | "qty">("revenue");
@@ -2078,7 +2250,7 @@ export function SalesReportClient({ initialData, outletKey }: SalesReportClientP
       {/* ==================================================== */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         {/* Left Column (8 Cols): Ringkasan Penjualan / Revenue Analytics (Image 2 style with Split Body & Margin) */}
-        <div className="lg:col-span-8 bg-white rounded-2xl border border-[#EAEFF8] p-5 sm:p-6 shadow-sm flex flex-col justify-between space-y-4">
+        <div ref={heroChartRef} className="lg:col-span-8 bg-white rounded-2xl border border-[#EAEFF8] p-5 sm:p-6 shadow-sm flex flex-col justify-between space-y-4">
           <div>
             {/* Top Bar Header with Title, Peak Value & Metric Switcher */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-3 border-b border-slate-100 gap-3">

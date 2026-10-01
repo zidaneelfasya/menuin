@@ -31,3 +31,23 @@
 - **Ekspor:**
   - Ekspor multi-sheet ke format Microsoft Excel (`.xlsx`) menggunakan library `xlsx`.
   - Format cetak ramah printer / PDF (*print-ready layout*).
+
+## [Unreleased] - 2026-09-30
+
+### Added
+- **Scroll & Viewport-Triggered Entrance Animations (`IntersectionObserver` Standard):**
+  - Seluruh animasi grafik pada halaman Ringkasan Eksekutif (`/reports`) dan Laporan Penjualan (`/reports/sales`) kini **hanya dimulai saat elemen memasuki viewport (pandangan layar) pengguna** (`IntersectionObserver` threshold `0.1`–`0.15`).
+  - Elemen di bawah lipatan layar (*below-the-fold*) tetap berada pada posisi awal `0%` sampai pengguna menggulir (*scroll*) ke posisi kartu terkait, memberikan pengalaman interaksi yang memuaskan dan bertahap (*satisfying tactile entrance*).
+  - Berlaku pada:
+    1. **MiniSparkline:** Penarikan garis SVG (*stroke draw*) pada 4 kartu KPI utama.
+    2. **Hero Capsule Bar Chart:** Gelombang batang kapsul meluncur naik dari garis dasar (*wave stagger entrance*).
+    3. **Sub-Cards Progres:** Bilah kasir POS, self-order QR, dan metode pembayaran dominan (`AnimatedHorizontalBar`).
+    4. **Doughnut Charts:** Putaran busur lingkaran searah jarum jam pada Komposisi Penjualan dan Metode Pembayaran (`PaymentDoughnutChart` & `CompositionDoughnutChart`).
+    5. **Top Menu & Kategori:** Bilah bertingkat (`AnimatedHorizontalBar`) pada menu terlaris, menu evaluasi, kategori teratas, dan pola waktu operasional.
+    6. **Buku Kas & Likuiditas:** Peluncuran bilah komparatif proporsional (`AnimatedSegmentedBar`) kas fisik vs saldo rekening digital.
+    7. **Speedometer Gauge:** Putaran busur radial efisiensi margin laba kotor.
+  - **Efisiensi & Beban Kinerja:**
+- **Standardisasi Tipografi Universal (`font-sans`):**
+  - Seluruh elemen tipografi pada Ringkasan Eksekutif (`/reports`) kini **100% menggunakan `font-sans`**.
+  - Penggunaan `font-mono` pada angka Speedometer Gauge, header jam pada Heatmap Jam Sibuk, rincian Buku Kas (Kas Laci & Rekening Digital), serta kartu Margin Laba telah distandardisasi menjadi `font-sans` agar tampilan selaras, modern, dan konsisten dengan desain sistem Menuin.
+
