@@ -3,7 +3,7 @@
 import { db } from "@/lib/db";
 import { tenants, transactions, transactionItems, products, promotions } from "@/lib/db/schema";
 import { eq, inArray, and, or, sql } from "drizzle-orm";
-import { headers } from "next/headers";
+import { getAppOrigin } from "@/lib/utils/app-origin";
 import { z } from "zod";
 import { generateOrderNumber } from "@/lib/utils/order-number";
 import { calculatePromoDiscount } from "@/lib/utils/promotions";
@@ -147,7 +147,7 @@ export async function createOnlineOrder(formData: z.infer<typeof orderSchema>) {
     const initialStatus = 'PENDING';
     
     // Always start online orders as PENDING so they wait in the "Menunggu Pembayaran" queue
-    // until the customer pays at the counter or completes Midtrans checkout.
+    // until the customer pays at the counter or completes DOKU checkout.
     
     const orderNumber = generateOrderNumber(tenant);
 
@@ -220,17 +220,6 @@ async function findPublicOrder(orderNumber: string, tenantSlug: string) {
   ).limit(1);
 
   return { tenant, order: order ?? null };
-}
-
-/** Origin aplikasi untuk callback URL DOKU. Tidak memakai URL kiriman client (anti open-redirect). */
-async function getAppOrigin(): Promise<string | null> {
-  const fromEnv = process.env.APP_BASE_URL?.trim();
-  if (fromEnv) return fromEnv.replace(/\/+$/, '');
-  const h = await headers();
-  const host = h.get('x-forwarded-host') || h.get('host');
-  if (!host) return null;
-  const proto = h.get('x-forwarded-proto') || (host.startsWith('localhost') ? 'http' : 'https');
-  return `${proto}://${host}`;
 }
 
 /**

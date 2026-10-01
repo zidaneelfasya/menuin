@@ -108,3 +108,21 @@ export function decideOrderUpdateOnPaid(order: OrderSnapshot, latePayment: boole
     reviewReason: latePayment ? 'LATE_PAYMENT' : null,
   };
 }
+
+export type SubscriptionUpdateOnPaid = {
+  activate: boolean;
+  reviewReason: ReviewReason | null;
+};
+
+/** Efek ke tagihan langganan ketika attempt-nya berubah menjadi PAID. */
+export function decideSubscriptionOnPaid(invoiceStatus: string, latePayment: boolean): SubscriptionUpdateOnPaid {
+  if (invoiceStatus === 'PAID') {
+    // Tagihan ini sudah lunas lewat attempt lain → pelanggan bayar dua kali.
+    return { activate: false, reviewReason: 'ALREADY_PAID_OTHER_METHOD' };
+  }
+  if (invoiceStatus === 'CANCELED') {
+    // Tagihan dibatalkan (mis. ganti paket) tapi uang tetap masuk: tetap aktifkan.
+    return { activate: true, reviewReason: 'LATE_PAYMENT' };
+  }
+  return { activate: true, reviewReason: latePayment ? 'LATE_PAYMENT' : null };
+}

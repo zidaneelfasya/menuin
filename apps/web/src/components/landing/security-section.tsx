@@ -15,7 +15,7 @@ const points = [
   {
     icon: CreditCard,
     title: "Pembayaran berizin",
-    body: "Pembayaran online diproses Midtrans, penyelenggara jasa pembayaran berizin. Menuin tidak menyimpan data kartu.",
+    body: "Pembayaran online diproses DOKU, penyelenggara jasa pembayaran berizin Bank Indonesia. Menuin tidak menyimpan data kartu.",
   },
   {
     icon: Database,
@@ -35,10 +35,9 @@ const points = [
 ];
 
 // Hanya mitra pembayaran yang benar-benar terintegrasi, semua di-host lokal.
-// `midtrans-ink.svg` adalah wordmark Midtrans yang fill putihnya ditukar ke
-// abu tinta. Tinggi menyamakan bobot optis, bukan tinggi kotaknya.
+// Tinggi menyamakan bobot optis, bukan tinggi kotaknya.
+// TODO: tambahkan wordmark DOKU setelah aset resmi dari DOKU tersedia.
 const logos = [
-  { name: "Midtrans", src: "/img/brand_logo/midtrans-ink.svg", h: 18 },
   { name: "QRIS", src: "/img/brand_logo/qris.svg", h: 22 },
   { name: "BCA", src: "/img/brand_logo/bca.svg", h: 20 },
   { name: "Bank Mandiri", src: "/img/brand_logo/mandiri.svg", h: 18 },

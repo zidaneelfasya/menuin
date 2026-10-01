@@ -496,12 +496,41 @@ export const payments = pgTable('payments', {
   };
 });
 
-// Satu baris per percobaan pembayaran ke gateway. Satu order bisa punya beberapa
-// attempt (mis. attempt pertama expired lalu pelanggan bayar ulang).
+// Tagihan langganan Menuin ke tenant. Harga & paket ditentukan server (lib/billing/plans).
+export const subscriptionInvoices = pgTable('subscription_invoices', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
+  planCode: text('plan_code').notNull(), // starter, business
+  plan: text('plan').notNull(), // BASIC, PRO (entitlement)
+  amount: integer('amount').notNull(), // rupiah
+  periodDays: integer('period_days').notNull(),
+  status: text('status').notNull().default('PENDING'), // PENDING, PAID, CANCELED
+  createdByMembershipId: uuid('created_by_membership_id'),
+  subscriptionId: uuid('subscription_id').references(() => subscriptions.id),
+  periodStart: timestamp('period_start', { withTimezone: true }),
+  periodEnd: timestamp('period_end', { withTimezone: true }),
+  paidAt: timestamp('paid_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => {
+  return {
+    amountCheck: check('subscription_invoices_amount_check', sql`${table.amount} > 0`),
+    statusCheck: check('subscription_invoices_status_check', sql`${table.status} in ('PENDING', 'PAID', 'CANCELED')`),
+    // Maksimal satu tagihan terbuka per tenant.
+    onePendingPerTenant: uniqueIndex('subscription_invoices_one_pending_uq')
+      .on(table.tenantId)
+      .where(sql`status = 'PENDING'`),
+  };
+}).enableRLS();
+
+// Satu baris per percobaan pembayaran ke gateway. Satu order/tagihan bisa punya
+// beberapa attempt (mis. attempt pertama expired lalu pelanggan bayar ulang).
 export const paymentAttempts = pgTable('payment_attempts', {
   id: uuid('id').primaryKey().defaultRandom(),
   tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
-  transactionId: uuid('transaction_id').notNull(),
+  purpose: text('purpose').notNull().default('ORDER'), // ORDER, SUBSCRIPTION
+  transactionId: uuid('transaction_id'),
+  subscriptionInvoiceId: uuid('subscription_invoice_id').references(() => subscriptionInvoices.id),
   provider: text('provider').notNull(), // DOKU
   product: text('product').notNull(), // CHECKOUT, SNAP_QRIS
   environment: text('environment').notNull(), // sandbox, production
@@ -537,6 +566,14 @@ export const paymentAttempts = pgTable('payment_attempts', {
     oneActivePerTransaction: uniqueIndex('payment_attempts_one_active_per_tx_uq')
       .on(table.transactionId)
       .where(sql`status in ('CREATED', 'PENDING')`),
+    oneActivePerSubscriptionInvoice: uniqueIndex('payment_attempts_one_active_per_sub_invoice_uq')
+      .on(table.subscriptionInvoiceId)
+      .where(sql`status in ('CREATED', 'PENDING')`),
+    targetCheck: check(
+      'payment_attempts_target_check',
+      sql`(${table.purpose} = 'ORDER' and ${table.transactionId} is not null and ${table.subscriptionInvoiceId} is null)
+        or (${table.purpose} = 'SUBSCRIPTION' and ${table.subscriptionInvoiceId} is not null and ${table.transactionId} is null)`
+    ),
     statusIdx: index('payment_attempts_status_created_idx').on(table.status, table.createdAt),
     amountCheck: check('payment_attempts_amount_check', sql`${table.amount} > 0`),
     statusCheck: check(

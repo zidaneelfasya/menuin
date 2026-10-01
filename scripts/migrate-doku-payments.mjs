@@ -10,13 +10,19 @@ if (!databaseUrl) {
 }
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const migrationPath = path.join(__dirname, '../apps/web/drizzle/doku_payments.sql');
+// Urutan penting: Fase 1 lalu Fase 2. Semua file idempotent.
+const migrationFiles = ['doku_payments.sql', 'doku_subscriptions.sql'].map((f) =>
+  path.join(__dirname, '../apps/web/drizzle', f)
+);
 const sql = postgres(databaseUrl, { max: 1, prepare: false });
 
 async function migrate() {
   try {
-    const statements = readFileSync(migrationPath, 'utf8');
-    await sql.begin((tx) => tx.unsafe(statements));
+    await sql.begin(async (tx) => {
+      for (const file of migrationFiles) {
+        await tx.unsafe(readFileSync(file, 'utf8'));
+      }
+    });
     console.log('DOKU payments migration successful!');
   } catch (err) {
     console.error('Migration error:', err);
