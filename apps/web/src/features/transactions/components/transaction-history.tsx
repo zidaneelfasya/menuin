@@ -34,6 +34,7 @@ import {
   Store,
   CreditCard,
   ArrowUpRight,
+  ArrowDownRight,
   UtensilsCrossed
 } from 'lucide-react';
 import Link from 'next/link';
@@ -290,26 +291,72 @@ function getCubicSplinePath(pts: { x: number; y: number }[]): string {
 }
 
 function MiniSparkline({
+  percentage,
+  isPositive,
   metricSeed = 1,
   color,
   data,
 }: {
+  percentage?: number;
+  isPositive?: boolean;
   metricSeed?: number;
   color?: string;
   data?: number[];
 }) {
-  const width = 84;
-  const height = 42;
-  const padX = 3;
+  const svgRef = React.useRef<SVGSVGElement>(null);
+  const [isInView, setIsInView] = React.useState(false);
+  const [isAnimated, setIsAnimated] = React.useState(false);
+
+  React.useEffect(() => {
+    const el = svgRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      setIsInView(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(true);
+          observer.unobserve(el);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  React.useEffect(() => {
+    if (!isInView) {
+      setIsAnimated(false);
+      return;
+    }
+    setIsAnimated(false);
+    const timer = setTimeout(() => {
+      setIsAnimated(true);
+    }, 40 + metricSeed * 25);
+    return () => clearTimeout(timer);
+  }, [isInView, percentage, data, metricSeed]);
+
+  const width = 76;
+  const height = 40;
+  const padX = 2;
   const midY = height / 2;
 
   const gradId = React.useId().replace(/:/g, "_");
-  const strokeColor = color || "#10b981";
+  const positive = isPositive !== undefined
+    ? isPositive
+    : (data && data.length >= 2)
+      ? data[data.length - 1] >= data[0]
+      : (percentage ?? 0) >= 0;
+  const strokeColor = color || (positive ? "#10b981" : "#f43f5e");
 
   const { lineD, areaD, lastPoint } = React.useMemo(() => {
     const pts: { x: number; y: number }[] = [];
 
-    // Prioritize REAL DATA when provided with at least 2 points!
+    // Prioritize REAL DATA when provided!
     if (data && data.length >= 2) {
       const dataMin = Math.min(...data);
       const dataMax = Math.max(...data);
@@ -320,27 +367,38 @@ function MiniSparkline({
       data.forEach((val, idx) => {
         const x = padX + (idx / (data.length - 1)) * (width - 2 * padX);
         const clampedVal = Math.max(min, Math.min(max, val));
-        const y = height - 5 - ((clampedVal - min) / range) * (height - 12);
+        const y = height - 5 - ((clampedVal - min) / range) * (height - 10);
         pts.push({ x, y });
       });
     } else {
       const numPoints = 28;
-      const phase = (metricSeed * 0.53) % 1;
+      const absP = Math.abs(percentage ?? 10);
+      const isUp = positive;
+
+      const ratio = Math.min(absP / 50, 1.0);
+      const maxClimb = 24;
+      const actualClimb = ratio * maxClimb;
+
+      const yStart = isUp ? midY + actualClimb * 0.47 : midY - actualClimb * 0.47;
+      const yEnd = isUp ? midY - actualClimb * 0.53 : midY + actualClimb * 0.53;
+
+      const phase = (metricSeed * 0.43) % 1;
 
       for (let i = 0; i < numPoints; i++) {
         const t = i / (numPoints - 1);
         const x = padX + t * (width - 2 * padX);
-        const linearY = midY + 4 * (1 - 2 * t);
+        const linearY = yStart + (yEnd - yStart) * t;
 
-        const oct1 = Math.sin((t * 3.8 + phase * 2.3) * Math.PI * 2) * 3.2;
-        const oct2 = Math.cos((t * 7.5 + phase * 3.7) * Math.PI * 2) * 2.0;
-        const oct3 = Math.sin((t * 11.2 + phase * 1.5) * Math.PI * 2) * 1.0;
-        const rawNoise = oct1 + oct2 + oct3;
+        const oct1 = Math.sin((t * 4.3 + phase * 2.1) * Math.PI * 2) * 2.3;
+        const oct2 = Math.cos((t * 8.7 + phase * 4.3) * Math.PI * 2) * 1.5;
+        const oct3 = Math.sin((t * 13.1 + phase * 1.7) * Math.PI * 2) * 0.8;
+        const drift = Math.sin((t * 2.1 + phase) * Math.PI * 2) * 0.9;
+        const rawNoise = oct1 + oct2 + oct3 + drift;
 
-        const windowFactor = Math.pow(Math.sin(t * Math.PI), 0.55);
+        const windowFactor = Math.pow(Math.sin(t * Math.PI), 0.65);
         const wave = rawNoise * windowFactor;
 
-        const y = Math.max(3.0, Math.min(height - 4, linearY + wave));
+        const y = Math.max(2.0, Math.min(height - 2.5, linearY + wave));
         pts.push({ x, y });
       }
     }
@@ -353,33 +411,52 @@ function MiniSparkline({
     const fillD = `${splineD} L ${last.x.toFixed(1)},${height} L ${first.x.toFixed(1)},${height} Z`;
 
     return { lineD: splineD, areaD: fillD, lastPoint: last };
-  }, [data, metricSeed, width, height, midY, padX]);
+  }, [percentage, data, metricSeed, width, height, midY, padX, positive]);
 
   if (!lineD) return null;
 
   return (
-    <svg width={width} height={height} className="overflow-visible flex-shrink-0">
+    <svg ref={svgRef} width={width} height={height} className="overflow-visible flex-shrink-0">
       <defs>
         <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={strokeColor} stopOpacity={color === "#ffffff" ? 0.32 : 0.24} />
+          <stop offset="0%" stopColor={strokeColor} stopOpacity={color === "#ffffff" ? 0.32 : 0.22} />
           <stop offset="100%" stopColor={strokeColor} stopOpacity={0.0} />
         </linearGradient>
       </defs>
-      <path d={areaD} fill={`url(#${gradId})`} />
+      <path
+        d={areaD}
+        fill={`url(#${gradId})`}
+        style={{
+          opacity: isAnimated ? 1 : 0,
+          transition: "opacity 800ms cubic-bezier(0.23, 1, 0.32, 1)",
+        }}
+      />
       <path
         d={lineD}
         fill="none"
         stroke={strokeColor}
-        strokeWidth="2"
+        strokeWidth="1.8"
         strokeLinecap="round"
         strokeLinejoin="round"
+        pathLength={100}
+        strokeDasharray={100}
+        strokeDashoffset={isAnimated ? 0 : 100}
+        style={{
+          transition: "stroke-dashoffset 850ms cubic-bezier(0.23, 1, 0.32, 1)",
+        }}
       />
       {lastPoint && (
         <circle
           cx={lastPoint.x}
           cy={lastPoint.y}
-          r="3"
+          r="2.5"
           fill={strokeColor}
+          style={{
+            opacity: isAnimated ? 1 : 0,
+            transform: isAnimated ? "scale(1)" : "scale(0)",
+            transformOrigin: `${lastPoint.x}px ${lastPoint.y}px`,
+            transition: "all 350ms cubic-bezier(0.34, 1.56, 0.64, 1) 600ms",
+          }}
         />
       )}
     </svg>
@@ -390,13 +467,13 @@ function MiniSparkline({
 function formatKpiCurrency(val: number): string {
   if (val >= 1_000_000_000) {
     const m = (val / 1_000_000_000).toFixed(1).replace('.', ',');
-    return `+Rp ${m.endsWith(',0') ? m.slice(0, -2) : m} M`;
+    return `Rp ${m.endsWith(',0') ? m.slice(0, -2) : m} M`;
   }
   if (val >= 1_000_000) {
     const jt = (val / 1_000_000).toFixed(1).replace('.', ',');
-    return `+Rp ${jt.endsWith(',0') ? jt.slice(0, -2) : jt} Jt`;
+    return `Rp ${jt.endsWith(',0') ? jt.slice(0, -2) : jt} Jt`;
   }
-  return `+${formatCurrency(val)}`;
+  return formatCurrency(val);
 }
 
 export function TransactionHistory({ initialData }: { initialData: Transaction[] }) {
@@ -820,7 +897,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
   }, [filteredData]);
 
   // Real trend data computation from actual transactions (chronologically grouped)
-  const { netSalesTrend, ordersTrend, aovTrend, itemsSoldTrend, growthStats } = React.useMemo(() => {
+  const { netSalesTrend, ordersTrend, aovTrend, itemsSoldTrend, growthStats, growthValues } = React.useMemo(() => {
     const list = filteredData.length > 0 ? filteredData : data;
     if (!list || list.length === 0) {
       return {
@@ -828,7 +905,8 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
         ordersTrend: undefined,
         aovTrend: undefined,
         itemsSoldTrend: undefined,
-        growthStats: { netSales: '+4244.3%', orders: '+3732%', aov: '+13.4%', itemsSold: '+4272%' },
+        growthStats: { netSales: '+0%', orders: '+0%', aov: '+0%', itemsSold: '+0%' },
+        growthValues: { netSales: 0, orders: 0, aov: 0, itemsSold: 0 },
       };
     }
 
@@ -913,26 +991,42 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
       }
     }
 
-    const calcGrowth = (pts: number[], defaultStr: string) => {
-      if (!pts || pts.length < 2) return defaultStr;
-      const first = pts[0] || 0;
-      const last = pts[pts.length - 1] || 0;
-      if (first === 0 && last === 0) return defaultStr;
-      if (first === 0) return '+100%';
-      const pct = Math.round(((last - first) / first) * 100);
-      return `${pct >= 0 ? '+' : ''}${pct}%`;
+    const calcGrowthVal = (pts: number[]): number => {
+      if (!pts || pts.length < 2) return 0;
+      const mid = Math.floor(pts.length / 2);
+      const firstHalfSum = pts.slice(0, mid).reduce((a, b) => a + b, 0);
+      const secondHalfSum = pts.slice(mid).reduce((a, b) => a + b, 0);
+      if (firstHalfSum === 0 && secondHalfSum === 0) return 0;
+      if (firstHalfSum === 0) return 100;
+      const pct = ((secondHalfSum - firstHalfSum) / firstHalfSum) * 100;
+      return Number(pct.toFixed(1));
     };
+
+    const formatGrowthStr = (val: number): string => {
+      return `${val >= 0 ? '+' : ''}${val.toFixed(1)}%`;
+    };
+
+    const gSales = calcGrowthVal(sPts);
+    const gOrders = calcGrowthVal(oPts);
+    const gAov = calcGrowthVal(aPts);
+    const gItems = calcGrowthVal(iPts);
 
     return {
       netSalesTrend: sPts.length >= 2 ? sPts : undefined,
       ordersTrend: oPts.length >= 2 ? oPts : undefined,
       aovTrend: aPts.length >= 2 ? aPts : undefined,
       itemsSoldTrend: iPts.length >= 2 ? iPts : undefined,
+      growthValues: {
+        netSales: gSales,
+        orders: gOrders,
+        aov: gAov,
+        itemsSold: gItems,
+      },
       growthStats: {
-        netSales: calcGrowth(sPts, '+4244.3%'),
-        orders: calcGrowth(oPts, '+3732%'),
-        aov: calcGrowth(aPts, '+13.4%'),
-        itemsSold: calcGrowth(iPts, '+4272%'),
+        netSales: formatGrowthStr(gSales),
+        orders: formatGrowthStr(gOrders),
+        aov: formatGrowthStr(gAov),
+        itemsSold: formatGrowthStr(gItems),
       },
     };
   }, [filteredData, data]);
@@ -988,8 +1082,17 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
             <div className="w-10 h-10 rounded-full bg-white text-[#0e59f9] flex items-center justify-center shadow-xs flex-shrink-0">
               <ShoppingBag className="w-5 h-5 text-[#0e59f9]" />
             </div>
-            <div className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full backdrop-blur-xs bg-white/20 text-white border border-white/25">
-              <ArrowUpRight className="h-3.5 w-3.5 text-white" />
+            <div className={cn(
+              "inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full backdrop-blur-xs",
+              growthValues.netSales >= 0
+                ? "bg-white/20 text-white border border-white/25"
+                : "bg-rose-500/30 text-rose-100 border border-rose-300/30"
+            )}>
+              {growthValues.netSales >= 0 ? (
+                <ArrowUpRight className="h-3.5 w-3.5 text-white" />
+              ) : (
+                <ArrowDownRight className="h-3.5 w-3.5 text-white" />
+              )}
               <span>{growthStats.netSales}</span>
             </div>
           </div>
@@ -997,18 +1100,24 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
           {/* Bottom Row: Label + Value (Bottom-Left) & Sparkline (Bottom-Right) */}
           <div className="mt-6 flex items-end justify-between gap-2">
             <div className="min-w-0">
-              <span className="text-[11px] font-bold text-white/75 uppercase tracking-wider block mb-1">
+              <span className="text-[11px] font-semibold text-white/80 uppercase tracking-wider block mb-1">
                 NET SALES
               </span>
               <div
-                className="text-2xl sm:text-[26px] font-bold text-white tracking-tight leading-none whitespace-nowrap"
+                className="text-2xl sm:text-[26px] font-semibold text-white tracking-tight leading-none whitespace-nowrap"
                 title={formatCurrency(totalRevenue)}
               >
                 {formatKpiCurrency(totalRevenue)}
               </div>
             </div>
             <div className="flex-shrink-0 pb-0.5">
-              <MiniSparkline data={netSalesTrend} metricSeed={1} color="#ffffff" />
+              <MiniSparkline
+                data={netSalesTrend}
+                percentage={growthValues.netSales}
+                isPositive={growthValues.netSales >= 0}
+                metricSeed={1}
+                color="#ffffff"
+              />
             </div>
           </div>
         </div>
@@ -1020,8 +1129,17 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
             <div className="w-10 h-10 rounded-full bg-[#0e59f9] text-white flex items-center justify-center shadow-xs flex-shrink-0">
               <Store className="w-5 h-5 text-white" />
             </div>
-            <div className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200/70 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/60">
-              <ArrowUpRight className="h-3.5 w-3.5" />
+            <div className={cn(
+              "inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full",
+              growthValues.orders >= 0
+                ? "bg-emerald-50 text-emerald-600 border border-emerald-200/70 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/60"
+                : "bg-rose-50 text-rose-600 border border-rose-200/70 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800/60"
+            )}>
+              {growthValues.orders >= 0 ? (
+                <ArrowUpRight className="h-3.5 w-3.5" />
+              ) : (
+                <ArrowDownRight className="h-3.5 w-3.5" />
+              )}
               <span>{growthStats.orders}</span>
             </div>
           </div>
@@ -1029,16 +1147,21 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
           {/* Bottom Row: Label + Value (Bottom-Left) & Sparkline (Bottom-Right) */}
           <div className="mt-6 flex items-end justify-between gap-2">
             <div className="min-w-0">
-              <span className="text-[11px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider block mb-1">
+              <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-400 uppercase tracking-wider block mb-1">
                 TOTAL TRANSAKSI
               </span>
-              <div className="text-2xl sm:text-[26px] font-bold text-slate-900 dark:text-white tracking-tight leading-none whitespace-nowrap flex items-baseline gap-1.5">
+              <div className="text-2xl sm:text-[26px] font-semibold text-slate-900 dark:text-white tracking-tight leading-none whitespace-nowrap flex items-baseline gap-1.5">
                 <span>{totalOrders.toLocaleString('id-ID')}</span>
                 <span className="text-xs sm:text-sm font-normal text-slate-400 dark:text-slate-400">Order</span>
               </div>
             </div>
             <div className="flex-shrink-0 pb-0.5">
-              <MiniSparkline data={ordersTrend} metricSeed={2} color="#10b981" />
+              <MiniSparkline
+                data={ordersTrend}
+                percentage={growthValues.orders}
+                isPositive={growthValues.orders >= 0}
+                metricSeed={2}
+              />
             </div>
           </div>
         </div>
@@ -1050,8 +1173,17 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
             <div className="w-10 h-10 rounded-full bg-[#0e59f9] text-white flex items-center justify-center shadow-xs flex-shrink-0">
               <CreditCard className="w-5 h-5 text-white" />
             </div>
-            <div className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200/70 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/60">
-              <ArrowUpRight className="h-3.5 w-3.5" />
+            <div className={cn(
+              "inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full",
+              growthValues.aov >= 0
+                ? "bg-emerald-50 text-emerald-600 border border-emerald-200/70 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/60"
+                : "bg-rose-50 text-rose-600 border border-rose-200/70 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800/60"
+            )}>
+              {growthValues.aov >= 0 ? (
+                <ArrowUpRight className="h-3.5 w-3.5" />
+              ) : (
+                <ArrowDownRight className="h-3.5 w-3.5" />
+              )}
               <span>{growthStats.aov}</span>
             </div>
           </div>
@@ -1059,18 +1191,23 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
           {/* Bottom Row: Label + Value (Bottom-Left) & Sparkline (Bottom-Right) */}
           <div className="mt-6 flex items-end justify-between gap-2">
             <div className="min-w-0">
-              <span className="text-[11px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider block mb-1">
+              <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-400 uppercase tracking-wider block mb-1">
                 RATA-RATA ORDER (AOV)
               </span>
               <div
-                className="text-2xl sm:text-[26px] font-bold text-slate-900 dark:text-white tracking-tight leading-none whitespace-nowrap"
+                className="text-2xl sm:text-[26px] font-semibold text-slate-900 dark:text-white tracking-tight leading-none whitespace-nowrap"
                 title={formatCurrency(aov)}
               >
                 {formatKpiCurrency(aov)}
               </div>
             </div>
             <div className="flex-shrink-0 pb-0.5">
-              <MiniSparkline data={aovTrend} metricSeed={3} color="#10b981" />
+              <MiniSparkline
+                data={aovTrend}
+                percentage={growthValues.aov}
+                isPositive={growthValues.aov >= 0}
+                metricSeed={3}
+              />
             </div>
           </div>
         </div>
@@ -1082,8 +1219,17 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
             <div className="w-10 h-10 rounded-full bg-[#0e59f9] text-white flex items-center justify-center shadow-xs flex-shrink-0">
               <UtensilsCrossed className="w-5 h-5 text-white" />
             </div>
-            <div className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200/70 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/60">
-              <ArrowUpRight className="h-3.5 w-3.5" />
+            <div className={cn(
+              "inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full",
+              growthValues.itemsSold >= 0
+                ? "bg-emerald-50 text-emerald-600 border border-emerald-200/70 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/60"
+                : "bg-rose-50 text-rose-600 border border-rose-200/70 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800/60"
+            )}>
+              {growthValues.itemsSold >= 0 ? (
+                <ArrowUpRight className="h-3.5 w-3.5" />
+              ) : (
+                <ArrowDownRight className="h-3.5 w-3.5" />
+              )}
               <span>{growthStats.itemsSold}</span>
             </div>
           </div>
@@ -1091,16 +1237,21 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
           {/* Bottom Row: Label + Value (Bottom-Left) & Sparkline (Bottom-Right) */}
           <div className="mt-6 flex items-end justify-between gap-2">
             <div className="min-w-0">
-              <span className="text-[11px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider block mb-1">
+              <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-400 uppercase tracking-wider block mb-1">
                 TOTAL MENU TERJUAL
               </span>
-              <div className="text-2xl sm:text-[26px] font-bold text-slate-900 dark:text-white tracking-tight leading-none whitespace-nowrap flex items-baseline gap-1.5">
+              <div className="text-2xl sm:text-[26px] font-semibold text-slate-900 dark:text-white tracking-tight leading-none whitespace-nowrap flex items-baseline gap-1.5">
                 <span>{totalItemsSold.toLocaleString('id-ID')}</span>
                 <span className="text-xs sm:text-sm font-normal text-slate-400 dark:text-slate-400">Porsi</span>
               </div>
             </div>
             <div className="flex-shrink-0 pb-0.5">
-              <MiniSparkline data={itemsSoldTrend} metricSeed={4} color="#10b981" />
+              <MiniSparkline
+                data={itemsSoldTrend}
+                percentage={growthValues.itemsSold}
+                isPositive={growthValues.itemsSold >= 0}
+                metricSeed={4}
+              />
             </div>
           </div>
         </div>
