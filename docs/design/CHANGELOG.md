@@ -51,3 +51,16 @@
   - Seluruh elemen tipografi pada Ringkasan Eksekutif (`/reports`) kini **100% menggunakan `font-sans`**.
   - Penggunaan `font-mono` pada angka Speedometer Gauge, header jam pada Heatmap Jam Sibuk, rincian Buku Kas (Kas Laci & Rekening Digital), serta kartu Margin Laba telah distandardisasi menjadi `font-sans` agar tampilan selaras, modern, dan konsisten dengan desain sistem Menuin.
 
+## [Unreleased] - 2026-10-01
+
+### Added
+- **Redesain Menyeluruh Laporan Operasional (`/reports/operations`):**
+  - **Modern Filter Bar 3-Mode:** Penyelarasan filter waktu menggunakan Segmented Tabs (Harian, Bulanan, Tahunan), Popover Kalender interaktif (mode rentang tanggal), navigasi bulan & tahun dengan chevron + select, tombol *Segarkan* dengan status *spinning*, serta pemindahan tombol *Ekspor Excel* dan *Cetak* ke header halaman.
+  - **4 Top KPI Cards Operasional:** Jam Tersibuk (Puncak Ramai) sebagai Hero Card Menuin Blue, Hari Tersibuk, Rata-Rata Order/Jam (Hourly Velocity), dan Total Volume Pesanan dilengkapi dengan **`MiniSparkline` berbasis data riil** yang beranimasi secara hardware-accelerated SVG via `IntersectionObserver`.
+  - **Peak Hours Heatmap (24 Jam &times; 7 Hari):** Standardisasi 100% `font-sans`, kontainer putih `border-[#EAEFF8] rounded-2xl shadow-sm`, gradasi warna Menuin Blue ramp, ring sorot pada jam tersibuk, dan tooltip preview popover interaktif.
+  - **Rounded Capsule Bar Charts:** Visualisasi distribusi 24 jam dan 7 hari menggunakan batang berkubah melengkung (`rounded-t-full rounded-b-none`), gelombang masuk bertingkat (*staggered entrance wave* `cubic-bezier(0.23, 1, 0.32, 1)`), hover state Menuin Blue dengan dot aksen, dan garis dasar putus-putus.
+  - **Analisis Sesi Waktu Makan (Dayparts):** Pembagian 5 sesi waktu operasional (Pagi, Makan Siang, Sore, Makan Malam, Larut Malam) dengan `AnimatedHorizontalBar` serta perbandingan Hari Kerja vs Akhir Pekan (*Weekday vs Weekend*) menggunakan `AnimatedSegmentedBar`.
+  - **Dualitas Tampilan Bar & Table View (Ranking Menu Terlaris):** Toggling mode Tabel vs Grafik Batang dengan tombol icon-only tanpa layout shift (`min-h-[380px]`), badge medali ranking (`RANK_THEMES`), bilah persentase animasi, dan *Dual-Stat Highlight Strips* di bagian bawah.
+  - **Backend Server Action Enhancements:** `getOperationsReport` kini menghitung perbandingan periode sebelumnya (*growth percentages*), sesi waktu makan, dan metrik agregat operasional.
+
+

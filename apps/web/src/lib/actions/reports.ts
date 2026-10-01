@@ -874,18 +874,30 @@ export async function getOperationsReport(outletKey: string, params?: DateFilter
       return { success: false, error: 'Akses ditolak.' };
     }
 
-    const { currentStart, currentEnd, period } = resolveDateIntervals(params);
+    const { currentStart, currentEnd, prevStart, prevEnd, period } = resolveDateIntervals(params);
 
-    const trxList = await db
-      .select()
-      .from(transactions)
-      .where(
-        and(
-          eq(transactions.tenantId, tenant.id),
-          gte(transactions.createdAt, currentStart),
-          lte(transactions.createdAt, currentEnd)
-        )
-      );
+    const [trxList, prevTrxList] = await Promise.all([
+      db
+        .select()
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.tenantId, tenant.id),
+            gte(transactions.createdAt, currentStart),
+            lte(transactions.createdAt, currentEnd)
+          )
+        ),
+      db
+        .select()
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.tenantId, tenant.id),
+            gte(transactions.createdAt, prevStart),
+            lte(transactions.createdAt, prevEnd)
+          )
+        ),
+    ]);
 
     // Days mapping (Mon=0 to Sun=6, or JS Sun=0 to Sat=6)
     // Reference 1 uses: Mon, Tue, Wed, Thu, Fri, Sat, Sun
@@ -944,6 +956,9 @@ export async function getOperationsReport(outletKey: string, params?: DateFilter
       });
     }
 
+    let totalOrders = 0;
+    let totalRevenue = 0;
+
     trxList.forEach((t) => {
       const isCanceled = t.status === 'CANCELLED' || t.status === 'CANCELED' || t.paymentStatus === 'CANCELED' || t.paymentStatus === 'REFUNDED';
       if (isCanceled || !t.createdAt) return;
@@ -955,6 +970,9 @@ export async function getOperationsReport(outletKey: string, params?: DateFilter
       const monIndex = jsDay === 0 ? 6 : jsDay - 1;
       const hour = date.getHours();
       const rev = parseFloat(t.grandTotal || '0') || 0;
+
+      totalOrders += 1;
+      totalRevenue += rev;
 
       // Update grid
       heatmapGrid[monIndex].hours[hour].orderCount += 1;
@@ -969,6 +987,39 @@ export async function getOperationsReport(outletKey: string, params?: DateFilter
       dayTotals[monIndex].revenue += rev;
     });
 
+    // Previous period aggregates for growth comparison
+    const prevHourlyTotals: { hour: number; orderCount: number; revenue: number }[] = Array.from({ length: 24 }, (_, h) => ({
+      hour: h,
+      orderCount: 0,
+      revenue: 0,
+    }));
+    const prevDayTotals: { dayIndex: number; orderCount: number; revenue: number }[] = Array.from({ length: 7 }, (_, d) => ({
+      dayIndex: d,
+      orderCount: 0,
+      revenue: 0,
+    }));
+
+    let prevTotalOrders = 0;
+    let prevTotalRevenue = 0;
+
+    prevTrxList.forEach((t) => {
+      const isCanceled = t.status === 'CANCELLED' || t.status === 'CANCELED' || t.paymentStatus === 'CANCELED' || t.paymentStatus === 'REFUNDED';
+      if (isCanceled || !t.createdAt) return;
+
+      const date = new Date(t.createdAt);
+      const jsDay = date.getDay();
+      const monIndex = jsDay === 0 ? 6 : jsDay - 1;
+      const hour = date.getHours();
+      const rev = parseFloat(t.grandTotal || '0') || 0;
+
+      prevTotalOrders += 1;
+      prevTotalRevenue += rev;
+      prevHourlyTotals[hour].orderCount += 1;
+      prevHourlyTotals[hour].revenue += rev;
+      prevDayTotals[monIndex].orderCount += 1;
+      prevDayTotals[monIndex].revenue += rev;
+    });
+
     // Find Peak Hours KPI cards
     // 1. Busiest Hour
     let busiestHour = hourlyTotals[0];
@@ -978,6 +1029,11 @@ export async function getOperationsReport(outletKey: string, params?: DateFilter
       if (h.orderCount < slowestHour.orderCount) slowestHour = h;
     });
 
+    let prevBusiestHour = prevHourlyTotals[0];
+    prevHourlyTotals.forEach((h) => {
+      if (h.orderCount > prevBusiestHour.orderCount) prevBusiestHour = h;
+    });
+
     // 2. Busiest Day
     let busiestDay = dayTotals[0];
     let slowestDay = dayTotals[0];
@@ -985,6 +1041,86 @@ export async function getOperationsReport(outletKey: string, params?: DateFilter
       if (d.revenue > busiestDay.revenue) busiestDay = d;
       if (d.revenue < slowestDay.revenue) slowestDay = d;
     });
+
+    let prevBusiestDay = prevDayTotals[0];
+    prevDayTotals.forEach((d) => {
+      if (d.revenue > prevBusiestDay.revenue) prevBusiestDay = d;
+    });
+
+    // Calculate growth percentages
+    const totalOrdersGrowth = prevTotalOrders > 0
+      ? ((totalOrders - prevTotalOrders) / prevTotalOrders) * 100
+      : 0;
+
+    const totalRevenueGrowth = prevTotalRevenue > 0
+      ? ((totalRevenue - prevTotalRevenue) / prevTotalRevenue) * 100
+      : 0;
+
+    const busiestHourOrdersGrowth = prevBusiestHour.orderCount > 0
+      ? ((busiestHour.orderCount - prevBusiestHour.orderCount) / prevBusiestHour.orderCount) * 100
+      : 0;
+
+    const busiestDayRevenueGrowth = prevBusiestDay.revenue > 0
+      ? ((busiestDay.revenue - prevBusiestDay.revenue) / prevBusiestDay.revenue) * 100
+      : 0;
+
+    const avgHourlyOrders = totalOrders > 0 ? totalOrders / 24 : 0;
+    const prevAvgHourlyOrders = prevTotalOrders > 0 ? prevTotalOrders / 24 : 0;
+    const avgHourlyOrdersGrowth = prevAvgHourlyOrders > 0
+      ? ((avgHourlyOrders - prevAvgHourlyOrders) / prevAvgHourlyOrders) * 100
+      : 0;
+
+    // Dayparts calculation (Pagi 06-11, Siang 11-15, Sore 15-18, Malam 18-23, Dini Hari 23-06)
+    const daypartBuckets = {
+      pagi: { key: 'pagi' as const, label: 'Pagi', timeRange: '06:00 - 11:00', orderCount: 0, revenue: 0 },
+      siang: { key: 'siang' as const, label: 'Makan Siang', timeRange: '11:00 - 15:00', orderCount: 0, revenue: 0 },
+      sore: { key: 'sore' as const, label: 'Sore Hari', timeRange: '15:00 - 18:00', orderCount: 0, revenue: 0 },
+      malam: { key: 'malam' as const, label: 'Makan Malam', timeRange: '18:00 - 23:00', orderCount: 0, revenue: 0 },
+      larut: { key: 'larut' as const, label: 'Larut / Dini Hari', timeRange: '23:00 - 06:00', orderCount: 0, revenue: 0 },
+    };
+
+    hourlyTotals.forEach((h) => {
+      if (h.hour >= 6 && h.hour < 11) {
+        daypartBuckets.pagi.orderCount += h.orderCount;
+        daypartBuckets.pagi.revenue += h.revenue;
+      } else if (h.hour >= 11 && h.hour < 15) {
+        daypartBuckets.siang.orderCount += h.orderCount;
+        daypartBuckets.siang.revenue += h.revenue;
+      } else if (h.hour >= 15 && h.hour < 18) {
+        daypartBuckets.sore.orderCount += h.orderCount;
+        daypartBuckets.sore.revenue += h.revenue;
+      } else if (h.hour >= 18 && h.hour < 23) {
+        daypartBuckets.malam.orderCount += h.orderCount;
+        daypartBuckets.malam.revenue += h.revenue;
+      } else {
+        daypartBuckets.larut.orderCount += h.orderCount;
+        daypartBuckets.larut.revenue += h.revenue;
+      }
+    });
+
+    const dayparts = Object.values(daypartBuckets).map((dp) => ({
+      ...dp,
+      percentage: totalOrders > 0 ? (dp.orderCount / totalOrders) * 100 : 0,
+    }));
+
+    // Weekday vs Weekend (Sen-Jum vs Sab-Min)
+    let weekdayOrders = 0;
+    let weekdayRevenue = 0;
+    let weekendOrders = 0;
+    let weekendRevenue = 0;
+
+    dayTotals.forEach((d) => {
+      if (d.dayIndex <= 4) {
+        weekdayOrders += d.orderCount;
+        weekdayRevenue += d.revenue;
+      } else {
+        weekendOrders += d.orderCount;
+        weekendRevenue += d.revenue;
+      }
+    });
+
+    const weekdayOrdersPercent = totalOrders > 0 ? (weekdayOrders / totalOrders) * 100 : 0;
+    const weekendOrdersPercent = totalOrders > 0 ? (weekendOrders / totalOrders) * 100 : 0;
 
     // Product performance query
     const trxIds = trxList.map((t) => t.id);
@@ -1040,12 +1176,29 @@ export async function getOperationsReport(outletKey: string, params?: DateFilter
           formattedStart: currentStart.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
           formattedEnd: currentEnd.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
         },
+        summary: {
+          totalOrders,
+          totalOrdersGrowth,
+          totalRevenue,
+          totalRevenueGrowth,
+          avgHourlyOrders,
+          avgHourlyOrdersGrowth,
+          busiestHourOrdersGrowth,
+          busiestDayRevenueGrowth,
+          weekdayOrders,
+          weekdayRevenue,
+          weekendOrders,
+          weekendRevenue,
+          weekdayOrdersPercent,
+          weekendOrdersPercent,
+        },
         peakKpis: {
           busiestHour: {
             hour: busiestHour.hour,
             label: busiestHour.label,
             orderCount: busiestHour.orderCount,
             revenue: busiestHour.revenue,
+            growth: busiestHourOrdersGrowth,
           },
           slowestHour: {
             hour: slowestHour.hour,
@@ -1058,6 +1211,7 @@ export async function getOperationsReport(outletKey: string, params?: DateFilter
             dayName: busiestDay.dayFullName,
             orderCount: busiestDay.orderCount,
             revenue: busiestDay.revenue,
+            growth: busiestDayRevenueGrowth,
           },
           slowestDay: {
             dayIndex: slowestDay.dayIndex,
@@ -1066,6 +1220,7 @@ export async function getOperationsReport(outletKey: string, params?: DateFilter
             revenue: slowestDay.revenue,
           },
         },
+        dayparts,
         heatmapGrid,
         hourlyDistribution: hourlyTotals,
         dayDistribution: dayTotals,
