@@ -4,6 +4,14 @@ import * as React from 'react';
 import { AnnualMonthRecap } from '@/lib/actions/dashboard';
 import { formatCurrency } from '@/lib/utils/format';
 import { Trophy, CalendarDays } from 'lucide-react';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+} from '@/components/ui/table';
 
 interface AnnualRecapTableProps {
   recap: AnnualMonthRecap[];
@@ -49,56 +57,56 @@ export function AnnualRecapTable({ recap, bestMonthName, year }: AnnualRecapTabl
       </div>
 
       {/* Table Breakdown */}
-      <div className="overflow-x-auto rounded-lg border border-gray-100">
-        <table className="w-full text-left text-xs">
-          <thead className="bg-gray-50/80 text-gray-500 uppercase tracking-wider font-semibold border-b border-gray-100">
-            <tr>
-              <th className="py-3 px-4">Bulan</th>
-              <th className="py-3 px-4">Net Revenue</th>
-              <th className="py-3 px-4">Total Orders</th>
-              <th className="py-3 px-4">Average Order Value (AOV)</th>
-              <th className="py-3 px-4">Gross Profit</th>
-              <th className="py-3 px-4 text-right">Status</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100 text-gray-700 font-financial tabular-nums">
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs">
+        <Table className="w-full text-left text-xs">
+          <TableHeader>
+            <TableRow className="border-none bg-transparent hover:bg-transparent">
+              <TableHead className="py-3 px-4">Bulan</TableHead>
+              <TableHead className="py-3 px-4">Net Revenue</TableHead>
+              <TableHead className="py-3 px-4">Total Orders</TableHead>
+              <TableHead className="py-3 px-4">Average Order Value (AOV)</TableHead>
+              <TableHead className="py-3 px-4">Gross Profit</TableHead>
+              <TableHead className="py-3 px-4 text-right">Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody className="divide-y divide-gray-100 text-gray-700 font-financial tabular-nums">
             {recap.map((row) => (
-              <tr 
+              <TableRow 
                 key={row.monthIndex} 
-                className={`transition-colors ${
+                className={`transition-colors hover:bg-blue-50/40 dark:hover:bg-blue-950/20 ${
                   row.isBestMonth 
                     ? 'bg-amber-50/30 font-medium' 
                     : row.status === 'future'
                     ? 'text-gray-400 bg-gray-50/20'
-                    : 'hover:bg-gray-50/50'
+                    : ''
                 }`}
               >
-                <td className="py-3 px-4 font-semibold text-gray-900 flex items-center gap-1.5">
+                <TableCell className="py-3 px-4 font-semibold text-gray-900 flex items-center gap-1.5">
                   {row.monthName}
                   {row.isBestMonth && (
                     <span title="Bulan Terbaik">
                       <Trophy className="w-3.5 h-3.5 text-amber-500" />
                     </span>
                   )}
-                </td>
+                </TableCell>
 
-                <td className="py-3 px-4 font-medium text-gray-900">
+                <TableCell className="py-3 px-4 font-medium text-gray-900">
                   {row.status === 'future' ? '—' : formatCurrency(row.omzet)}
-                </td>
+                </TableCell>
 
-                <td className="py-3 px-4">
+                <TableCell className="py-3 px-4">
                   {row.status === 'future' ? '—' : `${row.pesanan.toLocaleString('id-ID')} orders`}
-                </td>
+                </TableCell>
 
-                <td className="py-3 px-4">
+                <TableCell className="py-3 px-4">
                   {row.status === 'future' ? '—' : formatCurrency(row.aov)}
-                </td>
+                </TableCell>
 
-                <td className="py-3 px-4 text-blue-700 font-semibold">
+                <TableCell className="py-3 px-4 text-blue-700 font-semibold">
                   {row.status === 'future' ? '—' : formatCurrency(row.laba)}
-                </td>
+                </TableCell>
 
-                <td className="py-3 px-4 text-right">
+                <TableCell className="py-3 px-4 text-right">
                   {row.status === 'completed' && (
                     <span className="text-[11px] text-gray-500 font-medium">Selesai</span>
                   )}
@@ -111,11 +119,11 @@ export function AnnualRecapTable({ recap, bestMonthName, year }: AnnualRecapTabl
                   {row.status === 'future' && (
                     <span className="text-[11px] text-gray-400">Mendatang</span>
                   )}
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {/* Summary Footer */}

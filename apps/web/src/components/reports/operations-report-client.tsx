@@ -3,6 +3,14 @@
 import * as React from "react";
 import { Clock, Flame, UtensilsCrossed, Package, Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+} from "@/components/ui/table";
 import { PeakHoursHeatmap } from "./peak-hours-heatmap";
 import { ReportFilterBar } from "./report-filter-bar";
 import { getOperationsReport, ReportPeriod } from "@/lib/actions/reports";
@@ -161,50 +169,48 @@ export function OperationsReportClient({ initialData, outletKey }: OperationsRep
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs text-left">
-            <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-100">
-              <tr>
-                <th className="py-3 px-4 w-12 text-center">#</th>
-                <th className="py-3 px-4">Nama Produk</th>
-                <th className="py-3 px-4">Kategori</th>
-                <th className="py-3 px-4 text-center">Qty Terjual</th>
-                <th className="py-3 px-4 text-right">Total Omset</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 font-sans">
-              {topProducts.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="py-8 text-center text-slate-400">
-                    Belum ada data penjualan menu pada periode ini.
-                  </td>
-                </tr>
-              ) : (
-                topProducts.map((p, idx) => (
-                  <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-3 px-4 text-center font-semibold text-slate-500">
-                      {idx + 1}
-                    </td>
-                    <td className="py-3 px-4 font-semibold text-slate-900">
-                      {p.name}
-                    </td>
-                    <td className="py-3 px-4 text-slate-500">
-                      <span className="inline-block px-2 py-0.5 rounded-full text-[10px] bg-slate-100 text-slate-700 font-medium">
-                        {p.categoryName}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-center font-semibold text-slate-800">
-                      {p.totalQty} porsi
-                    </td>
-                    <td className="py-3 px-4 text-right font-semibold text-slate-900 font-mono">
-                      Rp {p.totalRevenue.toLocaleString("id-ID")}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <Table className="w-full text-xs text-left">
+          <TableHeader>
+            <TableRow className="border-none bg-transparent hover:bg-transparent">
+              <TableHead className="py-3 px-4 w-12 text-center">#</TableHead>
+              <TableHead className="py-3 px-4">Nama Produk</TableHead>
+              <TableHead className="py-3 px-4">Kategori</TableHead>
+              <TableHead className="py-3 px-4 text-center">Qty Terjual</TableHead>
+              <TableHead className="py-3 px-4 text-right">Total Omset</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody className="divide-y divide-slate-100 font-sans">
+            {topProducts.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="py-8 text-center text-slate-400">
+                  Belum ada data penjualan menu pada periode ini.
+                </TableCell>
+              </TableRow>
+            ) : (
+              topProducts.map((p, idx) => (
+                <TableRow key={p.id} className="hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-colors">
+                  <TableCell className="py-3 px-4 text-center font-semibold text-slate-500">
+                    {idx + 1}
+                  </TableCell>
+                  <TableCell className="py-3 px-4 font-semibold text-slate-900">
+                    {p.name}
+                  </TableCell>
+                  <TableCell className="py-3 px-4 text-slate-500">
+                    <span className="inline-block px-2 py-0.5 rounded-full text-[10px] bg-slate-100 text-slate-700 font-medium">
+                      {p.categoryName}
+                    </span>
+                  </TableCell>
+                  <TableCell className="py-3 px-4 text-center font-semibold text-slate-800">
+                    {p.totalQty} porsi
+                  </TableCell>
+                  <TableCell className="py-3 px-4 text-right font-semibold text-slate-900 font-mono">
+                    Rp {p.totalRevenue.toLocaleString("id-ID")}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

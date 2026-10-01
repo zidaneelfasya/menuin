@@ -4,6 +4,14 @@ import * as React from 'react';
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+} from '@/components/ui/table';
 import { QRCodeSVG } from 'qrcode.react';
 import { 
   Plus, 
@@ -318,135 +326,133 @@ export function DevicesClient({
             )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40">
-                  <th className="px-5 py-3.5 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                    Perangkat
-                  </th>
-                  <th className="px-5 py-3.5 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-5 py-3.5 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                    Terakhir Aktif
-                  </th>
-                  <th className="px-5 py-3.5 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                    Terdaftar Pada
-                  </th>
-                  {canManage && (
-                    <th className="px-5 py-3.5 text-[11px] font-semibold text-slate-500 uppercase tracking-wider text-right">
-                      Aksi
-                    </th>
-                  )}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
-                {filteredDevices.map((device) => {
-                  const isActive = device.status === 'ACTIVE';
+          <Table className="min-w-full">
+            <TableHeader>
+              <TableRow className="border-none bg-transparent hover:bg-transparent">
+                <TableHead className="px-5 py-3.5">
+                  Perangkat
+                </TableHead>
+                <TableHead className="px-5 py-3.5">
+                  Status
+                </TableHead>
+                <TableHead className="px-5 py-3.5">
+                  Terakhir Aktif
+                </TableHead>
+                <TableHead className="px-5 py-3.5">
+                  Terdaftar Pada
+                </TableHead>
+                {canManage && (
+                  <TableHead className="px-5 py-3.5 text-right">
+                    Aksi
+                  </TableHead>
+                )}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredDevices.map((device) => {
+                const isActive = device.status === 'ACTIVE';
 
-                  return (
-                    <tr 
-                      key={device.id} 
-                      className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors"
-                    >
-                      {/* Device info */}
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className={cn(
-                            "w-9 h-9 rounded-xl flex items-center justify-center shrink-0",
-                            isActive 
-                              ? "bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400" 
-                              : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
-                          )}>
-                            <Tablet className="w-4 h-4" />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-semibold text-slate-900 dark:text-slate-100 text-xs truncate">
-                              {device.name}
-                            </p>
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                              <span className="text-[11px] text-muted-foreground font-mono truncate max-w-[180px]">
-                                ID: {device.deviceIdentifier}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => copyDeviceId(device.deviceIdentifier)}
-                                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-0.5 rounded cursor-pointer"
-                                title="Salin ID Perangkat"
-                              >
-                                {copiedId === device.deviceIdentifier ? (
-                                  <Check className="w-3 h-3 text-emerald-600" />
-                                ) : (
-                                  <Copy className="w-3 h-3" />
-                                )}
-                              </button>
-                            </div>
+                return (
+                  <TableRow 
+                    key={device.id} 
+                    className="hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-colors"
+                  >
+                    {/* Device info */}
+                    <TableCell className="px-5 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className={cn(
+                          "w-9 h-9 rounded-xl flex items-center justify-center shrink-0",
+                          isActive 
+                            ? "bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400" 
+                            : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                        )}>
+                          <Tablet className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-slate-900 dark:text-slate-100 text-xs truncate">
+                            {device.name}
+                          </p>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-[11px] text-muted-foreground font-mono truncate max-w-[180px]">
+                              ID: {device.deviceIdentifier}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => copyDeviceId(device.deviceIdentifier)}
+                              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-0.5 rounded cursor-pointer"
+                              title="Salin ID Perangkat"
+                            >
+                              {copiedId === device.deviceIdentifier ? (
+                                <Check className="w-3 h-3 text-emerald-600" />
+                              ) : (
+                                <Copy className="w-3 h-3" />
+                              )}
+                            </button>
                           </div>
                         </div>
-                      </td>
+                      </div>
+                    </TableCell>
 
-                      {/* Status */}
-                      <td className="px-5 py-4 whitespace-nowrap">
-                        {isActive ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200/60">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            Aktif
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                            Dicabut
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Last Seen */}
-                      <td className="px-5 py-4 whitespace-nowrap text-slate-600 dark:text-slate-300">
-                        <div className="flex items-center gap-1.5 text-[11px]">
-                          <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-                          <span>{formatDate(device.lastSeenAt)}</span>
-                        </div>
-                      </td>
-
-                      {/* Registered Date */}
-                      <td className="px-5 py-4 whitespace-nowrap text-slate-600 dark:text-slate-300">
-                        <div className="flex items-center gap-1.5 text-[11px]">
-                          <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
-                          <span>{formatDate(device.createdAt)}</span>
-                        </div>
-                      </td>
-
-                      {/* Actions */}
-                      {canManage && (
-                        <td className="px-5 py-4 text-right whitespace-nowrap">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button 
-                                variant="ghost" 
-                                className="h-8 w-8 p-0 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                              >
-                                <MoreVertical className="w-4 h-4 text-slate-500" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48 rounded-xl p-1 shadow-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                              <DropdownMenuItem
-                                onClick={() => setSelectedDeviceToRevoke(device)}
-                                className="flex items-center gap-2 px-3 py-2 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg cursor-pointer transition-colors"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                <span>Putuskan Sambungan</span>
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </td>
+                    {/* Status */}
+                    <TableCell className="px-5 py-4 whitespace-nowrap">
+                      {isActive ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200/60">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          Aktif
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                          Dicabut
+                        </span>
                       )}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                    </TableCell>
+
+                    {/* Last Seen */}
+                    <TableCell className="px-5 py-4 whitespace-nowrap text-slate-600 dark:text-slate-300">
+                      <div className="flex items-center gap-1.5 text-[11px]">
+                        <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span>{formatDate(device.lastSeenAt)}</span>
+                      </div>
+                    </TableCell>
+
+                    {/* Registered Date */}
+                    <TableCell className="px-5 py-4 whitespace-nowrap text-slate-600 dark:text-slate-300">
+                      <div className="flex items-center gap-1.5 text-[11px]">
+                        <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span>{formatDate(device.createdAt)}</span>
+                      </div>
+                    </TableCell>
+
+                    {/* Actions */}
+                    {canManage && (
+                      <TableCell className="px-5 py-4 text-right whitespace-nowrap">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              className="h-8 w-8 p-0 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                            >
+                              <MoreVertical className="w-4 h-4 text-slate-500" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48 rounded-xl p-1 shadow-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                            <DropdownMenuItem
+                              onClick={() => setSelectedDeviceToRevoke(device)}
+                              className="flex items-center gap-2 px-3 py-2 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg cursor-pointer transition-colors"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>Putuskan Sambungan</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
         )}
       </div>
 

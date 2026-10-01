@@ -33,6 +33,7 @@ import {
   PackageSearch
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 
 const DataTable = dynamic(
   () => import('@/components/ui/data-table').then((mod) => mod.DataTable),
@@ -106,6 +107,96 @@ type Category = {
   name: string;
 };
 
+function CleanCurrencyInput({
+  id,
+  value,
+  onChange,
+  placeholder = '0',
+  className,
+}: {
+  id: string;
+  value: number | undefined | null;
+  onChange: (val: number) => void;
+  placeholder?: string;
+  className?: string;
+}) {
+  const [localStr, setLocalStr] = React.useState<string>(() => 
+    value !== undefined && value !== null && value > 0 ? value.toLocaleString('id-ID') : ''
+  );
+
+  React.useEffect(() => {
+    const formatted = value !== undefined && value !== null && value > 0 ? value.toLocaleString('id-ID') : '';
+    setLocalStr(formatted);
+  }, [value]);
+
+  return (
+    <div className="relative">
+      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-400 dark:text-slate-500 select-none pointer-events-none">
+        Rp
+      </span>
+      <Input
+        id={id}
+        type="text"
+        inputMode="numeric"
+        placeholder={placeholder}
+        value={localStr}
+        onChange={(e) => {
+          const digits = e.target.value.replace(/\D/g, '');
+          const num = digits ? parseInt(digits, 10) : 0;
+          setLocalStr(num > 0 ? num.toLocaleString('id-ID') : '');
+          onChange(num);
+        }}
+        className={cn(
+          "pl-9 h-9.5 text-sm font-medium border-slate-200 dark:border-slate-800 focus-visible:ring-1 focus-visible:ring-primary",
+          className
+        )}
+      />
+    </div>
+  );
+}
+
+function CleanNumberInput({
+  id,
+  value,
+  onChange,
+  placeholder = '0',
+  className,
+}: {
+  id: string;
+  value: number | undefined | null;
+  onChange: (val: number) => void;
+  placeholder?: string;
+  className?: string;
+}) {
+  const [localStr, setLocalStr] = React.useState<string>(() => 
+    value !== undefined && value !== null ? String(value) : ''
+  );
+
+  React.useEffect(() => {
+    setLocalStr(value !== undefined && value !== null ? String(value) : '');
+  }, [value]);
+
+  return (
+    <Input
+      id={id}
+      type="text"
+      inputMode="numeric"
+      placeholder={placeholder}
+      value={localStr}
+      onChange={(e) => {
+        const digits = e.target.value.replace(/\D/g, '');
+        const num = digits ? parseInt(digits, 10) : 0;
+        setLocalStr(digits);
+        onChange(num);
+      }}
+      className={cn(
+        "h-9.5 text-sm font-medium border-slate-200 dark:border-slate-800 focus-visible:ring-1 focus-visible:ring-primary",
+        className
+      )}
+    />
+  );
+}
+
 function PriceProfitSection({
   form,
 }: {
@@ -124,139 +215,119 @@ function PriceProfitSection({
   const marginPct = finalPriceAfterDiscount > 0 ? Math.round(((profit / finalPriceAfterDiscount) * 100)) : 0;
 
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-5 shadow-xs space-y-4">
-      <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800/80">
-        <Banknote className="w-4 h-4 text-emerald-600" />
-        <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Harga & Profitabilitas</h3>
+    <div className="space-y-3">
+      <div>
+        <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Harga & Potongan</h4>
+        <p className="text-xs text-muted-foreground mt-0.5">Tentukan harga normal dan diskon promo jika ada.</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="space-y-1.5">
-          <Label htmlFor="price" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+          <Label htmlFor="price" className="text-xs font-medium text-slate-700 dark:text-slate-300">
             Harga Normal <span className="text-rose-500">*</span>
           </Label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400">Rp</span>
-            <Input 
-              id="price" 
-              type="number" 
-              {...form.register('price')} 
-              className="pl-9 rounded-lg h-10 font-semibold"
-            />
-          </div>
+          <Controller
+            control={form.control}
+            name="price"
+            render={({ field }) => (
+              <CleanCurrencyInput
+                id="price"
+                value={field.value}
+                onChange={field.onChange}
+                placeholder="0"
+              />
+            )}
+          />
           {form.formState.errors.price && (
-            <p className="text-xs text-rose-500 font-medium">{form.formState.errors.price.message}</p>
+            <p className="text-xs text-rose-500 mt-1">{form.formState.errors.price.message}</p>
           )}
         </div>
 
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <Label htmlFor="potongan" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Potongan (Harga Coret)
+            <Label htmlFor="potongan" className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Potongan
             </Label>
-            <span className="text-[10px] text-rose-500 font-semibold uppercase">Promo Item</span>
+            {numPotongan > 0 && (
+              <button
+                type="button"
+                onClick={() => form.setValue('potongan', 0, { shouldDirty: true, shouldValidate: true })}
+                className="text-[10px] text-muted-foreground hover:text-rose-500 cursor-pointer"
+              >
+                Reset
+              </button>
+            )}
           </div>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-rose-500">Rp</span>
-            <Input 
-              id="potongan" 
-              type="number" 
-              placeholder="0"
-              {...form.register('potongan')} 
-              className="pl-9 rounded-lg h-10 font-semibold text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-900/50"
-            />
-          </div>
+          <Controller
+            control={form.control}
+            name="potongan"
+            render={({ field }) => (
+              <CleanCurrencyInput
+                id="potongan"
+                value={field.value}
+                onChange={field.onChange}
+                placeholder="0"
+              />
+            )}
+          />
           {form.formState.errors.potongan && (
-            <p className="text-xs text-rose-500 font-medium">{form.formState.errors.potongan.message}</p>
+            <p className="text-xs text-rose-500 mt-1">{form.formState.errors.potongan.message}</p>
           )}
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="costPrice" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-            Harga Modal (COGS / HPP)
+          <Label htmlFor="costPrice" className="text-xs font-medium text-slate-700 dark:text-slate-300">
+            Harga Modal (HPP)
           </Label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400">Rp</span>
-            <Input 
-              id="costPrice" 
-              type="number" 
-              {...form.register('costPrice')} 
-              className="pl-9 rounded-lg h-10 font-semibold"
-            />
-          </div>
+          <Controller
+            control={form.control}
+            name="costPrice"
+            render={({ field }) => (
+              <CleanCurrencyInput
+                id="costPrice"
+                value={field.value}
+                onChange={field.onChange}
+                placeholder="0"
+              />
+            )}
+          />
           {form.formState.errors.costPrice && (
-            <p className="text-xs text-rose-500 font-medium">{form.formState.errors.costPrice.message}</p>
+            <p className="text-xs text-rose-500 mt-1">{form.formState.errors.costPrice.message}</p>
           )}
         </div>
       </div>
 
-      {/* Live Preview Box for Potongan (Harga Coret) */}
-      {numPotongan > 0 && numPrice > 0 && (
-        <div className="p-3 bg-rose-50/70 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/60 rounded-xl flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-rose-100 dark:bg-rose-900/50 text-rose-600 dark:text-rose-300">
-              <Tag className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-rose-900 dark:text-rose-200">
-                Tampilan Harga Coret di Menu Pelanggan:
-              </p>
-              <div className="flex items-baseline gap-2 mt-0.5">
-                <span className="text-xs text-slate-400 line-through font-normal">
+      {numPrice > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs py-2 px-3 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-muted-foreground">Harga Jual Kasir:</span>
+            <span className="font-semibold text-slate-900 dark:text-slate-100">
+              {formatCurrency(finalPriceAfterDiscount)}
+            </span>
+            {numPotongan > 0 && (
+              <>
+                <span className="text-slate-400 line-through text-[11px] ml-1">
                   {formatCurrency(numPrice)}
                 </span>
-                <span className="text-sm font-semibold text-rose-600 dark:text-rose-400">
-                  {formatCurrency(finalPriceAfterDiscount)}
+                <span className="text-emerald-600 dark:text-emerald-400 font-medium text-[11px]">
+                  (Diskon {formatCurrency(numPotongan)})
                 </span>
-                <span className="text-[10px] font-semibold text-rose-700 bg-rose-100 dark:bg-rose-900/60 px-1.5 py-0.5 rounded">
-                  Hemat {formatCurrency(numPotongan)}
-                </span>
-              </div>
-            </div>
+              </>
+            )}
           </div>
-          <span className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 hidden sm:inline">
-            Harga coret aktif
-          </span>
+
+          {numCostPrice > 0 && (
+            <div className="text-[11px] text-muted-foreground">
+              Margin: <span className="font-medium text-slate-800 dark:text-slate-200">{marginPct}%</span> ({profit >= 0 ? `+${formatCurrency(profit)}` : `-${formatCurrency(Math.abs(profit))}`})
+            </div>
+          )}
         </div>
       )}
 
-      {/* Live Profit Margin Box */}
-      {numPrice > 0 && (
-        <div className={`p-3.5 rounded-xl border transition-all flex items-center justify-between ${
-          profit > 0 
-            ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-200' 
-            : profit < 0
-            ? 'bg-rose-50/70 border-rose-200 text-rose-900 dark:bg-rose-950/30 dark:border-rose-800 dark:text-rose-200'
-            : 'bg-slate-50 border-slate-200 text-slate-700 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-300'
-        }`}>
-          <div className="flex items-center gap-2.5">
-            <div className={`p-2 rounded-lg ${
-              profit > 0 ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700' : 'bg-slate-200 dark:bg-slate-800 text-slate-600'
-            }`}>
-              {profit > 0 ? <TrendingUp className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
-            </div>
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">
-                {profit >= 0 ? 'Estimasi Untung Bersih' : 'Peringatan Margin Negatif'}
-              </p>
-              <p className="text-sm font-semibold">
-                {profit >= 0 ? `+${formatCurrency(profit)}` : `-${formatCurrency(Math.abs(profit))}`}
-                <span className="text-xs font-normal text-muted-foreground ml-1">/ porsi</span>
-              </p>
-            </div>
-          </div>
-          <div className="text-right">
-            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
-              profit > 0 
-                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200'
-                : profit < 0
-                ? 'bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-200'
-                : 'bg-slate-200 text-slate-800'
-            }`}>
-              {marginPct}% Margin
-            </span>
-          </div>
-        </div>
+      {numPotongan > numPrice && (
+        <p className="text-xs text-rose-500 font-medium">
+          Nilai potongan tidak boleh lebih besar dari harga normal ({formatCurrency(numPrice)}).
+        </p>
       )}
     </div>
   );
@@ -286,9 +357,9 @@ function ProductForm({
   onCancel,
 }: ProductFormProps) {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const [isDragging, setIsDragging] = React.useState(false);
 
   const watchedImageUrl = useWatch({ control: form.control, name: 'imageUrl' });
+  const watchedTrackStock = useWatch({ control: form.control, name: 'trackStock' });
   const currentImage = imageFile 
     ? URL.createObjectURL(imageFile) 
     : watchedImageUrl;
@@ -315,83 +386,52 @@ function ProductForm({
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0 bg-white dark:bg-slate-950">
-      <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50 dark:bg-slate-900">
+      <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
         
-        {/* Card 1: Foto Produk */}
-        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-5 shadow-xs space-y-3">
-          <div className="flex items-center justify-between">
-            <Label className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-              <ImageIcon className="w-4 h-4 text-primary" /> Foto Produk
-            </Label>
-            <span className="text-xs text-muted-foreground">Maks. 2MB (JPG, PNG, WEBP)</span>
+        {/* Section 1: Foto Menu (Compact, Sleek Row) */}
+        <div className="flex items-center gap-4 p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
+          <div 
+            onClick={() => fileInputRef.current?.click()}
+            className="relative w-16 h-16 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-800 flex items-center justify-center shrink-0 cursor-pointer group shadow-xs"
+          >
+            {currentImage ? (
+              <img src={currentImage} alt="Foto Menu" className="w-full h-full object-cover" />
+            ) : (
+              <Upload className="w-5 h-5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors" />
+            )}
           </div>
-
-          {currentImage ? (
-            <div className="relative rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-slate-100 dark:bg-slate-900 group">
-              <div className="aspect-[16/9] w-full max-h-52 overflow-hidden flex items-center justify-center bg-slate-100 dark:bg-slate-900">
-                <img 
-                  src={currentImage} 
-                  alt="Pratinjau Foto Produk" 
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-2">
-                <Button 
-                  type="button" 
-                  size="sm" 
-                  variant="secondary"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="rounded-lg shadow-sm"
-                >
-                  <RefreshCw className="w-3.5 h-3.5 mr-1.5" /> Ganti Foto
-                </Button>
-                <Button 
-                  type="button" 
-                  size="sm" 
-                  variant="destructive"
+          <div className="space-y-1 min-w-0 flex-1">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">Foto Menu</span>
+              {currentImage && (
+                <button
+                  type="button"
                   onClick={() => {
                     setImageFile(null);
                     form.setValue('imageUrl', null, { shouldDirty: true });
                   }}
-                  className="rounded-lg shadow-sm"
+                  className="text-[11px] font-medium text-rose-500 hover:text-rose-600 transition-colors cursor-pointer"
                 >
-                  <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Hapus
-                </Button>
-              </div>
+                  Hapus
+                </button>
+              )}
             </div>
-          ) : (
-            <div 
-              onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-              onDragLeave={() => setIsDragging(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setIsDragging(false);
-                if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                  const file = e.dataTransfer.files[0];
-                  if (file.type.startsWith('image/')) {
-                    setImageFile(file);
-                    form.setValue('imageUrl', null, { shouldDirty: true });
-                  } else {
-                    toast.error('Berkas harus berupa gambar (JPG, PNG, WEBP)');
-                  }
-                }
-              }}
-              onClick={() => fileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors flex flex-col items-center justify-center gap-2 ${
-                isDragging 
-                  ? 'border-primary bg-primary/5' 
-                  : 'border-slate-200 dark:border-slate-800 hover:border-primary/50 hover:bg-slate-50 dark:hover:bg-slate-900'
-              }`}
-            >
-              <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-1">
-                <Upload className="w-5 h-5" />
-              </div>
-              <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                Tarik & lepas foto di sini, atau <span className="text-primary underline underline-offset-2">pilih berkas</span>
-              </p>
-              <p className="text-xs text-muted-foreground">Disarankan foto rasio 1:1 atau 4:3 untuk katalog terbaik</p>
+            <p className="text-[11px] text-muted-foreground truncate">
+              Format JPG, PNG, atau WEBP (maks. 2MB)
+            </p>
+            <div className="pt-0.5">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                className="h-7 text-xs font-medium px-2.5 rounded-lg border-slate-200 dark:border-slate-700"
+              >
+                <Upload className="w-3 h-3 mr-1.5" />
+                {currentImage ? 'Ganti Foto' : 'Unggah Foto'}
+              </Button>
             </div>
-          )}
+          </div>
           <input 
             type="file" 
             ref={fileInputRef} 
@@ -406,64 +446,59 @@ function ProductForm({
           />
         </div>
 
-        {/* Card 2: Informasi Utama */}
-        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-5 shadow-xs space-y-4">
-          <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800/80">
-            <Tag className="w-4 h-4 text-primary" />
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Informasi Utama</h3>
-          </div>
-
+        {/* Section 2: Informasi Menu */}
+        <div className="space-y-3.5">
           <div className="space-y-1.5">
-            <Label htmlFor="name" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Nama Produk <span className="text-rose-500">*</span>
+            <Label htmlFor="name" className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Nama Menu <span className="text-rose-500">*</span>
             </Label>
             <Input 
               id="name" 
               {...form.register('name')} 
               placeholder="Contoh: Kopi Susu Gula Aren, Croissant Almond" 
-              className="rounded-lg h-10"
+              className="h-9.5 text-sm"
             />
             {form.formState.errors.name && (
-              <p className="text-xs text-rose-500 font-medium">{form.formState.errors.name.message}</p>
+              <p className="text-xs text-rose-500 mt-1">{form.formState.errors.name.message}</p>
             )}
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="category" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Kategori Produk
-            </Label>
-            <Controller
-              control={form.control}
-              name="categoryId"
-              render={({ field }) => (
-                <Select
-                  value={field.value || 'none'}
-                  onValueChange={(val) => field.onChange(val === 'none' ? null : val)}
-                >
-                  <SelectTrigger id="category" className="w-full rounded-lg h-10 text-sm">
-                    <SelectValue placeholder="Pilih Kategori Produk" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none" className="text-muted-foreground">Tanpa Kategori</SelectItem>
-                    {categories.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="space-y-1.5">
+              <Label htmlFor="category" className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                Kategori
+              </Label>
+              <Controller
+                control={form.control}
+                name="categoryId"
+                render={({ field }) => (
+                  <Select
+                    value={field.value || 'none'}
+                    onValueChange={(val) => field.onChange(val === 'none' ? null : val)}
+                  >
+                    <SelectTrigger id="category" className="w-full h-9.5 text-sm">
+                      <SelectValue placeholder="Pilih Kategori" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none" className="text-muted-foreground">Tanpa Kategori</SelectItem>
+                      {categories.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <Label htmlFor="sku" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <Label htmlFor="sku" className="text-xs font-medium text-slate-700 dark:text-slate-300">
                   SKU (Kode Menu) <span className="text-rose-500">*</span>
                 </Label>
                 <button
                   type="button"
                   onClick={handleAutoGenerateSku}
-                  className="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                  className="text-[11px] font-medium text-primary hover:underline cursor-pointer"
                 >
                   Auto SKU
                 </button>
@@ -471,247 +506,218 @@ function ProductForm({
               <Input 
                 id="sku" 
                 {...form.register('sku')} 
-                placeholder="Misal: KOP-001" 
-                className="rounded-lg font-mono text-sm uppercase h-10"
+                placeholder="KOP-001" 
+                className="font-mono text-sm uppercase h-9.5"
               />
               {form.formState.errors.sku && (
-                <p className="text-xs text-rose-500 font-medium">{form.formState.errors.sku.message}</p>
+                <p className="text-xs text-rose-500 mt-1">{form.formState.errors.sku.message}</p>
               )}
-            </div>
-
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="barcode" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Barcode (Opsional)
-                </Label>
-                <button
-                  type="button"
-                  onClick={handleAutoGenerateBarcode}
-                  className="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer"
-                >
-                  <BarcodeIcon className="w-3 h-3" /> Auto Barcode
-                </button>
-              </div>
-              <Input 
-                id="barcode" 
-                {...form.register('barcode')} 
-                placeholder="Kosongkan untuk auto-generate" 
-                className="rounded-lg font-mono text-sm h-10"
-              />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="description" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Deskripsi Item (Opsional)
+            <div className="flex items-center justify-between">
+              <Label htmlFor="barcode" className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                Barcode (Opsional)
+              </Label>
+              <button
+                type="button"
+                onClick={handleAutoGenerateBarcode}
+                className="text-[11px] font-medium text-primary hover:underline cursor-pointer"
+              >
+                Auto Barcode
+              </button>
+            </div>
+            <Input 
+              id="barcode" 
+              {...form.register('barcode')} 
+              placeholder="Contoh: 8991234567890 (kosongkan jika tanpa barcode)" 
+              className="font-mono text-sm h-9.5"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="description" className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Deskripsi Menu (Opsional)
             </Label>
             <Textarea 
               id="description" 
               {...form.register('description')} 
-              placeholder="Deskripsikan keunikan rasa, bahan utama, atau panduan penyajian bagi pelanggan..." 
-              className="rounded-lg min-h-[76px] resize-none text-sm"
+              placeholder="Deskripsi singkat menu atau catatan penyajian..." 
+              className="min-h-[64px] resize-none text-sm"
             />
           </div>
         </div>
 
-        {/* Card 3: Harga & Keuntungan */}
+        <div className="border-t border-slate-100 dark:border-slate-800/80" />
+
+        {/* Section 3: Harga & Potongan */}
         <PriceProfitSection form={form} />
 
-        {/* Card: Status Ketersediaan */}
-        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-5 shadow-xs space-y-4">
-          <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800/80">
-            <Power className="w-4 h-4 text-emerald-600" />
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Status Ketersediaan Item</h3>
+        <div className="border-t border-slate-100 dark:border-slate-800/80" />
+
+        {/* Section 4: Ketersediaan & Stok */}
+        <div className="space-y-3">
+          <div>
+            <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Ketersediaan & Stok</h4>
+            <p className="text-xs text-muted-foreground mt-0.5">Kontrol ketersediaan menu di kasir dan pelacakan sisa stok.</p>
           </div>
 
-          <div className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60">
-            <div className="space-y-0.5 pr-4">
-              <Label htmlFor="isActiveSwitch" className="text-sm font-semibold cursor-pointer">
-                Item Aktif & Tersedia untuk Dipesan
-              </Label>
+          <div className="divide-y divide-slate-100 dark:divide-slate-800/80 rounded-xl border border-slate-200/80 dark:border-slate-800">
+            <div className="flex items-center justify-between p-3">
+              <div className="space-y-0.5 pr-4">
+                <Label htmlFor="isActiveSwitch" className="text-xs font-medium cursor-pointer text-slate-800 dark:text-slate-200">
+                  Menu Aktif & Tersedia
+                </Label>
+                <p className="text-[11px] text-muted-foreground">
+                  Tampil aktif di kasir POS dan katalog digital.
+                </p>
+              </div>
               <Controller
                 control={form.control}
                 name="isActive"
                 render={({ field }) => (
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    {field.value !== false 
-                      ? 'Item tampil aktif dan dapat dipesan oleh kasir POS maupun katalog online pelanggan.' 
-                      : 'Item dinonaktifkan (Tidak Tersedia). Item tidak dapat ditambahkan ke keranjang kasir maupun dipesan online.'}
-                  </p>
+                  <Switch
+                    id="isActiveSwitch"
+                    checked={field.value !== false}
+                    onCheckedChange={field.onChange}
+                  />
                 )}
               />
             </div>
-            <Controller
-              control={form.control}
-              name="isActive"
-              render={({ field }) => (
-                <Switch
-                  id="isActiveSwitch"
-                  checked={field.value !== false}
-                  onCheckedChange={field.onChange}
-                  className="data-[state=checked]:bg-emerald-600"
-                />
-              )}
-            />
-          </div>
-        </div>
 
-        {/* Card 4: Manajemen Stok & Inventaris */}
-        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-5 shadow-xs space-y-4">
-          <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800/80">
-            <Boxes className="w-4 h-4 text-blue-600" />
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Manajemen Stok</h3>
-          </div>
-
-          <div className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60">
-            <div className="space-y-0.5 pr-4">
-              <Label htmlFor="trackStockSwitch" className="text-sm font-semibold cursor-pointer">
-                Lacak Stok Otomatis
-              </Label>
+            <div className="flex items-center justify-between p-3">
+              <div className="space-y-0.5 pr-4">
+                <Label htmlFor="trackStockSwitch" className="text-xs font-medium cursor-pointer text-slate-800 dark:text-slate-200">
+                  Lacak Sisa Stok
+                </Label>
+                <p className="text-[11px] text-muted-foreground">
+                  Stok otomatis berkurang saat transaksi berhasil diselesaikan.
+                </p>
+              </div>
               <Controller
                 control={form.control}
                 name="trackStock"
                 render={({ field }) => (
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    {field.value !== false 
-                      ? 'Stok akan berkurang otomatis di sistem saat kasir menyelesaikan penjualan.' 
-                      : 'Stok tak terbatas (unlimited). Item selalu tersedia di katalog kasir.'}
-                  </p>
+                  <Switch
+                    id="trackStockSwitch"
+                    checked={field.value !== false}
+                    onCheckedChange={field.onChange}
+                  />
                 )}
               />
             </div>
-            <Controller
-              control={form.control}
-              name="trackStock"
-              render={({ field }) => (
-                <Switch
-                  id="trackStockSwitch"
-                  checked={field.value !== false}
-                  onCheckedChange={field.onChange}
-                />
-              )}
-            />
           </div>
 
-          <Controller
-            control={form.control}
-            name="trackStock"
-            render={({ field: trackStockField }) => {
-              if (trackStockField.value === false) {
-                return (
-                  <div className="p-3 rounded-lg bg-blue-50/60 border border-blue-100 text-blue-800 dark:bg-blue-950/30 dark:border-blue-900 dark:text-blue-300 text-xs flex items-center gap-2">
-                    <Info className="w-4 h-4 flex-shrink-0" />
-                    <span>Pelacakan stok dinonaktifkan. Anda tidak perlu mengelola jumlah stok secara manual untuk item ini.</span>
-                  </div>
-                );
-              }
-              return (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="stock" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      Sisa Stok Saat Ini
-                    </Label>
-                    <Input 
-                      id="stock" 
-                      type="number" 
-                      {...form.register('stock')} 
-                      className="rounded-lg h-10 font-semibold"
+          {watchedTrackStock !== false && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-0.5">
+              <div className="space-y-1.5">
+                <Label htmlFor="stock" className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                  Sisa Stok
+                </Label>
+                <Controller
+                  control={form.control}
+                  name="stock"
+                  render={({ field }) => (
+                    <CleanNumberInput
+                      id="stock"
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="0"
                     />
-                    <p className="text-[11px] text-muted-foreground">Jumlah porsi siap saji yang tersedia.</p>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="minStock" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      Batas Minimum Stok
-                    </Label>
-                    <Input 
-                      id="minStock" 
-                      type="number" 
-                      {...form.register('minStock')} 
-                      className="rounded-lg h-10 font-semibold"
+                  )}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="minStock" className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                  Batas Minimum Stok
+                </Label>
+                <Controller
+                  control={form.control}
+                  name="minStock"
+                  render={({ field }) => (
+                    <CleanNumberInput
+                      id="minStock"
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="0"
                     />
-                    <p className="text-[11px] text-muted-foreground">Peringatan stok menipis saat sisa unit mencapai angka ini.</p>
-                  </div>
-                </div>
-              );
-            }}
-          />
+                  )}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Card 5: Kustomisasi & Modifier */}
+        {/* Section 5: Kustomisasi & Modifier (if applicable) */}
         {modifierGroups.length > 0 && (
-          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-5 shadow-xs space-y-3">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800/80">
-              <div className="flex items-center gap-2">
-                <Layers className="w-4 h-4 text-purple-600" />
-                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Grup Modifier & Varian</h3>
+          <>
+            <div className="border-t border-slate-100 dark:border-slate-800/80" />
+            <div className="space-y-3">
+              <div>
+                <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Grup Modifier & Varian</h4>
+                <p className="text-xs text-muted-foreground mt-0.5">Pilih varian atau opsi tambahan yang dapat dipilih saat memesan menu ini.</p>
               </div>
-              <span className="text-xs text-muted-foreground">Opsional</span>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Pilih grup varian / kustomisasi yang berlaku untuk item menu ini saat pelanggan memesan:
-            </p>
 
-            <Controller
-              control={form.control}
-              name="modifierGroupIds"
-              render={({ field }) => (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                  {modifierGroups.map((mg: any) => {
-                    const isChecked = field.value?.includes(mg.id);
-                    return (
-                      <div 
-                        key={mg.id}
-                        onClick={() => {
-                          if (isChecked) {
-                            field.onChange((field.value || []).filter((id: string) => id !== mg.id));
-                          } else {
-                            field.onChange([...(field.value || []), mg.id]);
-                          }
-                        }}
-                        className={`p-3 rounded-xl border transition-all cursor-pointer flex items-start gap-3 select-none ${
-                          isChecked 
-                            ? 'border-primary/60 bg-primary/5 text-slate-900 dark:text-slate-100 shadow-xs' 
-                            : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 hover:bg-slate-100/70 dark:bg-slate-900/30'
-                        }`}
-                      >
-                        <Checkbox 
-                          id={`mg-${mg.id}`}
-                          checked={isChecked}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              field.onChange([...(field.value || []), mg.id]);
-                            } else {
+              <Controller
+                control={form.control}
+                name="modifierGroupIds"
+                render={({ field }) => (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {modifierGroups.map((mg: any) => {
+                      const isChecked = field.value?.includes(mg.id);
+                      return (
+                        <div 
+                          key={mg.id}
+                          onClick={() => {
+                            if (isChecked) {
                               field.onChange((field.value || []).filter((id: string) => id !== mg.id));
+                            } else {
+                              field.onChange([...(field.value || []), mg.id]);
                             }
                           }}
-                          className="mt-0.5"
-                        />
-                        <div className="space-y-0.5">
-                          <p className="text-xs font-semibold">{mg.name}</p>
-                          <p className="text-[11px] text-muted-foreground line-clamp-1">
-                            {mg.modifiers?.map((m: any) => m.name).join(', ') || 'Belum ada opsi'}
-                          </p>
+                          className={`p-3 rounded-xl border transition-colors cursor-pointer flex items-start gap-3 select-none ${
+                            isChecked 
+                              ? 'border-primary/50 bg-primary/5 text-slate-900 dark:text-slate-100' 
+                              : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                          }`}
+                        >
+                          <Checkbox 
+                            id={`mg-${mg.id}`}
+                            checked={isChecked}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                field.onChange([...(field.value || []), mg.id]);
+                              } else {
+                                field.onChange((field.value || []).filter((id: string) => id !== mg.id));
+                              }
+                            }}
+                            className="mt-0.5"
+                          />
+                          <div className="space-y-0.5 min-w-0">
+                            <p className="text-xs font-medium truncate">{mg.name}</p>
+                            <p className="text-[11px] text-muted-foreground truncate">
+                              {mg.modifiers?.map((m: any) => m.name).join(', ') || 'Belum ada opsi'}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            />
-          </div>
+                      );
+                    })}
+                  </div>
+                )}
+              />
+            </div>
+          </>
         )}
       </div>
 
-      {/* Floating Action Bottom Bar */}
-      <div className="p-4 px-6 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex items-center justify-between gap-3 shadow-lg">
+      {/* Action Footer */}
+      <div className="p-4 px-6 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 flex items-center justify-between gap-3">
         <div className="text-xs text-muted-foreground">
-          {form.formState.isDirty ? (
-            <span className="text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-              Ada perubahan yang belum disimpan
+          {form.formState.isDirty && (
+            <span className="text-amber-600 dark:text-amber-400 font-medium">
+              Ada perubahan belum disimpan
             </span>
-          ) : (
-            <span>Semua data tersimpan</span>
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -719,23 +725,21 @@ function ProductForm({
             type="button" 
             variant="outline" 
             onClick={onCancel}
-            className="rounded-xl h-10 px-4"
+            className="h-9 px-4 text-xs font-medium"
           >
             Batal
           </Button>
           <Button 
             type="submit" 
-            disabled={isLoading || (Boolean(selectedProduct) && !form.formState.isDirty && !imageFile)}
-            className="rounded-xl h-10 px-5 bg-primary hover:bg-primary/90 text-primary-foreground font-medium shadow-xs"
+            disabled={isLoading}
+            className="h-9 px-4 text-xs font-medium"
           >
             {isLoading ? (
-              <span className="flex items-center gap-2">
-                <RefreshCw className="w-4 h-4 animate-spin" /> Menyimpan...
+              <span className="flex items-center gap-1.5">
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Menyimpan...
               </span>
             ) : (
-              <span className="flex items-center gap-2">
-                <Check className="w-4 h-4" /> {selectedProduct ? 'Perbarui Item' : 'Simpan Item'}
-              </span>
+              selectedProduct ? 'Perbarui Item' : 'Simpan Item'
             )}
           </Button>
         </div>
@@ -755,6 +759,7 @@ export function ProductList({
   modifierGroups?: any[];
   userRole?: string;
 }) {
+  const router = useRouter();
   const [isAddOpen, setIsAddOpen] = React.useState(false);
   const [isEditOpen, setIsEditOpen] = React.useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
@@ -1014,13 +1019,15 @@ export function ProductList({
         finalImageUrl = await uploadImage(imageFile);
       }
       
-      const result = await createProduct({ ...values, imageUrl: finalImageUrl });
+      const payload = { ...values, imageUrl: finalImageUrl };
+      const result = await createProduct(payload);
       
       if (result.success) {
         toast.success('Item berhasil ditambahkan');
         setIsAddOpen(false);
         form.reset();
         setImageFile(null);
+        router.refresh();
       } else {
         toast.error(result.error);
       }
@@ -1041,12 +1048,68 @@ export function ProductList({
         finalImageUrl = await uploadImage(imageFile);
       }
 
-      const result = await updateProduct(selectedProduct.id, { ...values, imageUrl: finalImageUrl });
+      const payload = { ...values, imageUrl: finalImageUrl };
+      const result = await updateProduct(selectedProduct.id, payload);
       
       if (result.success) {
+        const catName = categories.find((c) => c.id === values.categoryId)?.name || null;
+        const numPotongan = values.potongan ?? 0;
+        
+        // Optimistic / immediate UI update on local state so changes reflect instantly
+        setProductsList((prev) =>
+          prev.map((p) =>
+            p.id === selectedProduct.id
+              ? {
+                  ...p,
+                  name: values.name,
+                  sku: values.sku,
+                  categoryId: values.categoryId ?? null,
+                  categoryName: catName,
+                  price: values.price.toString(),
+                  costPrice: values.costPrice.toString(),
+                  potongan: numPotongan.toString(),
+                  stock: values.stock,
+                  minStock: values.minStock,
+                  trackStock: values.trackStock ?? true,
+                  isActive: values.isActive ?? true,
+                  imageUrl: finalImageUrl || p.imageUrl,
+                  description: values.description || null,
+                  barcode: values.barcode || null,
+                  modifierGroupIds: values.modifierGroupIds || [],
+                }
+              : p
+          )
+        );
+
+        if (detailProduct?.id === selectedProduct.id) {
+          setDetailProduct((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  name: values.name,
+                  sku: values.sku,
+                  categoryId: values.categoryId ?? null,
+                  categoryName: catName,
+                  price: values.price.toString(),
+                  costPrice: values.costPrice.toString(),
+                  potongan: numPotongan.toString(),
+                  stock: values.stock,
+                  minStock: values.minStock,
+                  trackStock: values.trackStock ?? true,
+                  isActive: values.isActive ?? true,
+                  imageUrl: finalImageUrl || prev.imageUrl,
+                  description: values.description || null,
+                  barcode: values.barcode || null,
+                  modifierGroupIds: values.modifierGroupIds || [],
+                }
+              : null
+          );
+        }
+
         toast.success('Item berhasil diperbarui');
         setIsEditOpen(false);
         setImageFile(null);
+        router.refresh();
       } else {
         toast.error(result.error);
       }
@@ -1060,12 +1123,19 @@ export function ProductList({
   const onConfirmDelete = async () => {
     if (!selectedProduct) return;
     setIsLoading(true);
-    const result = await deleteProduct(selectedProduct.id);
+    const deleteId = selectedProduct.id;
+    const result = await deleteProduct(deleteId);
     setIsLoading(false);
     
     if (result.success) {
+      setProductsList((prev) => prev.filter((p) => p.id !== deleteId));
+      if (detailProduct?.id === deleteId) {
+        setIsDetailOpen(false);
+        setDetailProduct(null);
+      }
       toast.success('Item berhasil dihapus');
       setIsDeleteOpen(false);
+      router.refresh();
     } else {
       toast.error(result.error);
     }
@@ -1077,12 +1147,12 @@ export function ProductList({
     form.reset({
       name: product.name,
       sku: product.sku,
-      categoryId: product.categoryId,
-      price: parseFloat(product.price),
+      categoryId: product.categoryId || null,
+      price: parseFloat(product.price) || 0,
       costPrice: product.costPrice ? parseFloat(product.costPrice) : 0, 
       potongan: product.potongan ? parseFloat(product.potongan) : 0,
-      stock: product.stock,
-      minStock: product.minStock,
+      stock: product.stock ?? 0,
+      minStock: product.minStock ?? 5,
       trackStock: product.trackStock !== false,
       isActive: product.isActive !== false,
       barcode: product.barcode || '',
@@ -2209,35 +2279,17 @@ export function ProductList({
       }}>
         <SheetContent 
           side="right" 
-          className="sm:max-w-xl md:max-w-2xl w-full p-0 flex flex-col h-full bg-white dark:bg-slate-950 border-l border-slate-200 dark:border-slate-800 focus:outline-none shadow-2xl"
+          className="sm:max-w-xl md:max-w-2xl w-full p-0 flex flex-col h-full bg-white dark:bg-slate-950 border-l border-slate-200 dark:border-slate-800 focus:outline-none"
         >
-          <SheetHeader className="px-6 py-5 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex-shrink-0">
-            <div className="flex items-center justify-between pr-6">
-              <div>
-                <SheetTitle className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
-                  {selectedProduct ? (
-                    <>
-                      <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-                        <Pencil className="w-4 h-4" />
-                      </div>
-                      <span>Edit Item: {selectedProduct.name}</span>
-                    </>
-                  ) : (
-                    <>
-                      <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-                        <Package className="w-4 h-4" />
-                      </div>
-                      <span>Tambah Item Baru</span>
-                    </>
-                  )}
-                </SheetTitle>
-                <SheetDescription className="text-xs text-muted-foreground mt-1">
-                  {selectedProduct 
-                    ? 'Perbarui rincian produk, harga jual, margin, inventaris, dan opsi kustomisasi.' 
-                    : 'Lengkapi informasi produk baru untuk ditampilkan di sistem kasir dan menu digital.'}
-                </SheetDescription>
-              </div>
-            </div>
+          <SheetHeader className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 flex-shrink-0">
+            <SheetTitle className="text-base font-semibold text-slate-900 dark:text-slate-100">
+              {selectedProduct ? 'Edit Menu' : 'Tambah Menu Baru'}
+            </SheetTitle>
+            <SheetDescription className="text-xs text-muted-foreground truncate">
+              {selectedProduct 
+                ? selectedProduct.name 
+                : 'Lengkapi informasi menu untuk kasir dan katalog digital.'}
+            </SheetDescription>
           </SheetHeader>
 
           <ProductForm

@@ -24,6 +24,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+} from "@/components/ui/table";
 import { 
   Dialog, 
   DialogContent, 
@@ -555,73 +563,71 @@ export function FinanceReportClient({ initialData, outletKey }: FinanceReportCli
           </div>
         )}
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs text-left">
-            <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-100">
-              <tr>
-                <th className="py-3 px-4">Tanggal</th>
-                <th className="py-3 px-4">Kategori</th>
-                <th className="py-3 px-4">Deskripsi Pengeluaran</th>
-                <th className="py-3 px-4">Sumber Bayar</th>
-                <th className="py-3 px-4 text-right">Nominal</th>
-                <th className="py-3 px-4 text-center print:hidden w-16">Aksi</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 font-sans">
-              {expenses.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-10 text-center text-slate-400">
-                    <Receipt className="h-8 w-8 mx-auto mb-2 text-slate-300 opacity-60" />
-                    Belum ada catatan pengeluaran operasional pada periode ini.
-                  </td>
-                </tr>
-              ) : (
-                expenses.map((exp) => (
-                  <tr key={exp.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-3 px-4 text-slate-500 whitespace-nowrap">
-                      {new Date(exp.date).toLocaleDateString("id-ID", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] bg-blue-50 text-[#0e59f9] font-semibold border border-blue-100">
-                        {exp.category}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 font-medium text-slate-900">
-                      {exp.description}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className={cn(
-                        "inline-block px-2 py-0.5 rounded text-[10px] font-medium border",
-                        exp.paymentMethod === "TUNAI" || exp.paymentMethod === "CASH"
-                          ? "bg-amber-50 text-amber-700 border-amber-200"
-                          : "bg-slate-100 text-slate-700 border-slate-200"
-                      )}>
-                        {exp.paymentMethod === "TUNAI" || exp.paymentMethod === "CASH" ? "Kasir Tunai" : exp.paymentMethod}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-right font-semibold text-rose-600 font-mono">
-                      Rp {parseFloat(exp.amount).toLocaleString("id-ID")}
-                    </td>
-                    <td className="py-3 px-4 text-center print:hidden">
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteExpense(exp.id)}
-                        className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
-                        title="Hapus Pengeluaran"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <Table className="w-full text-xs text-left">
+          <TableHeader>
+            <TableRow className="border-none bg-transparent hover:bg-transparent">
+              <TableHead className="py-3 px-4">Tanggal</TableHead>
+              <TableHead className="py-3 px-4">Kategori</TableHead>
+              <TableHead className="py-3 px-4">Deskripsi Pengeluaran</TableHead>
+              <TableHead className="py-3 px-4">Sumber Bayar</TableHead>
+              <TableHead className="py-3 px-4 text-right">Nominal</TableHead>
+              <TableHead className="py-3 px-4 text-center print:hidden w-16">Aksi</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody className="divide-y divide-slate-100 font-sans">
+            {expenses.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="py-10 text-center text-slate-400">
+                  <Receipt className="h-8 w-8 mx-auto mb-2 text-slate-300 opacity-60" />
+                  Belum ada catatan pengeluaran operasional pada periode ini.
+                </TableCell>
+              </TableRow>
+            ) : (
+              expenses.map((exp) => (
+                <TableRow key={exp.id} className="hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-colors">
+                  <TableCell className="py-3 px-4 text-slate-500 whitespace-nowrap">
+                    {new Date(exp.date).toLocaleDateString("id-ID", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </TableCell>
+                  <TableCell className="py-3 px-4">
+                    <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] bg-blue-50 text-[#0e59f9] font-semibold border border-blue-100">
+                      {exp.category}
+                    </span>
+                  </TableCell>
+                  <TableCell className="py-3 px-4 font-medium text-slate-900">
+                    {exp.description}
+                  </TableCell>
+                  <TableCell className="py-3 px-4">
+                    <span className={cn(
+                      "inline-block px-2 py-0.5 rounded text-[10px] font-medium border",
+                      exp.paymentMethod === "TUNAI" || exp.paymentMethod === "CASH"
+                        ? "bg-amber-50 text-amber-700 border-amber-200"
+                        : "bg-slate-100 text-slate-700 border-slate-200"
+                    )}>
+                      {exp.paymentMethod === "TUNAI" || exp.paymentMethod === "CASH" ? "Kasir Tunai" : exp.paymentMethod}
+                    </span>
+                  </TableCell>
+                  <TableCell className="py-3 px-4 text-right font-semibold text-rose-600 font-mono">
+                    Rp {parseFloat(exp.amount).toLocaleString("id-ID")}
+                  </TableCell>
+                  <TableCell className="py-3 px-4 text-center print:hidden">
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteExpense(exp.id)}
+                      className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
+                      title="Hapus Pengeluaran"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </div>
 
       {/* Cashier Shift Reconciliation Table */}
@@ -638,89 +644,87 @@ export function FinanceReportClient({ initialData, outletKey }: FinanceReportCli
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs text-left">
-            <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-100">
-              <tr>
-                <th className="py-3 px-4">Shift & Kasir</th>
-                <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4">Waktu Buka / Tutup</th>
-                <th className="py-3 px-4 text-right">Modal Awal</th>
-                <th className="py-3 px-4 text-right">Diharapkan (Sistem)</th>
-                <th className="py-3 px-4 text-right">Aktual Laci</th>
-                <th className="py-3 px-4 text-right">Selisih</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 font-sans">
-              {shifts.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="py-10 text-center text-slate-400">
-                    <ShieldCheck className="h-8 w-8 mx-auto mb-2 text-slate-300 opacity-60" />
-                    Belum ada riwayat shift kasir pada periode ini.
-                  </td>
-                </tr>
-              ) : (
-                shifts.map((s) => {
-                  const diff = parseFloat(s.cashDifference || "0");
-                  const cashier = (s as any).cashierName || "Kasir";
-                  return (
-                    <tr key={s.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3 px-4">
-                        <div className="font-semibold text-slate-900 font-mono text-[11px]">
-                          #{s.id.slice(0, 8)}
-                        </div>
-                        <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
-                          <User className="h-3 w-3 text-slate-400" />
-                          <span>{cashier}</span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span
-                          className={cn(
-                            "px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase",
-                            s.status === "ACTIVE"
-                              ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
-                              : "bg-slate-100 text-slate-700"
-                          )}
-                        >
-                          {s.status === "ACTIVE" ? "AKTIF" : "SELESAI"}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-slate-500 text-[11px]">
-                        <div>Mulai: {new Date(s.startTime).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</div>
-                        {s.endTime && (
-                          <div className="text-slate-400">
-                            Tutup: {new Date(s.endTime).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
-                          </div>
+        <Table className="w-full text-xs text-left">
+          <TableHeader>
+            <TableRow className="border-none bg-transparent hover:bg-transparent">
+              <TableHead className="py-3 px-4">Shift & Kasir</TableHead>
+              <TableHead className="py-3 px-4">Status</TableHead>
+              <TableHead className="py-3 px-4">Waktu Buka / Tutup</TableHead>
+              <TableHead className="py-3 px-4 text-right">Modal Awal</TableHead>
+              <TableHead className="py-3 px-4 text-right">Diharapkan (Sistem)</TableHead>
+              <TableHead className="py-3 px-4 text-right">Aktual Laci</TableHead>
+              <TableHead className="py-3 px-4 text-right">Selisih</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody className="divide-y divide-slate-100 font-sans">
+            {shifts.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="py-10 text-center text-slate-400">
+                  <ShieldCheck className="h-8 w-8 mx-auto mb-2 text-slate-300 opacity-60" />
+                  Belum ada riwayat shift kasir pada periode ini.
+                </TableCell>
+              </TableRow>
+            ) : (
+              shifts.map((s) => {
+                const diff = parseFloat(s.cashDifference || "0");
+                const cashier = (s as any).cashierName || "Kasir";
+                return (
+                  <TableRow key={s.id} className="hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-colors">
+                    <TableCell className="py-3 px-4">
+                      <div className="font-semibold text-slate-900 font-mono text-[11px]">
+                        #{s.id.slice(0, 8)}
+                      </div>
+                      <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
+                        <User className="h-3 w-3 text-slate-400" />
+                        <span>{cashier}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-3 px-4">
+                      <span
+                        className={cn(
+                          "px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase",
+                          s.status === "ACTIVE"
+                            ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                            : "bg-slate-100 text-slate-700"
                         )}
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono">
-                        Rp {parseFloat(s.startingCash || "0").toLocaleString("id-ID")}
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono">
-                        Rp {parseFloat(s.expectedCash || "0").toLocaleString("id-ID")}
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono font-semibold text-slate-900">
-                        {s.actualCash ? `Rp ${parseFloat(s.actualCash).toLocaleString("id-ID")}` : "-"}
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono font-semibold">
-                        {s.status === "ACTIVE" ? (
-                          <span className="text-slate-400 font-normal">Shift berjalan</span>
-                        ) : diff === 0 ? (
-                          <span className="text-emerald-600">Pas (Rp 0)</span>
-                        ) : diff > 0 ? (
-                          <span className="text-emerald-700">+Rp {diff.toLocaleString("id-ID")}</span>
-                        ) : (
-                          <span className="text-rose-600">-Rp {Math.abs(diff).toLocaleString("id-ID")}</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+                      >
+                        {s.status === "ACTIVE" ? "AKTIF" : "SELESAI"}
+                      </span>
+                    </TableCell>
+                    <TableCell className="py-3 px-4 text-slate-500 text-[11px]">
+                      <div>Mulai: {new Date(s.startTime).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</div>
+                      {s.endTime && (
+                        <div className="text-slate-400">
+                          Tutup: {new Date(s.endTime).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell className="py-3 px-4 text-right font-mono">
+                      Rp {parseFloat(s.startingCash || "0").toLocaleString("id-ID")}
+                    </TableCell>
+                    <TableCell className="py-3 px-4 text-right font-mono">
+                      Rp {parseFloat(s.expectedCash || "0").toLocaleString("id-ID")}
+                    </TableCell>
+                    <TableCell className="py-3 px-4 text-right font-mono font-semibold text-slate-900">
+                      {s.actualCash ? `Rp ${parseFloat(s.actualCash).toLocaleString("id-ID")}` : "-"}
+                    </TableCell>
+                    <TableCell className="py-3 px-4 text-right font-mono font-semibold">
+                      {s.status === "ACTIVE" ? (
+                        <span className="text-slate-400 font-normal">Shift berjalan</span>
+                      ) : diff === 0 ? (
+                        <span className="text-emerald-600">Pas (Rp 0)</span>
+                      ) : diff > 0 ? (
+                        <span className="text-emerald-700">+Rp {diff.toLocaleString("id-ID")}</span>
+                      ) : (
+                        <span className="text-rose-600">-Rp {Math.abs(diff).toLocaleString("id-ID")}</span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
       </div>
 
       {/* Modal: Catat Pengeluaran Baru */}

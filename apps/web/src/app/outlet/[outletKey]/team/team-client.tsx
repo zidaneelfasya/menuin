@@ -4,6 +4,14 @@ import * as React from 'react';
 import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+} from '@/components/ui/table';
 import { 
   inviteUserAction, 
   changeRoleAction, 
@@ -666,29 +674,28 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
       {/* Main Table with Doodle Avatars, Unified Blue Badges, and Clean Hierarchy */}
       {hasRows ? (
         <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-card overflow-hidden shadow-xs">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[760px]">
-              {/* Header */}
-              <thead>
-                <tr className="border-b bg-muted/40 h-10 text-xs font-medium text-muted-foreground select-none">
-                  <th className="px-5 w-[260px]">User</th>
-                  <th className="px-4">Email Address</th>
-                  <th className="px-4">Role</th>
-                  <th className="px-4">POS PIN</th>
-                  <th className="px-4">Date Added</th>
-                  <th className="px-4">Status</th>
-                  <th className="px-4 text-right w-[60px]"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/60">
+          <Table className="min-w-[760px]">
+            {/* Header */}
+            <TableHeader>
+              <TableRow className="border-none bg-transparent hover:bg-transparent">
+                <TableHead className="px-5 w-[260px]">User</TableHead>
+                <TableHead className="px-4">Email Address</TableHead>
+                <TableHead className="px-4">Role</TableHead>
+                <TableHead className="px-4">POS PIN</TableHead>
+                <TableHead className="px-4">Date Added</TableHead>
+                <TableHead className="px-4">Status</TableHead>
+                <TableHead className="px-4 text-right w-[60px]"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
                 {/* Active Members */}
                 {filteredMembers.map((member) => (
-                  <tr 
+                  <TableRow 
                     key={member.id} 
-                    className="h-16 hover:bg-muted/30 transition-colors group"
+                    className="h-16 hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-colors group"
                   >
                     {/* User (Doodle Avatar + Name) */}
-                    <td className="px-5">
+                    <TableCell className="px-5">
                       <div className="flex items-center gap-3">
                         <DoodleAvatar name={member.name} email={member.email} />
                         <div className="flex flex-col min-w-0">
@@ -697,10 +704,10 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
                           </span>
                         </div>
                       </div>
-                    </td>
+                    </TableCell>
 
                     {/* Email Address with Copy Button */}
-                    <td className="px-4">
+                    <TableCell className="px-4">
                       <div className="flex items-center gap-1.5 group/email">
                         <span className="text-sm text-slate-600 dark:text-slate-400 font-inter font-normal truncate max-w-[220px]">
                           {member.email}
@@ -714,15 +721,15 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
                           <Copy className="w-3.5 h-3.5" />
                         </button>
                       </div>
-                    </td>
+                    </TableCell>
 
                     {/* Role Pill Badge */}
-                    <td className="px-4">
+                    <TableCell className="px-4">
                       <RoleBadge role={member.role} />
-                    </td>
+                    </TableCell>
 
                     {/* POS PIN (Interactive Button / Badge) */}
-                    <td className="px-4">
+                    <TableCell className="px-4">
                       {member.pinHash ? (
                         <button
                           type="button"
@@ -744,22 +751,22 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
                           <span>Atur PIN</span>
                         </button>
                       )}
-                    </td>
+                    </TableCell>
 
                     {/* Date Added */}
-                    <td className="px-4">
+                    <TableCell className="px-4">
                       <span className="text-sm font-inter font-normal text-slate-600 dark:text-slate-400">
                         {formatDateAdded(member.createdAt)}
                       </span>
-                    </td>
+                    </TableCell>
 
                     {/* Status Pill Badge */}
-                    <td className="px-4">
+                    <TableCell className="px-4">
                       <StatusBadge status="ACTIVE" />
-                    </td>
+                    </TableCell>
 
                     {/* Action Menu (⋮) */}
-                    <td className="px-4 text-right">
+                    <TableCell className="px-4 text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button 
@@ -813,18 +820,18 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
                           )}
                         </DropdownMenuContent>
                       </DropdownMenu>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
 
                 {/* Pending Invites */}
                 {filteredPending.map((invite) => (
-                  <tr 
+                  <TableRow 
                     key={invite.id} 
-                    className="h-16 hover:bg-muted/30 transition-colors bg-blue-50/20 dark:bg-blue-950/10 group"
+                    className="h-16 hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-colors bg-blue-50/20 dark:bg-blue-950/10 group"
                   >
                     {/* User (Doodle Avatar + Email Prefix) */}
-                    <td className="px-5">
+                    <TableCell className="px-5">
                       <div className="flex items-center gap-3">
                         <DoodleAvatar email={invite.email} />
                         <div className="flex flex-col min-w-0">
@@ -836,10 +843,10 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
                           </span>
                         </div>
                       </div>
-                    </td>
+                    </TableCell>
 
                     {/* Email */}
-                    <td className="px-4">
+                    <TableCell className="px-4">
                       <div className="flex items-center gap-1.5 group/email">
                         <span className="text-sm text-slate-600 dark:text-slate-400 font-inter font-normal truncate max-w-[220px]">
                           {invite.email}
@@ -853,32 +860,32 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
                           <Copy className="w-3.5 h-3.5" />
                         </button>
                       </div>
-                    </td>
+                    </TableCell>
 
                     {/* Role */}
-                    <td className="px-4">
+                    <TableCell className="px-4">
                       <RoleBadge role={invite.role} />
-                    </td>
+                    </TableCell>
 
                     {/* POS PIN */}
-                    <td className="px-4">
+                    <TableCell className="px-4">
                       <span className="text-xs text-muted-foreground italic">-</span>
-                    </td>
+                    </TableCell>
 
                     {/* Date Added */}
-                    <td className="px-4">
+                    <TableCell className="px-4">
                       <span className="text-sm font-inter font-normal text-slate-600 dark:text-slate-400">
                         {formatDateAdded(invite.createdAt)}
                       </span>
-                    </td>
+                    </TableCell>
 
                     {/* Status */}
-                    <td className="px-4">
+                    <TableCell className="px-4">
                       <StatusBadge status="PENDING" />
-                    </td>
+                    </TableCell>
 
                     {/* Action Menu (⋮) */}
-                    <td className="px-4 text-right">
+                    <TableCell className="px-4 text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button 
@@ -923,12 +930,11 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
         </div>
       ) : (
         /* Empty State */
