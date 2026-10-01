@@ -181,7 +181,7 @@ export function SalesDetailClient({ initialData, outletKey }: SalesDetailClientP
           "Penjualan Kotor (Rp)": g,
           "Diskon (Rp)": d,
           "Fee Gateway (Rp)": f,
-          "Penjualan Bersih (Rp)": n,
+          "Net Sales (Rp)": n,
           Status: isCanceled ? "Dibatalkan" : "Selesai",
         };
       });
@@ -279,7 +279,7 @@ export function SalesDetailClient({ initialData, outletKey }: SalesDetailClientP
         {/* Metric 3: Penjualan Bersih */}
         <Card className="border border-[#0e59f9]/20 shadow-sm rounded-2xl bg-blue-50/20 p-4">
           <div className="text-[11px] font-semibold text-[#0e59f9] uppercase tracking-wider">
-            Penjualan Bersih
+            Net Sales
           </div>
           <div className="text-lg sm:text-xl font-semibold text-slate-900 mt-1.5 tracking-tight">
             {formatRupiah(filteredSummary.net)}
@@ -668,7 +668,7 @@ export function SalesDetailClient({ initialData, outletKey }: SalesDetailClientP
                   </div>
                 )}
                 <div className="flex justify-between text-sm font-semibold text-slate-900 pt-2 border-t border-slate-100">
-                  <span>Penjualan Bersih (Net)</span>
+                  <span>Net Sales</span>
                   <span className="text-[#0e59f9]">
                     {formatRupiah(
                       Math.max(

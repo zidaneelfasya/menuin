@@ -41,6 +41,7 @@ export default async function CheckoutPage({
     taxRate: parseFloat(tenant.posTaxRate || '0'),
     taxName: tenant.taxName || 'Pajak (PB1)',
     serviceChargeRate: parseFloat(tenant.serviceChargeRate || '0'),
+    posRounding: tenant.posRounding ?? false,
   };
 
   // Get products available online

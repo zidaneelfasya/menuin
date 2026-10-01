@@ -33,6 +33,10 @@ async function run() {
     await sql.unsafe('ALTER TABLE tenants ADD COLUMN IF NOT EXISTS doku_sub_account_id text;');
     await sql.unsafe("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS doku_environment text DEFAULT 'sandbox';");
 
+    console.log('Migrating schema: Adding pos_rounding to tenants and rounding to transactions...');
+    await sql.unsafe('ALTER TABLE tenants ADD COLUMN IF NOT EXISTS pos_rounding boolean DEFAULT false NOT NULL;');
+    await sql.unsafe('ALTER TABLE transactions ADD COLUMN IF NOT EXISTS rounding numeric(12, 2) DEFAULT 0;');
+
     console.log('Backfilling net_amount and gateway_fee for existing transactions...');
     // Cash transactions: gateway_fee = 0, net_amount = grand_total
     await sql.unsafe(`

@@ -184,7 +184,7 @@ export function FinanceReportClient({ initialData, outletKey }: FinanceReportCli
         { Indikator: "Arus Kas Bersih (Net Cash Flow)", Nilai: data.cashFlow.netCashFlow },
         { Indikator: "Net Arus Kas Laci Kasir", Nilai: data.cashFlow.drawerNetFlow },
         { Indikator: "Net Saldo Bank & Digital", Nilai: data.cashFlow.digitalNetFlow },
-        { Indikator: "Penjualan Bersih (Net Sales)", Nilai: data.profitability.netSales },
+        { Indikator: "Net Sales", Nilai: data.profitability.netSales },
         { Indikator: "Estimasi HPP Modal Produk Terjual", Nilai: data.profitability.totalHpp },
         { Indikator: "Estimasi Laba Kotor (Gross Profit)", Nilai: data.profitability.estimatedGrossProfit },
         { Indikator: "Margin Keuntungan (%)", Nilai: data.profitability.profitMargin.toFixed(1) + "%" },
