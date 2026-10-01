@@ -116,7 +116,18 @@ export async function createProduct(formData: z.infer<typeof productSchema>) {
     const user = await getCurrentUser();
     if (!user || !user.tenantId) return { success: false, error: 'Unauthorized or no dashboard' };
 
-    const validatedData = productSchema.parse(formData);
+    const sanitizedData = {
+      ...formData,
+      potongan: formData.potongan ?? 0,
+      costPrice: formData.costPrice ?? 0,
+      categoryId: formData.categoryId || null,
+    };
+
+    if (sanitizedData.potongan > sanitizedData.price) {
+      return { success: false, error: 'Nilai potongan tidak boleh melebihi harga jual normal' };
+    }
+
+    const validatedData = productSchema.parse(sanitizedData);
     
     // Auto-generate barcode if empty
     const finalBarcode = validatedData.barcode && validatedData.barcode.trim() !== '' 
@@ -151,10 +162,28 @@ export async function createProduct(formData: z.infer<typeof productSchema>) {
       );
     }
     
-    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
+    if (user && typeof user === "object" && "outletKey" in user && user.outletKey) { 
+      revalidatePath(`/outlet/${user.outletKey}`, "layout"); 
+      revalidatePath(`/outlet/${user.outletKey}/items`, "page");
+      revalidatePath(`/outlet/${user.outletKey}/pos`, "page");
+    }
+    revalidatePath("/store/[slug]", "layout");
     return { success: true };
   } catch (error) {
     console.error('Error creating product:', error);
+    if (error instanceof z.ZodError) {
+      return { success: false, error: error.issues[0]?.message || 'Data produk tidak valid' };
+    }
+    if (error && typeof error === 'object' && 'code' in error && (error as any).code === '23505') {
+      const detail = (error as any).detail || '';
+      if (detail.includes('barcode')) {
+        return { success: false, error: 'Barcode sudah digunakan oleh menu lain. Barcode harus unik.' };
+      }
+      if (detail.includes('sku')) {
+        return { success: false, error: 'SKU sudah digunakan oleh menu lain. SKU harus unik.' };
+      }
+      return { success: false, error: 'Data produk duplikat dengan produk lain.' };
+    }
     return { success: false, error: 'Gagal membuat produk. Pastikan SKU unik.' };
   }
 }
@@ -164,7 +193,22 @@ export async function updateProduct(id: string, formData: z.infer<typeof product
     const user = await getCurrentUser();
     if (!user || !user.tenantId) return { success: false, error: 'Unauthorized' };
 
-    const validatedData = productSchema.parse(formData);
+    const sanitizedData = {
+      ...formData,
+      potongan: formData.potongan ?? 0,
+      costPrice: formData.costPrice ?? 0,
+      categoryId: formData.categoryId || null,
+      barcode: formData.barcode && formData.barcode.trim() !== '' ? formData.barcode.trim() : null,
+    };
+
+    if (sanitizedData.potongan > sanitizedData.price) {
+      return { success: false, error: 'Nilai potongan tidak boleh melebihi harga jual normal' };
+    }
+
+    const validatedData = productSchema.parse(sanitizedData);
+    const finalBarcode = validatedData.barcode && validatedData.barcode.trim() !== '' 
+      ? validatedData.barcode.trim() 
+      : null;
     
     await db.update(products)
       .set({
@@ -180,13 +224,18 @@ export async function updateProduct(id: string, formData: z.infer<typeof product
         ...(validatedData.isActive !== undefined ? { isActive: validatedData.isActive } : {}),
         imageUrl: validatedData.imageUrl,
         description: validatedData.description || null,
-        barcode: validatedData.barcode,
+        barcode: finalBarcode,
         updatedAt: new Date(),
       })
       .where(and(eq(products.id, id), eq(products.tenantId, user.tenantId)));
     
     // Update modifiers
-    await db.delete(productModifierGroups).where(eq(productModifierGroups.productId, id));
+    await db.delete(productModifierGroups).where(
+      and(
+        eq(productModifierGroups.productId, id),
+        eq(productModifierGroups.tenantId, user.tenantId)
+      )
+    );
     if (validatedData.modifierGroupIds && validatedData.modifierGroupIds.length > 0) {
       await db.insert(productModifierGroups).values(
         validatedData.modifierGroupIds.map(groupId => ({
@@ -197,10 +246,28 @@ export async function updateProduct(id: string, formData: z.infer<typeof product
       );
     }
     
-    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
+    if (user && typeof user === "object" && "outletKey" in user && user.outletKey) { 
+      revalidatePath(`/outlet/${user.outletKey}`, "layout"); 
+      revalidatePath(`/outlet/${user.outletKey}/items`, "page");
+      revalidatePath(`/outlet/${user.outletKey}/pos`, "page");
+    }
+    revalidatePath("/store/[slug]", "layout");
     return { success: true };
   } catch (error) {
     console.error('Error updating product:', error);
+    if (error instanceof z.ZodError) {
+      return { success: false, error: error.issues[0]?.message || 'Data produk tidak valid' };
+    }
+    if (error && typeof error === 'object' && 'code' in error && (error as any).code === '23505') {
+      const detail = (error as any).detail || '';
+      if (detail.includes('barcode')) {
+        return { success: false, error: 'Barcode sudah digunakan oleh menu lain. Barcode harus unik.' };
+      }
+      if (detail.includes('sku')) {
+        return { success: false, error: 'SKU sudah digunakan oleh menu lain. SKU harus unik.' };
+      }
+      return { success: false, error: 'Data produk duplikat dengan produk lain.' };
+    }
     return { success: false, error: 'Gagal memperbarui produk' };
   }
 }
@@ -210,13 +277,23 @@ export async function deleteProduct(id: string) {
     const user = await getCurrentUser();
     if (!user || !user.tenantId) return { success: false, error: 'Unauthorized' };
 
-    await db.delete(productModifierGroups).where(eq(productModifierGroups.productId, id));
+    await db.delete(productModifierGroups).where(
+      and(
+        eq(productModifierGroups.productId, id),
+        eq(productModifierGroups.tenantId, user.tenantId)
+      )
+    );
     await db.delete(products).where(and(eq(products.id, id), eq(products.tenantId, user.tenantId)));
     
     // Non-blocking audit log
     AuditService.log('DELETE', 'products', id).catch(console.error);
     
-    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
+    if (user && typeof user === "object" && "outletKey" in user && user.outletKey) { 
+      revalidatePath(`/outlet/${user.outletKey}`, "layout"); 
+      revalidatePath(`/outlet/${user.outletKey}/items`, "page");
+      revalidatePath(`/outlet/${user.outletKey}/pos`, "page");
+    }
+    revalidatePath("/store/[slug]", "layout");
     return { success: true };
   } catch (error) {
     console.error('Error deleting product:', error);

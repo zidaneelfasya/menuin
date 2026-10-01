@@ -112,12 +112,12 @@ export function calculatePromoDiscount(promo: any, subtotal: number, items?: Car
     discountAmount = subtotal;
   }
 
-  // Calculate per-item discount allocation
-  if (items && items.length > 0 && discountAmount > 0) {
-    const isSpecific = promo.targetType === 'SPECIFIC_PRODUCTS' && applicableIds.length > 0;
-    const targetItems = isSpecific
-      ? items.filter((it) => applicableIds.includes(it.productId))
-      : items;
+  // Calculate per-item discount allocation ONLY for SPECIFIC_PRODUCTS.
+  // Global discounts (targetType === 'ALL') are applied at the order/subtotal level after everything is totaled,
+  // NOT deducted from individual items.
+  const isSpecific = promo.targetType === 'SPECIFIC_PRODUCTS' && applicableIds.length > 0;
+  if (isSpecific && items && items.length > 0 && discountAmount > 0) {
+    const targetItems = items.filter((it) => applicableIds.includes(it.productId));
 
     if (promo.type === 'PERCENTAGE') {
       const totalRawDiscount = targetItems.reduce((sum, it) => {

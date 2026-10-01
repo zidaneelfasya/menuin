@@ -137,7 +137,7 @@ export async function getPublicPromotions(tenantSlug: string) {
     const tenantRows = await db
       .select({ id: tenants.id })
       .from(tenants)
-      .where(eq(tenants.slug, tenantSlug))
+      .where(or(eq(tenants.slug, tenantSlug), eq(tenants.outletKey, tenantSlug)))
       .limit(1);
 
     if (tenantRows.length === 0) {
@@ -354,7 +354,7 @@ export async function validatePublicPromoCode(tenantSlug: string, code: string, 
     const tenantRows = await db
       .select({ id: tenants.id })
       .from(tenants)
-      .where(eq(tenants.slug, tenantSlug))
+      .where(or(eq(tenants.slug, tenantSlug), eq(tenants.outletKey, tenantSlug)))
       .limit(1);
 
     if (tenantRows.length === 0) {

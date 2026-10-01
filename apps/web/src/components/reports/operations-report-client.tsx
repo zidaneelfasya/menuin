@@ -1403,7 +1403,7 @@ export function OperationsReportClient({ initialData, outletKey }: OperationsRep
             <span>Total Mingguan: <strong className="text-slate-900 font-semibold">{formatKpiCurrency(summary?.totalRevenue || 0)}</strong></span>
           </div>
         </div>
-      </div>
+x``      </div>
     </div>
   );
 }
