@@ -2,7 +2,7 @@
 
 import { and, eq, inArray } from 'drizzle-orm';
 import { db } from '@/lib/db';
-import { paymentAttempts, subscriptionInvoices, tenants } from '@/lib/db/schema';
+import { paymentAttempts, subscriptionInvoices } from '@/lib/db/schema';
 import { getBillingPlan } from '@/lib/billing/plans';
 import { startSubscriptionPayment, syncSubscriptionInvoicePayment } from '@/lib/payments/payment.service';
 import { getAppOrigin } from '@/lib/utils/app-origin';
@@ -19,25 +19,18 @@ async function requireBillingOwner(): Promise<{ context: BillingContext } | { er
   return { context };
 }
 
+type Plan = NonNullable<ReturnType<typeof getBillingPlan>>;
+
 /**
- * Membuat (atau memakai ulang) tagihan langganan untuk paket yang dipilih lalu
- * mengembalikan URL halaman pembayaran DOKU. Client hanya mengirim kode paket;
- * harga & durasi selalu dari katalog server.
+ * Tagihan PENDING tenant untuk paket ini: dipakai ulang bila cocok, diganti bila
+ * paket/harga berubah. Klik paralel diserialisasi oleh unique index
+ * "satu PENDING per tenant" (ON CONFLICT DO NOTHING lalu baca ulang), bukan oleh
+ * lock baris tenant — urutan lock tetap invoice → attempt → tenant seperti di
+ * payment service, sehingga tidak bisa deadlock dengan webhook.
  */
-export async function startSubscriptionCheckout(planCode: string) {
-  try {
-    const plan = getBillingPlan(planCode);
-    if (!plan) return { error: 'Paket tidak dikenal.' };
-
-    const auth = await requireBillingOwner();
-    if ('error' in auth) return { error: auth.error };
-    const { context } = auth;
-    const tenantId = context.tenant.id;
-
-    const invoice = await db.transaction(async (tx) => {
-      // Serialisasi per tenant agar klik ganda tidak membuat dua tagihan.
-      await tx.select({ id: tenants.id }).from(tenants).where(eq(tenants.id, tenantId)).limit(1).for('update');
-
+async function getOrCreateOpenInvoice(tenantId: string, plan: Plan, membershipId: string) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const result = await db.transaction(async (tx) => {
       const [open] = await tx
         .select()
         .from(subscriptionInvoices)
@@ -77,11 +70,36 @@ export async function startSubscriptionCheckout(planCode: string) {
           amount: plan.amount,
           periodDays: plan.periodDays,
           status: 'PENDING',
-          createdByMembershipId: context.membership.id,
+          createdByMembershipId: membershipId,
         })
+        .onConflictDoNothing()
         .returning();
-      return created;
+      return created ?? null;
     });
+
+    // null = request paralel lain baru saja membuat tagihan PENDING; ulangi untuk
+    // membacanya (dan memakainya ulang bila paketnya sama).
+    if (result) return result;
+  }
+  throw new Error('Gagal menyiapkan tagihan langganan setelah beberapa percobaan');
+}
+
+/**
+ * Membuat (atau memakai ulang) tagihan langganan untuk paket yang dipilih lalu
+ * mengembalikan URL halaman pembayaran DOKU. Client hanya mengirim kode paket;
+ * harga & durasi selalu dari katalog server.
+ */
+export async function startSubscriptionCheckout(planCode: string) {
+  try {
+    const plan = getBillingPlan(planCode);
+    if (!plan) return { error: 'Paket tidak dikenal.' };
+
+    const auth = await requireBillingOwner();
+    if ('error' in auth) return { error: auth.error };
+    const { context } = auth;
+    const tenantId = context.tenant.id;
+
+    const invoice = await getOrCreateOpenInvoice(tenantId, plan, context.membership.id);
 
     const origin = await getAppOrigin();
     const callbackUrl = origin ? `${origin}/checkout/status?invoice=${encodeURIComponent(invoice.id)}` : undefined;

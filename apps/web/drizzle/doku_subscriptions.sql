@@ -34,12 +34,21 @@ ALTER TABLE payment_attempts ALTER COLUMN transaction_id DROP NOT NULL;
 
 DO $$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'payment_attempts_subscription_invoice_id_subscription_invoices_id_fk') THEN
+  -- Nama pendek eksplisit (nama panjang > 63 karakter akan dipotong Postgres).
+  ALTER TABLE payment_attempts
+    DROP CONSTRAINT IF EXISTS payment_attempts_subscription_invoice_id_subscription_invoices_;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'payment_attempts_sub_invoice_fk' AND conrelid = 'payment_attempts'::regclass
+  ) THEN
     ALTER TABLE payment_attempts
-      ADD CONSTRAINT payment_attempts_subscription_invoice_id_subscription_invoices_id_fk
+      ADD CONSTRAINT payment_attempts_sub_invoice_fk
       FOREIGN KEY (subscription_invoice_id) REFERENCES subscription_invoices(id);
   END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'payment_attempts_target_check') THEN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'payment_attempts_target_check' AND conrelid = 'payment_attempts'::regclass
+  ) THEN
     ALTER TABLE payment_attempts
       ADD CONSTRAINT payment_attempts_target_check CHECK (
         (purpose = 'ORDER' AND transaction_id IS NOT NULL AND subscription_invoice_id IS NULL)

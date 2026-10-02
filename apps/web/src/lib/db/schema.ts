@@ -530,7 +530,7 @@ export const paymentAttempts = pgTable('payment_attempts', {
   tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
   purpose: text('purpose').notNull().default('ORDER'), // ORDER, SUBSCRIPTION
   transactionId: uuid('transaction_id'),
-  subscriptionInvoiceId: uuid('subscription_invoice_id').references(() => subscriptionInvoices.id),
+  subscriptionInvoiceId: uuid('subscription_invoice_id'),
   provider: text('provider').notNull(), // DOKU
   product: text('product').notNull(), // CHECKOUT, SNAP_QRIS
   environment: text('environment').notNull(), // sandbox, production
@@ -560,6 +560,12 @@ export const paymentAttempts = pgTable('payment_attempts', {
       name: 'payment_attempts_transaction_fk',
       columns: [table.tenantId, table.transactionId],
       foreignColumns: [transactions.tenantId, transactions.id]
+    }),
+    // Nama eksplisit: nama default drizzle > 63 karakter dan akan dipotong Postgres.
+    subscriptionInvoiceFk: foreignKey({
+      name: 'payment_attempts_sub_invoice_fk',
+      columns: [table.subscriptionInvoiceId],
+      foreignColumns: [subscriptionInvoices.id]
     }),
     invoiceUnique: uniqueIndex('payment_attempts_provider_invoice_uq').on(table.provider, table.invoiceNumber),
     // Maksimal satu attempt aktif per order: mencegah invoice ganda saat pelanggan klik berkali-kali.

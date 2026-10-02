@@ -12,6 +12,7 @@ harus diperbarui.
 |---|---|---|
 | Model akun | **Platform + Sub Account** (Model A) | Menuin memegang satu kredensial DOKU (env). Tiap outlet cukup punya `doku_sub_account_id`, tidak ada secret per tenant di DB. |
 | Produk untuk pesanan online (storefront) | **DOKU Checkout** (hosted page, Non-SNAP) | Satu integrasi untuk QRIS, VA, e-wallet, dan kartu. |
+| Langganan Menuin | **DOKU Checkout** ke akun platform (tanpa Sub Account) | Mesin pembayaran sama dengan storefront. Harga ditentukan server (`lib/billing/plans.ts`). |
 | POS QRIS dinamis | **SNAP QRIS MPM** (Fase 3) | Kasir butuh QR string mentah. Checkout hanya memberi URL. |
 | Lingkungan | **Sandbox dulu** sampai semua fase selesai | Pindah ke production cukup dengan mengganti env. |
 
@@ -20,7 +21,7 @@ harus diperbarui.
 | Fase | Isi | Status |
 |---|---|---|
 | 1 | Modul `lib/payments`, migrasi DB, Checkout storefront, webhook, cron rekonsiliasi, aktivasi Sub Account | ✅ Selesai (menunggu uji live di sandbox) |
-| 2 | Subscription Menuin via DOKU (menggantikan `/api/checkout` + webhook Midtrans subscription) | ⏳ |
+| 2 | Langganan Menuin via DOKU (menggantikan `/api/checkout` + webhook Midtrans subscription) | ✅ Selesai (menunggu uji live di sandbox) |
 | 3 | POS QRIS dinamis via SNAP (RSA key pair, token B2B) | ⏳ |
 | 4 | Rekonsiliasi settlement (fee riil), refund, dashboard review | ⏳ |
 
@@ -48,6 +49,19 @@ sequenceDiagram
     Note over B: Cron /api/cron/payment-reconcile menjadi jaring pengaman jika webhook tidak sampai
 ```
 
+### Alur langganan (Fase 2)
+
+1. OWNER yang terkunci membuka `PaymentGate` dan memilih paket, lalu masuk ke `/checkout?plan=starter|business`. Halaman ini wajib login.
+2. `startSubscriptionCheckout(planCode)` membuat atau memakai ulang tagihan `subscription_invoices` (PENDING). Harga diambil dari katalog server. Ganti paket membatalkan tagihan lama.
+3. `startSubscriptionPayment` membuat attempt `SUB-…` (`purpose = SUBSCRIPTION`) ke DOKU Checkout **tanpa Sub Account**, sehingga dana masuk ke akun platform. Batas bayar 60 menit.
+4. Webhook `/api/webhook/doku` (endpoint yang sama dengan order) menjalankan `applySubscriptionPaid`:
+   - langganan ACTIVE lama menjadi EXPIRED;
+   - langganan ACTIVE baru dibuat, periode = sekarang + 30 hari + sisa hari langganan lama;
+   - invoice menjadi PAID;
+   - `tenants.subscription_tier` diperbarui.
+5. DOKU mengarahkan pengguna ke `/checkout/status?invoice=…`. Halaman ini melakukan polling `getSubscriptionCheckoutStatus`, dengan fallback Check Status yang dibatasi.
+6. `getEntitlements` mengunci dashboard bila `currentPeriodEnd` sudah lewat.
+
 ## 4. Peta kode
 
 | File | Fungsi |
@@ -59,10 +73,13 @@ sequenceDiagram
 | `apps/web/src/lib/payments/doku/sub-account.ts` | Membuat Sub Account outlet. |
 | `apps/web/src/lib/payments/doku/notification.ts` | Parsing header dan payload webhook. |
 | `apps/web/src/lib/payments/state-machine.ts` | Aturan transisi status (murni, diuji unit). |
-| `apps/web/src/lib/payments/payment.service.ts` | Create, apply outcome, sync, webhook, dan rekonsiliasi. Satu-satunya pintu ke DB pembayaran. |
+| `apps/web/src/lib/payments/payment.service.ts` | Create (order dan langganan), apply outcome, sync, webhook, dan rekonsiliasi. Satu-satunya pintu ke DB pembayaran. |
+| `apps/web/src/lib/billing/plans.ts` | Katalog paket langganan: satu-satunya sumber harga. |
+| `apps/web/src/lib/actions/billing.ts` | Server action checkout langganan (OWNER saja) dan status tagihan. |
+| `apps/web/src/app/checkout/` | Halaman checkout langganan dan `/checkout/status`. |
 | `apps/web/src/app/api/webhook/doku/route.ts` | Endpoint notifikasi DOKU. |
 | `apps/web/src/app/api/cron/payment-reconcile/route.ts` | Endpoint cron rekonsiliasi. |
-| `apps/web/drizzle/doku_payments.sql` + `scripts/migrate-doku-payments.mjs` | Migrasi DB (idempotent). |
+| `apps/web/drizzle/doku_payments.sql`, `doku_subscriptions.sql` + `scripts/migrate-doku-payments.mjs` | Migrasi DB (idempotent, dijalankan berurutan). |
 
 ## 5. Spesifikasi DOKU yang dipakai
 
@@ -90,13 +107,18 @@ Signature = "HMACSHA256=" + base64(HMAC-SHA256(secretKey, Component))
 
 ## 6. Data
 
-**`payment_attempts`**: satu baris per percobaan bayar.
-- `invoice_number` unik per attempt, format `MNU-{time36}-{rand}`.
+**`payment_attempts`**: satu baris per percobaan bayar, untuk order maupun langganan.
+- `purpose` bernilai `ORDER` (mengisi `transaction_id`) atau `SUBSCRIPTION` (mengisi `subscription_invoice_id`). CHECK constraint menjamin tepat satu yang terisi.
+- `invoice_number` unik per attempt. Formatnya `MNU-{time36}-{rand}` untuk order dan `SUB-…` untuk langganan.
 - `amount` berupa integer rupiah.
 - Status: `CREATED → PENDING → PAID | FAILED | EXPIRED | CANCELED`.
-- Unique index parsial menjamin **maksimal satu attempt aktif per order**.
+- Unique index parsial menjamin **maksimal satu attempt aktif per order / per tagihan**.
 - Kolom review: `requires_review` dan `review_reason` (`LATE_PAYMENT`, `ALREADY_PAID_OTHER_METHOD`, `ORDER_CLOSED_BEFORE_PAYMENT`, `AMOUNT_MISMATCH`, `SUB_ACCOUNT_MISMATCH`).
 - `fee_amount`/`net_amount` untuk sementara berupa estimasi (`fee_source = ESTIMATED`, 0,7%) sampai rekonsiliasi settlement di Fase 4.
+
+**`subscription_invoices`**: tagihan langganan.
+- Kolom: `plan_code`, `plan` (BASIC/PRO), `amount`, `period_days`, `status` (`PENDING → PAID | CANCELED`), serta `subscription_id`, `period_start`, dan `period_end` setelah lunas.
+- Unique index parsial: **maksimal satu tagihan PENDING per tenant**.
 
 **`payment_webhook_events`**: log mentah notifikasi. Unik per `(provider, request_id)`, dipakai untuk dedupe, audit, dan replay.
 
@@ -124,6 +146,12 @@ Signature = "HMACSHA256=" + base64(HMAC-SHA256(secretKey, Component))
 | Attempt macet di `CREATED` lebih dari 5 menit | Cron menandainya `FAILED`. |
 | Halaman status di-polling pelanggan | Cek ke DOKU dibatasi minimal 15 detik per attempt. Tombol kasir dibatasi 5 detik. |
 | Callback URL | Dibangun di server dari `APP_BASE_URL` (bukan dari client), untuk mencegah open redirect. |
+| Owner klik "Bayar" langganan berkali-kali atau paralel | Satu tagihan PENDING (unique index + `ON CONFLICT DO NOTHING`), satu sesi DOKU dipakai ulang. |
+| Ganti paket saat tagihan lama masih terbuka | Tagihan dan sesi lama menjadi CANCELED. Kalau tagihan lama ternyata tetap dibayar, langganan tetap aktif dengan flag `LATE_PAYMENT`. |
+| Satu tagihan dibayar lewat dua attempt | Aktivasi hanya sekali. Attempt kedua diberi flag `ALREADY_PAID_OTHER_METHOD` (refund manual). |
+| Perpanjang saat langganan masih aktif | Sisa hari ditambahkan ke periode baru. Hanya ada satu langganan ACTIVE (unique index). |
+| Langganan lewat `currentPeriodEnd` | Dashboard terkunci (`getEntitlements`). `currentPeriodEnd = null` (pemberian admin) tidak kedaluwarsa. |
+| Urutan lock | Target (order/tagihan) → `payment_attempts` → `subscriptions` → `tenants` di semua jalur, sehingga tidak bisa deadlock. Billing action sengaja **tidak** mengunci baris tenant. |
 
 ## 8. Konfigurasi (env server)
 
@@ -160,6 +188,9 @@ Kredensial **tidak boleh** di-commit, ditempel di chat, atau disimpan di DB. Gun
 - [ ] Kirim notifikasi palsu (signature salah): 401.
 - [ ] Matikan webhook (URL salah) lalu jalankan cron: status tetap tersinkron.
 - [ ] Dana masuk ke Sub Account outlet yang benar (cek `additional_info.account.id`).
+- [ ] Langganan: owner yang terkunci bayar paket Starter, dashboard terbuka, `/checkout/status` menampilkan "Pembayaran berhasil".
+- [ ] Langganan: perpanjang saat masih aktif, sisa hari bertambah.
+- [ ] Langganan: dana masuk ke akun platform, bukan Sub Account outlet.
 
 ## 11. Pengujian otomatis
 

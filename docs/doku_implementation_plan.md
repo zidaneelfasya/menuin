@@ -24,53 +24,23 @@ Acuan teknis lengkap: [`doku_payment_gateway_migration_source_of_truth.md`](./do
 
 ---
 
-## Fase 2: Langganan Menuin via DOKU 🟡 KODE DITULIS, BELUM DIUJI
+## Fase 2: Langganan Menuin via DOKU ✅ SELESAI (menunggu uji live di sandbox)
 
-### Sudah dikerjakan (ikut di commit WIP ini, `tsc` lolos)
-- [x] Katalog harga di server: `lib/billing/plans.ts` (`starter` → BASIC Rp99.000, `business` → PRO Rp199.000, 30 hari) beserta `computeSubscriptionPeriod` (sisa hari dibawa ke periode berikutnya).
-- [x] Tabel `subscription_invoices`. `payment_attempts` digeneralisasi: kolom `purpose` (`ORDER`/`SUBSCRIPTION`), `transaction_id` nullable, kolom `subscription_invoice_id`, dan CHECK constraint target. Migrasinya di `drizzle/doku_subscriptions.sql`, dijalankan oleh `scripts/migrate-doku-payments.mjs` setelah file Fase 1.
-- [x] `payment.service.ts` di-refactor: satu mesin `startPayment` untuk dua target.
-  - `startOrderPayment` mengarahkan dana ke Sub Account outlet.
-  - `startSubscriptionPayment` mengarahkan dana ke akun platform, prefix invoice `SUB-`, batas bayar 60 menit.
-  - Saat PAID, `applySubscriptionPaid` mengunci langganan aktif, menutup langganan lama (EXPIRED), membuat langganan ACTIVE baru, mengisi invoice PAID, dan memperbarui `tenants.subscription_tier`.
-  - Fungsi baru `syncSubscriptionInvoicePayment` untuk halaman status.
-- [x] `decideSubscriptionOnPaid` di `state-machine.ts`: bayar ganda tidak mengaktifkan dua kali. Invoice yang sudah dibatalkan tetap diaktifkan bila uangnya masuk, dengan flag `LATE_PAYMENT`.
-- [x] Server action `lib/actions/billing.ts`:
-  - `startSubscriptionCheckout(planCode)`: hanya OWNER, harga dari server, row tenant di-lock, invoice PENDING dipakai ulang, ganti paket membatalkan invoice lama.
-  - `getSubscriptionCheckoutStatus(invoiceId)`: hanya untuk tenant sendiri.
-- [x] Halaman `/checkout` ditulis ulang:
-  - server component, wajib login, tanpa `?email=`
-  - client: `app/checkout/checkout-client.tsx`
-  - halaman baru `/checkout/status?invoice=…` dengan polling
-- [x] `components/payment-gate.tsx` membaca dari `BILLING_PLANS`.
-- [x] `getEntitlements` sekarang mengecek `currentPeriodEnd`. Langganan yang lewat periodenya dikunci. Nilai `null` berarti tanpa batas (pemberian admin).
-- [x] `getAppOrigin` dipindah ke `lib/utils/app-origin.ts`, dipakai bersama storefront dan billing.
-- [x] **Celah keamanan yang dihapus:**
-  - `markTenantAsPaidAction(email)`: server action publik yang mengaktifkan PRO tanpa bayar.
-  - `getTenantDetailsByEmail(email)`: membocorkan data tenant berdasarkan email.
-  - `createOrUpdateSubscription`: OWNER/MANAGER bisa memberi diri sendiri langganan gratis.
-  - `/api/checkout`, `/api/webhook/midtrans`, `/api/webhook/midtrans-subscription`.
-- [x] Teks Midtrans di landing (security section, FAQ), label laporan, dan payment gate diganti ke DOKU. Logo Midtrans dihapus dari daftar mitra (ada TODO untuk menambahkan logo DOKU).
+- Katalog harga di server: `lib/billing/plans.ts`. Tabel `subscription_invoices`. `payment_attempts` mendukung `purpose` ORDER dan SUBSCRIPTION. Migrasi di `drizzle/doku_subscriptions.sql`.
+- `startSubscriptionPayment` mengarahkan dana ke akun platform. Saat lunas, `applySubscriptionPaid` mengaktifkan atau memperpanjang langganan (sisa hari ikut dibawa) dan memperbarui `subscription_tier`.
+- `/checkout` wajib login dan hanya untuk OWNER. Halaman baru `/checkout/status`. `PaymentGate` membaca katalog server. Entitlement mengecek `currentPeriodEnd`.
+- Celah keamanan dihapus: `markTenantAsPaidAction`, `createOrUpdateSubscription`, `getTenantDetailsByEmail`, dan route Midtrans lama.
+- **Bug yang ditemukan dan diperbaiki saat pengujian:**
+  - Deadlock saat owner klik "Bayar" paralel, karena urutan lock tenant ↔ invoice tidak konsisten. Billing action sekarang diserialisasi lewat unique index, bukan lock tenant.
+  - Nama FK `payment_attempts → subscription_invoices` lebih dari 63 karakter sehingga dipotong Postgres. Diganti nama pendek `payment_attempts_sub_invoice_fk`.
+- Pengujian:
+  - **107 test lolos**: 79 unit, 28 integration ke Postgres, termasuk race webhook vs ganti paket.
+  - Mutation check: test gagal saat carry-over, dedupe aktivasi, atau update tier dirusak.
+  - Migrasi diverifikasi dari kondisi fresh, upgrade dari Fase 1, dan run berulang.
+  - `tsc`, `eslint`, dan `next build` bersih.
 
-### Belum dikerjakan (lanjutkan dari sini)
-1. **Uji migrasi Fase 2 ke Postgres lokal**
-   - Push skema, drop tabel pembayaran, jalankan `node scripts/migrate-doku-payments.mjs` **dua kali**.
-   - Pastikan `drizzle-kit push --verbose` tidak menunjukkan drift untuk `payment_attempts` dan `subscription_invoices`. Drift bawaan pada composite unique/FK tabel lama memang selalu muncul, abaikan.
-2. **Unit test baru:**
-   - `lib/billing/plans.test.ts`: `getBillingPlan`, `computeSubscriptionPeriod` (tanpa langganan, dengan sisa hari, dengan periode yang sudah lewat).
-   - `state-machine.test.ts`: `decideSubscriptionOnPaid` untuk PENDING, PAID, CANCELED, dan kasus terlambat.
-   - `getEntitlements`: periode lewat dikunci, `null` tidak dikunci. Perlu mock `@/lib/supabase/server`, `next/headers`, dan `@/lib/db`.
-3. **Integration test langganan** (lanjutan `payment.service.integration.test.ts`, DOKU di-mock):
-   - [ ] Webhook SUCCESS: invoice PAID, langganan ACTIVE dengan periode 30 hari, `tenants.subscription_tier` ikut berubah.
-   - [ ] Perpanjangan saat masih aktif: sisa hari ikut terbawa, langganan lama berubah EXPIRED, hanya ada satu ACTIVE.
-   - [ ] Notifikasi ganda atau webhook yang bersamaan dengan cek status: hanya satu langganan yang dibuat.
-   - [ ] Invoice dibatalkan (ganti paket) lalu tetap dibayar: tetap aktif dengan flag `LATE_PAYMENT`.
-   - [ ] Dua invoice sama-sama dibayar: yang kedua diberi flag `ALREADY_PAID_OTHER_METHOD` dan tidak mengaktifkan ulang.
-   - [ ] Amount tidak cocok: tidak aktif.
-   - [ ] Update fixture test Fase 1 kalau ada yang rusak karena kolom `purpose`.
-4. **Jalankan semua pengecekan:** `npm test --workspace=web` (ditambah `TEST_DATABASE_URL=…`), `npx tsc --noEmit`, `npx eslint` pada file yang berubah, dan `npx next build`. Hapus `.next` dulu kalau ada error tipe dari route yang sudah dihapus.
-5. **Update dokumen** `doku_payment_gateway_migration_source_of_truth.md`: alur langganan, tabel `subscription_invoices`, dan tandai Fase 2 ✅.
-6. **Keputusan produk yang masih terbuka:** harga billing (Starter 99rb / Business 199rb) **berbeda** dari harga di landing (`components/landing/pricing-data.ts`: Kasir 49.900, Kasir Plus 74.900, Lengkap 149.000, ditandai "belum final"). Begitu harga final, cukup ubah `lib/billing/plans.ts`. Kalau jumlah paket berubah, mapping ke tier BASIC/PRO di `getEntitlements` juga perlu disesuaikan.
+### Keputusan produk yang masih terbuka
+- Harga billing (Starter Rp99.000 → BASIC, Business Rp199.000 → PRO) **berbeda** dengan harga di landing (`components/landing/pricing-data.ts`: Kasir 49.900, Kasir Plus 74.900, Lengkap 149.000, ditandai "belum final"). Begitu final, cukup ubah `lib/billing/plans.ts`. Kalau jumlah paket berubah, mapping ke tier di `getEntitlements` juga perlu disesuaikan.
 
 ---
 
@@ -99,4 +69,4 @@ Acuan teknis lengkap: [`doku_payment_gateway_migration_source_of_truth.md`](./do
 - [ ] Dashboard DOKU sandbox: Notification URL `https://<domain>/api/webhook/doku`. Aktifkan Checkout dan Sub Account.
 - [ ] Scheduler cron 5 menit untuk `GET /api/cron/payment-reconcile` dengan header `Authorization: Bearer <CRON_SECRET>`.
 - [ ] Supaya Claude bisa ikut tes live: tambahkan `api-sandbox.doku.com` dan `developers.doku.com` ke network allowlist environment, lalu isi env DOKU di pengaturan environment.
-- [ ] Putuskan harga final paket langganan (lihat Fase 2 poin 6).
+- [ ] Putuskan harga final paket langganan (lihat "Keputusan produk yang masih terbuka" di Fase 2).

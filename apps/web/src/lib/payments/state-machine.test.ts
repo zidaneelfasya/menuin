@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   decideAttemptTransition,
   decideOrderUpdateOnPaid,
+  decideSubscriptionOnPaid,
   isActiveAttempt,
   mapDokuStatus,
   type AttemptStatus,
@@ -99,5 +100,23 @@ describe('decideOrderUpdateOnPaid', () => {
     const result = decideOrderUpdateOnPaid(pending, true);
     expect(result.update?.paymentMethod).toBe('ONLINE');
     expect(result.reviewReason).toBe('LATE_PAYMENT');
+  });
+});
+
+describe('decideSubscriptionOnPaid', () => {
+  it('activates a pending invoice', () => {
+    expect(decideSubscriptionOnPaid('PENDING', false)).toEqual({ activate: true, reviewReason: null });
+  });
+
+  it('activates but flags a payment that arrived after the attempt closed', () => {
+    expect(decideSubscriptionOnPaid('PENDING', true)).toEqual({ activate: true, reviewReason: 'LATE_PAYMENT' });
+  });
+
+  it('still activates a cancelled invoice that was paid anyway, flagged for review', () => {
+    expect(decideSubscriptionOnPaid('CANCELED', false)).toEqual({ activate: true, reviewReason: 'LATE_PAYMENT' });
+  });
+
+  it('never activates twice for an invoice that is already paid', () => {
+    expect(decideSubscriptionOnPaid('PAID', false)).toEqual({ activate: false, reviewReason: 'ALREADY_PAID_OTHER_METHOD' });
   });
 });
