@@ -117,6 +117,15 @@ export async function POST(req: NextRequest) {
     const tenantId = user.tenantId;
     const userId = user.id;
 
+    // Metode gateway hanya boleh lunas lewat konfirmasi DOKU, bukan klaim dari aplikasi kasir.
+    const requestedMethod = String(payload.paymentMethod || 'CASH').toUpperCase();
+    if (['QRIS_DYNAMIC', 'ONLINE', 'DOKU'].includes(requestedMethod)) {
+      return NextResponse.json(
+        { error: 'QRIS dinamis belum tersedia di aplikasi mobile. Gunakan POS web atau metode lain.' },
+        { status: 400 }
+      );
+    }
+
     const result = await db.transaction(async (tx) => {
       const [currentTenant] = await tx
         .select({ name: tenants.name, orderPrefix: tenants.orderPrefix })
@@ -142,11 +151,9 @@ export async function POST(req: NextRequest) {
 
       const gTotal = parseFloat(payload.grandTotal.toString()) || 0;
       const payMethod = (payload.paymentMethod || 'CASH').toUpperCase();
-      // Only QRIS_DYNAMIC and online payment gateway transactions incur 0.7% MDR.
-      // QRIS_STATIC (merchant's physical acrylic QR), CARD (EDC), TRANSFER (Bank), and CASH have 0 gateway fee.
-      const isGatewayPayment = payMethod === 'QRIS_DYNAMIC' || payMethod === 'ONLINE' || payMethod === 'DOKU';
-      const gatewayFeeNum = isGatewayPayment ? Math.round(gTotal * 0.007) : 0;
-      const netAmountNum = Math.max(0, gTotal - gatewayFeeNum);
+      // Metode yang diterima di sini tidak melewati gateway, jadi tanpa potongan MDR.
+      const gatewayFeeNum = 0;
+      const netAmountNum = gTotal;
 
       // 1. Create Transaction record
       const [newTx] = await tx.insert(transactions).values({

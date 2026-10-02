@@ -73,16 +73,23 @@ export type OrderSnapshot = {
   status: string;
   paymentStatus: string;
   orderProcessType: string;
+  /** POS / ONLINE / QR. Order POS yang lunas langsung masuk dapur (PROCESSING). */
+  source?: string | null;
 };
 
 export type OrderUpdateOnPaid = {
   /** null = transaksi tidak perlu diubah. */
-  update: { paymentStatus: 'PAID'; status: string; paymentMethod: 'ONLINE' } | null;
+  update: { paymentStatus: 'PAID'; status: string; paymentMethod: string } | null;
   reviewReason: ReviewReason | null;
 };
 
 /** Efek ke tabel transactions ketika sebuah attempt berubah menjadi PAID. */
-export function decideOrderUpdateOnPaid(order: OrderSnapshot, latePayment: boolean): OrderUpdateOnPaid {
+export function decideOrderUpdateOnPaid(
+  order: OrderSnapshot,
+  latePayment: boolean,
+  /** Metode yang dicatat saat lunas: ONLINE (Checkout storefront) atau QRIS_DYNAMIC (POS). */
+  paidMethod: string = 'ONLINE'
+): OrderUpdateOnPaid {
   if (order.paymentStatus === 'PAID') {
     // Sudah dibayar lewat jalur lain (mis. kasir) → pelanggan bayar dua kali.
     return { update: null, reviewReason: 'ALREADY_PAID_OTHER_METHOD' };
@@ -91,20 +98,19 @@ export function decideOrderUpdateOnPaid(order: OrderSnapshot, latePayment: boole
   const currentStatus = (order.status || '').toUpperCase();
   if (CLOSED_ORDER_STATUSES.has(currentStatus)) {
     return {
-      update: { paymentStatus: 'PAID', status: order.status, paymentMethod: 'ONLINE' },
+      update: { paymentStatus: 'PAID', status: order.status, paymentMethod: paidMethod },
       reviewReason: 'ORDER_CLOSED_BEFORE_PAYMENT',
     };
   }
 
-  const nextStatus =
-    currentStatus === 'PENDING'
-      ? order.orderProcessType === 'AUTO'
-        ? 'COMPLETED'
-        : 'NEW'
-      : order.status;
+  let nextStatus = order.status;
+  if (currentStatus === 'PENDING') {
+    if ((order.source || '').toUpperCase() === 'POS') nextStatus = 'PROCESSING';
+    else nextStatus = order.orderProcessType === 'AUTO' ? 'COMPLETED' : 'NEW';
+  }
 
   return {
-    update: { paymentStatus: 'PAID', status: nextStatus, paymentMethod: 'ONLINE' },
+    update: { paymentStatus: 'PAID', status: nextStatus, paymentMethod: paidMethod },
     reviewReason: latePayment ? 'LATE_PAYMENT' : null,
   };
 }

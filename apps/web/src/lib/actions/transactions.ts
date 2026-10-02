@@ -5,134 +5,27 @@ import { transactions, transactionItems, products, shifts, tenants, memberships 
 import { eq, desc, sql, and } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from './auth';
-import { generateOrderNumber } from '@/lib/utils/order-number';
+import { insertPosTransaction, type PosCheckoutPayload } from '@/lib/pos/create-pos-transaction';
 
-// We'll trust the checkout payload from the client to have this structure
-type CheckoutPayload = {
-  totalAmount: number;
-  discount: number;
-  tax: number;
-  serviceCharge?: number;
-  platformFee?: number;
-  grandTotal: number;
-  promoCode?: string;
-  promotionId?: string;
-  paymentMethod: string;
-  customerName?: string;
-  customerPhone?: string;
-  tableNumber?: string;
-  orderType?: string;
-  posKitchenSync?: boolean;
-  items: Array<{
-    productId: string;
-    quantity: number;
-    price: number;
-    subtotal: number;
-    modifiers?: any[];
-    notes?: string;
-  }>;
-};
-
-export async function createTransaction(payload: CheckoutPayload) {
+export async function createTransaction(payload: PosCheckoutPayload) {
   try {
     const user = await getCurrentUser();
     if (!user || !user.tenantId) return { success: false, error: 'Unauthorized or no dashboard' };
 
-    const tenantId = user.tenantId;
-    const userId = user.id;
+    // QRIS dinamis tidak boleh dicatat lunas oleh kasir: harus lewat konfirmasi DOKU.
+    if ((payload.paymentMethod || '').toUpperCase() === 'QRIS_DYNAMIC') {
+      return { success: false, error: 'QRIS dinamis harus dibayar lewat kode QR DOKU.' };
+    }
 
-    // We run the transaction logic in a single DB transaction
-    const result = await db.transaction(async (tx) => {
-      const [currentTenant] = await tx
-        .select({ name: tenants.name, orderPrefix: tenants.orderPrefix })
-        .from(tenants)
-        .where(eq(tenants.id, tenantId))
-        .limit(1);
-
-      const orderNumber = generateOrderNumber(currentTenant);
-
-      // Find active shift
-      const activeShifts = await tx
-        .select()
-        .from(shifts)
-        .where(
-          and(
-            eq(shifts.tenantId, tenantId),
-            eq(shifts.status, 'ACTIVE')
-          )
-        )
-        .limit(1);
-        
-      const shiftId = activeShifts.length > 0 ? activeShifts[0].id : null;
-
-      const gTotal = parseFloat(payload.grandTotal.toString()) || 0;
-      const payMethod = (payload.paymentMethod || 'CASH').toUpperCase();
-      // Only QRIS_DYNAMIC and online payment gateway transactions incur 0.7% MDR.
-      // QRIS_STATIC (merchant's physical acrylic QR), CARD (EDC), TRANSFER (Bank), and CASH have 0 gateway fee.
-      const isGatewayPayment = payMethod === 'QRIS_DYNAMIC' || payMethod === 'ONLINE' || payMethod === 'DOKU';
-      const gatewayFeeNum = isGatewayPayment ? Math.round(gTotal * 0.007) : 0;
-      const netAmountNum = Math.max(0, gTotal - gatewayFeeNum);
-
-      // 1. Create Transaction record
-      const [newTx] = await tx.insert(transactions).values({
-        tenantId,
-        cashierMembershipId: userId,
-        shiftId,
-        totalAmount: payload.totalAmount.toString(),
-        discount: (payload.discount || 0).toString(),
-        tax: (payload.tax || 0).toString(),
-        serviceCharge: (payload.serviceCharge || 0).toString(),
-        platformFee: (payload.platformFee || 0).toString(),
-        grandTotal: payload.grandTotal.toString(),
-        gatewayFee: gatewayFeeNum.toString(),
-        netAmount: netAmountNum.toString(),
-        promoCode: payload.promoCode || null,
-        promotionId: payload.promotionId || null,
-        paymentMethod: payMethod,
-        paymentStatus: 'PAID', // POS transactions are always paid immediately
-        status: 'PROCESSING', // POS orders directly go to kitchen as PROCESSING
-        source: 'POS',
-        orderType: payload.orderType || 'DINE_IN',
-        customerName: payload.customerName || null,
-        customerPhone: payload.customerPhone || null,
-        tableNumber: payload.tableNumber || null,
-        orderNumber,
-      }).returning({ id: transactions.id });
-      
-      // 2. Insert Items and Update Stock (only if trackStock is enabled)
-      for (const item of payload.items) {
-        await tx.insert(transactionItems).values({
-          tenantId, // use narrowed tenantId
-          transactionId: newTx.id,
-          productId: item.productId,
-          quantity: item.quantity,
-          price: item.price.toString(),
-          subtotal: item.subtotal.toString(),
-          modifiers: item.modifiers || [],
-          notes: item.notes || null,
-        });
-
-        // Deduct stock only if product has trackStock enabled (true)
-        await tx
-          .update(products)
-          .set({
-            stock: sql`GREATEST(0, ${products.stock} - ${item.quantity})`,
-            updatedAt: new Date(),
-          })
-          .where(
-            and(
-              eq(products.id, item.productId),
-              eq(products.tenantId, tenantId),
-              eq(products.trackStock, true)
-            )
-          );
-      }
-      
-      return newTx.id;
+    const created = await insertPosTransaction({
+      tenantId: user.tenantId,
+      cashierMembershipId: user.id,
+      payload,
+      mode: 'PAID',
     });
-    
+
     if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
-    return { success: true, transactionId: result };
+    return { success: true, transactionId: created.id };
   } catch (error) {
     console.error('Error creating transaction:', error);
     return { success: false, error: 'Gagal memproses transaksi.' };

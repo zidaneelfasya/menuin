@@ -13,15 +13,17 @@ export const metadata: Metadata = {
 import { getTenantCatalogSettings } from '@/lib/actions/catalog';
 import { getActiveShift } from '@/lib/actions/shifts';
 import { requireFeature } from '@/lib/actions/auth-context';
+import { getPosQrisAvailability } from '@/lib/actions/pos-qris';
 
 async function POSDataWrapper() {
   await requireFeature('POS');
-  const [productsResult, categoriesResult, tenantSettings, modifiersResult, activeShiftResult] = await Promise.all([
+  const [productsResult, categoriesResult, tenantSettings, modifiersResult, activeShiftResult, qrisDynamicEnabled] = await Promise.all([
     getProducts(),
     getCategories(),
     getTenantCatalogSettings(),
     getModifierGroups(),
-    getActiveShift()
+    getActiveShift(),
+    getPosQrisAvailability(),
   ]);
 
   const products = productsResult.success && productsResult.data ? productsResult.data : [];
@@ -29,7 +31,7 @@ async function POSDataWrapper() {
   const modifierGroups = modifiersResult.success && modifiersResult.data ? modifiersResult.data : [];
   const activeShift = activeShiftResult.success ? activeShiftResult.data : null;
 
-  return <POSPage initialProducts={products} initialCategories={categories} posSettings={tenantSettings} modifierGroups={modifierGroups} activeShift={activeShift} />;
+  return <POSPage initialProducts={products} initialCategories={categories} posSettings={{ ...tenantSettings, qrisDynamicEnabled }} modifierGroups={modifierGroups} activeShift={activeShift} />;
 }
 
 export default function Page() {

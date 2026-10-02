@@ -73,6 +73,9 @@ export const tenants = pgTable('tenants', {
   // dokuClientId/dokuSecretKey/dokuEnvironment tidak dipakai lagi (legacy).
   dokuSubAccountId: text('doku_sub_account_id'),
   dokuSubAccountStatus: text('doku_sub_account_status'),
+  // QRIS dinamis POS (SNAP): merchant & terminal QRIS outlet dari DOKU (NMID per outlet).
+  dokuQrisMerchantId: text('doku_qris_merchant_id'),
+  dokuQrisTerminalId: text('doku_qris_terminal_id'),
   dokuEnvironment: text('doku_environment').default('sandbox'),
 
   // Custom Receipt & Kitchen Ticket Settings (OWNER / MANAGER)
@@ -539,6 +542,8 @@ export const paymentAttempts = pgTable('payment_attempts', {
   status: text('status').notNull().default('CREATED'), // CREATED, PENDING, PAID, FAILED, EXPIRED, CANCELED
   subAccountId: text('sub_account_id'),
   paymentUrl: text('payment_url'),
+  qrContent: text('qr_content'), // SNAP_QRIS: string QRIS untuk dirender
+  gatewayMerchantId: text('gateway_merchant_id'), // SNAP_QRIS: merchantId saat generate (dipakai untuk query)
   providerReference: text('provider_reference'),
   providerStatus: text('provider_status'),
   paymentChannel: text('payment_channel'),

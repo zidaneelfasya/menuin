@@ -58,6 +58,8 @@ export function PaymentModal({
   const [isProcessing, setIsProcessing] = React.useState(false);
 
   const { orderType, customerName, tableNumber, appliedPromo, discount: storeDiscount } = useCartStore();
+  // QRIS dinamis hanya aktif bila outlet sudah terhubung ke DOKU (lihat getPosQrisAvailability).
+  const qrisDynamicEnabled = Boolean(posSettings?.qrisDynamicEnabled);
 
   // Reset state when opened
   React.useEffect(() => {
@@ -270,14 +272,17 @@ export function PaymentModal({
             </button>
             <button
               type="button"
-              onClick={() => setPaymentMethod('qris_dynamic')}
+              onClick={() => qrisDynamicEnabled && setPaymentMethod('qris_dynamic')}
+              disabled={!qrisDynamicEnabled}
               className={cn(
-                "py-2 px-1 rounded-lg text-xs font-semibold flex flex-col items-center gap-1 transition-all cursor-pointer text-center",
+                "py-2 px-1 rounded-lg text-xs font-semibold flex flex-col items-center gap-1 transition-all cursor-pointer text-center disabled:opacity-40 disabled:cursor-not-allowed",
                 paymentMethod === 'qris_dynamic'
                   ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-2xs"
                   : "text-muted-foreground hover:text-foreground"
               )}
-              title="QRIS Dinamis Menuin (Nominal otomatis terkunci, MDR 0.7%)"
+              title={qrisDynamicEnabled
+                ? "QRIS Dinamis (nominal terkunci otomatis, dikonfirmasi DOKU)"
+                : "QRIS Dinamis belum aktif untuk outlet ini"}
             >
               <QrCode className="w-4 h-4 shrink-0 text-blue-600" />
               <span className="truncate w-full text-[11px] leading-tight">QR Dinamis</span>
@@ -429,7 +434,7 @@ export function PaymentModal({
                     </span>
                   </div>
                   <p className="text-[11px] text-muted-foreground max-w-sm mx-auto leading-relaxed">
-                    Tunjukkan kode QR dinamis kepada pelanggan. Nominal terkunci otomatis sebesar <span className="font-semibold text-foreground">{formatCurrency(grandTotal)}</span>. Dana dicairkan via settlement digital Menuin setelah verifikasi sistem.
+                    Kode QR akan tampil dengan nominal terkunci <span className="font-semibold text-foreground">{formatCurrency(grandTotal)}</span>. Transaksi otomatis lunas setelah pembayaran dikonfirmasi DOKU. Kasir tidak perlu memeriksa mutasi.
                   </p>
                 </div>
               )}
@@ -490,7 +495,7 @@ export function PaymentModal({
             ) : (
               <>
                 <Check className="w-4 h-4 stroke-[2.5]" />
-                <span>Selesaikan & Cetak Struk (Enter)</span>
+                <span>{paymentMethod === 'qris_dynamic' ? 'Tampilkan QR (Enter)' : 'Selesaikan & Cetak Struk (Enter)'}</span>
               </>
             )}
           </Button>

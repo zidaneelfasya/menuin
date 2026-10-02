@@ -10,8 +10,8 @@ if (!databaseUrl) {
 }
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-// Urutan penting: Fase 1 lalu Fase 2. Semua file idempotent.
-const migrationFiles = ['doku_payments.sql', 'doku_subscriptions.sql'].map((f) =>
+// Urutan penting: Fase 1, 2, lalu 3. Semua file idempotent.
+const migrationFiles = ['doku_payments.sql', 'doku_subscriptions.sql', 'doku_qris.sql'].map((f) =>
   path.join(__dirname, '../apps/web/drizzle', f)
 );
 const sql = postgres(databaseUrl, { max: 1, prepare: false });

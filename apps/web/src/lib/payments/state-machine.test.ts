@@ -96,6 +96,13 @@ describe('decideOrderUpdateOnPaid', () => {
     });
   });
 
+  it('sends a POS QRIS order straight to the kitchen and keeps the QRIS method', () => {
+    expect(decideOrderUpdateOnPaid({ ...pending, source: 'POS' }, false, 'QRIS_DYNAMIC')).toEqual({
+      update: { paymentStatus: 'PAID', status: 'PROCESSING', paymentMethod: 'QRIS_DYNAMIC' },
+      reviewReason: null,
+    });
+  });
+
   it('switches a customer who chose cash back to ONLINE and flags a late payment', () => {
     const result = decideOrderUpdateOnPaid(pending, true);
     expect(result.update?.paymentMethod).toBe('ONLINE');

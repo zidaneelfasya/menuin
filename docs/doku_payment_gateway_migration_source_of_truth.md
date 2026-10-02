@@ -22,7 +22,7 @@ harus diperbarui.
 |---|---|---|
 | 1 | Modul `lib/payments`, migrasi DB, Checkout storefront, webhook, cron rekonsiliasi, aktivasi Sub Account | ✅ Selesai (menunggu uji live di sandbox) |
 | 2 | Langganan Menuin via DOKU (menggantikan `/api/checkout` + webhook Midtrans subscription) | ✅ Selesai (menunggu uji live di sandbox) |
-| 3 | POS QRIS dinamis via SNAP (RSA key pair, token B2B) | ⏳ |
+| 3 | POS QRIS dinamis via SNAP (RSA key pair, token B2B, notifikasi SNAP) | ✅ Selesai (menunggu uji live di sandbox) |
 | 4 | Rekonsiliasi settlement (fee riil), refund, dashboard review | ⏳ |
 
 ## 3. Alur pembayaran (Fase 1)
@@ -62,6 +62,22 @@ sequenceDiagram
 5. DOKU mengarahkan pengguna ke `/checkout/status?invoice=…`. Halaman ini melakukan polling `getSubscriptionCheckoutStatus`, dengan fallback Check Status yang dibatasi.
 6. `getEntitlements` mengunci dashboard bila `currentPeriodEnd` sudah lewat.
 
+### Alur QRIS dinamis POS (Fase 3)
+
+1. Kasir memilih **QR Dinamis**. Opsi ini aktif hanya bila konfigurasi SNAP dan merchant QRIS outlet tersedia (`getPosQrisAvailability`).
+2. `startPosQrisCheckout`:
+   - menyimpan transaksi POS sebagai `PENDING` (`paymentMethod = QRIS_DYNAMIC`) dan langsung memotong stok;
+   - memanggil `startPosQrisPayment`, yang membuat attempt `QRS-…` (`product = SNAP_QRIS`);
+   - memanggil DOKU `qr-mpm-generate` dengan nominal dari DB dan masa berlaku 10 menit.
+3. Layar kasir (`QrisPaymentDialog`) menampilkan QR dan melakukan polling `getPosQrisStatus` setiap 3 detik. Pengecekan ke DOKU (`qr-mpm-query`) dibatasi atomik, maksimal satu per 3 detik per transaksi.
+4. Saat lunas, transaksi menjadi `PAID` + `PROCESSING` (masuk dapur seperti POS biasa), fee estimasi tercatat, lalu struk tampil.
+5. **Batalkan:** status dicek ke DOKU dulu. Kalau sudah dibayar, pembatalan ditolak. Kalau belum, transaksi menjadi `CANCELLED` dan stok dikembalikan.
+6. **QR kedaluwarsa:** status dicek dulu, baru QR baru dibuat untuk transaksi yang sama.
+7. **Notifikasi SNAP dari DOKU:**
+   - DOKU meminta token ke `POST /api/snap/v1.0/access-token/b2b`. Signature RSA-nya diverifikasi dengan `DOKU_PUBLIC_KEY`, lalu kita menerbitkan JWT RS256.
+   - DOKU mengirim `POST /api/snap/v1.0/qr/qr-mpm-notify` dengan bearer JWT tersebut.
+   - Isi status di body notifikasi **tidak dipercaya**. Notifikasi hanya memicu `qr-mpm-query` yang ditandatangani.
+
 ## 4. Peta kode
 
 | File | Fungsi |
@@ -77,9 +93,14 @@ sequenceDiagram
 | `apps/web/src/lib/billing/plans.ts` | Katalog paket langganan: satu-satunya sumber harga. |
 | `apps/web/src/lib/actions/billing.ts` | Server action checkout langganan (OWNER saja) dan status tagihan. |
 | `apps/web/src/app/checkout/` | Halaman checkout langganan dan `/checkout/status`. |
+| `apps/web/src/lib/payments/doku/snap/` | SNAP: config (validasi key, menolak public key DOKU yang tertukar), signature (RSA/HMAC-SHA512), client (token B2B ter-cache, retry 401), QRIS generate/query, token inbound. |
+| `apps/web/src/lib/pos/create-pos-transaction.ts` | Pembuatan transaksi POS (lunas langsung / menunggu gateway) dan restock. |
+| `apps/web/src/lib/actions/pos-qris.ts` | Server action QRIS POS: mulai, status, QR baru, batal, ketersediaan. |
+| `apps/web/src/features/pos/components/qris-payment-dialog.tsx` | Layar QR untuk kasir. |
+| `apps/web/src/app/api/snap/v1.0/...` | Endpoint SNAP inbound: token B2B dan notifikasi QRIS. |
 | `apps/web/src/app/api/webhook/doku/route.ts` | Endpoint notifikasi DOKU. |
 | `apps/web/src/app/api/cron/payment-reconcile/route.ts` | Endpoint cron rekonsiliasi. |
-| `apps/web/drizzle/doku_payments.sql`, `doku_subscriptions.sql` + `scripts/migrate-doku-payments.mjs` | Migrasi DB (idempotent, dijalankan berurutan). |
+| `apps/web/drizzle/doku_payments.sql`, `doku_subscriptions.sql`, `doku_qris.sql` + `scripts/migrate-doku-payments.mjs` | Migrasi DB (idempotent, dijalankan berurutan). |
 
 ## 5. Spesifikasi DOKU yang dipakai
 
@@ -105,6 +126,19 @@ Signature = "HMACSHA256=" + base64(HMAC-SHA256(secretKey, Component))
 
 **Pemetaan status:** `SUCCESS → PAID`, `PENDING → PENDING`, `FAILED → FAILED`, `EXPIRED → EXPIRED`. Status lain diabaikan.
 
+## 5b. Spesifikasi SNAP (QRIS)
+
+Format berikut diverifikasi dari library resmi `doku-nodejs-library`:
+
+| Bagian | Format |
+|---|---|
+| Timestamp | `yyyy-MM-ddTHH:mm:ss+07:00` |
+| Token B2B (keluar) | `POST /authorization/v1/access-token/b2b`. Header `X-CLIENT-KEY`, `X-TIMESTAMP`, `X-SIGNATURE = base64(SHA256withRSA(privateKey, clientId + "\|" + timestamp))`. Body `{"grantType":"client_credentials"}` |
+| Request transaksi | Header `Authorization: Bearer`, `X-TIMESTAMP`, `X-PARTNER-ID`, `X-EXTERNAL-ID` (numerik unik), `CHANNEL-ID`, `X-SIGNATURE = base64(HMAC-SHA512(secretKey, METHOD:path:token:lowerhex(sha256(body)):timestamp))` |
+| QRIS | `POST /snap-adapter/b2b/v1.0/qr/qr-mpm-generate` dan `/qr-mpm-query` (`serviceCode = 47`). `latestTransactionStatus`: `00` lunas, `01`–`03` pending, `05`/`06` gagal, `04`/`07` diabaikan |
+
+**Perlu dikonfirmasi saat uji live:** `CHANNEL-ID` (default `95221`), field wajib `additionalInfo` pada generate, dan cara DOKU memetakan merchant QRIS per Sub Account (saat ini dipakai `tenants.doku_qris_merchant_id`/`doku_qris_terminal_id`).
+
 ## 6. Data
 
 **`payment_attempts`**: satu baris per percobaan bayar, untuk order maupun langganan.
@@ -119,6 +153,10 @@ Signature = "HMACSHA256=" + base64(HMAC-SHA256(secretKey, Component))
 **`subscription_invoices`**: tagihan langganan.
 - Kolom: `plan_code`, `plan` (BASIC/PRO), `amount`, `period_days`, `status` (`PENDING → PAID | CANCELED`), serta `subscription_id`, `period_start`, dan `period_end` setelah lunas.
 - Unique index parsial: **maksimal satu tagihan PENDING per tenant**.
+
+**`payment_attempts` (QRIS)**: `product = SNAP_QRIS`, `qr_content`, `gateway_merchant_id` (dipakai untuk query), `provider_reference` (`referenceNo` DOKU).
+
+**`tenants`**: `doku_qris_merchant_id` dan `doku_qris_terminal_id` berisi merchant QRIS outlet dari DOKU. Wajib di production. Di sandbox ada fallback ke env.
 
 **`payment_webhook_events`**: log mentah notifikasi. Unik per `(provider, request_id)`, dipakai untuk dedupe, audit, dan replay.
 
@@ -151,6 +189,12 @@ Signature = "HMACSHA256=" + base64(HMAC-SHA256(secretKey, Component))
 | Satu tagihan dibayar lewat dua attempt | Aktivasi hanya sekali. Attempt kedua diberi flag `ALREADY_PAID_OTHER_METHOD` (refund manual). |
 | Perpanjang saat langganan masih aktif | Sisa hari ditambahkan ke periode baru. Hanya ada satu langganan ACTIVE (unique index). |
 | Langganan lewat `currentPeriodEnd` | Dashboard terkunci (`getEntitlements`). `currentPeriodEnd = null` (pemberian admin) tidak kedaluwarsa. |
+| Kasir menekan "Batalkan" padahal pelanggan sudah bayar | Status dicek ke DOKU dulu. Kalau lunas, pembatalan ditolak dan transaksi diperlakukan lunas. |
+| Uang QRIS masuk setelah kasir membatalkan | Tetap dicatat `PAID`, status tetap `CANCELLED`, flag `ORDER_CLOSED_BEFORE_PAYMENT` (refund manual). |
+| QR gagal dibuat | Transaksi PENDING langsung dibatalkan dan stok dikembalikan, kasir bisa memilih metode lain. |
+| Polling paralel (beberapa tab/perangkat) | Klaim cek atomik (`UPDATE … WHERE last_checked_at < batas`), sehingga hanya satu request yang ke DOKU per interval. |
+| Kasir/aplikasi mobile mengirim `QRIS_DYNAMIC` sebagai lunas | Ditolak: `createTransaction` dan `/api/mobile/v1/pos` menolak metode gateway. |
+| Notifikasi QRIS palsu | Tanpa token SNAP yang valid dibalas 401. Dengan token valid pun status tetap diambil dari `qr-mpm-query`. |
 | Urutan lock | Target (order/tagihan) → `payment_attempts` → `subscriptions` → `tenants` di semua jalur, sehingga tidak bisa deadlock. Billing action sengaja **tidak** mengunci baris tenant. |
 
 ## 8. Konfigurasi (env server)
@@ -166,6 +210,11 @@ Signature = "HMACSHA256=" + base64(HMAC-SHA256(secretKey, Component))
 | `DOKU_ESTIMATED_MDR_PERCENT` | – | Default `0.7` |
 | `APP_BASE_URL` | disarankan | Origin publik, mis. `https://app.menuin.id` |
 | `CRON_SECRET` | ✅ untuk cron | Header `Authorization: Bearer <CRON_SECRET>` |
+| `DOKU_PRIVATE_KEY` | ✅ untuk QRIS | Private key RSA milik Menuin (PEM). Public key-nya diunggah ke DOKU. |
+| `DOKU_PUBLIC_KEY` | ✅ untuk QRIS | Public key **milik DOKU** (PEM). Aplikasi menolak start kalau isinya sama dengan public key Menuin. |
+| `DOKU_SNAP_CHANNEL_ID` | – | Default `95221` |
+| `DOKU_QRIS_MERCHANT_ID` / `DOKU_QRIS_TERMINAL_ID` | sandbox | Merchant QRIS default untuk sandbox |
+| `DOKU_QRIS_VALIDITY_MINUTES` | – | Default `10` |
 
 Kredensial **tidak boleh** di-commit, ditempel di chat, atau disimpan di DB. Gunakan secret manager atau env deployment.
 
@@ -174,7 +223,10 @@ Kredensial **tidak boleh** di-commit, ditempel di chat, atau disimpan di DB. Gun
 1. Isi env di atas di deployment (dan di `.env.local` untuk dev).
 2. Jalankan migrasi: `DATABASE_URL=… npm run db:migrate:doku --workspace=web`.
 3. Di dashboard DOKU sandbox, set **Notification URL** ke `https://<domain>/api/webhook/doku`. Untuk dev lokal, pakai tunnel HTTPS (ngrok atau cloudflared).
-4. Minta DOKU mengaktifkan **Checkout** dan **Sub Account** di akun sandbox kalau belum aktif.
+4. Minta DOKU mengaktifkan **Checkout**, **Sub Account**, dan **SNAP QRIS MPM** di akun sandbox kalau belum aktif.
+   - Buat key pair (`openssl genrsa -out private.pem 2048` lalu `openssl rsa -in private.pem -pubout -out public.pem`) dan unggah `public.pem` ke DOKU.
+   - Ambil public key DOKU dan merchant/terminal ID QRIS.
+   - Daftarkan base URL SNAP `https://<domain>/api/snap`, sehingga endpoint-nya menjadi `/v1.0/access-token/b2b` dan `/v1.0/qr/qr-mpm-notify`.
 5. Jadwalkan cron `GET /api/cron/payment-reconcile` setiap 5 menit dengan header Authorization. Bisa lewat Vercel Cron (paket Pro), Supabase `pg_cron` + `pg_net`, atau scheduler eksternal.
 6. Sebagai OWNER: buka **Pengaturan → Pembayaran Online → Aktifkan Akun Pembayaran** (membuat Sub Account), lalu aktifkan **Katalog → Pemesanan → Pembayaran Non-Tunai**.
 
@@ -191,6 +243,9 @@ Kredensial **tidak boleh** di-commit, ditempel di chat, atau disimpan di DB. Gun
 - [ ] Langganan: owner yang terkunci bayar paket Starter, dashboard terbuka, `/checkout/status` menampilkan "Pembayaran berhasil".
 - [ ] Langganan: perpanjang saat masih aktif, sisa hari bertambah.
 - [ ] Langganan: dana masuk ke akun platform, bukan Sub Account outlet.
+- [ ] POS QRIS: QR tampil, bayar via simulator QRIS, layar kasir otomatis "Pembayaran diterima" dan struk keluar.
+- [ ] POS QRIS: batalkan sebelum bayar, stok kembali. Biarkan kedaluwarsa, lalu "Buat QR Baru".
+- [ ] POS QRIS: notifikasi SNAP diterima. Cek log, tidak ada `qris_notify_invalid_token`.
 
 ## 11. Pengujian otomatis
 

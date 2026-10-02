@@ -18,6 +18,10 @@ import { DokuApiError, DokuNetworkError } from './doku/client';
 import { createCheckoutPayment, getCheckoutStatus, type CheckoutLineItem } from './doku/checkout';
 import { dokuNotificationSchema, readNotificationHeaders } from './doku/notification';
 import { verifySignature } from './doku/signature';
+import { getSnapConfig, getSnapConfigOrNull, type SnapConfig } from './doku/snap/config';
+import { generateQris, mapQrisStatus, queryQris } from './doku/snap/qris';
+import { verifyInboundToken } from './doku/snap/inbound';
+import { snapTimestamp } from './doku/snap/signature';
 import {
   decideAttemptTransition,
   decideOrderUpdateOnPaid,
@@ -101,10 +105,42 @@ export type StartPaymentErrorCode =
   | 'GATEWAY_ERROR';
 
 export type StartPaymentResult =
-  | { ok: true; paymentUrl: string; expiresAt: Date | null; reused: boolean }
+  | {
+      ok: true;
+      attemptId: string;
+      /** CHECKOUT: URL halaman bayar DOKU. */
+      paymentUrl: string | null;
+      /** SNAP_QRIS: string QRIS untuk dirender jadi kode QR. */
+      qrContent: string | null;
+      amount: number;
+      expiresAt: Date | null;
+      reused: boolean;
+    }
   | { ok: false; code: StartPaymentErrorCode; message: string };
 
-const START_ERROR_MESSAGES: Record<PaymentPurpose, Record<StartPaymentErrorCode, string>> = {
+export type PaymentProduct = 'CHECKOUT' | 'SNAP_QRIS';
+
+type GatewayCreated = {
+  paymentUrl?: string | null;
+  qrContent?: string | null;
+  providerReference: string | null;
+  raw: unknown;
+};
+
+type MessageSet = PaymentPurpose | 'POS_QRIS';
+
+const START_ERROR_MESSAGES: Record<MessageSet, Record<StartPaymentErrorCode, string>> = {
+  POS_QRIS: {
+    NOT_CONFIGURED: 'QRIS dinamis belum dikonfigurasi. Gunakan metode pembayaran lain.',
+    DISABLED: 'QRIS dinamis belum aktif untuk outlet ini.',
+    NO_SUB_ACCOUNT: 'Merchant QRIS outlet ini belum terdaftar di DOKU. Gunakan metode pembayaran lain.',
+    NOT_FOUND: 'Transaksi tidak ditemukan.',
+    ALREADY_PAID: 'Transaksi ini sudah lunas.',
+    ORDER_CLOSED: 'Transaksi ini sudah dibatalkan.',
+    INVALID_AMOUNT: 'Total transaksi tidak valid untuk QRIS.',
+    IN_PROGRESS: 'QR sedang dibuat, coba lagi dalam beberapa detik.',
+    GATEWAY_ERROR: 'Gagal membuat QRIS. Coba lagi atau gunakan metode pembayaran lain.',
+  },
   ORDER: {
     NOT_CONFIGURED: 'Pembayaran online belum tersedia. Silakan bayar di kasir.',
     DISABLED: 'Toko ini belum mengaktifkan pembayaran online.',
@@ -129,8 +165,8 @@ const START_ERROR_MESSAGES: Record<PaymentPurpose, Record<StartPaymentErrorCode,
   },
 };
 
-function startError(purpose: PaymentPurpose, code: StartPaymentErrorCode): StartPaymentResult {
-  return { ok: false, code, message: START_ERROR_MESSAGES[purpose][code] };
+function startError(set: MessageSet, code: StartPaymentErrorCode): StartPaymentResult {
+  return { ok: false, code, message: START_ERROR_MESSAGES[set][code] };
 }
 
 type PaymentTarget =
@@ -153,7 +189,11 @@ function targetColumn(target: PaymentTarget) {
     : eq(paymentAttempts.subscriptionInvoiceId, target.subscriptionInvoiceId);
 }
 
-async function lockOrderTarget(tx: Tx, target: Extract<PaymentTarget, { purpose: 'ORDER' }>): Promise<LockedTarget> {
+async function lockOrderTarget(
+  tx: Tx,
+  target: Extract<PaymentTarget, { purpose: 'ORDER' }>,
+  paymentMethod: 'ONLINE' | 'QRIS_DYNAMIC' = 'ONLINE'
+): Promise<LockedTarget> {
   const [order] = await tx
     .select()
     .from(transactions)
@@ -170,8 +210,8 @@ async function lockOrderTarget(tx: Tx, target: Extract<PaymentTarget, { purpose:
     customer: { id: order.id, name: order.customerName || undefined, phone: order.customerPhone || undefined },
     lineItems: () => buildOrderLineItems(order),
     afterAttemptCreated: async (inner) => {
-      if (order.paymentMethod !== 'ONLINE') {
-        await inner.update(transactions).set({ paymentMethod: 'ONLINE' }).where(eq(transactions.id, order.id));
+      if (order.paymentMethod !== paymentMethod) {
+        await inner.update(transactions).set({ paymentMethod }).where(eq(transactions.id, order.id));
       }
     },
   };
@@ -234,17 +274,24 @@ async function startPayment(
   target: PaymentTarget,
   options: {
     lock: (tx: Tx) => Promise<LockedTarget>;
+    product: PaymentProduct;
+    messageSet?: MessageSet;
     subAccountId: string | null;
+    gatewayMerchantId?: string | null;
     dueMinutes: number;
-    callbackUrl?: string;
     invoicePrefix: string;
+    /** Membuat sesi bayar di DOKU untuk attempt yang baru dibuat. */
+    createAtGateway: (
+      attempt: Attempt,
+      locked: Exclude<LockedTarget, { error: StartPaymentErrorCode }>
+    ) => Promise<GatewayCreated>;
   }
 ): Promise<StartPaymentResult> {
   const now = new Date();
 
   type Prepared =
     | { kind: 'error'; code: StartPaymentErrorCode }
-    | { kind: 'reuse'; paymentUrl: string; expiresAt: Date | null }
+    | { kind: 'reuse'; attempt: Attempt }
     | { kind: 'create'; attempt: Attempt; locked: Exclude<LockedTarget, { error: StartPaymentErrorCode }> };
 
   const prepared: Prepared = await db.transaction(async (tx) => {
@@ -262,12 +309,13 @@ async function startPayment(
     if (active) {
       const stillValid =
         active.status === 'PENDING' &&
-        active.paymentUrl &&
+        active.product === options.product &&
+        (active.paymentUrl || active.qrContent) &&
         active.amount === locked.amount &&
         (!active.expiresAt || active.expiresAt.getTime() - now.getTime() > REUSE_MIN_REMAINING_MS);
 
       if (stillValid) {
-        return { kind: 'reuse', paymentUrl: active.paymentUrl!, expiresAt: active.expiresAt };
+        return { kind: 'reuse', attempt: active };
       }
       if (active.status === 'CREATED' && now.getTime() - active.createdAt.getTime() < CREATE_IN_PROGRESS_MS) {
         return { kind: 'error', code: 'IN_PROGRESS' };
@@ -290,12 +338,13 @@ async function startPayment(
         transactionId: target.purpose === 'ORDER' ? target.transactionId : null,
         subscriptionInvoiceId: target.purpose === 'SUBSCRIPTION' ? target.subscriptionInvoiceId : null,
         provider: PROVIDER,
-        product: 'CHECKOUT',
+        product: options.product,
         environment: config.environment,
         invoiceNumber: generateInvoiceNumber(options.invoicePrefix),
         amount: locked.amount,
         status: 'CREATED',
         subAccountId: options.subAccountId,
+        gatewayMerchantId: options.gatewayMerchantId ?? null,
         expiresAt: new Date(now.getTime() + options.dueMinutes * 60_000),
       })
       .returning();
@@ -304,37 +353,33 @@ async function startPayment(
     return { kind: 'create', attempt, locked };
   });
 
-  if (prepared.kind === 'error') return startError(target.purpose, prepared.code);
+  const messageSet = options.messageSet ?? target.purpose;
+  if (prepared.kind === 'error') return startError(messageSet, prepared.code);
   if (prepared.kind === 'reuse') {
-    return { ok: true, paymentUrl: prepared.paymentUrl, expiresAt: prepared.expiresAt, reused: true };
+    const a = prepared.attempt;
+    return {
+      ok: true,
+      attemptId: a.id,
+      paymentUrl: a.paymentUrl,
+      qrContent: a.qrContent,
+      amount: a.amount,
+      expiresAt: a.expiresAt,
+      reused: true,
+    };
   }
 
   const { attempt, locked } = prepared;
-  let lineItems: CheckoutLineItem[] = [];
-  try {
-    lineItems = await locked.lineItems();
-  } catch (error) {
-    log('warn', 'line_items_failed', { invoice: attempt.invoiceNumber, error: errorMessage(error) });
-  }
 
   try {
-    const result = await createCheckoutPayment({
-      invoiceNumber: attempt.invoiceNumber,
-      amount: attempt.amount,
-      dueMinutes: options.dueMinutes,
-      callbackUrl: options.callbackUrl,
-      callbackUrlCancel: options.callbackUrl,
-      lineItems,
-      customer: locked.customer,
-      subAccountId: options.subAccountId,
-    });
+    const result = await options.createAtGateway(attempt, locked);
 
     await db
       .update(paymentAttempts)
       .set({
         status: 'PENDING',
-        paymentUrl: result.paymentUrl,
-        providerReference: result.tokenId,
+        paymentUrl: result.paymentUrl ?? null,
+        qrContent: result.qrContent ?? null,
+        providerReference: result.providerReference,
         rawCreateResponse: result.raw as object,
         updatedAt: new Date(),
       })
@@ -343,10 +388,19 @@ async function startPayment(
     log('info', 'payment_created', {
       invoice: attempt.invoiceNumber,
       purpose: target.purpose,
+      product: options.product,
       tenantId: attempt.tenantId,
       amount: attempt.amount,
     });
-    return { ok: true, paymentUrl: result.paymentUrl, expiresAt: attempt.expiresAt, reused: false };
+    return {
+      ok: true,
+      attemptId: attempt.id,
+      paymentUrl: result.paymentUrl ?? null,
+      qrContent: result.qrContent ?? null,
+      amount: attempt.amount,
+      expiresAt: attempt.expiresAt,
+      reused: false,
+    };
   } catch (error) {
     const outcomeUnknown = error instanceof DokuNetworkError;
     await db
@@ -365,8 +419,30 @@ async function startPayment(
       outcomeUnknown,
       error: errorMessage(error),
     });
-    return startError(target.purpose, 'GATEWAY_ERROR');
+    return startError(messageSet, 'GATEWAY_ERROR');
   }
+}
+
+function checkoutGateway(params: { dueMinutes: number; callbackUrl?: string; subAccountId: string | null }) {
+  return async (attempt: Attempt, locked: Exclude<LockedTarget, { error: StartPaymentErrorCode }>): Promise<GatewayCreated> => {
+    let lineItems: CheckoutLineItem[] = [];
+    try {
+      lineItems = await locked.lineItems();
+    } catch (error) {
+      log('warn', 'line_items_failed', { invoice: attempt.invoiceNumber, error: errorMessage(error) });
+    }
+    const result = await createCheckoutPayment({
+      invoiceNumber: attempt.invoiceNumber,
+      amount: attempt.amount,
+      dueMinutes: params.dueMinutes,
+      callbackUrl: params.callbackUrl,
+      callbackUrlCancel: params.callbackUrl,
+      lineItems,
+      customer: locked.customer,
+      subAccountId: params.subAccountId,
+    });
+    return { paymentUrl: result.paymentUrl, providerReference: result.tokenId, raw: result.raw };
+  };
 }
 
 /**
@@ -390,10 +466,11 @@ export async function startOrderPayment(params: {
   const target = { purpose: 'ORDER' as const, tenantId: params.tenantId, transactionId: params.transactionId };
   return startPayment(config, target, {
     lock: (tx) => lockOrderTarget(tx, target),
+    product: 'CHECKOUT',
     subAccountId,
     dueMinutes: config.paymentDueMinutes,
-    callbackUrl: params.callbackUrl,
     invoicePrefix: 'MNU',
+    createAtGateway: checkoutGateway({ dueMinutes: config.paymentDueMinutes, callbackUrl: params.callbackUrl, subAccountId }),
   });
 }
 
@@ -417,10 +494,67 @@ export async function startSubscriptionPayment(params: {
   };
   return startPayment(config, target, {
     lock: (tx) => lockSubscriptionTarget(tx, target, params.customer),
+    product: 'CHECKOUT',
     subAccountId: null,
     dueMinutes: SUBSCRIPTION_DUE_MINUTES,
-    callbackUrl: params.callbackUrl,
     invoicePrefix: 'SUB',
+    createAtGateway: checkoutGateway({ dueMinutes: SUBSCRIPTION_DUE_MINUTES, callbackUrl: params.callbackUrl, subAccountId: null }),
+  });
+}
+
+/** Merchant & terminal QRIS outlet. Fallback ke default env hanya bila Sub Account tidak diwajibkan (sandbox). */
+export function resolveQrisMerchant(
+  config: SnapConfig,
+  tenant: { dokuQrisMerchantId: string | null; dokuQrisTerminalId: string | null }
+): { merchantId: string; terminalId: string } | null {
+  if (tenant.dokuQrisMerchantId && tenant.dokuQrisTerminalId) {
+    return { merchantId: tenant.dokuQrisMerchantId, terminalId: tenant.dokuQrisTerminalId };
+  }
+  if (!config.requireSubAccount && config.defaultQrisMerchantId && config.defaultQrisTerminalId) {
+    return { merchantId: config.defaultQrisMerchantId, terminalId: config.defaultQrisTerminalId };
+  }
+  return null;
+}
+
+/** Apakah POS outlet ini boleh menawarkan QRIS dinamis. */
+export function isPosQrisAvailable(tenant: { dokuQrisMerchantId: string | null; dokuQrisTerminalId: string | null }): boolean {
+  const config = getSnapConfigOrNull();
+  return Boolean(config && resolveQrisMerchant(config, tenant));
+}
+
+/**
+ * Membuat (atau memakai ulang) QRIS dinamis untuk transaksi POS yang menunggu
+ * pembayaran. Nominal SELALU dari DB.
+ */
+export async function startPosQrisPayment(params: { tenantId: string; transactionId: string }): Promise<StartPaymentResult> {
+  const config = getSnapConfigOrNull();
+  if (!config) return startError('POS_QRIS', 'NOT_CONFIGURED');
+
+  const [tenant] = await db.select().from(tenants).where(eq(tenants.id, params.tenantId)).limit(1);
+  if (!tenant) return startError('POS_QRIS', 'NOT_FOUND');
+  const merchant = resolveQrisMerchant(config, tenant);
+  if (!merchant) return startError('POS_QRIS', 'NO_SUB_ACCOUNT');
+
+  const target = { purpose: 'ORDER' as const, tenantId: params.tenantId, transactionId: params.transactionId };
+  return startPayment(config, target, {
+    lock: (tx) => lockOrderTarget(tx, target, 'QRIS_DYNAMIC'),
+    product: 'SNAP_QRIS',
+    messageSet: 'POS_QRIS',
+    subAccountId: tenant.dokuSubAccountId || null,
+    gatewayMerchantId: merchant.merchantId,
+    dueMinutes: config.qrisValidityMinutes,
+    invoicePrefix: 'QRS',
+    createAtGateway: async (attempt) => {
+      const result = await generateQris({
+        partnerReferenceNo: attempt.invoiceNumber,
+        amount: attempt.amount,
+        merchantId: merchant.merchantId,
+        terminalId: merchant.terminalId,
+        validityPeriod: snapTimestamp(attempt.expiresAt ?? new Date(Date.now() + config.qrisValidityMinutes * 60_000)),
+        postalCode: config.qrisPostalCode,
+      });
+      return { qrContent: result.qrContent, providerReference: result.referenceNo, raw: result.raw };
+    },
   });
 }
 
@@ -461,8 +595,14 @@ async function applyOrderPaid(
     .limit(1);
 
   const decision = decideOrderUpdateOnPaid(
-    { status: order.status, paymentStatus: order.paymentStatus, orderProcessType: tenant?.orderProcessType ?? 'MANUAL' },
-    latePayment
+    {
+      status: order.status,
+      paymentStatus: order.paymentStatus,
+      orderProcessType: tenant?.orderProcessType ?? 'MANUAL',
+      source: order.source,
+    },
+    latePayment,
+    attempt.product === 'SNAP_QRIS' ? 'QRIS_DYNAMIC' : 'ONLINE'
   );
 
   if (decision.update) {
@@ -685,6 +825,32 @@ export async function syncAttemptWithGateway(attempt: Attempt, source: ApplyInpu
   const pastGrace = attempt.expiresAt ? now > attempt.expiresAt.getTime() + EXPIRY_GRACE_MS : false;
 
   try {
+    if (attempt.product === 'SNAP_QRIS') {
+      getSnapConfig();
+      if (!attempt.gatewayMerchantId) throw new Error('Attempt QRIS tanpa gatewayMerchantId');
+      const q = await queryQris({
+        referenceNo: attempt.providerReference,
+        partnerReferenceNo: attempt.invoiceNumber,
+        merchantId: attempt.gatewayMerchantId,
+      });
+      let qOutcome = mapQrisStatus(q.statusCode);
+      if ((qOutcome === null || qOutcome === 'PENDING') && pastGrace) qOutcome = 'EXPIRED';
+      if (!qOutcome) {
+        await db.update(paymentAttempts)
+          .set({ providerStatus: q.statusCode, lastCheckedAt: new Date() })
+          .where(eq(paymentAttempts.id, attempt.id));
+        return 'NO_CHANGE';
+      }
+      return await applyProviderOutcome({
+        attemptId: attempt.id,
+        outcome: qOutcome,
+        providerStatus: q.statusCode,
+        channel: 'QRIS',
+        reportedAmount: q.amount,
+        source,
+      });
+    }
+
     const status = await getCheckoutStatus(attempt.invoiceNumber);
     let outcome = mapDokuStatus(status.status);
     if ((outcome === null || outcome === 'PENDING') && pastGrace) outcome = 'EXPIRED';
@@ -728,9 +894,26 @@ async function syncPendingAttempt(where: ReturnType<typeof and>, minIntervalMs: 
     .limit(1);
   if (!active) return;
 
-  const lastChecked = active.lastCheckedAt?.getTime() ?? 0;
-  if (Date.now() - lastChecked < minIntervalMs) return;
   if (!loadConfigOrNull()) return;
+
+  if (minIntervalMs > 0) {
+    // Klaim "jatah cek" secara atomik: dari banyak request paralel (beberapa tab,
+    // banyak pelanggan membuka halaman status) hanya satu yang benar-benar ke DOKU.
+    const cutoff = new Date(Date.now() - minIntervalMs);
+    const claimed = await db
+      .update(paymentAttempts)
+      .set({ lastCheckedAt: new Date() })
+      .where(
+        and(
+          eq(paymentAttempts.id, active.id),
+          eq(paymentAttempts.status, 'PENDING'),
+          or(isNull(paymentAttempts.lastCheckedAt), lt(paymentAttempts.lastCheckedAt, cutoff))
+        )
+      )
+      .returning({ id: paymentAttempts.id });
+    if (claimed.length === 0) return;
+  }
+
   await syncAttemptWithGateway(active, 'STATUS_CHECK');
 }
 
@@ -936,6 +1119,76 @@ export async function handleDokuNotification(rawBody: string, headers: Headers):
     }
     return { status: 500, body: { error: 'Processing failed' } };
   }
+}
+
+// ---------------------------------------------------------------------------
+// Notifikasi QRIS (SNAP)
+// ---------------------------------------------------------------------------
+
+const SNAP_NOTIFY_OK = { responseCode: '2005200', responseMessage: 'Successful' };
+/** Notifikasi QRIS berulang dalam jendela ini tidak memicu query ulang ke DOKU. */
+const QRIS_NOTIFY_MIN_INTERVAL_MS = 2_000;
+
+/**
+ * Notifikasi QRIS dari DOKU. Body notifikasi TIDAK dipercaya sebagai sumber status:
+ * setelah token diverifikasi, status selalu diambil ulang lewat QRIS query
+ * (server-to-server, ditandatangani). Notifikasi hanya berfungsi sebagai pemicu.
+ */
+export async function handleQrisNotification(rawBody: string, headers: Headers): Promise<WebhookResponse> {
+  if (!getSnapConfigOrNull()) {
+    return { status: 503, body: { responseCode: '5035200', responseMessage: 'Service Unavailable' } };
+  }
+  if (!verifyInboundToken(headers.get('authorization'))) {
+    log('warn', 'qris_notify_invalid_token', {});
+    return { status: 401, body: { responseCode: '4015200', responseMessage: 'Unauthorized. Invalid Token' } };
+  }
+
+  let json: { originalPartnerReferenceNo?: unknown; originalReferenceNo?: unknown };
+  try {
+    json = JSON.parse(rawBody);
+  } catch {
+    return { status: 400, body: { responseCode: '4005200', responseMessage: 'Bad Request' } };
+  }
+  const invoiceNumber = typeof json.originalPartnerReferenceNo === 'string' ? json.originalPartnerReferenceNo : null;
+  if (!invoiceNumber || invoiceNumber.length > 64) {
+    return { status: 400, body: { responseCode: '4005202', responseMessage: 'Invalid Mandatory Field originalPartnerReferenceNo' } };
+  }
+
+  const requestId = headers.get('x-external-id') || crypto.randomUUID();
+  await db
+    .insert(paymentWebhookEvents)
+    .values({
+      provider: 'DOKU_SNAP',
+      requestId: requestId.slice(0, 128),
+      invoiceNumber,
+      signatureValid: true,
+      headers: { 'x-external-id': headers.get('x-external-id'), 'x-timestamp': headers.get('x-timestamp') },
+      rawBody,
+      processedAt: new Date(),
+      result: 'TRIGGER',
+    })
+    .onConflictDoNothing();
+
+  const [attempt] = await db
+    .select()
+    .from(paymentAttempts)
+    .where(and(eq(paymentAttempts.provider, PROVIDER), eq(paymentAttempts.invoiceNumber, invoiceNumber)))
+    .limit(1);
+
+  if (!attempt || attempt.product !== 'SNAP_QRIS') {
+    log('warn', 'qris_notify_unknown_invoice', { invoice: invoiceNumber });
+    return { status: 200, body: SNAP_NOTIFY_OK };
+  }
+
+  const recentlyChecked = attempt.lastCheckedAt && Date.now() - attempt.lastCheckedAt.getTime() < QRIS_NOTIFY_MIN_INTERVAL_MS;
+  if (!recentlyChecked && isActiveAttempt(attempt.status)) {
+    const result = await syncAttemptWithGateway(attempt, 'WEBHOOK');
+    if (result === 'SKIPPED') {
+      // Query ke DOKU gagal: minta DOKU mengirim ulang; cron juga akan menyusul.
+      return { status: 500, body: { responseCode: '5005200', responseMessage: 'General Error' } };
+    }
+  }
+  return { status: 200, body: SNAP_NOTIFY_OK };
 }
 
 // ---------------------------------------------------------------------------

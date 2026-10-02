@@ -44,13 +44,34 @@ Acuan teknis lengkap: [`doku_payment_gateway_migration_source_of_truth.md`](./do
 
 ---
 
-## Fase 3: POS QRIS dinamis (SNAP) ⏳
-- Generate RSA key pair sendiri, lalu upload public key ke DOKU. Private key disimpan di env (`DOKU_PRIVATE_KEY`). Simpan juga `DOKU_PUBLIC_KEY` milik DOKU.
-  - Catatan: dua public key yang dikirim di chat **identik**, jadi salah satunya keliru.
-- Token B2B: `X-SIGNATURE = SHA256withRSA(clientId|timestamp)`, di-cache sampai expired dikurangi 60 detik.
-- `POST /snap-adapter/b2b/v1.0/qr/qr-mpm-generate` menghasilkan `qrContent` yang ditampilkan di `features/pos/components/payment-modal.tsx` (opsi `qris_dynamic`).
-- Notifikasi SNAP diverifikasi dengan public key DOKU (asymmetric). Fallback-nya `qr-mpm-query`.
-- Pakai ulang `payment_attempts` dengan `product = 'SNAP_QRIS'` dan state machine yang sama.
+## Fase 3: POS QRIS dinamis (SNAP) ✅ SELESAI (menunggu uji live di sandbox)
+
+- **Modul SNAP** (`lib/payments/doku/snap/`):
+  - config yang menolak public key DOKU yang tertukar dengan public key Menuin (kesalahan yang terjadi di chat sebelumnya);
+  - signature RSA dan HMAC-SHA512 sesuai library resmi DOKU;
+  - token B2B di-cache (single-flight, retry saat 401);
+  - QRIS generate/query;
+  - token SNAP inbound (JWT RS256).
+- **POS:** "QR Dinamis" sebelumnya langsung dicatat **lunas tanpa pembayaran sungguhan**. Sekarang alurnya:
+  - transaksi PENDING, lalu QR DOKU tampil;
+  - polling, lalu lunas setelah DOKU mengonfirmasi;
+  - batal: stok kembali;
+  - QR kedaluwarsa: bisa dibuat ulang.
+- **Ditutup:** `createTransaction` dan API POS mobile tidak lagi bisa mencatat QRIS dinamis atau metode gateway sebagai lunas.
+- **Endpoint notifikasi SNAP:** `/api/snap/v1.0/access-token/b2b` dan `/api/snap/v1.0/qr/qr-mpm-notify`. Body notifikasi tidak dipercaya; status selalu diambil ulang lewat query.
+- **Bug yang ditemukan dan diperbaiki saat pengujian:** rate limit cek status bocor saat request paralel (4 request sekaligus semuanya memanggil DOKU). Sekarang klaim cek dilakukan atomik. Perbaikan ini juga berlaku untuk polling halaman status storefront dan langganan.
+- **Pengujian:**
+  - **147 test lolos**, termasuk 54 unit SNAP dan 13 integration QRIS POS;
+  - mutation check: test gagal bila restock atau cek-sebelum-batal dihapus;
+  - migrasi Fase 1–3 diverifikasi;
+  - `tsc`, `eslint`, dan `next build` bersih.
+
+### Perlu dikonfirmasi saat uji live sandbox
+- `CHANNEL-ID` yang benar untuk QRIS (default `95221`).
+- Field wajib `additionalInfo` pada `qr-mpm-generate`.
+- Cara DOKU memetakan merchant QRIS ke Sub Account outlet. Saat ini setiap outlet memakai `doku_qris_merchant_id`/`doku_qris_terminal_id` sendiri, diisi admin sesuai data dari DOKU.
+
+---
 
 ## Fase 4: Rekonsiliasi & operasional ⏳
 - Settlement report harian: isi `fee_amount`/`net_amount` riil (`fee_source = SETTLEMENT`).
@@ -64,9 +85,10 @@ Acuan teknis lengkap: [`doku_payment_gateway_migration_source_of_truth.md`](./do
 ---
 
 ## Yang perlu disiapkan pemilik project
-- [ ] Env deployment: `DOKU_ENV`, `DOKU_CLIENT_ID`, `DOKU_SECRET_KEY`, `APP_BASE_URL`, `CRON_SECRET`.
+- [ ] Env deployment: `DOKU_ENV`, `DOKU_CLIENT_ID`, `DOKU_SECRET_KEY`, `APP_BASE_URL`, `CRON_SECRET` (dan variabel QRIS di bawah).
 - [ ] Jalankan migrasi: `DATABASE_URL=… npm run db:migrate:doku --workspace=web`.
 - [ ] Dashboard DOKU sandbox: Notification URL `https://<domain>/api/webhook/doku`. Aktifkan Checkout dan Sub Account.
 - [ ] Scheduler cron 5 menit untuk `GET /api/cron/payment-reconcile` dengan header `Authorization: Bearer <CRON_SECRET>`.
+- [ ] QRIS: buat RSA key pair sendiri, unggah public key ke DOKU, isi `DOKU_PRIVATE_KEY`, `DOKU_PUBLIC_KEY` (milik DOKU), `DOKU_QRIS_MERCHANT_ID`, dan `DOKU_QRIS_TERMINAL_ID`. Daftarkan base URL SNAP `https://<domain>/api/snap`.
 - [ ] Supaya Claude bisa ikut tes live: tambahkan `api-sandbox.doku.com` dan `developers.doku.com` ke network allowlist environment, lalu isi env DOKU di pengaturan environment.
 - [ ] Putuskan harga final paket langganan (lihat "Keputusan produk yang masih terbuka" di Fase 2).
