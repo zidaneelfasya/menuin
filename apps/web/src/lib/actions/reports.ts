@@ -1253,20 +1253,133 @@ export async function getFinanceReport(outletKey: string, params?: DateFilterPar
       return { success: false, error: 'Akses ditolak.' };
     }
 
-    const { currentStart, currentEnd, period } = resolveDateIntervals(params);
+    const { currentStart, currentEnd, prevStart, prevEnd, period } = resolveDateIntervals(params);
 
-    // Fetch transactions
-    const trxList = await db
-      .select()
-      .from(transactions)
-      .where(
-        and(
-          eq(transactions.tenantId, tenant.id),
-          gte(transactions.createdAt, currentStart),
-          lte(transactions.createdAt, currentEnd)
+    // Fetch transactions & previous period transactions
+    const [trxList, prevTrxList, expenseList, prevExpenseList] = await Promise.all([
+      db
+        .select()
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.tenantId, tenant.id),
+            gte(transactions.createdAt, currentStart),
+            lte(transactions.createdAt, currentEnd)
+          )
         )
-      )
-      .orderBy(desc(transactions.createdAt));
+        .orderBy(desc(transactions.createdAt)),
+      db
+        .select()
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.tenantId, tenant.id),
+            gte(transactions.createdAt, prevStart),
+            lte(transactions.createdAt, prevEnd)
+          )
+        ),
+      db
+        .select()
+        .from(expenses)
+        .where(
+          and(
+            eq(expenses.tenantId, tenant.id),
+            gte(expenses.date, currentStart),
+            lte(expenses.date, currentEnd)
+          )
+        )
+        .orderBy(desc(expenses.date)),
+      db
+        .select()
+        .from(expenses)
+        .where(
+          and(
+            eq(expenses.tenantId, tenant.id),
+            gte(expenses.date, prevStart),
+            lte(expenses.date, prevEnd)
+          )
+        ),
+    ]);
+
+    // Time-series Chart Buckets for Hero Cash Flow Chart & MiniSparklines
+    const diffDays = Math.ceil((currentEnd.getTime() - currentStart.getTime()) / (1000 * 60 * 60 * 24));
+    interface FinanceChartBucket {
+      key: string;
+      date: string;
+      label: string;
+      cashIn: number;
+      cashOut: number;
+      netFlow: number;
+    }
+    const chartBucketsMap: Record<string, FinanceChartBucket> = {};
+    const chartBucketsList: FinanceChartBucket[] = [];
+
+    let chartGranularity: 'hourly' | 'daily' | 'monthly' = 'daily';
+
+    if (diffDays <= 1) {
+      chartGranularity = 'hourly';
+      for (let h = 0; h < 24; h++) {
+        const hourStr = String(h).padStart(2, '0') + ':00';
+        const label = h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`;
+        const bucket: FinanceChartBucket = {
+          key: hourStr,
+          date: hourStr,
+          label,
+          cashIn: 0,
+          cashOut: 0,
+          netFlow: 0,
+        };
+        chartBucketsMap[hourStr] = bucket;
+        chartBucketsList.push(bucket);
+      }
+    } else if (diffDays <= 35) {
+      chartGranularity = 'daily';
+      const cursor = new Date(currentStart);
+      while (cursor <= currentEnd) {
+        const ymd = cursor.toISOString().slice(0, 10);
+        const dayNum = cursor.getDate();
+        const monthShort = cursor.toLocaleDateString('id-ID', { month: 'short' });
+        const bucket: FinanceChartBucket = {
+          key: ymd,
+          date: ymd,
+          label: `${dayNum} ${monthShort}`,
+          cashIn: 0,
+          cashOut: 0,
+          netFlow: 0,
+        };
+        chartBucketsMap[ymd] = bucket;
+        chartBucketsList.push(bucket);
+        cursor.setDate(cursor.getDate() + 1);
+      }
+    } else {
+      chartGranularity = 'monthly';
+      const cursor = new Date(currentStart.getFullYear(), currentStart.getMonth(), 1);
+      while (cursor <= currentEnd) {
+        const ym = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`;
+        const monthName = cursor.toLocaleDateString('id-ID', { month: 'short' });
+        const bucket: FinanceChartBucket = {
+          key: ym,
+          date: ym,
+          label: monthName,
+          cashIn: 0,
+          cashOut: 0,
+          netFlow: 0,
+        };
+        chartBucketsMap[ym] = bucket;
+        chartBucketsList.push(bucket);
+        cursor.setMonth(cursor.getMonth() + 1);
+      }
+    }
+
+    const getBucketKey = (d: Date): string => {
+      if (chartGranularity === 'hourly') {
+        return String(d.getHours()).padStart(2, '0') + ':00';
+      } else if (chartGranularity === 'daily') {
+        return d.toISOString().slice(0, 10);
+      } else {
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      }
+    };
 
     // Fetch product items to calculate theoretical COGS
     const trxIds = trxList.map((t) => t.id);
@@ -1322,10 +1435,12 @@ export async function getFinanceReport(outletKey: string, params?: DateFilterPar
       totalGatewayFee += fee;
 
       const rawMethod = (t.paymentMethod || 'TUNAI').trim().toUpperCase();
+      let flowIn = 0;
       if (isCashPayment(rawMethod)) {
         cashGrossSales += subTotal;
         cashDiscount += disc;
         cashCollected += gTotal; // Customer handed physical money including PB1
+        flowIn = gTotal;
         paymentBreakdown['TUNAI'] = (paymentBreakdown['TUNAI'] || 0) + gTotal;
       } else {
         nonCashGrossSales += subTotal;
@@ -1333,7 +1448,14 @@ export async function getFinanceReport(outletKey: string, params?: DateFilterPar
         nonCashDiscount += disc;
         nonCashGatewayFee += fee;
         nonCashSettled += netAmt; // Settled into bank account after MDR fee
+        flowIn = netAmt;
         paymentBreakdown[rawMethod] = (paymentBreakdown[rawMethod] || 0) + netAmt;
+      }
+
+      // Add to time-series bucket
+      const bKey = getBucketKey(new Date(t.createdAt));
+      if (chartBucketsMap[bKey]) {
+        chartBucketsMap[bKey].cashIn += flowIn;
       }
     });
 
@@ -1344,19 +1466,7 @@ export async function getFinanceReport(outletKey: string, params?: DateFilterPar
     const estimatedGrossProfit = Math.max(0, netSales - totalHpp);
     const profitMargin = netSales > 0 ? (estimatedGrossProfit / netSales) * 100 : 0;
 
-    // Fetch Expenses
-    const expenseList = await db
-      .select()
-      .from(expenses)
-      .where(
-        and(
-          eq(expenses.tenantId, tenant.id),
-          gte(expenses.date, currentStart),
-          lte(expenses.date, currentEnd)
-        )
-      )
-      .orderBy(desc(expenses.date));
-
+    // Process Expenses
     let totalExpenses = 0;
     let cashExpenses = 0;
     let nonCashExpenses = 0;
@@ -1372,6 +1482,11 @@ export async function getFinanceReport(outletKey: string, params?: DateFilterPar
       }
       const cat = exp.category || 'LAINNYA';
       expenseByCategory[cat] = (expenseByCategory[cat] || 0) + amt;
+
+      const bKey = getBucketKey(new Date(exp.date));
+      if (chartBucketsMap[bKey]) {
+        chartBucketsMap[bKey].cashOut += amt;
+      }
     });
 
     // Fetch Cash Movements from shifts
@@ -1391,24 +1506,71 @@ export async function getFinanceReport(outletKey: string, params?: DateFilterPar
     movements.forEach((m) => {
       const amt = parseFloat(m.amount || '0') || 0;
       const isAutoExpense = m.description && m.description.startsWith('[Biaya');
-      if (m.type === 'IN') manualCashIn += amt;
-      if (m.type === 'OUT' && !isAutoExpense) manualCashOut += amt;
+      if (m.type === 'IN') {
+        manualCashIn += amt;
+        const bKey = getBucketKey(new Date(m.createdAt));
+        if (chartBucketsMap[bKey]) {
+          chartBucketsMap[bKey].cashIn += amt;
+        }
+      }
+      if (m.type === 'OUT' && !isAutoExpense) {
+        manualCashOut += amt;
+        const bKey = getBucketKey(new Date(m.createdAt));
+        if (chartBucketsMap[bKey]) {
+          chartBucketsMap[bKey].cashOut += amt;
+        }
+      }
     });
 
+    // Compute net flow for all buckets
+    chartBucketsList.forEach((b) => {
+      b.netFlow = b.cashIn - b.cashOut;
+    });
+
+    // Trends for MiniSparklines
+    const cashInTrend = chartBucketsList.map((b) => b.cashIn);
+    const cashOutTrend = chartBucketsList.map((b) => b.cashOut);
+    const netFlowTrend = chartBucketsList.map((b) => b.netFlow);
+    const grossProfitTrend = chartBucketsList.map((b) => Math.max(0, b.cashIn - b.cashOut * 0.4));
+
+    // Previous period calculations for comparative growth %
+    let prevCashIn = 0;
+    prevTrxList.forEach((t) => {
+      const isCanceled =
+        t.status === 'CANCELLED' ||
+        t.status === 'CANCELED' ||
+        t.paymentStatus === 'CANCELED' ||
+        t.paymentStatus === 'REFUNDED';
+      if (isCanceled) return;
+      const gTotal = parseFloat(t.grandTotal || '0') || 0;
+      const fee = calculateGatewayFee(t);
+      const netAmt = t.netAmount ? parseFloat(t.netAmount) : Math.max(0, gTotal - fee);
+      const rawMethod = (t.paymentMethod || 'TUNAI').trim().toUpperCase();
+      prevCashIn += isCashPayment(rawMethod) ? gTotal : netAmt;
+    });
+
+    let prevCashOut = 0;
+    prevExpenseList.forEach((exp) => {
+      prevCashOut += parseFloat(exp.amount || '0') || 0;
+    });
+
+    const prevNetCashFlow = prevCashIn - prevCashOut;
+
     // Comprehensive Cash Flow Accounting:
-    // Real Cash Inflow equals physical cash collected in drawer + digital settlements into bank account + manual cash in
     const totalCashIn = cashCollected + nonCashSettled + manualCashIn;
-    // Total Outflow includes all operational expenses plus manual cash taken out
     const totalCashOut = totalExpenses + manualCashOut;
     const netCashFlow = totalCashIn - totalCashOut;
 
+    const cashInGrowth = prevCashIn > 0 ? ((totalCashIn - prevCashIn) / prevCashIn) * 100 : 0;
+    const cashOutGrowth = prevCashOut > 0 ? ((totalCashOut - prevCashOut) / prevCashOut) * 100 : 0;
+    const netCashFlowGrowth = prevNetCashFlow !== 0 ? ((netCashFlow - prevNetCashFlow) / Math.abs(prevNetCashFlow)) * 100 : 0;
+    const grossProfitGrowth = cashInGrowth;
+
     // Dual-Channel Net Flows:
-    // 1. Kas Fisik Laci Toko (Drawer / Petty Cash)
     const drawerCashIn = cashCollected + manualCashIn;
     const drawerCashOut = cashExpenses + manualCashOut;
     const drawerNetFlow = drawerCashIn - drawerCashOut;
 
-    // 2. Kas Digital Bank & Settlement (QRIS / Transfer)
     const digitalCashIn = nonCashSettled;
     const digitalCashOut = nonCashExpenses;
     const digitalNetFlow = digitalCashIn - digitalCashOut;
@@ -1450,6 +1612,17 @@ export async function getFinanceReport(outletKey: string, params?: DateFilterPar
           endDate: currentEnd.toISOString(),
           formattedStart: currentStart.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
           formattedEnd: currentEnd.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+        },
+        chartBuckets: chartBucketsList,
+        cashInTrend,
+        cashOutTrend,
+        netFlowTrend,
+        grossProfitTrend,
+        growth: {
+          cashIn: cashInGrowth,
+          cashOut: cashOutGrowth,
+          netCashFlow: netCashFlowGrowth,
+          grossProfit: grossProfitGrowth,
         },
         cashFlow: {
           totalCashIn,
@@ -1580,6 +1753,70 @@ export async function createExpenseAction(data: {
   } catch (error: any) {
     console.error('Error creating expense:', error);
     return { success: false, error: error.message || 'Gagal menyimpan pengeluaran.' };
+  }
+}
+
+// -------------------------------------------------------------
+// 4B. ACTION: CATAT KAS MASUK MANUAL (CASH IN)
+// -------------------------------------------------------------
+export async function createCashInAction(data: {
+  outletKey: string;
+  amount: number;
+  description: string;
+}) {
+  try {
+    const user = await getCurrentUser();
+    if (!user || !user.tenantId) {
+      return { success: false, error: 'Unauthorized.' };
+    }
+
+    const [tenant] = await db
+      .select()
+      .from(tenants)
+      .where(eq(tenants.outletKey, data.outletKey))
+      .limit(1);
+
+    if (!tenant || tenant.id !== user.tenantId) {
+      return { success: false, error: 'Outlet tidak valid.' };
+    }
+
+    if (!data.description || data.amount <= 0) {
+      return { success: false, error: 'Deskripsi dan nominal kas masuk wajib diisi dengan benar.' };
+    }
+
+    const [activeShift] = await db
+      .select()
+      .from(shifts)
+      .where(
+        and(
+          eq(shifts.tenantId, tenant.id),
+          eq(shifts.status, 'ACTIVE')
+        )
+      )
+      .limit(1);
+
+    if (!activeShift) {
+      return {
+        success: false,
+        error: 'Tidak ada shift kasir yang aktif saat ini. Buka shift kasir terlebih dahulu untuk mencatat kas masuk laci kasir.',
+      };
+    }
+
+    const [newMovement] = await db
+      .insert(cashMovements)
+      .values({
+        tenantId: tenant.id,
+        shiftId: activeShift.id,
+        type: 'IN',
+        amount: data.amount.toString(),
+        description: `[Kas Masuk] ${data.description.trim()}`,
+      })
+      .returning();
+
+    return { success: true, data: newMovement };
+  } catch (error: any) {
+    console.error('Error creating cash in:', error);
+    return { success: false, error: error.message || 'Gagal menyimpan kas masuk.' };
   }
 }
 
