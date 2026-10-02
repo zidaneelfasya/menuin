@@ -23,7 +23,7 @@ harus diperbarui.
 | 1 | Modul `lib/payments`, migrasi DB, Checkout storefront, webhook, cron rekonsiliasi, aktivasi Sub Account | ✅ Selesai (menunggu uji live di sandbox) |
 | 2 | Langganan Menuin via DOKU (menggantikan `/api/checkout` + webhook Midtrans subscription) | ✅ Selesai (menunggu uji live di sandbox) |
 | 3 | POS QRIS dinamis via SNAP (RSA key pair, token B2B, notifikasi SNAP) | ✅ Selesai (menunggu uji live di sandbox) |
-| 4 | Rekonsiliasi settlement (fee riil), refund, dashboard review | ⏳ |
+| 4 | Antrean review, pencatatan refund, import settlement (fee riil) | ✅ Selesai |
 
 ## 3. Alur pembayaran (Fase 1)
 
@@ -78,6 +78,23 @@ sequenceDiagram
    - DOKU mengirim `POST /api/snap/v1.0/qr/qr-mpm-notify` dengan bearer JWT tersebut.
    - Isi status di body notifikasi **tidak dipercaya**. Notifikasi hanya memicu `qr-mpm-query` yang ditandatangani.
 
+### Operasional pembayaran (Fase 4)
+
+Halaman **Pengaturan → Transaksi Online** (`/outlet/{key}/settings/online-payments`, untuk OWNER dan MANAGER):
+
+- **Perlu Ditinjau**: pembayaran yang ditandai sistem (`requires_review`), lengkap dengan penjelasan dan saran tindakan per alasan (`lib/payments/review-reasons.ts`).
+- **Catat Refund**: refund dieksekusi di dashboard DOKU, lalu dicatat di sini (nominal, nomor referensi, catatan). Satu refund per pembayaran, dengan lock dan pengecekan ulang supaya tidak tercatat ganda.
+  - Refund penuh atas pembayaran yang melunasi order mengubah `transactions.payment_status` menjadi `REFUNDED`.
+  - Refund pembayaran ganda tidak mengubah order, karena order tetap lunas lewat metode lain.
+- **Selesai Tanpa Refund**: wajib menyertakan catatan. Contohnya pembayaran telat untuk pesanan yang tetap dilayani.
+- **Import settlement (OWNER)**: unggah CSV dari dashboard DOKU.
+  - Kolom dikenali dari nama header (invoice, amount, fee, net amount, settlement date). Format rupiah Indonesia didukung.
+  - Fee estimasi diganti fee riil (`fee_source = SETTLEMENT`), dan `transactions.gateway_fee`/`net_amount` ikut diperbarui. Laporan keuangan otomatis akurat.
+  - Invoice milik outlet lain, belum lunas, atau nominalnya tidak cocok dilaporkan dan tidak diterapkan.
+  - Idempoten: unggah ulang file yang sama tidak mengubah apa pun.
+
+Refund lewat API DOKU dan penarikan laporan settlement otomatis lewat API **belum** diimplementasikan, karena spesifikasi API-nya belum bisa diverifikasi. Kandidat langkah setelah uji live.
+
 ## 4. Peta kode
 
 | File | Fungsi |
@@ -98,9 +115,12 @@ sequenceDiagram
 | `apps/web/src/lib/actions/pos-qris.ts` | Server action QRIS POS: mulai, status, QR baru, batal, ketersediaan. |
 | `apps/web/src/features/pos/components/qris-payment-dialog.tsx` | Layar QR untuk kasir. |
 | `apps/web/src/app/api/snap/v1.0/...` | Endpoint SNAP inbound: token B2B dan notifikasi QRIS. |
+| `apps/web/src/lib/payments/settlement.ts` | Parser CSV settlement (murni): deteksi kolom dan parsing rupiah. |
+| `apps/web/src/lib/payments/payment-ops.service.ts` | Daftar pembayaran, refund, penyelesaian review, dan penerapan settlement. |
+| `apps/web/src/lib/actions/online-payments.ts` + `app/outlet/[outletKey]/settings/online-payments/` | Server action (dengan cek peran) dan halaman Transaksi Online. |
 | `apps/web/src/app/api/webhook/doku/route.ts` | Endpoint notifikasi DOKU. |
 | `apps/web/src/app/api/cron/payment-reconcile/route.ts` | Endpoint cron rekonsiliasi. |
-| `apps/web/drizzle/doku_payments.sql`, `doku_subscriptions.sql`, `doku_qris.sql` + `scripts/migrate-doku-payments.mjs` | Migrasi DB (idempotent, dijalankan berurutan). |
+| `apps/web/drizzle/doku_payments.sql`, `doku_subscriptions.sql`, `doku_qris.sql`, `doku_ops.sql` + `scripts/migrate-doku-payments.mjs` | Migrasi DB (idempotent, dijalankan berurutan). |
 
 ## 5. Spesifikasi DOKU yang dipakai
 
@@ -157,6 +177,11 @@ Format berikut diverifikasi dari library resmi `doku-nodejs-library`:
 **`payment_attempts` (QRIS)**: `product = SNAP_QRIS`, `qr_content`, `gateway_merchant_id` (dipakai untuk query), `provider_reference` (`referenceNo` DOKU).
 
 **`tenants`**: `doku_qris_merchant_id` dan `doku_qris_terminal_id` berisi merchant QRIS outlet dari DOKU. Wajib di production. Di sandbox ada fallback ke env.
+
+**`payment_attempts` (operasional)**:
+- `review_resolution` (`REFUNDED`/`NO_ACTION`), `review_note`, `reviewed_at`, `reviewed_by_membership_id`;
+- `refunded_amount` (CHECK: lebih dari 0 dan tidak melebihi `amount`), `refund_reference`, `refunded_at`;
+- `settled_at`.
 
 **`payment_webhook_events`**: log mentah notifikasi. Unik per `(provider, request_id)`, dipakai untuk dedupe, audit, dan replay.
 
@@ -245,6 +270,8 @@ Kredensial **tidak boleh** di-commit, ditempel di chat, atau disimpan di DB. Gun
 - [ ] Langganan: dana masuk ke akun platform, bukan Sub Account outlet.
 - [ ] POS QRIS: QR tampil, bayar via simulator QRIS, layar kasir otomatis "Pembayaran diterima" dan struk keluar.
 - [ ] POS QRIS: batalkan sebelum bayar, stok kembali. Biarkan kedaluwarsa, lalu "Buat QR Baru".
+- [ ] Operasional: ekspor CSV settlement dari dashboard DOKU, lalu unggah di **Transaksi Online**. Fee berubah menjadi "settlement" dan laporan keuangan ikut berubah. Kalau nama kolom laporan DOKU tidak dikenali, tambahkan aliasnya di `COLUMN_ALIASES` (`settlement.ts`).
+- [ ] Operasional: buat pembayaran ganda (bayar tunai lalu tetap bayar online), muncul di **Perlu Ditinjau**, lalu "Catat Refund".
 - [ ] POS QRIS: notifikasi SNAP diterima. Cek log, tidak ada `qris_notify_invalid_token`.
 
 ## 11. Pengujian otomatis

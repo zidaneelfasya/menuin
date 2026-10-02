@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { 
   IconBuildingStore, 
@@ -10,7 +10,8 @@ import {
   IconPrinter, 
   IconReceipt, 
   IconMoped, 
-  IconCreditCard
+  IconCreditCard,
+  IconReceiptRefund
 } from '@tabler/icons-react';
 
 interface SettingsSidebarProps {
@@ -27,6 +28,8 @@ interface NavItem {
   tab?: string;
   isRoute?: boolean;
   ownerOnly?: boolean;
+  /** Terlihat untuk OWNER dan MANAGER. */
+  managerUp?: boolean;
 }
 
 interface NavSection {
@@ -98,6 +101,14 @@ const SETTINGS_SECTIONS: NavSection[] = [
         tab: 'payment',
         ownerOnly: true,
       },
+      {
+        id: 'online-payments',
+        label: 'Transaksi Online',
+        icon: IconReceiptRefund,
+        href: (k) => `/outlet/${k}/settings/online-payments`,
+        isRoute: true,
+        managerUp: true,
+      },
     ],
   },
 ];
@@ -105,6 +116,9 @@ const SETTINGS_SECTIONS: NavSection[] = [
 export function SettingsSidebar({ outletKey, userRole }: SettingsSidebarProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const pathname = usePathname();
+  const settingsBase = `/outlet/${outletKey}/settings`;
+  const isOnSubRoute = pathname !== settingsBase && pathname.startsWith(`${settingsBase}/`);
 
   const isOwner = userRole === 'OWNER' || userRole === 'SYSTEM_ADMIN' || !userRole;
   const currentTab = searchParams.get('tab') || 'store';
@@ -127,7 +141,10 @@ export function SettingsSidebar({ outletKey, userRole }: SettingsSidebarProps) {
       {/* Nav Items */}
       <nav className="flex space-x-1.5 md:flex-col md:space-x-0 md:space-y-3 overflow-x-auto pb-1 md:pb-0 scrollbar-hide flex-1">
         {SETTINGS_SECTIONS.map((section) => {
-          const visibleItems = section.items.filter((item) => !item.ownerOnly || isOwner);
+          const isManagerUp = isOwner || userRole === 'MANAGER';
+          const visibleItems = section.items.filter(
+            (item) => (!item.ownerOnly || isOwner) && (!item.managerUp || isManagerUp)
+          );
           if (visibleItems.length === 0) return null;
 
           return (
@@ -136,7 +153,9 @@ export function SettingsSidebar({ outletKey, userRole }: SettingsSidebarProps) {
                 {section.title}
               </h3>
               {visibleItems.map((item) => {
-                const isActive = item.tab === currentTab;
+                const isActive = item.isRoute
+                  ? pathname === item.href(outletKey)
+                  : !isOnSubRoute && item.tab === currentTab;
 
                 return (
                   <button

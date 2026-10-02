@@ -554,6 +554,17 @@ export const paymentAttempts = pgTable('payment_attempts', {
   feeSource: text('fee_source'), // ESTIMATED, SETTLEMENT
   requiresReview: boolean('requires_review').default(false).notNull(),
   reviewReason: text('review_reason'),
+  // Penyelesaian review oleh outlet/admin: REFUNDED atau NO_ACTION.
+  reviewResolution: text('review_resolution'),
+  reviewNote: text('review_note'),
+  reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+  reviewedByMembershipId: uuid('reviewed_by_membership_id'),
+  // Refund dicatat setelah dieksekusi di dashboard DOKU.
+  refundedAmount: integer('refunded_amount'),
+  refundReference: text('refund_reference'),
+  refundedAt: timestamp('refunded_at', { withTimezone: true }),
+  // Settlement riil dari laporan DOKU (menggantikan fee estimasi).
+  settledAt: timestamp('settled_at', { withTimezone: true }),
   lastError: text('last_error'),
   lastCheckedAt: timestamp('last_checked_at', { withTimezone: true }),
   rawCreateResponse: jsonb('raw_create_response'),
@@ -587,6 +598,11 @@ export const paymentAttempts = pgTable('payment_attempts', {
     ),
     statusIdx: index('payment_attempts_status_created_idx').on(table.status, table.createdAt),
     amountCheck: check('payment_attempts_amount_check', sql`${table.amount} > 0`),
+    refundCheck: check(
+      'payment_attempts_refund_check',
+      sql`${table.refundedAmount} is null or (${table.refundedAmount} > 0 and ${table.refundedAmount} <= ${table.amount})`
+    ),
+    reviewIdx: index('payment_attempts_review_idx').on(table.tenantId, table.requiresReview, table.reviewedAt),
     statusCheck: check(
       'payment_attempts_status_check',
       sql`${table.status} in ('CREATED', 'PENDING', 'PAID', 'FAILED', 'EXPIRED', 'CANCELED')`

@@ -73,10 +73,17 @@ Acuan teknis lengkap: [`doku_payment_gateway_migration_source_of_truth.md`](./do
 
 ---
 
-## Fase 4: Rekonsiliasi & operasional ⏳
-- Settlement report harian: isi `fee_amount`/`net_amount` riil (`fee_source = SETTLEMENT`).
-- Dashboard admin untuk attempt dengan `requires_review = true` (bayar ganda, telat, amount mismatch).
-- Alur refund, manual dulu.
+## Fase 4: Rekonsiliasi & operasional ✅ SELESAI
+
+- Halaman **Pengaturan → Transaksi Online** (OWNER/MANAGER) berisi antrean review dengan penjelasan dan saran tindakan, daftar semua pembayaran online, pencatatan refund, dan "Selesai Tanpa Refund".
+- **Refund:** dieksekusi di dashboard DOKU, lalu dicatat di Menuin. Hanya satu refund per pembayaran, termasuk saat dikirim paralel. Refund penuh atas pembayaran yang melunasi order mengubah status order menjadi `REFUNDED`; refund pembayaran ganda tidak mengubah order.
+- **Import settlement CSV (OWNER):** fee estimasi diganti fee riil, dan laporan keuangan ikut akurat. Import dibatasi ke tenant sendiri, aman diulang, dan baris yang tidak cocok dilaporkan.
+- **Pengujian:**
+  - **188 test lolos** (+27 unit parser settlement, +14 integration operasional);
+  - mutation check: refund ganda, pembayaran ganda yang dianggap melunasi order, dan import tanpa batasan tenant semuanya tertangkap test.
+- **Belum** (menunggu verifikasi API DOKU): refund otomatis lewat API, penarikan settlement otomatis, dan dashboard review lintas tenant untuk tim Menuin (termasuk pembayaran langganan ganda).
+
+---
 
 ## Go-live ⏳
 - Lengkapi legal dan kontrak platform dengan DOKU. Buat kredensial production **baru**, karena key sandbox sudah pernah ditempel di chat.
