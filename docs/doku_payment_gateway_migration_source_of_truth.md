@@ -262,7 +262,9 @@ Kredensial **tidak boleh** di-commit, ditempel di chat, atau disimpan di DB. Gun
 ## 9. Setup sandbox
 
 1. Isi env di atas di deployment (dan di `.env.local` untuk dev).
-2. Jalankan migrasi: `DATABASE_URL=… npm run db:migrate:doku --workspace=web`.
+2. Samakan skema DB lalu jalankan migrasi DOKU (dari `apps/web`, keduanya membaca `.env.local`):
+   - `npm run db:sync` menampilkan tabel/kolom/index yang kurang (dry-run), lalu `npm run db:sync -- --apply` menambahkannya. **Hanya menambah**, tidak pernah drop atau ubah. Jangan pakai `db:push` di repo ini.
+   - `npm run db:migrate:doku`
 3. Di dashboard DOKU sandbox, set **Notification URL** ke `https://<domain>/api/webhook/doku`. Untuk dev lokal, pakai tunnel HTTPS (ngrok atau cloudflared).
 4. Minta DOKU mengaktifkan **Checkout**, **Sub Account**, dan **SNAP QRIS MPM** di akun sandbox kalau belum aktif.
    - Buat key pair (`openssl genrsa -out private.pem 2048` lalu `openssl rsa -in private.pem -pubout -out public.pem`) dan unggah `public.pem` ke DOKU.
