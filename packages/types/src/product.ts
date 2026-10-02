@@ -4,6 +4,7 @@ export interface ProductDto {
   name: string;
   price: string;
   costPrice?: string | null;
+  potongan?: string | null;
   stock: number;
   minStock: number;
   categoryName: string | null;

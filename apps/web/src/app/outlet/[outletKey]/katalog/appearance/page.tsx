@@ -6,7 +6,7 @@ import { Loader2 } from "lucide-react";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: 'Tampilan Storefront - Menuin',
+  title: 'Tampilan Self QR - Menuin',
 };
 
 async function AppearanceDataWrapper() {
@@ -16,9 +16,9 @@ async function AppearanceDataWrapper() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Tampilan Storefront</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Tampilan Self QR</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Sesuaikan logo, banner cover, deskripsi, dan warna utama katalog publik toko Anda.
+          Sesuaikan logo, banner cover, deskripsi, dan warna utama Self QR publik toko Anda.
         </p>
       </div>
 

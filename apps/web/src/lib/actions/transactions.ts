@@ -14,8 +14,10 @@ type CheckoutPayload = {
   tax: number;
   serviceCharge?: number;
   platformFee?: number;
+  rounding?: number;
   grandTotal: number;
   promoCode?: string;
+  promotionId?: string;
   paymentMethod: string;
   customerName?: string;
   customerPhone?: string;
@@ -64,6 +66,14 @@ export async function createTransaction(payload: CheckoutPayload) {
         
       const shiftId = activeShifts.length > 0 ? activeShifts[0].id : null;
 
+      const gTotal = parseFloat(payload.grandTotal.toString()) || 0;
+      const payMethod = (payload.paymentMethod || 'CASH').toUpperCase();
+      // Only QRIS_DYNAMIC and online payment gateway transactions incur 0.7% MDR.
+      // QRIS_STATIC (merchant's physical acrylic QR), CARD (EDC), TRANSFER (Bank), and CASH have 0 gateway fee.
+      const isGatewayPayment = payMethod === 'QRIS_DYNAMIC' || payMethod === 'ONLINE' || payMethod === 'DOKU';
+      const gatewayFeeNum = isGatewayPayment ? Math.round(gTotal * 0.007) : 0;
+      const netAmountNum = Math.max(0, gTotal - gatewayFeeNum);
+
       // 1. Create Transaction record
       const [newTx] = await tx.insert(transactions).values({
         tenantId,
@@ -74,9 +84,13 @@ export async function createTransaction(payload: CheckoutPayload) {
         tax: (payload.tax || 0).toString(),
         serviceCharge: (payload.serviceCharge || 0).toString(),
         platformFee: (payload.platformFee || 0).toString(),
+        rounding: (payload.rounding || 0).toString(),
         grandTotal: payload.grandTotal.toString(),
+        gatewayFee: gatewayFeeNum.toString(),
+        netAmount: netAmountNum.toString(),
         promoCode: payload.promoCode || null,
-        paymentMethod: (payload.paymentMethod || 'CASH').toUpperCase(),
+        promotionId: payload.promotionId || null,
+        paymentMethod: payMethod,
         paymentStatus: 'PAID', // POS transactions are always paid immediately
         status: 'PROCESSING', // POS orders directly go to kitchen as PROCESSING
         source: 'POS',
@@ -163,6 +177,9 @@ export async function getTransactionDetails(transactionId: string) {
         tax: transactions.tax,
         serviceCharge: transactions.serviceCharge,
         platformFee: transactions.platformFee,
+        rounding: transactions.rounding,
+        gatewayFee: transactions.gatewayFee,
+        netAmount: transactions.netAmount,
         grandTotal: transactions.grandTotal,
         promoCode: transactions.promoCode,
         paymentMethod: transactions.paymentMethod,

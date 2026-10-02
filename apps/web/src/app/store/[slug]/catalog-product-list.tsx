@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useCartStore } from "@/lib/store/cart";
-import { Search, ShoppingBag, Plus, Minus, Star, ArrowRight, X, Flame, ThumbsUp, Utensils } from "lucide-react";
+import { Search, ShoppingBag, Plus, Minus, Star, ArrowRight, X, Flame, ThumbsUp, Utensils, Tag } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,7 @@ type CatalogProductListProps = {
   tenantSlug: string;
   modifierGroups?: any[];
   tableParam?: string | null;
+  activePromotions?: any[];
 };
 
 export function CatalogProductList({
@@ -32,6 +33,7 @@ export function CatalogProductList({
   tenantSlug,
   modifierGroups = [],
   tableParam: initialTableParam,
+  activePromotions = [],
 }: CatalogProductListProps) {
   const searchParams = useSearchParams();
   const tableParam = initialTableParam || searchParams.get("table");
@@ -92,6 +94,19 @@ export function CatalogProductList({
     ...categories,
     ...(productsByCategory["uncategorized"]?.length > 0 ? [{ id: "uncategorized", name: "Lainnya" }] : []),
   ], [displayBestSellers, actualRecommended, categories, productsByCategory]);
+
+  // Helper to calculate product pricing with potongan
+  const getProductPricing = useCallback((product: Product) => {
+    const origPrice = Number(product.price);
+    const discount = Number(product.potongan || 0);
+    const finalPrice = Math.max(0, origPrice - discount);
+    return {
+      origPrice,
+      discount,
+      finalPrice,
+      hasDiscount: discount > 0,
+    };
+  }, []);
 
   const formatSoldCount = (sold?: number | null): string | null => {
     if (!sold || sold <= 0) return null;
@@ -210,10 +225,11 @@ export function CatalogProductList({
       }
     } else {
       // Products without modifiers add directly to cart
+      const { finalPrice } = getProductPricing(product);
       addItem({
         productId: product.id,
         name: product.name,
-        price: Number(product.price),
+        price: finalPrice,
         imageUrl: product.imageUrl,
       });
       toast.success(`${product.name} ditambahkan ke keranjang`);
@@ -239,10 +255,11 @@ export function CatalogProductList({
         updateQuantity(item.cartItemId, item.quantity + 1);
         toast.success(`${product.name} (+1)`);
       } else {
+        const { finalPrice } = getProductPricing(product);
         addItem({
           productId: product.id,
           name: product.name,
-          price: Number(product.price),
+          price: finalPrice,
           imageUrl: product.imageUrl,
         });
       }
@@ -324,9 +341,28 @@ export function CatalogProductList({
           {/* Bottom Area: Price & Tambah / Stepper Directly Below Price */}
           <div className="pt-2 mt-auto space-y-1.5">
             <div>
-              <span className="font-semibold text-sm sm:text-base text-gray-900 block leading-tight">
-                {formatCurrency(Number(product.price))}
-              </span>
+              {(() => {
+                const { origPrice, finalPrice, hasDiscount } = getProductPricing(product);
+                if (hasDiscount) {
+                  return (
+                    <div className="space-y-0.5">
+                      <div className="flex items-baseline gap-1.5 flex-wrap">
+                        <span className="font-semibold text-sm sm:text-base text-rose-600 block leading-tight">
+                          {formatCurrency(finalPrice)}
+                        </span>
+                        <span className="text-xs text-gray-400 line-through">
+                          {formatCurrency(origPrice)}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                }
+                return (
+                  <span className="font-semibold text-sm sm:text-base text-gray-900 block leading-tight">
+                    {formatCurrency(origPrice)}
+                  </span>
+                );
+              })()}
             </div>
 
             {/* Action Button: Located below the price */}
@@ -429,12 +465,18 @@ export function CatalogProductList({
           )}
 
           {/* Top Badges */}
-          {product.isFeatured && (
-            <div className="absolute top-2 left-2 z-10 bg-slate-900/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1 backdrop-blur-xs tracking-wider uppercase">
-              
-              <span>Best Seller</span>
-            </div>
-          )}
+          <div className="absolute top-2 left-2 z-10 flex flex-col gap-1 items-start">
+            {product.isFeatured && (
+              <div className="bg-slate-900/90 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1 backdrop-blur-xs tracking-wider uppercase">
+                <span>Best Seller</span>
+              </div>
+            )}
+            {Number(product.potongan || 0) > 0 && (
+              <div className="bg-rose-600 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1 backdrop-blur-xs tracking-wider uppercase">
+                <span>Hemat {formatCurrency(Number(product.potongan))}</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Product Info & Action Button */}
@@ -448,9 +490,26 @@ export function CatalogProductList({
                 {product.description}
               </p>
             )}
-            <div className="font-semibold text-xs sm:text-sm text-gray-900 mt-1">
-              {formatCurrency(Number(product.price))}
-            </div>
+            {(() => {
+              const { origPrice, finalPrice, hasDiscount } = getProductPricing(product);
+              if (hasDiscount) {
+                return (
+                  <div className="mt-1 flex items-baseline gap-1.5 flex-wrap">
+                    <span className="font-semibold text-xs sm:text-sm text-rose-600">
+                      {formatCurrency(finalPrice)}
+                    </span>
+                    <span className="text-[11px] text-gray-400 line-through">
+                      {formatCurrency(origPrice)}
+                    </span>
+                  </div>
+                );
+              }
+              return (
+                <div className="font-semibold text-xs sm:text-sm text-gray-900 mt-1">
+                  {formatCurrency(origPrice)}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Action Button: "Add" vs Inline Stepper */}
@@ -459,7 +518,7 @@ export function CatalogProductList({
               <button
                 type="button"
                 onClick={(e) => handleAddButtonClick(e, product)}
-                className="w-full h-8 sm:h-9 rounded-full border  border-catalog-primary text-catalog-primary hover:bg-catalog-primary hover:text-white font-bold text-xs flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-2xs"
+                className="w-full h-8 sm:h-9 rounded-full border border-catalog-primary text-catalog-primary hover:bg-catalog-primary hover:text-white font-semibold text-xs flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-2xs"
               >
                 Add
               </button>
@@ -476,7 +535,7 @@ export function CatalogProductList({
                 >
                   <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
                 </button>
-                <span className="font-bold text-xs sm:text-sm text-gray-900 font-sans min-w-[20px] text-center">
+                <span className="font-semibold text-xs sm:text-sm text-gray-900 font-sans min-w-[20px] text-center">
                   {totalQty}
                 </span>
                 <button
@@ -711,11 +770,12 @@ export function CatalogProductList({
           if (editingCartItemId) {
             removeItem(editingCartItemId);
           }
+          const { finalPrice } = getProductPricing(product);
           addItem(
             {
               productId: product.id,
               name: product.name,
-              price: Number(product.price) + extraPrice,
+              price: finalPrice + extraPrice,
               imageUrl: product.imageUrl,
               modifiers,
               notes,

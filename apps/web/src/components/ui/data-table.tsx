@@ -26,6 +26,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, Loader2, ArrowUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
+export { AppTable, type AppTableProps, type AppTableColumn } from './app-table';
 
 interface DataTableProps<TData, TValue> {
   columns: any;
@@ -39,6 +40,7 @@ interface DataTableProps<TData, TValue> {
   rowSelection?: RowSelectionState;
   onRowSelectionChange?: React.Dispatch<React.SetStateAction<RowSelectionState>>;
   toolbar?: React.ReactNode;
+  headerTheme?: 'blue' | 'default';
 }
 
 export function DataTable<TData, TValue>({
@@ -53,6 +55,7 @@ export function DataTable<TData, TValue>({
   rowSelection: controlledRowSelection,
   onRowSelectionChange: setControlledRowSelection,
   toolbar,
+  headerTheme = 'blue',
 }: DataTableProps<TData, TValue>) {
   const [mounted, setMounted] = React.useState(false);
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -181,14 +184,33 @@ export function DataTable<TData, TValue>({
           </div>
         )}
       </div>
-      <div className="rounded-xl border bg-card overflow-hidden">
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-card overflow-hidden shadow-xs">
         <Table>
-          <TableHeader>
+          <TableHeader
+            className={cn(
+              headerTheme === 'blue' &&
+                'bg-blue-50/50 dark:bg-blue-950/30 text-slate-700 dark:text-slate-300 border-b border-blue-100/80 dark:border-blue-900/40'
+            )}
+          >
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
+              <TableRow
+                key={headerGroup.id}
+                className={cn(
+                  headerTheme === 'blue'
+                    ? 'border-none bg-transparent hover:bg-transparent'
+                    : 'border-b'
+                )}
+              >
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id}>
+                    <TableHead
+                      key={header.id}
+                      className={cn(
+                        headerTheme === 'blue'
+                          ? 'text-slate-700 dark:text-slate-300 font-semibold text-xs sm:text-sm h-11 px-3.5 tracking-tight whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&_[role=checkbox]]:border-blue-300 dark:[&_[role=checkbox]]:border-blue-700 [&_[role=checkbox]]:bg-white dark:[&_[role=checkbox]]:bg-slate-900 [&_[role=checkbox][data-state=checked]]:bg-blue-600 [&_[role=checkbox][data-state=checked]]:text-white [&_[role=checkbox][data-state=checked]]:border-blue-600 [&_button]:text-slate-700 dark:[&_button]:text-slate-300 [&_button:hover]:text-slate-900 dark:[&_button:hover]:text-white [&_button:hover]:bg-blue-100/70 dark:[&_button:hover]:bg-blue-900/50 [&_svg]:text-slate-600 dark:[&_svg]:text-slate-400'
+                          : 'h-10 px-2'
+                      )}
+                    >
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -209,12 +231,18 @@ export function DataTable<TData, TValue>({
                   data-state={row.getIsSelected() && 'selected'}
                   onClick={() => onRowClick && onRowClick(row.original)}
                   className={cn(
-                    onRowClick && 'cursor-pointer hover:bg-muted/50',
-                    row.getIsSelected() && 'bg-primary/5 dark:bg-primary/10 hover:bg-primary/10'
+                    'border-b border-slate-100 dark:border-slate-800/80 transition-colors',
+                    onRowClick && 'cursor-pointer',
+                    headerTheme === 'blue'
+                      ? 'hover:bg-blue-50/40 dark:hover:bg-blue-950/20 data-[state=selected]:bg-blue-50/70 dark:data-[state=selected]:bg-blue-950/40'
+                      : 'hover:bg-muted/50 data-[state=selected]:bg-muted'
                   )}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell
+                      key={cell.id}
+                      className="px-3.5 py-3 text-xs sm:text-sm align-middle"
+                    >
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -227,9 +255,17 @@ export function DataTable<TData, TValue>({
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="h-24 text-center text-muted-foreground"
+                  className="h-32 text-center text-muted-foreground"
                 >
-                  Tidak ada data.
+                  <div className="flex flex-col items-center justify-center py-6 space-y-1.5">
+                    <Search className="w-6 h-6 text-muted-foreground/40 mb-1" />
+                    <span className="font-semibold text-sm text-foreground">
+                      Tidak ada data ditemukan
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      Coba ubah kata kunci pencarian atau filter yang dipilih.
+                    </span>
+                  </div>
                 </TableCell>
               </TableRow>
             )}

@@ -41,6 +41,7 @@ interface PaymentModalProps {
     tax: number;
     serviceCharge: number;
     platformFee: number;
+    rounding?: number;
     grandTotal: number;
   }) => Promise<void>;
   posSettings: any;
@@ -53,7 +54,7 @@ export function PaymentModal({
   onConfirm,
   posSettings,
 }: PaymentModalProps) {
-  const [paymentMethod, setPaymentMethod] = React.useState<'cash' | 'qris' | 'card' | 'transfer'>('cash');
+  const [paymentMethod, setPaymentMethod] = React.useState<'cash' | 'qris_static' | 'qris_dynamic' | 'card' | 'transfer'>('cash');
   const [cashReceivedStr, setCashReceivedStr] = React.useState('');
   const [isProcessing, setIsProcessing] = React.useState(false);
 
@@ -76,7 +77,16 @@ export function PaymentModal({
   const taxableSubtotal = Math.max(0, subtotalAmount - discountAmount);
   const taxAmount = taxRate > 0 ? (taxableSubtotal * taxRate) / 100 : 0;
   const serviceChargeAmount = serviceRate > 0 ? (taxableSubtotal * serviceRate) / 100 : 0;
-  const grandTotal = Math.round(taxableSubtotal + taxAmount + serviceChargeAmount);
+  const rawTotal = taxableSubtotal + taxAmount + serviceChargeAmount;
+  let roundingAmount = 0;
+  if (posSettings?.posRounding) {
+    const roundedInt = Math.round(rawTotal);
+    const remainder = roundedInt % 100;
+    if (remainder > 0) {
+      roundingAmount = 100 - remainder;
+    }
+  }
+  const grandTotal = Math.round(rawTotal) + roundingAmount;
 
   // Platform commissions (for online food orders)
   let platformCommissionRate = 0;
@@ -159,25 +169,33 @@ export function PaymentModal({
     return sorted.slice(0, 3);
   }, [grandTotal]);
 
-  const handleSubmit = async () => {
-    if (!isCashSufficient || isProcessing) return;
+  const submittingRef = React.useRef(false);
 
+  const handleSubmit = async () => {
+    if (!isCashSufficient || isProcessing || submittingRef.current) return;
+
+    submittingRef.current = true;
     setIsProcessing(true);
-    await onConfirm({
-      cashReceived: paymentMethod === 'cash' ? cashReceived : grandTotal,
-      change: Math.max(0, change),
-      paymentMethod,
-      orderType: orderType || 'DINE_IN',
-      customerName: customerName || undefined,
-      tableNumber: tableNumber || undefined,
-      discount: discountAmount,
-      promoCode: appliedPromo?.name,
-      tax: taxAmount,
-      serviceCharge: serviceChargeAmount,
-      platformFee: platformFeeAmount,
-      grandTotal,
-    });
-    setIsProcessing(false);
+    try {
+      await onConfirm({
+        cashReceived: paymentMethod === 'cash' ? cashReceived : grandTotal,
+        change: Math.max(0, change),
+        paymentMethod,
+        orderType: orderType || 'DINE_IN',
+        customerName: customerName || undefined,
+        tableNumber: tableNumber || undefined,
+        discount: discountAmount,
+        promoCode: appliedPromo?.code || appliedPromo?.name || undefined,
+        tax: taxAmount,
+        serviceCharge: serviceChargeAmount,
+        platformFee: platformFeeAmount,
+        rounding: roundingAmount,
+        grandTotal,
+      });
+    } finally {
+      setIsProcessing(false);
+      submittingRef.current = false;
+    }
   };
 
   // Human-readable Order Type description
@@ -239,59 +257,74 @@ export function PaymentModal({
         </DialogHeader>
 
         <div className="p-4 space-y-3.5">
-          {/* Payment Method Selector Tabs */}
-          <div className="grid grid-cols-4 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl gap-1">
+          {/* Payment Method Selector Tabs (5 Options: Tunai, QRIS Toko, QR Dinamis, EDC, Transfer) */}
+          <div className="grid grid-cols-5 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl gap-1">
             <button
               type="button"
               onClick={() => setPaymentMethod('cash')}
               className={cn(
-                "py-2 px-1.5 rounded-lg text-xs font-semibold flex flex-col items-center gap-1 transition-all cursor-pointer",
+                "py-2 px-1 rounded-lg text-xs font-semibold flex flex-col items-center gap-1 transition-all cursor-pointer text-center",
                 paymentMethod === 'cash'
                   ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-2xs"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <Banknote className="w-4 h-4" />
-              <span>Tunai</span>
+              <Banknote className="w-4 h-4 shrink-0" />
+              <span className="truncate w-full text-[11px] leading-tight">Tunai</span>
             </button>
             <button
               type="button"
-              onClick={() => setPaymentMethod('qris')}
+              onClick={() => setPaymentMethod('qris_static')}
               className={cn(
-                "py-2 px-1.5 rounded-lg text-xs font-semibold flex flex-col items-center gap-1 transition-all cursor-pointer",
-                paymentMethod === 'qris'
+                "py-2 px-1 rounded-lg text-xs font-semibold flex flex-col items-center gap-1 transition-all cursor-pointer text-center",
+                paymentMethod === 'qris_static'
                   ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-2xs"
                   : "text-muted-foreground hover:text-foreground"
               )}
+              title="QRIS Statis Toko (Stiker fisik merchant, bebas fee MDR)"
             >
-              <QrCode className="w-4 h-4" />
-              <span>QRIS</span>
+              <QrCode className="w-4 h-4 shrink-0" />
+              <span className="truncate w-full text-[11px] leading-tight">QRIS Toko</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPaymentMethod('qris_dynamic')}
+              className={cn(
+                "py-2 px-1 rounded-lg text-xs font-semibold flex flex-col items-center gap-1 transition-all cursor-pointer text-center",
+                paymentMethod === 'qris_dynamic'
+                  ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-2xs"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              title="QRIS Dinamis Menuin (Nominal otomatis terkunci, MDR 0.7%)"
+            >
+              <QrCode className="w-4 h-4 shrink-0 text-blue-600" />
+              <span className="truncate w-full text-[11px] leading-tight">QR Dinamis</span>
             </button>
             <button
               type="button"
               onClick={() => setPaymentMethod('card')}
               className={cn(
-                "py-2 px-1.5 rounded-lg text-xs font-semibold flex flex-col items-center gap-1 transition-all cursor-pointer",
+                "py-2 px-1 rounded-lg text-xs font-semibold flex flex-col items-center gap-1 transition-all cursor-pointer text-center",
                 paymentMethod === 'card'
                   ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-2xs"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <CreditCard className="w-4 h-4" />
-              <span>Kartu EDC</span>
+              <CreditCard className="w-4 h-4 shrink-0" />
+              <span className="truncate w-full text-[11px] leading-tight">Kartu EDC</span>
             </button>
             <button
               type="button"
               onClick={() => setPaymentMethod('transfer')}
               className={cn(
-                "py-2 px-1.5 rounded-lg text-xs font-semibold flex flex-col items-center gap-1 transition-all cursor-pointer",
+                "py-2 px-1 rounded-lg text-xs font-semibold flex flex-col items-center gap-1 transition-all cursor-pointer text-center",
                 paymentMethod === 'transfer'
                   ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-2xs"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <ArrowRightLeft className="w-4 h-4" />
-              <span>Transfer</span>
+              <ArrowRightLeft className="w-4 h-4 shrink-0" />
+              <span className="truncate w-full text-[11px] leading-tight">Transfer</span>
             </button>
           </div>
 
@@ -380,22 +413,72 @@ export function PaymentModal({
             </div>
           ) : (
             /* Non-cash Payment Guidance */
-            <div className="py-6 px-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/70 dark:border-slate-800 text-center space-y-2">
-              <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 mx-auto flex items-center justify-center">
-                {paymentMethod === 'qris' && <QrCode className="w-5 h-5" />}
-                {paymentMethod === 'card' && <CreditCard className="w-5 h-5" />}
-                {paymentMethod === 'transfer' && <ArrowRightLeft className="w-5 h-5" />}
-              </div>
-              <p className="text-xs font-semibold text-foreground">
-                {paymentMethod === 'qris' && 'Instruksi Pembayaran QRIS'}
-                {paymentMethod === 'card' && 'Instruksi Mesin EDC'}
-                {paymentMethod === 'transfer' && 'Instruksi Transfer Bank'}
-              </p>
-              <p className="text-[11px] text-muted-foreground max-w-xs mx-auto">
-                {paymentMethod === 'qris' && 'Tunjukkan kode QR dinamis/statis kepada pelanggan. Setelah verifikasi pembayaran berhasil di aplikasi, klik Selesaikan.'}
-                {paymentMethod === 'card' && 'Gesek atau tap kartu pelanggan pada terminal EDC kasir. Pastikan struk EDC tercetak.'}
-                {paymentMethod === 'transfer' && 'Verifikasi dana masuk pada mutasi rekening toko sebelum menyelesaikan transaksi ini.'}
-              </p>
+            <div className="space-y-3">
+              {paymentMethod === 'qris_static' && (
+                <div className="py-5 px-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/70 dark:border-slate-800 text-center space-y-2">
+                  <div className="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 mx-auto flex items-center justify-center">
+                    <QrCode className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-foreground">
+                      QRIS Statis Toko (Stiker Merchant)
+                    </p>
+                    <span className="inline-block px-2 py-0.5 mt-1 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                      100% Utuh Masuk Rekening Toko • Bebas Potongan MDR
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground max-w-sm mx-auto leading-relaxed">
+                    Arahkan pelanggan memindai stiker QRIS fisik toko Anda dan mengetik nominal <span className="font-semibold text-foreground">{formatCurrency(grandTotal)}</span>. Setelah kasir memverifikasi dana masuk di notifikasi/mutasi m-banking toko, klik Selesaikan.
+                  </p>
+                </div>
+              )}
+
+              {paymentMethod === 'qris_dynamic' && (
+                <div className="py-5 px-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/70 dark:border-slate-800 text-center space-y-2">
+                  <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 mx-auto flex items-center justify-center">
+                    <QrCode className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-foreground">
+                      QRIS Dinamis Menuin (Payment Gateway)
+                    </p>
+                    <span className="inline-block px-2 py-0.5 mt-1 rounded text-[10px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                      Nominal Terkunci Otomatis • MDR DOKU 0.7%
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground max-w-sm mx-auto leading-relaxed">
+                    Tunjukkan kode QR dinamis kepada pelanggan. Nominal terkunci otomatis sebesar <span className="font-semibold text-foreground">{formatCurrency(grandTotal)}</span>. Dana dicairkan via settlement digital Menuin setelah verifikasi sistem.
+                  </p>
+                </div>
+              )}
+
+              {paymentMethod === 'card' && (
+                <div className="py-5 px-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/70 dark:border-slate-800 text-center space-y-2">
+                  <div className="w-10 h-10 rounded-full bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 mx-auto flex items-center justify-center">
+                    <CreditCard className="w-5 h-5" />
+                  </div>
+                  <p className="text-xs font-semibold text-foreground">
+                    Instruksi Mesin EDC Toko
+                  </p>
+                  <p className="text-[11px] text-muted-foreground max-w-xs mx-auto leading-relaxed">
+                    Gesek atau tap kartu pelanggan pada terminal EDC kasir toko Anda. Pastikan struk transaksi EDC fisik telah berhasil keluar dari mesin.
+                  </p>
+                </div>
+              )}
+
+              {paymentMethod === 'transfer' && (
+                <div className="py-5 px-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/70 dark:border-slate-800 text-center space-y-2">
+                  <div className="w-10 h-10 rounded-full bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 mx-auto flex items-center justify-center">
+                    <ArrowRightLeft className="w-5 h-5" />
+                  </div>
+                  <p className="text-xs font-semibold text-foreground">
+                    Instruksi Transfer Bank Manual
+                  </p>
+                  <p className="text-[11px] text-muted-foreground max-w-xs mx-auto leading-relaxed">
+                    Verifikasi dana transfer pelanggan di mutasi rekening bank toko Anda sebelum menyelesaikan transaksi ini.
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>

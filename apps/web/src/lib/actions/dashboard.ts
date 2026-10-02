@@ -568,7 +568,7 @@ export async function getDashboardDataForTenant(
       },
       {
         channel: 'STOREFRONT',
-        label: 'Storefront (Self-Order)',
+        label: 'Self QR (Pesan Mandiri)',
         totalAmount: storefrontAmount,
         transactionCount: storefrontCount,
         percentage: totalChannelSales > 0 ? Number(((storefrontAmount / totalChannelSales) * 100).toFixed(1)) : 0,
@@ -940,7 +940,7 @@ export async function getDashboardDataForTenant(
       insights.push({
         id: 'insight-channel',
         type: 'trend',
-        text: `Adopsi Storefront Mandiri: ${storefrontRatio}% pesanan (${storefrontCount} transaksi) dipesan mandiri oleh pelanggan via QR meja/Storefront, mempercepat alur antrean kasir.`,
+        text: `Adopsi Self QR: ${storefrontRatio}% pesanan (${storefrontCount} transaksi) dipesan mandiri oleh pelanggan via Self QR meja, mempercepat alur antrean kasir.`,
       });
     }
 

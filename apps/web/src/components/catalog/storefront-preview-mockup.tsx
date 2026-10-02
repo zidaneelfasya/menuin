@@ -43,7 +43,7 @@ export function StorefrontPreviewMockup({ slug, outletKey }: StorefrontPreviewMo
         <div className="flex items-center gap-2">
           
           <div className="flex flex-col">
-            <span className="text-xs font-semibold text-gray-900 leading-none">Live Storefront</span>
+            <span className="text-xs font-semibold text-gray-900 leading-none">Live Self QR</span>
             <span className="text-[10px] text-gray-400 mt-0.5">iPhone 14</span>
           </div>
         </div>
@@ -89,7 +89,7 @@ export function StorefrontPreviewMockup({ slug, outletKey }: StorefrontPreviewMo
             {isLoading && (
               <div className="absolute inset-0 z-20 bg-white/90 backdrop-blur-xs flex flex-col items-center justify-center text-center p-4">
                 <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin mb-2" />
-                <p className="text-xs font-semibold text-gray-700">Memuat Storefront...</p>
+                <p className="text-xs font-semibold text-gray-700">Memuat Self QR...</p>
                 <p className="text-[10px] text-gray-400 mt-0.5">Menghubungkan ke toko online Anda</p>
               </div>
             )}
@@ -99,7 +99,7 @@ export function StorefrontPreviewMockup({ slug, outletKey }: StorefrontPreviewMo
               key={iframeKey}
               ref={iframeRef}
               src={storeUrl}
-              title="Storefront Live Preview"
+              title="Self QR Live Preview"
               onLoad={() => setIsLoading(false)}
               className="w-full h-full border-0 select-text overflow-y-auto"
             />

@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { db } from "@/lib/db";
 import { tenants, products, productModifierGroups, modifierGroups } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, or } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { CheckoutClient } from "./checkout-client";
 
@@ -14,7 +14,11 @@ export default async function CheckoutPage({
 }) {
   await connection();
   const { slug } = await params;
-  const tenantResult = await db.select().from(tenants).where(eq(tenants.slug, slug)).limit(1);
+  const tenantResult = await db
+    .select()
+    .from(tenants)
+    .where(or(eq(tenants.slug, slug), eq(tenants.outletKey, slug)))
+    .limit(1);
   if (tenantResult.length === 0) notFound();
   
   const tenant = tenantResult[0];
@@ -37,6 +41,7 @@ export default async function CheckoutPage({
     taxRate: parseFloat(tenant.posTaxRate || '0'),
     taxName: tenant.taxName || 'Pajak (PB1)',
     serviceChargeRate: parseFloat(tenant.serviceChargeRate || '0'),
+    posRounding: tenant.posRounding ?? false,
   };
 
   // Get products available online
@@ -83,7 +88,7 @@ export default async function CheckoutPage({
 
   return (
     <CheckoutClient
-      tenantSlug={slug}
+      tenantSlug={tenant.slug || slug}
       settings={settings}
       products={productsWithMods}
       modifierGroups={tenantModGroups as any}

@@ -23,6 +23,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  TableFooter,
+} from '@/components/ui/table';
 import { 
   Dialog, 
   DialogContent, 
@@ -444,50 +453,50 @@ export function FinanceClient({ initialData }: { initialData: FinancialData }) {
         </CardHeader>
 
         <CardContent className="p-0 overflow-x-auto">
-          <table className="w-full text-xs text-left">
-            <thead className="bg-slate-100/80 text-slate-600 font-semibold border-b">
-              <tr>
-                <th className="py-3 px-4">No. Order</th>
-                <th className="py-3 px-4">Waktu</th>
-                <th className="py-3 px-4">Tipe & Meja</th>
-                <th className="py-3 px-4">Pelanggan</th>
-                <th className="py-3 px-4">Metode Bayar</th>
-                <th className="py-3 px-4 text-right">Subtotal</th>
-                <th className="py-3 px-4 text-right">Pajak</th>
-                <th className="py-3 px-4 text-right">Total</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 font-mono">
+          <Table className="w-full text-xs text-left">
+            <TableHeader>
+              <TableRow className="border-none bg-transparent hover:bg-transparent">
+                <TableHead className="py-3 px-4">No. Order</TableHead>
+                <TableHead className="py-3 px-4">Waktu</TableHead>
+                <TableHead className="py-3 px-4">Tipe & Meja</TableHead>
+                <TableHead className="py-3 px-4">Pelanggan</TableHead>
+                <TableHead className="py-3 px-4">Metode Bayar</TableHead>
+                <TableHead className="py-3 px-4 text-right">Subtotal</TableHead>
+                <TableHead className="py-3 px-4 text-right">Pajak</TableHead>
+                <TableHead className="py-3 px-4 text-right">Total</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody className="divide-y divide-slate-100 font-mono">
               {filteredTransactions.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="py-8 text-center text-slate-400 font-sans">
+                <TableRow>
+                  <TableCell colSpan={8} className="py-8 text-center text-slate-400 font-sans">
                     Tidak ada transaksi pada periode ini.
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ) : (
                 filteredTransactions.map((trx) => {
                   const isCanceled = trx.status === 'CANCELLED' || trx.status === 'CANCELED' || trx.paymentStatus === 'CANCELED' || trx.paymentStatus === 'REFUNDED';
                   return (
-                    <tr key={trx.id} className={`hover:bg-slate-50/80 transition-colors ${isCanceled ? 'opacity-50 line-through bg-slate-50/40' : ''}`}>
-                      <td className="py-3 px-4 font-bold text-slate-900">
+                    <TableRow key={trx.id} className={`hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-colors ${isCanceled ? 'opacity-50 line-through bg-slate-50/40' : ''}`}>
+                      <TableCell className="py-3 px-4 font-bold text-slate-900">
                         {trx.orderNumber || trx.id.slice(0, 8)}
-                      </td>
-                      <td className="py-3 px-4 font-sans text-slate-500 text-[11px]">
+                      </TableCell>
+                      <TableCell className="py-3 px-4 font-sans text-slate-500 text-[11px]">
                         {trx.createdAt ? new Date(trx.createdAt).toLocaleDateString('id-ID', {
                           day: '2-digit',
                           month: 'short',
                           hour: '2-digit',
                           minute: '2-digit'
                         }) : '-'}
-                      </td>
-                      <td className="py-3 px-4 font-sans">
+                      </TableCell>
+                      <TableCell className="py-3 px-4 font-sans">
                         <span className="font-semibold text-slate-800 uppercase">{trx.orderType || 'DINE IN'}</span>
                         {trx.tableNumber && <span className="text-slate-500 text-[11px] block">Meja {trx.tableNumber}</span>}
-                      </td>
-                      <td className="py-3 px-4 font-sans text-slate-700">
+                      </TableCell>
+                      <TableCell className="py-3 px-4 font-sans text-slate-700">
                         {trx.customerName || '-'}
-                      </td>
-                      <td className="py-3 px-4 font-sans">
+                      </TableCell>
+                      <TableCell className="py-3 px-4 font-sans">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 text-slate-800 border">
                             {trx.paymentMethod || 'TUNAI'}
@@ -503,34 +512,34 @@ export function FinanceClient({ initialData }: { initialData: FinancialData }) {
                             Alasan: {trx.voidReason}
                           </div>
                         )}
-                      </td>
-                      <td className="py-3 px-4 text-right text-slate-600">
+                      </TableCell>
+                      <TableCell className="py-3 px-4 text-right text-slate-600">
                         Rp {parseFloat(trx.totalAmount || '0').toLocaleString('id-ID')}
-                      </td>
-                      <td className="py-3 px-4 text-right text-slate-600">
+                      </TableCell>
+                      <TableCell className="py-3 px-4 text-right text-slate-600">
                         Rp {parseFloat(trx.tax || '0').toLocaleString('id-ID')}
-                      </td>
-                      <td className="py-3 px-4 text-right font-bold text-slate-950 font-sans">
+                      </TableCell>
+                      <TableCell className="py-3 px-4 text-right font-bold text-slate-950 font-sans">
                         Rp {parseFloat(trx.grandTotal || '0').toLocaleString('id-ID')}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   );
                 })
               )}
-            </tbody>
+            </TableBody>
             {filteredTransactions.length > 0 && (
-              <tfoot className="bg-slate-100/90 font-bold border-t-2 border-slate-300 text-slate-900">
-                <tr>
-                  <td colSpan={5} className="py-3 px-4 text-right uppercase font-sans">TOTAL:</td>
-                  <td className="py-3 px-4 text-right font-mono">Rp {(summary.totalOmset - summary.totalPajak - summary.totalLayanan + summary.totalDiskon).toLocaleString('id-ID')}</td>
-                  <td className="py-3 px-4 text-right font-mono">Rp {summary.totalPajak.toLocaleString('id-ID')}</td>
-                  <td className="py-3 px-4 text-right font-mono text-sm text-emerald-700">
+              <TableFooter className="bg-slate-100/90 font-bold border-t-2 border-slate-300 text-slate-900">
+                <TableRow>
+                  <TableCell colSpan={5} className="py-3 px-4 text-right uppercase font-sans">TOTAL:</TableCell>
+                  <TableCell className="py-3 px-4 text-right font-mono">Rp {(summary.totalOmset - summary.totalPajak - summary.totalLayanan + summary.totalDiskon).toLocaleString('id-ID')}</TableCell>
+                  <TableCell className="py-3 px-4 text-right font-mono">Rp {summary.totalPajak.toLocaleString('id-ID')}</TableCell>
+                  <TableCell className="py-3 px-4 text-right font-mono text-sm text-emerald-700">
                     Rp {summary.totalOmset.toLocaleString('id-ID')}
-                  </td>
-                </tr>
-              </tfoot>
+                  </TableCell>
+                </TableRow>
+              </TableFooter>
             )}
-          </table>
+          </Table>
         </CardContent>
       </Card>
 

@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { categories, products, tenants, productModifierGroups, modifierGroups, transactionItems } from "@/lib/db/schema";
+import { categories, products, tenants, productModifierGroups, modifierGroups, transactionItems, promotions } from "@/lib/db/schema";
 import { eq, and, sql, or } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { CatalogProductList } from "./catalog-product-list";
@@ -23,12 +23,27 @@ export default async function StorePage({
   if (tenantResult.length === 0) notFound();
   const tenant = tenantResult[0];
 
+  // Get active promotions for this tenant
+  const now = new Date();
+  const allTenantPromos = await db
+    .select()
+    .from(promotions)
+    .where(and(eq(promotions.tenantId, tenant.id), eq(promotions.isActive, true)))
+    .orderBy(promotions.name);
+
+  const activePromos = allTenantPromos.filter((p) => {
+    if (p.startDate && new Date(p.startDate) > now) return false;
+    if (p.endDate && new Date(p.endDate) < now) return false;
+    return true;
+  });
+
   // Get products available online
   const productsList = await db
     .select({
       id: products.id,
       name: products.name,
       price: products.price,
+      potongan: products.potongan,
       imageUrl: products.imageUrl,
       description: products.description,
       isFeatured: products.isFeatured,
@@ -129,6 +144,7 @@ export default async function StorePage({
         recommendedProducts={recommendedProducts}
         featuredProducts={recommendedProducts}
         modifierGroups={tenantModGroups}
+        activePromotions={activePromos}
       />
       <ActiveOrderBanner tenantSlug={tenant.slug!} />
     </div>

@@ -16,11 +16,13 @@ export function PosSettingsForm({ initialData }: { initialData: any }) {
   const [posKitchenSync, setPosKitchenSync] = useState(initialData.posKitchenSync ?? false);
   const [posOrderTypeSelection, setPosOrderTypeSelection] = useState(initialData.posOrderTypeSelection || "MANUAL");
   const [posPinBestSellers, setPosPinBestSellers] = useState(initialData.posPinBestSellers ?? true);
+  const [posRounding, setPosRounding] = useState(initialData.posRounding ?? false);
 
   const hasChanges = 
     posKitchenSync !== (initialData.posKitchenSync ?? false) ||
     posOrderTypeSelection !== (initialData.posOrderTypeSelection || "MANUAL") ||
-    posPinBestSellers !== (initialData.posPinBestSellers ?? true);
+    posPinBestSellers !== (initialData.posPinBestSellers ?? true) ||
+    posRounding !== (initialData.posRounding ?? false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,6 +32,7 @@ export function PosSettingsForm({ initialData }: { initialData: any }) {
     formData.append("posKitchenSync", posKitchenSync.toString());
     formData.append("posOrderTypeSelection", posOrderTypeSelection);
     formData.append("posPinBestSellers", posPinBestSellers.toString());
+    formData.append("posRounding", posRounding.toString());
 
     const result = await updatePosSettings(formData);
     
@@ -45,11 +48,11 @@ export function PosSettingsForm({ initialData }: { initialData: any }) {
     <div className="bg-card border border-border/70 rounded-2xl p-6 sm:p-8 shadow-xs">
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="pb-5 border-b border-border/60">
-          <h2 className="text-lg font-bold tracking-tight text-foreground">
+          <h2 className="text-lg font-semibold tracking-tight text-foreground">
             Alur Kasir & Operasional POS
           </h2>
           <p className="text-xs text-muted-foreground mt-1">
-            Konfigurasi alur checkout kasir dan integrasi tiket pesanan dapur.
+            Konfigurasi alur checkout kasir, pembulatan nominal, dan integrasi tiket pesanan dapur.
           </p>
         </div>
 
@@ -112,6 +115,30 @@ export function PosSettingsForm({ initialData }: { initialData: any }) {
                 id="posPinBestSellersForm"
                 checked={posPinBestSellers}
                 onCheckedChange={setPosPinBestSellers}
+              />
+            </div>
+          </div>
+
+          {/* ROW 4: PEMBULATAN NOMINAL KE RATUSAN (ROUNDING 1-99) */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-center">
+            <div className="md:col-span-8 space-y-0.5">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="posRoundingForm" className="text-sm font-semibold text-foreground">
+                  Pembulatan Nominal ke Ratusan (Rounding 1–99)
+                </Label>
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-[#0e59f9] border border-blue-200/60 dark:bg-blue-950/50 dark:text-blue-300">
+                  Kasir POS & Struk
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Membulatkan total pembayaran ke atas (ceiling) ke ratusan rupiah terdekat jika terdapat pecahan 1–99 rupiah (contoh: Rp 49.950 digenapkan menjadi Rp 50.000) untuk mempermudah pembayaran tunai dan uang kembalian kasir.
+              </p>
+            </div>
+            <div className="md:col-span-4 flex justify-start md:justify-end">
+              <Switch
+                id="posRoundingForm"
+                checked={posRounding}
+                onCheckedChange={setPosRounding}
               />
             </div>
           </div>

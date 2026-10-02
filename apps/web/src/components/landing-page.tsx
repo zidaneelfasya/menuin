@@ -625,7 +625,7 @@ export default function LandingPage({
               <div>
                 <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#71717a]">Harga</p>
                 <h2 className="mt-4 max-w-[18ch] text-[clamp(30px,4.2vw,48px)] font-semibold leading-[1.05] tracking-[-0.04em] text-[#0a0a0a] text-balance">
-                  Bayar bulanan, tanpa kontrak tahunan.
+                  Harga jelas, bayar bulanan atau tahunan.
                 </h2>
               </div>
               <Link

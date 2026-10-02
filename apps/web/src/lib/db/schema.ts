@@ -60,12 +60,18 @@ export const tenants = pgTable('tenants', {
   
   // Preferensi Tampilan
   posPinBestSellers: boolean('pos_pin_best_sellers').default(true).notNull(),
+  posRounding: boolean('pos_rounding').default(false).notNull(), // Pembulatan nominal ratusan (1-99) ke atas
   
   // Payment settings
   onlinePaymentEnabled: boolean('online_payment_enabled').default(false).notNull(),
   midtransServerKey: text('midtrans_server_key'),
   midtransClientKey: text('midtrans_client_key'),
   midtransEnvironment: text('midtrans_environment').default('sandbox'),
+  // DOKU Payment Gateway Settings (Sub-Account & QRIS Dinamis)
+  dokuClientId: text('doku_client_id'),
+  dokuSecretKey: text('doku_secret_key'),
+  dokuSubAccountId: text('doku_sub_account_id'),
+  dokuEnvironment: text('doku_environment').default('sandbox'),
 
   // Custom Receipt & Kitchen Ticket Settings (OWNER / MANAGER)
   receiptHeader: text('receipt_header'),
@@ -221,6 +227,9 @@ export const promotions = pgTable('promotions', {
   value: decimal('value', { precision: 12, scale: 2 }).notNull(),
   minOrder: decimal('min_order', { precision: 12, scale: 2 }).default('0').notNull(),
   maxDiscount: decimal('max_discount', { precision: 12, scale: 2 }),
+  targetType: text('target_type').default('ALL').notNull(), // 'ALL' | 'SPECIFIC_PRODUCTS'
+  applicableProductIds: jsonb('applicable_product_ids').default(sql`'[]'::jsonb`), // array of product IDs
+  minProductQty: integer('min_product_qty').default(1).notNull(),
   isActive: boolean('is_active').default(true).notNull(),
   startDate: timestamp('start_date', { withTimezone: true }),
   endDate: timestamp('end_date', { withTimezone: true }),
@@ -257,6 +266,7 @@ export const products = pgTable('products', {
   barcode: text('barcode'),
   price: decimal('price', { precision: 12, scale: 2 }).notNull(),
   costPrice: decimal('cost_price', { precision: 12, scale: 2 }).notNull(),
+  potongan: decimal('potongan', { precision: 12, scale: 2 }).default('0'),
   stock: integer('stock').notNull().default(0),
   minStock: integer('min_stock').notNull().default(5),
   trackStock: boolean('track_stock').default(true).notNull(),
@@ -338,8 +348,12 @@ export const transactions = pgTable('transactions', {
   tax: decimal('tax', { precision: 12, scale: 2 }).default('0'),
   serviceCharge: decimal('service_charge', { precision: 12, scale: 2 }).default('0'),
   platformFee: decimal('platform_fee', { precision: 12, scale: 2 }).default('0'),
+  rounding: decimal('rounding', { precision: 12, scale: 2 }).default('0'),
   grandTotal: decimal('grand_total', { precision: 12, scale: 2 }).notNull(),
+  gatewayFee: decimal('gateway_fee', { precision: 12, scale: 2 }).default('0').notNull(),
+  netAmount: decimal('net_amount', { precision: 12, scale: 2 }),
   promoCode: text('promo_code'),
+  promotionId: uuid('promotion_id').references(() => promotions.id, { onDelete: 'set null' }),
   paymentMethod: text('payment_method').notNull(),
   paymentStatus: text('payment_status').notNull().default('PENDING'), // PENDING, PAID, CANCELED, REFUNDED
   status: text('status').notNull().default('COMPLETED'),
@@ -518,4 +532,19 @@ export const devicePairingCodes = pgTable('device_pairing_codes', {
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
+
+export const expenses = pgTable('expenses', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
+  category: text('category').notNull(), // 'BAHAN_BAKU', 'PACKAGING', 'OPERASIONAL', 'GAJI', 'PEMELIHARAAN', 'MARKETING', 'LAINNYA'
+  amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
+  paymentMethod: text('payment_method').default('TUNAI').notNull(), // 'TUNAI', 'BANK_TRANSFER', 'EWALLET'
+  description: text('description').notNull(),
+  date: timestamp('date', { withTimezone: true }).defaultNow().notNull(),
+  receiptUrl: text('receipt_url'),
+  createdByMembershipId: uuid('created_by_membership_id'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
 

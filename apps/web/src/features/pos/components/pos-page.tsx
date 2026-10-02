@@ -79,6 +79,8 @@ export function POSPage({
     setIsPaymentModalOpen(true);
   }, [items.length, currentShift]);
 
+  const isSubmittingPaymentRef = React.useRef(false);
+
   const handleConfirmPayment = async (paymentData: {
     cashReceived: number;
     change: number;
@@ -91,75 +93,89 @@ export function POSPage({
     tax: number;
     serviceCharge: number;
     platformFee: number;
+    rounding?: number;
     grandTotal: number;
   }) => {
+    if (isSubmittingPaymentRef.current) return;
+    isSubmittingPaymentRef.current = true;
     setIsProcessing(true);
     const toastId = toast.loading('Memproses transaksi...');
 
-    const payload = {
-      totalAmount: getTotal(),
-      discount: paymentData.discount,
-      promoCode: paymentData.promoCode,
-      tax: paymentData.tax,
-      serviceCharge: paymentData.serviceCharge,
-      platformFee: paymentData.platformFee,
-      grandTotal: paymentData.grandTotal,
-      paymentMethod: paymentData.paymentMethod,
-      customerName: paymentData.customerName,
-      tableNumber: paymentData.tableNumber,
-      orderType: paymentData.orderType || 'DINE_IN',
-      posKitchenSync: posSettings?.posKitchenSync || false,
-      items: items.map(item => ({
-        productId: item.productId,
-        quantity: item.quantity,
-        price: item.price,
-        subtotal: item.price * item.quantity,
-        modifiers: item.modifiers,
-        notes: item.notes,
-      }))
-    };
-
-    const result = await createTransaction(payload);
-    setIsProcessing(false);
-
-    if (result.success && result.transactionId) {
-      toast.success('Transaksi berhasil!', { id: toastId });
-      
-      const cashier = currentShift?.cashierName || 'Kasir';
-      const newReceipt: ReceiptData = {
-        transactionId: result.transactionId || 'TRX-UNKNOWN',
-        date: new Date(),
-        cashierName: cashier,
-        subtotal: getTotal(),
+    try {
+      const payload = {
+        totalAmount: getTotal(),
         discount: paymentData.discount,
         promoCode: paymentData.promoCode,
         tax: paymentData.tax,
         serviceCharge: paymentData.serviceCharge,
-        totalAmount: paymentData.grandTotal,
-        cashReceived: paymentData.cashReceived,
-        change: paymentData.change,
-        paymentMethod: paymentData.paymentMethod.toUpperCase(),
-        orderType: paymentData.orderType,
+        platformFee: paymentData.platformFee,
+        rounding: paymentData.rounding || 0,
+        grandTotal: paymentData.grandTotal,
+        paymentMethod: paymentData.paymentMethod,
         customerName: paymentData.customerName,
         tableNumber: paymentData.tableNumber,
+        orderType: paymentData.orderType || 'DINE_IN',
+        posKitchenSync: posSettings?.posKitchenSync || false,
         items: items.map(item => ({
-          name: item.name,
+          productId: item.productId,
           quantity: item.quantity,
           price: item.price,
           subtotal: item.price * item.quantity,
-          notes: item.notes,
           modifiers: item.modifiers,
+          notes: item.notes,
         }))
       };
-      
-      const initialMode = (posSettings?.kitchenPrintEnabled ?? false) ? 'all' : 'customer';
-      setPrintMode(initialMode);
-      setReceiptData(newReceipt);
-      setIsPaymentModalOpen(false);
-      setIsSuccessModalOpen(true);
-      clearCart();
-    } else {
-      toast.error(result.error || 'Terjadi kesalahan.', { id: toastId });
+
+      const result = await createTransaction(payload);
+      toast.dismiss(toastId);
+
+      if (result.success && result.transactionId) {
+        toast.success('Transaksi berhasil!', { duration: 3500 });
+        
+        const cashier = currentShift?.cashierName || 'Kasir';
+        const newReceipt: ReceiptData = {
+          transactionId: result.transactionId || 'TRX-UNKNOWN',
+          date: new Date(),
+          cashierName: cashier,
+          subtotal: getTotal(),
+          discount: paymentData.discount,
+          promoCode: paymentData.promoCode,
+          tax: paymentData.tax,
+          serviceCharge: paymentData.serviceCharge,
+          rounding: paymentData.rounding || 0,
+          totalAmount: paymentData.grandTotal,
+          cashReceived: paymentData.cashReceived,
+          change: paymentData.change,
+          paymentMethod: paymentData.paymentMethod.toUpperCase(),
+          orderType: paymentData.orderType,
+          customerName: paymentData.customerName,
+          tableNumber: paymentData.tableNumber,
+          items: items.map(item => ({
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+            subtotal: item.price * item.quantity,
+            notes: item.notes,
+            modifiers: item.modifiers,
+          }))
+        };
+        
+        const initialMode = (posSettings?.kitchenPrintEnabled ?? false) ? 'all' : 'customer';
+        setPrintMode(initialMode);
+        setReceiptData(newReceipt);
+        setIsPaymentModalOpen(false);
+        setIsSuccessModalOpen(true);
+        clearCart();
+      } else {
+        toast.error(result.error || 'Terjadi kesalahan.', { duration: 4000 });
+      }
+    } catch (err: any) {
+      console.error('Error in handleConfirmPayment:', err);
+      toast.dismiss(toastId);
+      toast.error(err?.message || 'Gagal memproses transaksi. Silakan coba lagi.', { duration: 4000 });
+    } finally {
+      setIsProcessing(false);
+      isSubmittingPaymentRef.current = false;
     }
   };
 
@@ -190,7 +206,16 @@ export function POSPage({
   const taxableSubtotal = Math.max(0, cartSubtotal - discount);
   const serviceChargeAmount = serviceRate > 0 ? (taxableSubtotal * serviceRate) / 100 : 0;
   const taxAmount = taxRate > 0 ? (taxableSubtotal * taxRate) / 100 : 0;
-  const cartGrandTotal = taxableSubtotal + serviceChargeAmount + taxAmount;
+  const rawTotal = taxableSubtotal + serviceChargeAmount + taxAmount;
+  let roundingAmount = 0;
+  if (posSettings?.posRounding) {
+    const roundedInt = Math.round(rawTotal);
+    const remainder = roundedInt % 100;
+    if (remainder > 0) {
+      roundingAmount = 100 - remainder;
+    }
+  }
+  const cartGrandTotal = Math.round(rawTotal) + roundingAmount;
 
   return (
     <>
