@@ -69,7 +69,7 @@ describe('SNAP client', () => {
     expect(qrCall.url).toBe('https://api-sandbox.doku.com/snap-adapter/b2b/v1.0/qr/qr-mpm-generate');
     expect(header(qrCall, 'Authorization')).toBe('Bearer tok-1');
     expect(header(qrCall, 'X-PARTNER-ID')).toBe('BRN-TEST-1');
-    expect(header(qrCall, 'CHANNEL-ID')).toBe('95221');
+    expect(header(qrCall, 'CHANNEL-ID')).toBe('H2H');
     expect(header(qrCall, 'X-EXTERNAL-ID')).toMatch(/^\d+$/);
     const expectedSig = signSymmetric('SK-snap', {
       method: 'POST',

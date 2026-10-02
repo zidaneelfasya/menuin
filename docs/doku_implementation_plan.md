@@ -67,7 +67,7 @@ Acuan teknis lengkap: [`doku_payment_gateway_migration_source_of_truth.md`](./do
   - `tsc`, `eslint`, dan `next build` bersih.
 
 ### Perlu dikonfirmasi saat uji live sandbox
-- `CHANNEL-ID` yang benar untuk QRIS (default `95221`).
+- `CHANNEL-ID` yang benar untuk QRIS. Default `H2H` mengikuti Postman collection resmi DOKU; sebelumnya keliru `95221`.
 - Field wajib `additionalInfo` pada `qr-mpm-generate`.
 - Cara DOKU memetakan merchant QRIS ke Sub Account outlet. Saat ini setiap outlet memakai `doku_qris_merchant_id`/`doku_qris_terminal_id` sendiri, diisi admin sesuai data dari DOKU.
 

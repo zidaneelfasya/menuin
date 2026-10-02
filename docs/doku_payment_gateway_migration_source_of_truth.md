@@ -146,6 +146,22 @@ Signature = "HMACSHA256=" + base64(HMAC-SHA256(secretKey, Component))
 
 **Pemetaan status:** `SUCCESS → PAID`, `PENDING → PENDING`, `FAILED → FAILED`, `EXPIRED → EXPIRED`. Status lain diabaikan.
 
+## 5a. Verifikasi terhadap Postman collection resmi DOKU
+
+Sumber: [`doku-postman-collection.json`](https://raw.githubusercontent.com/PTNUSASATUINTIARTHA-DOKU/doku-postman-collection/main/doku-postman-collection.json).
+
+| Bagian | Hasil |
+|---|---|
+| Checkout `POST /checkout/v1/payment` | ✅ Signature (Digest base64 SHA-256, `HMACSHA256=` + base64 HMAC-SHA256, timestamp `toISOString().slice(0,19)+"Z"`) dan bentuk body cocok |
+| Check Status `GET /orders/v1/status/{invoice}` | ✅ Signature tanpa Digest, cocok |
+| Create Sub Account `POST /sac-merchant/v1/accounts` | ✅ Body `{account:{email,type:"STANDARD",name}}` cocok |
+| Token B2B `POST /authorization/v1/access-token/b2b` | ✅ Header `X-CLIENT-KEY`/`X-TIMESTAMP`/`X-SIGNATURE` (SHA256withRSA `clientId\|timestamp`), body `grantType` cocok |
+| Signature simetris SNAP | ✅ HMAC-SHA512 base64 atas `METHOD:path:token:lowerhex(sha256(minify(body))):timestamp` cocok |
+| `CHANNEL-ID` | ⚠️ **Diperbaiki.** DOKU memakai kode seperti `H2H`/`VA008`, bukan angka 5 digit. Default sekarang `H2H` |
+| QRIS MPM generate/query, refund Checkout, settlement report | ❌ Tidak ada di collection. Masih berdasarkan library resmi dan standar SNAP, perlu dikonfirmasi saat uji live |
+
+Catatan: collection juga memuat **Sub Account V2** (`/sub-account/v2.0/register`, SNAP-style dengan `parentProfileId` = Client ID). Implementasi saat ini memakai V1, yang ID `SAC-…`-nya dipakai di `additional_info.account.id` Checkout. Pindah ke V2 hanya bila DOKU mensyaratkannya.
+
 ## 5b. Spesifikasi SNAP (QRIS)
 
 Format berikut diverifikasi dari library resmi `doku-nodejs-library`:
@@ -157,7 +173,7 @@ Format berikut diverifikasi dari library resmi `doku-nodejs-library`:
 | Request transaksi | Header `Authorization: Bearer`, `X-TIMESTAMP`, `X-PARTNER-ID`, `X-EXTERNAL-ID` (numerik unik), `CHANNEL-ID`, `X-SIGNATURE = base64(HMAC-SHA512(secretKey, METHOD:path:token:lowerhex(sha256(body)):timestamp))` |
 | QRIS | `POST /snap-adapter/b2b/v1.0/qr/qr-mpm-generate` dan `/qr-mpm-query` (`serviceCode = 47`). `latestTransactionStatus`: `00` lunas, `01`–`03` pending, `05`/`06` gagal, `04`/`07` diabaikan |
 
-**Perlu dikonfirmasi saat uji live:** `CHANNEL-ID` (default `95221`), field wajib `additionalInfo` pada generate, dan cara DOKU memetakan merchant QRIS per Sub Account (saat ini dipakai `tenants.doku_qris_merchant_id`/`doku_qris_terminal_id`).
+**Perlu dikonfirmasi saat uji live:** nilai `CHANNEL-ID` untuk QRIS (default `H2H`, mengikuti request Direct API di Postman collection DOKU), field wajib `additionalInfo` pada generate, dan cara DOKU memetakan merchant QRIS per Sub Account (saat ini dipakai `tenants.doku_qris_merchant_id`/`doku_qris_terminal_id`).
 
 ## 6. Data
 
@@ -237,7 +253,7 @@ Format berikut diverifikasi dari library resmi `doku-nodejs-library`:
 | `CRON_SECRET` | ✅ untuk cron | Header `Authorization: Bearer <CRON_SECRET>` |
 | `DOKU_PRIVATE_KEY` | ✅ untuk QRIS | Private key RSA milik Menuin (PEM). Public key-nya diunggah ke DOKU. |
 | `DOKU_PUBLIC_KEY` | ✅ untuk QRIS | Public key **milik DOKU** (PEM). Aplikasi menolak start kalau isinya sama dengan public key Menuin. |
-| `DOKU_SNAP_CHANNEL_ID` | – | Default `95221` |
+| `DOKU_SNAP_CHANNEL_ID` | – | Default `H2H` |
 | `DOKU_QRIS_MERCHANT_ID` / `DOKU_QRIS_TERMINAL_ID` | sandbox | Merchant QRIS default untuk sandbox |
 | `DOKU_QRIS_VALIDITY_MINUTES` | – | Default `10` |
 

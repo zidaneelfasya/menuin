@@ -107,7 +107,7 @@ describe('SNAP config', () => {
       DOKU_PUBLIC_KEY: pem(doku.publicKey, 'spki'),
     });
     const config = getSnapConfig();
-    expect(config.channelId).toBe('95221');
+    expect(config.channelId).toBe('H2H');
     expect(config.qrisValidityMinutes).toBe(10);
   });
 

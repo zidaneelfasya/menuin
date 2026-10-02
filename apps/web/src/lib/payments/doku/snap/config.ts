@@ -13,8 +13,9 @@ import { getDokuConfig, type DokuConfig } from '../config';
 const envSchema = z.object({
   DOKU_PRIVATE_KEY: z.string().trim().min(1, 'DOKU_PRIVATE_KEY wajib diisi'),
   DOKU_PUBLIC_KEY: z.string().trim().min(1, 'DOKU_PUBLIC_KEY wajib diisi'),
-  // CHANNEL-ID SNAP (5 digit). Nilai default mengikuti contoh DOKU; sesuaikan bila DOKU memberi nilai lain.
-  DOKU_SNAP_CHANNEL_ID: z.string().regex(/^\d{5}$/).default('95221'),
+  // CHANNEL-ID SNAP. Di Postman collection resmi DOKU nilainya kode seperti "H2H" (Direct API)
+  // atau "VA008"; konfirmasikan nilai untuk QRIS ke DOKU bila berbeda.
+  DOKU_SNAP_CHANNEL_ID: z.string().trim().regex(/^[A-Za-z0-9_-]{1,20}$/).default('H2H'),
   // Default merchant/terminal QRIS (sandbox). Di production tiap outlet memakai miliknya sendiri.
   DOKU_QRIS_MERCHANT_ID: z.string().trim().optional(),
   DOKU_QRIS_TERMINAL_ID: z.string().trim().optional(),
