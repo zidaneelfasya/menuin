@@ -1,8 +1,10 @@
 import { CreateTenantForm } from './create-tenant-form';
 import { getAuthenticatedAccount } from '@/lib/actions/auth-context';
+import { redirect } from 'next/navigation';
 
 export default async function CreateTenantPage() {
-  await getAuthenticatedAccount(); // Ensure the user is logged in
+  const account = await getAuthenticatedAccount().catch(() => null);
+  if (!account) redirect('/auth/login');
   
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40 items-center justify-center p-4">

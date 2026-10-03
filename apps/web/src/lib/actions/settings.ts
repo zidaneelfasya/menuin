@@ -7,6 +7,7 @@ import { getCurrentUser } from './auth';
 import { revalidatePath } from 'next/cache';
 import { DokuApiError } from '@/lib/payments/doku/client';
 import { getDokuConfig } from '@/lib/payments/doku/config';
+import { getSnapConfig } from '@/lib/payments/doku/snap/config';
 import { createSubAccount } from '@/lib/payments/doku/sub-account';
 
 function getPaymentGatewayInfo(tenant: typeof tenants.$inferSelect) {
@@ -203,8 +204,14 @@ export async function activateDokuSubAccount() {
     }
 
     try {
-      getDokuConfig();
-    } catch {
+      // Sub Account V2 memakai SNAP, jadi kredensial SNAP (RSA key) juga wajib.
+      getSnapConfig();
+    } catch (error) {
+      console.error(JSON.stringify({
+        scope: 'payments',
+        event: 'sub_account_config_missing',
+        error: error instanceof Error ? error.message : String(error),
+      }));
       return { success: false, error: 'Payment gateway platform belum dikonfigurasi. Hubungi tim Menuin.' };
     }
 
@@ -262,6 +269,7 @@ export async function activateDokuSubAccount() {
         event: 'sub_account_create_failed',
         tenantId: tenant.id,
         status: error instanceof DokuApiError ? error.status : null,
+        response: error instanceof DokuApiError ? error.responseBody : null,
         error: error instanceof Error ? error.message : String(error),
       }));
       return { success: false, error: 'Gagal membuat akun pembayaran di DOKU. Silakan coba lagi.' };
