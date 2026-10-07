@@ -27,6 +27,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+} from "@/components/ui/table";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -173,7 +181,7 @@ export function SalesDetailClient({ initialData, outletKey }: SalesDetailClientP
           "Penjualan Kotor (Rp)": g,
           "Diskon (Rp)": d,
           "Fee Gateway (Rp)": f,
-          "Penjualan Bersih (Rp)": n,
+          "Net Sales (Rp)": n,
           Status: isCanceled ? "Dibatalkan" : "Selesai",
         };
       });
@@ -271,7 +279,7 @@ export function SalesDetailClient({ initialData, outletKey }: SalesDetailClientP
         {/* Metric 3: Penjualan Bersih */}
         <Card className="border border-[#0e59f9]/20 shadow-sm rounded-2xl bg-blue-50/20 p-4">
           <div className="text-[11px] font-semibold text-[#0e59f9] uppercase tracking-wider">
-            Penjualan Bersih
+            Net Sales
           </div>
           <div className="text-lg sm:text-xl font-semibold text-slate-900 mt-1.5 tracking-tight">
             {formatRupiah(filteredSummary.net)}
@@ -380,45 +388,44 @@ export function SalesDetailClient({ initialData, outletKey }: SalesDetailClientP
       {/* 4. TRANSACTION DATA TABLE */}
       {/* ==================================================== */}
       <Card className="border border-[#EAEFF8] shadow-sm rounded-2xl bg-white overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50/75 border-b border-[#EAEFF8] text-[11px] font-medium text-slate-500 uppercase tracking-wider">
-              <tr>
-                <th className="py-3 px-4">Waktu</th>
-                <th className="py-3 px-4">No. Transaksi</th>
-                <th className="py-3 px-4">Tipe & Meja</th>
-                <th className="py-3 px-4">Kanal</th>
-                <th className="py-3 px-4">Metode Bayar</th>
-                <th className="py-3 px-4 text-right">Kotor</th>
-                <th className="py-3 px-4 text-right">Diskon & Fee</th>
-                <th className="py-3 px-4 text-right">Bersih</th>
-                <th className="py-3 px-4 text-center">Status</th>
-                <th className="py-3 px-4 text-right">Aksi</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#EAEFF8]">
-              {paginatedTransactions.length === 0 ? (
-                <tr>
-                  <td colSpan={10} className="py-12 text-center text-slate-400">
-                    Tidak ada transaksi penjualan yang sesuai dengan filter.
-                  </td>
-                </tr>
-              ) : (
-                paginatedTransactions.map((t) => {
-                  const isCanceled = t.status === "CANCELLED" || t.status === "CANCELED" || t.paymentStatus === "CANCELED" || t.paymentStatus === "REFUNDED";
-                  const gross = parseFloat(t.totalAmount || "0") || 0;
-                  const disc = parseFloat(t.discount || "0") || 0;
-                  const fee = parseFloat(t.gatewayFee || "0") || 0;
-                  const net = Math.max(0, gross - disc - fee);
-                  const isQR = t.source === "QR" || t.source === "STOREFRONT" || t.source === "WEB_ORDER";
+        <Table className="w-full text-left text-xs">
+          <TableHeader>
+            <TableRow className="border-none bg-transparent hover:bg-transparent">
+              <TableHead className="py-3 px-4">Waktu</TableHead>
+              <TableHead className="py-3 px-4">No. Transaksi</TableHead>
+              <TableHead className="py-3 px-4">Tipe & Meja</TableHead>
+              <TableHead className="py-3 px-4">Kanal</TableHead>
+              <TableHead className="py-3 px-4">Metode Bayar</TableHead>
+              <TableHead className="py-3 px-4 text-right">Kotor</TableHead>
+              <TableHead className="py-3 px-4 text-right">Diskon & Fee</TableHead>
+              <TableHead className="py-3 px-4 text-right">Bersih</TableHead>
+              <TableHead className="py-3 px-4 text-center">Status</TableHead>
+              <TableHead className="py-3 px-4 text-right">Aksi</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody className="divide-y divide-[#EAEFF8]">
+            {paginatedTransactions.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={10} className="py-12 text-center text-slate-400">
+                  Tidak ada transaksi penjualan yang sesuai dengan filter.
+                </TableCell>
+              </TableRow>
+            ) : (
+              paginatedTransactions.map((t) => {
+                const isCanceled = t.status === "CANCELLED" || t.status === "CANCELED" || t.paymentStatus === "CANCELED" || t.paymentStatus === "REFUNDED";
+                const gross = parseFloat(t.totalAmount || "0") || 0;
+                const disc = parseFloat(t.discount || "0") || 0;
+                const fee = parseFloat(t.gatewayFee || "0") || 0;
+                const net = Math.max(0, gross - disc - fee);
+                const isQR = t.source === "QR" || t.source === "STOREFRONT" || t.source === "WEB_ORDER";
 
-                  return (
-                    <tr
-                      key={t.id}
-                      className="hover:bg-slate-50/70 transition-colors group"
-                    >
+                return (
+                  <TableRow
+                    key={t.id}
+                    className="hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-colors group"
+                  >
                       {/* Waktu */}
-                      <td className="py-3 px-4 whitespace-nowrap text-slate-600">
+                      <TableCell className="py-3 px-4 whitespace-nowrap text-slate-600">
                         {t.createdAt ? (
                           <>
                             <div className="font-medium text-slate-800">
@@ -439,27 +446,27 @@ export function SalesDetailClient({ initialData, outletKey }: SalesDetailClientP
                         ) : (
                           "-"
                         )}
-                      </td>
+                      </TableCell>
 
                       {/* No. Transaksi */}
-                      <td className="py-3 px-4 whitespace-nowrap">
+                      <TableCell className="py-3 px-4 whitespace-nowrap">
                         <span className="font-mono text-slate-700 font-semibold bg-slate-100 px-2 py-0.5 rounded-md text-[11px]">
                           {t.orderNumber || `#${t.id.slice(0, 8)}`}
                         </span>
-                      </td>
+                      </TableCell>
 
                       {/* Tipe & Meja */}
-                      <td className="py-3 px-4 whitespace-nowrap">
+                      <TableCell className="py-3 px-4 whitespace-nowrap">
                         <div className="font-medium text-slate-800">
                           {t.orderType === "TAKEAWAY" ? "Bawa Pulang" : "Makan di Tempat"}
                         </div>
                         <div className="text-[11px] text-slate-400">
                           {t.tableNumber ? `Meja ${t.tableNumber}` : t.customerName ? t.customerName : "Tanpa Meja"}
                         </div>
-                      </td>
+                      </TableCell>
 
                       {/* Kanal */}
-                      <td className="py-3 px-4 whitespace-nowrap">
+                      <TableCell className="py-3 px-4 whitespace-nowrap">
                         <span
                           className={cn(
                             "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium",
@@ -471,22 +478,22 @@ export function SalesDetailClient({ initialData, outletKey }: SalesDetailClientP
                           {isQR ? <Smartphone className="w-3 h-3" /> : <Store className="w-3 h-3" />}
                           {isQR ? "Self QR" : "Kasir POS"}
                         </span>
-                      </td>
+                      </TableCell>
 
                       {/* Metode Bayar */}
-                      <td className="py-3 px-4 whitespace-nowrap">
+                      <TableCell className="py-3 px-4 whitespace-nowrap">
                         <span className="font-medium text-slate-700">
                           {formatPaymentMethodLabel(t.paymentMethod)}
                         </span>
-                      </td>
+                      </TableCell>
 
                       {/* Kotor */}
-                      <td className="py-3 px-4 whitespace-nowrap text-right text-slate-600">
+                      <TableCell className="py-3 px-4 whitespace-nowrap text-right text-slate-600">
                         {formatRupiah(gross)}
-                      </td>
+                      </TableCell>
 
                       {/* Diskon & Fee */}
-                      <td className="py-3 px-4 whitespace-nowrap text-right text-slate-500">
+                      <TableCell className="py-3 px-4 whitespace-nowrap text-right text-slate-500">
                         {disc + fee > 0 ? (
                           <span className="text-rose-600 font-medium">
                             -{formatRupiah(disc + fee)}
@@ -494,15 +501,15 @@ export function SalesDetailClient({ initialData, outletKey }: SalesDetailClientP
                         ) : (
                           <span className="text-slate-400">Rp 0</span>
                         )}
-                      </td>
+                      </TableCell>
 
                       {/* Bersih */}
-                      <td className="py-3 px-4 whitespace-nowrap text-right font-semibold text-slate-900">
+                      <TableCell className="py-3 px-4 whitespace-nowrap text-right font-semibold text-slate-900">
                         {formatRupiah(net)}
-                      </td>
+                      </TableCell>
 
                       {/* Status */}
-                      <td className="py-3 px-4 whitespace-nowrap text-center">
+                      <TableCell className="py-3 px-4 whitespace-nowrap text-center">
                         <span
                           className={cn(
                             "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium",
@@ -523,10 +530,10 @@ export function SalesDetailClient({ initialData, outletKey }: SalesDetailClientP
                             </>
                           )}
                         </span>
-                      </td>
+                      </TableCell>
 
                       {/* Aksi */}
-                      <td className="py-3 px-4 whitespace-nowrap text-right">
+                      <TableCell className="py-3 px-4 whitespace-nowrap text-right">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -536,14 +543,13 @@ export function SalesDetailClient({ initialData, outletKey }: SalesDetailClientP
                           <Eye className="w-3.5 h-3.5 mr-1" />
                           Rincian
                         </Button>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   );
                 })
               )}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </Table>
 
         {/* Pagination Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 border-t border-[#EAEFF8] bg-slate-50/40">
@@ -662,7 +668,7 @@ export function SalesDetailClient({ initialData, outletKey }: SalesDetailClientP
                   </div>
                 )}
                 <div className="flex justify-between text-sm font-semibold text-slate-900 pt-2 border-t border-slate-100">
-                  <span>Penjualan Bersih (Net)</span>
+                  <span>Net Sales</span>
                   <span className="text-[#0e59f9]">
                     {formatRupiah(
                       Math.max(

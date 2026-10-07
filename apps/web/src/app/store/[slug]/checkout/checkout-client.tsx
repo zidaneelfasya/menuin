@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createOnlineOrder } from "@/lib/actions/public-catalog";
-import { getPublicPromotions, validatePublicPromoCode } from "@/lib/actions/promotions";
+import { validatePublicPromoCode } from "@/lib/actions/promotions";
 import Script from "next/script";
 import {
   ArrowLeft,
@@ -58,6 +58,7 @@ type CheckoutClientProps = {
     taxRate?: number;
     taxName?: string;
     serviceChargeRate?: number;
+    posRounding?: boolean;
   };
   products?: Product[];
   modifierGroups?: ModifierGroup[];
@@ -165,6 +166,23 @@ export function CheckoutClient({
     handleCloseEditSheet();
   };
 
+  // Promotions state (only manual promo code input)
+  const [promoCodeInput, setPromoCodeInput] = useState("");
+  const [isValidatingPromo, setIsValidatingPromo] = useState(false);
+  const [appliedPromo, setAppliedPromo] = useState<{
+    id: string;
+    code?: string;
+    name: string;
+    type: string;
+    value: number;
+    discountAmount: number;
+    minOrder?: number;
+    maxDiscount?: number | null;
+    targetType?: string;
+    applicableProductIds?: string[];
+    minProductQty?: number;
+  } | null>(null);
+
   useEffect(() => {
     const handlePopState = () => {
       if (isEditSheetOpen) {
@@ -177,29 +195,9 @@ export function CheckoutClient({
     return () => window.removeEventListener("popstate", handlePopState);
   }, [isEditSheetOpen]);
 
-  // Promotions
-  const [availablePromos, setAvailablePromos] = useState<any[]>([]);
-  const [promoCodeInput, setPromoCodeInput] = useState("");
-  const [isValidatingPromo, setIsValidatingPromo] = useState(false);
-  const [appliedPromo, setAppliedPromo] = useState<{
-    id: string;
-    code?: string;
-    name: string;
-    type: string;
-    value: number;
-    discountAmount: number;
-  } | null>(null);
-
   useEffect(() => {
     setMounted(true);
-
-    // Fetch store promotions
-    getPublicPromotions(tenantSlug).then((res) => {
-      if (res.success && res.data) {
-        setAvailablePromos(res.data);
-      }
-    });
-  }, [tenantSlug]);
+  }, []);
 
   useEffect(() => {
     // Reset loading state if page is restored from BFCache
@@ -230,7 +228,7 @@ export function CheckoutClient({
       };
     }
 
-    const promo = availablePromos.find((p) => p.id === appliedPromo.id) || appliedPromo;
+    const promo = appliedPromo;
     if (!promo) {
       return {
         discount: 0,
@@ -341,9 +339,11 @@ export function CheckoutClient({
 
     const finalDiscount = Math.min(rawDiscount, eligibleSubtotal, subTotal);
 
-    // Calculate per-cartItemId discount allocation
+    // Calculate per-cartItemId discount allocation ONLY for SPECIFIC_PRODUCTS.
+    // Global discounts (targetType !== "SPECIFIC_PRODUCTS") are applied at the order subtotal level
+    // after everything is totaled, so individual menu prices in the cart are not cut.
     const itemDiscounts: Record<string, number> = {};
-    if (finalDiscount > 0 && eligibleItems.length > 0) {
+    if (isSpecific && finalDiscount > 0 && eligibleItems.length > 0) {
       if (promo.type === "PERCENTAGE") {
         const sumItemRaw = eligibleItems.reduce(
           (sum, it) => sum + (it.price * it.quantity * promoVal) / 100,
@@ -380,7 +380,7 @@ export function CheckoutClient({
       isValid: true,
       error: null,
     };
-  }, [appliedPromo, availablePromos, items, subTotal]);
+  }, [appliedPromo, items, subTotal]);
 
   const promoDiscount = promoCalculation.discount;
 
@@ -389,7 +389,16 @@ export function CheckoutClient({
   const serviceChargeRate = settings.serviceChargeRate || 0;
   const taxAmount = (taxableSubtotal * taxRate) / 100;
   const serviceChargeAmount = (taxableSubtotal * serviceChargeRate) / 100;
-  const grandTotal = Math.max(0, taxableSubtotal + taxAmount + serviceChargeAmount);
+  const rawTotal = Math.max(0, taxableSubtotal + taxAmount + serviceChargeAmount);
+  let roundingAmount = 0;
+  if (settings.posRounding) {
+    const roundedInt = Math.round(rawTotal);
+    const remainder = roundedInt % 100;
+    if (remainder > 0) {
+      roundingAmount = 100 - remainder;
+    }
+  }
+  const grandTotal = Math.round(rawTotal) + roundingAmount;
 
   if (!mounted) return null;
 
@@ -398,15 +407,15 @@ export function CheckoutClient({
       ? "https://app.midtrans.com/snap/snap.js"
       : "https://app.sandbox.midtrans.com/snap/snap.js";
 
-  const handleApplyPromoCode = async (codeToApply?: string) => {
+  const handleApplyPromoCode = async (codeToApply?: string): Promise<boolean> => {
     const code = (codeToApply ?? promoCodeInput).trim().toUpperCase();
     if (!code) {
       toast.error("Silakan masukkan kode promo");
-      return;
+      return false;
     }
     if (subTotal <= 0) {
       toast.error("Keranjang belanja masih kosong");
-      return;
+      return false;
     }
 
     const cartItemsForPromo = items.map((i) => ({
@@ -420,7 +429,7 @@ export function CheckoutClient({
       const res = await validatePublicPromoCode(tenantSlug, code, subTotal, cartItemsForPromo);
       if (!res.success || !res.data) {
         toast.error(res.error || "Kode promo tidak valid");
-        return;
+        return false;
       }
 
       setAppliedPromo({
@@ -430,13 +439,19 @@ export function CheckoutClient({
         type: res.data.type,
         value: res.data.value,
         discountAmount: res.data.discountAmount,
+        minOrder: res.data.minOrder,
+        maxDiscount: res.data.maxDiscount,
+        targetType: res.data.targetType,
+        applicableProductIds: res.data.applicableProductIds,
       });
       setPromoCodeInput(res.data.code);
       toast.success(
         `Kode promo "${res.data.code}" berhasil digunakan! Hemat ${formatCurrency(res.data.discountAmount)}`
       );
+      return true;
     } catch (err: any) {
       toast.error("Gagal memeriksa kode promo");
+      return false;
     } finally {
       setIsValidatingPromo(false);
     }
@@ -684,7 +699,7 @@ export function CheckoutClient({
               </div>
             </div>
 
-            {/* Promo Code Section */}
+            {/* Promo Code Section (Hanya field kode promo) */}
             <div className="space-y-2.5 mt-4">
               <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 tracking-wider uppercase">
                 <Tag className="w-3.5 h-3.5 text-blue-600" />
@@ -698,7 +713,7 @@ export function CheckoutClient({
                     {/* TOP ROW */}
                     <div className="flex items-center justify-between relative z-10">
                       <span className="text-[11px] sm:text-xs font-medium text-white/90 tracking-wide">
-                        {appliedPromo.name || "Limited"}
+                        {appliedPromo.name || "Promo"}
                       </span>
                       <button
                         type="button"
@@ -722,7 +737,7 @@ export function CheckoutClient({
                     {/* SUBTITLE */}
                     <div className="relative z-10 mt-1">
                       <span className="text-[11px] font-medium text-white/80 tracking-wide">
-                        Coded • {appliedPromo.code}
+                        Kode • {appliedPromo.code}
                       </span>
                     </div>
 
@@ -817,37 +832,6 @@ export function CheckoutClient({
                       "Terapkan"
                     )}
                   </Button>
-                </div>
-              )}
-
-              {/* Available Store Promos List */}
-              {!appliedPromo && availablePromos.length > 0 && (
-                <div className="space-y-1.5 pt-1">
-                  <div className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
-                    Promo Toko Tersedia
-                  </div>
-                  <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-                    {availablePromos.map((p) => (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => handleApplyPromoCode(p.code)}
-                        className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-200 bg-blue-50/70 hover:bg-blue-100 text-blue-800 text-xs font-medium transition-colors cursor-pointer"
-                      >
-                        <Tag className="w-3 h-3 text-blue-600" />
-                        <span className="font-mono font-bold">{p.code}</span>
-                        <span>•</span>
-                        <span>
-                          {p.type === "PERCENTAGE"
-                            ? `${p.value}% OFF`
-                            : `${formatCurrency(Number(p.value))} OFF`}
-                        </span>
-                        <span className="ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-600 text-white">
-                          Pakai
-                        </span>
-                      </button>
-                    ))}
-                  </div>
                 </div>
               )}
             </div>
@@ -997,11 +981,16 @@ export function CheckoutClient({
                   <div className="flex justify-between text-emerald-600 font-semibold text-sm sm:text-base">
                     <span className="flex items-center gap-1.5">
                       <Tag className="w-4 h-4 text-emerald-600" />
-                      <span>Diskon Promo ({appliedPromo?.name})</span>
+                      <span>
+                        {promoCalculation.isSpecific
+                          ? `Diskon Menu Promo (${appliedPromo?.name})`
+                          : `Diskon Global (${appliedPromo?.name})`}
+                      </span>
                     </span>
                     <span>-{formatCurrency(promoDiscount)}</span>
                   </div>
-                  {promoCalculation.isSpecific && promoCalculation.discountedItemNames.length > 0 && (
+
+                  {promoCalculation.isSpecific && promoCalculation.discountedItemNames.length > 0 ? (
                     <div className="bg-emerald-50/90 border border-emerald-200/70 rounded-xl p-2.5 text-xs text-emerald-800 space-y-1">
                       <div className="flex items-center justify-between font-semibold">
                         <span className="flex items-center gap-1">
@@ -1013,6 +1002,19 @@ export function CheckoutClient({
                       <div className="text-[11px] text-emerald-700 pl-4 font-medium">
                         {promoCalculation.discountedItemNames.join(", ")}
                       </div>
+                    </div>
+                  ) : (
+                    <div className="text-[11px] text-emerald-700 font-medium flex items-center gap-1">
+                      <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <span>Dipotong dari total belanja seluruh menu</span>
+                    </div>
+                  )}
+
+                  {/* Subtotal Setelah Diskon / DPP jika ada pajak atau biaya layanan */}
+                  {(serviceChargeRate > 0 || taxRate > 0) && (
+                    <div className="flex justify-between text-xs text-gray-500 pt-1 border-t border-dashed border-gray-100">
+                      <span>Subtotal Setelah Diskon (Dasar Pajak)</span>
+                      <span className="font-medium text-gray-700">{formatCurrency(taxableSubtotal)}</span>
                     </div>
                   )}
                 </div>
@@ -1038,6 +1040,15 @@ export function CheckoutClient({
                     {settings.taxName || "Pajak (PB1)"} ({taxRate}%)
                   </span>
                   <span className="font-semibold text-gray-800">{formatCurrency(taxAmount)}</span>
+                </div>
+              )}
+
+              {roundingAmount > 0 && (
+                <div className="flex justify-between text-gray-600">
+                  <span>Pembulatan (Rounding)</span>
+                  <span className="font-semibold text-gray-800">
+                    +{formatCurrency(roundingAmount)}
+                  </span>
                 </div>
               )}
 

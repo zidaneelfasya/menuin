@@ -63,34 +63,36 @@ export default async function CatalogTablesPage() {
                   <p>Belum ada meja yang ditambahkan.</p>
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nama Meja</TableHead>
-                      <TableHead>Link Pemesanan (QR Data)</TableHead>
-                      <TableHead className="w-[120px]"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {tablesList.map((table) => {
-                      const tableUrl = catalogUrl ? `${catalogUrl}/?table=${encodeURIComponent(table.name)}` : '';
-                      return (
-                        <TableRow key={table.id}>
-                          <TableCell className="font-medium">{table.name}</TableCell>
-                          <TableCell className="text-xs font-mono text-muted-foreground break-all">
-                            {tableUrl || 'Atur URL Katalog terlebih dahulu'}
-                          </TableCell>
-                          <TableCell className="text-right flex items-center justify-end gap-1">
-                            {tableUrl && <TableQrDialog tableName={table.name} url={tableUrl} />}
-                            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive/90 hover:bg-destructive/10">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+                <div className="rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nama Meja</TableHead>
+                        <TableHead>Link Pemesanan (QR Data)</TableHead>
+                        <TableHead className="w-[120px]"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {tablesList.map((table) => {
+                        const tableUrl = catalogUrl ? `${catalogUrl}/?table=${encodeURIComponent(table.name)}` : '';
+                        return (
+                          <TableRow key={table.id}>
+                            <TableCell className="font-medium">{table.name}</TableCell>
+                            <TableCell className="text-xs font-mono text-muted-foreground break-all">
+                              {tableUrl || 'Atur URL Katalog terlebih dahulu'}
+                            </TableCell>
+                            <TableCell className="text-right flex items-center justify-end gap-1">
+                              {tableUrl && <TableQrDialog tableName={table.name} url={tableUrl} />}
+                              <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive/90 hover:bg-destructive/10">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>

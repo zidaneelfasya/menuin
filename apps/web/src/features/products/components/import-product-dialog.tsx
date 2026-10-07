@@ -11,6 +11,14 @@ import {
   DialogFooter 
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+} from '@/components/ui/table';
 import { 
   Upload, 
   FileSpreadsheet, 
@@ -285,35 +293,35 @@ export function ImportProductDialog() {
                 </span>
                 <span className="text-[10px] text-muted-foreground">Menampilkan contoh 4 baris pertama</span>
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-800 text-muted-foreground">
-                      <th className="pb-1.5 font-medium">Nama Menu</th>
-                      <th className="pb-1.5 font-medium">Kategori</th>
-                      <th className="pb-1.5 font-medium text-right">Harga Jual</th>
-                      <th className="pb-1.5 font-medium text-right">Stok</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs">
+                <Table className="w-full text-left text-xs">
+                  <TableHeader>
+                    <TableRow className="border-none bg-transparent hover:bg-transparent">
+                      <TableHead className="py-2 px-3 font-semibold">Nama Menu</TableHead>
+                      <TableHead className="py-2 px-3 font-semibold">Kategori</TableHead>
+                      <TableHead className="py-2 px-3 font-semibold text-right">Harga Jual</TableHead>
+                      <TableHead className="py-2 px-3 font-semibold text-right">Stok</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                     {previewRows.map((row, idx) => (
-                      <tr key={idx} className="hover:bg-slate-100/50 dark:hover:bg-slate-800/30">
-                        <td className="py-1.5 font-medium text-slate-900 dark:text-slate-100 truncate max-w-[160px]">
+                      <TableRow key={idx} className="hover:bg-blue-50/40 dark:hover:bg-blue-950/20">
+                        <TableCell className="py-2 px-3 font-medium text-slate-900 dark:text-slate-100 truncate max-w-[160px]">
                           {row.name}
-                        </td>
-                        <td className="py-1.5 text-slate-600 dark:text-slate-400">
+                        </TableCell>
+                        <TableCell className="py-2 px-3 text-slate-600 dark:text-slate-400">
                           {row.category}
-                        </td>
-                        <td className="py-1.5 font-mono text-right text-emerald-600 dark:text-emerald-400 font-medium">
+                        </TableCell>
+                        <TableCell className="py-2 px-3 font-mono text-right text-emerald-600 dark:text-emerald-400 font-medium">
                           {formatCurrency(row.price || 0)}
-                        </td>
-                        <td className="py-1.5 font-mono text-right text-slate-700 dark:text-slate-300">
+                        </TableCell>
+                        <TableCell className="py-2 px-3 font-mono text-right text-slate-700 dark:text-slate-300">
                           {row.stock ?? 0}
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             </div>
           )}

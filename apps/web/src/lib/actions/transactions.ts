@@ -14,6 +14,7 @@ type CheckoutPayload = {
   tax: number;
   serviceCharge?: number;
   platformFee?: number;
+  rounding?: number;
   grandTotal: number;
   promoCode?: string;
   promotionId?: string;
@@ -83,6 +84,7 @@ export async function createTransaction(payload: CheckoutPayload) {
         tax: (payload.tax || 0).toString(),
         serviceCharge: (payload.serviceCharge || 0).toString(),
         platformFee: (payload.platformFee || 0).toString(),
+        rounding: (payload.rounding || 0).toString(),
         grandTotal: payload.grandTotal.toString(),
         gatewayFee: gatewayFeeNum.toString(),
         netAmount: netAmountNum.toString(),
@@ -175,6 +177,7 @@ export async function getTransactionDetails(transactionId: string) {
         tax: transactions.tax,
         serviceCharge: transactions.serviceCharge,
         platformFee: transactions.platformFee,
+        rounding: transactions.rounding,
         gatewayFee: transactions.gatewayFee,
         netAmount: transactions.netAmount,
         grandTotal: transactions.grandTotal,

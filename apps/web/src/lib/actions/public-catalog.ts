@@ -141,7 +141,16 @@ export async function createOnlineOrder(formData: z.infer<typeof orderSchema>) {
     const taxAmount = (taxableSubtotal * taxRate) / 100;
     const serviceChargeAmount = (taxableSubtotal * serviceRate) / 100;
 
-    const grandTotal = Math.max(0, taxableSubtotal + taxAmount + serviceChargeAmount);
+    const rawTotal = Math.max(0, taxableSubtotal + taxAmount + serviceChargeAmount);
+    let roundingAmount = 0;
+    if (tenant.posRounding) {
+      const roundedInt = Math.round(rawTotal);
+      const remainder = roundedInt % 100;
+      if (remainder > 0) {
+        roundingAmount = 100 - remainder;
+      }
+    }
+    const grandTotal = Math.round(rawTotal) + roundingAmount;
 
     const initialStatus = 'PENDING';
     
@@ -165,6 +174,7 @@ export async function createOnlineOrder(formData: z.infer<typeof orderSchema>) {
       promotionId: validatedPromoId,
       tax: taxAmount.toString(),
       serviceCharge: serviceChargeAmount.toString(),
+      rounding: roundingAmount.toString(),
       grandTotal: grandTotal.toString(),
       gatewayFee: gatewayFeeNum.toString(),
       netAmount: netAmountNum.toString(),

@@ -43,6 +43,20 @@ Sebelum implementasi ini, modul laporan pada MENUIN hanya menyajikan satu halama
   └── Keuangan & Arus Kas — /outlet/[outletKey]/reports/finance
   ```
 
+### 2.5 Standardisasi Layout Top KPI Cards & Minimalist Header Typography
+* **Keputusan:** Menyelaraskan tata letak 4 kartu KPI teratas di seluruh suite laporan (Sales, Operations):
+  - **Icon:** Dipindahkan ke pojok kanan atas dalam kontainer lingkaran (`w-10 h-10 rounded-full flex items-center justify-center`).
+  - **Judul Metrik:** Diposisikan di pojok kiri atas (`text-[11px] font-semibold uppercase tracking-wider`).
+  - **Nilai & Subteks:** Berada di pojok kiri bawah (`text-xl sm:text-2xl font-semibold` dengan currency compact `formatKpiCurrency`).
+  - **Visual Sparkline:** Berada di pojok kanan bawah (**`MiniSparkline`** SVG Catmull-Rom spline dengan `IntersectionObserver`). Pada Hero Blue Card menggunakan `color="#ffffff"`.
+  - **Pemberantasan AI Slop & Badge Clutter:** Menghapus seluruh pill badge di pojok kanan atas kartu KPI dan mengganti label `Puncak: [Hari]` pada grafik dengan teks datar clean format **`[Hari] : [Nominal]`**.
+
+### 2.6 Layout Asimetris KPI Finansial (Net Flow Hero, Inflow, Outflow)
+* **Keputusan:** Pada modul Laporan Keuangan & Arus Kas (`/reports/finance`), kartu KPI teratas direstrukturisasi dari grid simetris 4 kartu menjadi **Grid Asimetris 3 Kartu (50% : 25% : 25%)**:
+  1. **Net Flow Hero Blue Card (`lg:col-span-2`):** Fokus pada likuiditas kas riil bisnis (`Arus Kas Bersih`). Dilengkapi nominal besar, baseline status surplus/defisit, kurva trendline SVG putih (`MiniSparkline`), dan tombol aksi cepat operasional (*+ Catat Biaya*, *Ekspor Excel*, *Cetak*).
+  2. **Inflow Card (`lg:col-span-1`):** Fokus pada realisasi kas masuk dengan pemisahan sub-metrik ganda (*Dual-Split Sub-Metrics*) antara penerimaan fisik *Kasir Tunai* vs saldo digital *QRIS & Bank*.
+  3. **Outflow Card (`lg:col-span-1`):** Fokus pada beban pengeluaran dengan bilah distribusi proporsional (*Segmented Progress Bar*) kas kecil laci kasir vs transfer rekening bank.
+
 ---
 
 ## 3. Ekspor Data & Auditability

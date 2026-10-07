@@ -234,12 +234,14 @@ export async function getSalesReport(outletKey: string, params?: DateFilterParam
     const trxIds = trxList.map((t) => t.id);
     let totalHpp = 0;
     let totalItemsSold = 0;
+    const itemsSoldByTrxId: Record<string, number> = {};
     const productSalesMap: Record<string, { id: string; name: string; categoryName: string; price: number; imageUrl?: string | null; totalQty: number; totalRevenue: number }> = {};
     const categorySalesMap: Record<string, { name: string; totalQty: number; totalRevenue: number }> = {};
 
     if (trxIds.length > 0) {
       const allItems = await db
         .select({
+          transactionId: transactionItems.transactionId,
           productId: transactionItems.productId,
           productName: products.name,
           categoryName: categories.name,
@@ -262,6 +264,9 @@ export async function getSalesReport(outletKey: string, params?: DateFilterParam
 
         totalHpp += cost * qty;
         totalItemsSold += qty;
+        if (it.transactionId) {
+          itemsSoldByTrxId[it.transactionId] = (itemsSoldByTrxId[it.transactionId] || 0) + qty;
+        }
 
         const pId = it.productId || 'unknown';
         const pName = it.productName || 'Menu Tanpa Nama';
@@ -289,14 +294,18 @@ export async function getSalesReport(outletKey: string, params?: DateFilterParam
       });
     }
 
-    // 2. Calculate COGS / HPP and Items Sold for previous period (for trend percentages)
+    // 2. Calculate COGS / HPP, Items Sold, and Product Sales for previous period (for trend & product growth)
     const prevTrxIds = prevTrxList.map((t) => t.id);
     let prevTotalHpp = 0;
     let prevTotalItemsSold = 0;
+    const prevProductSalesMap: Record<string, { totalQty: number; totalRevenue: number }> = {};
     if (prevTrxIds.length > 0) {
       const prevItems = await db
         .select({
+          productId: transactionItems.productId,
           quantity: transactionItems.quantity,
+          price: transactionItems.price,
+          subtotal: transactionItems.subtotal,
           costPrice: products.costPrice,
         })
         .from(transactionItems)
@@ -306,8 +315,18 @@ export async function getSalesReport(outletKey: string, params?: DateFilterParam
       prevItems.forEach((it) => {
         const qty = it.quantity || 1;
         const cost = parseFloat(it.costPrice || '0') || 0;
+        const price = parseFloat(it.price || '0') || 0;
+        const subtotal = parseFloat(it.subtotal || '0') || (price * qty);
+
         prevTotalHpp += cost * qty;
         prevTotalItemsSold += qty;
+
+        const pId = it.productId || 'unknown';
+        if (!prevProductSalesMap[pId]) {
+          prevProductSalesMap[pId] = { totalQty: 0, totalRevenue: 0 };
+        }
+        prevProductSalesMap[pId].totalQty += qty;
+        prevProductSalesMap[pId].totalRevenue += subtotal;
       });
     }
 
@@ -315,20 +334,53 @@ export async function getSalesReport(outletKey: string, params?: DateFilterParam
 
     // Return up to 20 products so client can dynamically toggle between Omzet (Revenue) and Porsi (Qty) perspectives
     const topProducts = Object.values(productSalesMap)
+      .map((p) => {
+        const prevSales = prevProductSalesMap[p.id];
+        const prevRev = prevSales ? prevSales.totalRevenue : 0;
+        const prevQty = prevSales ? prevSales.totalQty : 0;
+        const growthRevenue = prevRev > 0
+          ? Math.round(((p.totalRevenue - prevRev) / prevRev) * 100)
+          : (p.totalRevenue > 0 ? 100 : 0);
+        const growthQty = prevQty > 0
+          ? Math.round(((p.totalQty - prevQty) / prevQty) * 100)
+          : (p.totalQty > 0 ? 100 : 0);
+
+        return {
+          ...p,
+          growthRevenue,
+          growthQty,
+          growth: growthRevenue,
+        };
+      })
       .sort((a, b) => b.totalRevenue - a.totalRevenue || b.totalQty - a.totalQty)
       .slice(0, 20);
 
     // Worst Selling / Low Velocity Products (Products with lowest or 0 sales)
     const bottomCandidates = allTenantProducts.map((p) => {
       const sales = productSalesMap[p.id];
+      const prevSales = prevProductSalesMap[p.id];
+      const curRevenue = sales ? sales.totalRevenue : 0;
+      const curQty = sales ? sales.totalQty : 0;
+      const prevRev = prevSales ? prevSales.totalRevenue : 0;
+      const prevQty = prevSales ? prevSales.totalQty : 0;
+      const growthRevenue = prevRev > 0
+        ? Math.round(((curRevenue - prevRev) / prevRev) * 100)
+        : (curRevenue > 0 ? 100 : (prevRev > 0 ? -100 : 0));
+      const growthQty = prevQty > 0
+        ? Math.round(((curQty - prevQty) / prevQty) * 100)
+        : (curQty > 0 ? 100 : (prevQty > 0 ? -100 : 0));
+
       return {
         id: p.id,
         name: p.name,
         categoryName: p.categoryName || 'Lainnya',
         price: parseFloat(p.price || '0') || 0,
         imageUrl: p.imageUrl,
-        totalQty: sales ? sales.totalQty : 0,
-        totalRevenue: sales ? sales.totalRevenue : 0,
+        totalQty: curQty,
+        totalRevenue: curRevenue,
+        growthRevenue,
+        growthQty,
+        growth: growthRevenue,
       };
     });
 
@@ -390,6 +442,7 @@ export async function getSalesReport(outletKey: string, params?: DateFilterParam
       grossSales: number;
       discount: number;
       orders: number;
+      itemsSold: number;
       projected: number;
     };
     const chartBucketsMap: Record<string, ChartBucket> = {};
@@ -410,6 +463,7 @@ export async function getSalesReport(outletKey: string, params?: DateFilterParam
           grossSales: 0,
           discount: 0,
           orders: 0,
+          itemsSold: 0,
           projected: 0,
         };
         chartBucketsMap[hourStr] = bucket;
@@ -430,6 +484,7 @@ export async function getSalesReport(outletKey: string, params?: DateFilterParam
           grossSales: 0,
           discount: 0,
           orders: 0,
+          itemsSold: 0,
           projected: 0,
         };
         chartBucketsMap[ymd] = bucket;
@@ -450,6 +505,7 @@ export async function getSalesReport(outletKey: string, params?: DateFilterParam
           grossSales: 0,
           discount: 0,
           orders: 0,
+          itemsSold: 0,
           projected: 0,
         };
         chartBucketsMap[ym] = bucket;
@@ -547,6 +603,7 @@ export async function getSalesReport(outletKey: string, params?: DateFilterParam
           chartBucketsMap[bucketKey].grossSales += subTotal;
           chartBucketsMap[bucketKey].discount += disc;
           chartBucketsMap[bucketKey].orders += 1;
+          chartBucketsMap[bucketKey].itemsSold += itemsSoldByTrxId[t.id] || 0;
         }
 
         // Dayparts aggregation (Breakfast, Lunch, Afternoon, Dinner, Late Night)
@@ -817,18 +874,30 @@ export async function getOperationsReport(outletKey: string, params?: DateFilter
       return { success: false, error: 'Akses ditolak.' };
     }
 
-    const { currentStart, currentEnd, period } = resolveDateIntervals(params);
+    const { currentStart, currentEnd, prevStart, prevEnd, period } = resolveDateIntervals(params);
 
-    const trxList = await db
-      .select()
-      .from(transactions)
-      .where(
-        and(
-          eq(transactions.tenantId, tenant.id),
-          gte(transactions.createdAt, currentStart),
-          lte(transactions.createdAt, currentEnd)
-        )
-      );
+    const [trxList, prevTrxList] = await Promise.all([
+      db
+        .select()
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.tenantId, tenant.id),
+            gte(transactions.createdAt, currentStart),
+            lte(transactions.createdAt, currentEnd)
+          )
+        ),
+      db
+        .select()
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.tenantId, tenant.id),
+            gte(transactions.createdAt, prevStart),
+            lte(transactions.createdAt, prevEnd)
+          )
+        ),
+    ]);
 
     // Days mapping (Mon=0 to Sun=6, or JS Sun=0 to Sat=6)
     // Reference 1 uses: Mon, Tue, Wed, Thu, Fri, Sat, Sun
@@ -887,6 +956,9 @@ export async function getOperationsReport(outletKey: string, params?: DateFilter
       });
     }
 
+    let totalOrders = 0;
+    let totalRevenue = 0;
+
     trxList.forEach((t) => {
       const isCanceled = t.status === 'CANCELLED' || t.status === 'CANCELED' || t.paymentStatus === 'CANCELED' || t.paymentStatus === 'REFUNDED';
       if (isCanceled || !t.createdAt) return;
@@ -898,6 +970,9 @@ export async function getOperationsReport(outletKey: string, params?: DateFilter
       const monIndex = jsDay === 0 ? 6 : jsDay - 1;
       const hour = date.getHours();
       const rev = parseFloat(t.grandTotal || '0') || 0;
+
+      totalOrders += 1;
+      totalRevenue += rev;
 
       // Update grid
       heatmapGrid[monIndex].hours[hour].orderCount += 1;
@@ -912,6 +987,39 @@ export async function getOperationsReport(outletKey: string, params?: DateFilter
       dayTotals[monIndex].revenue += rev;
     });
 
+    // Previous period aggregates for growth comparison
+    const prevHourlyTotals: { hour: number; orderCount: number; revenue: number }[] = Array.from({ length: 24 }, (_, h) => ({
+      hour: h,
+      orderCount: 0,
+      revenue: 0,
+    }));
+    const prevDayTotals: { dayIndex: number; orderCount: number; revenue: number }[] = Array.from({ length: 7 }, (_, d) => ({
+      dayIndex: d,
+      orderCount: 0,
+      revenue: 0,
+    }));
+
+    let prevTotalOrders = 0;
+    let prevTotalRevenue = 0;
+
+    prevTrxList.forEach((t) => {
+      const isCanceled = t.status === 'CANCELLED' || t.status === 'CANCELED' || t.paymentStatus === 'CANCELED' || t.paymentStatus === 'REFUNDED';
+      if (isCanceled || !t.createdAt) return;
+
+      const date = new Date(t.createdAt);
+      const jsDay = date.getDay();
+      const monIndex = jsDay === 0 ? 6 : jsDay - 1;
+      const hour = date.getHours();
+      const rev = parseFloat(t.grandTotal || '0') || 0;
+
+      prevTotalOrders += 1;
+      prevTotalRevenue += rev;
+      prevHourlyTotals[hour].orderCount += 1;
+      prevHourlyTotals[hour].revenue += rev;
+      prevDayTotals[monIndex].orderCount += 1;
+      prevDayTotals[monIndex].revenue += rev;
+    });
+
     // Find Peak Hours KPI cards
     // 1. Busiest Hour
     let busiestHour = hourlyTotals[0];
@@ -921,6 +1029,11 @@ export async function getOperationsReport(outletKey: string, params?: DateFilter
       if (h.orderCount < slowestHour.orderCount) slowestHour = h;
     });
 
+    let prevBusiestHour = prevHourlyTotals[0];
+    prevHourlyTotals.forEach((h) => {
+      if (h.orderCount > prevBusiestHour.orderCount) prevBusiestHour = h;
+    });
+
     // 2. Busiest Day
     let busiestDay = dayTotals[0];
     let slowestDay = dayTotals[0];
@@ -928,6 +1041,86 @@ export async function getOperationsReport(outletKey: string, params?: DateFilter
       if (d.revenue > busiestDay.revenue) busiestDay = d;
       if (d.revenue < slowestDay.revenue) slowestDay = d;
     });
+
+    let prevBusiestDay = prevDayTotals[0];
+    prevDayTotals.forEach((d) => {
+      if (d.revenue > prevBusiestDay.revenue) prevBusiestDay = d;
+    });
+
+    // Calculate growth percentages
+    const totalOrdersGrowth = prevTotalOrders > 0
+      ? ((totalOrders - prevTotalOrders) / prevTotalOrders) * 100
+      : 0;
+
+    const totalRevenueGrowth = prevTotalRevenue > 0
+      ? ((totalRevenue - prevTotalRevenue) / prevTotalRevenue) * 100
+      : 0;
+
+    const busiestHourOrdersGrowth = prevBusiestHour.orderCount > 0
+      ? ((busiestHour.orderCount - prevBusiestHour.orderCount) / prevBusiestHour.orderCount) * 100
+      : 0;
+
+    const busiestDayRevenueGrowth = prevBusiestDay.revenue > 0
+      ? ((busiestDay.revenue - prevBusiestDay.revenue) / prevBusiestDay.revenue) * 100
+      : 0;
+
+    const avgHourlyOrders = totalOrders > 0 ? totalOrders / 24 : 0;
+    const prevAvgHourlyOrders = prevTotalOrders > 0 ? prevTotalOrders / 24 : 0;
+    const avgHourlyOrdersGrowth = prevAvgHourlyOrders > 0
+      ? ((avgHourlyOrders - prevAvgHourlyOrders) / prevAvgHourlyOrders) * 100
+      : 0;
+
+    // Dayparts calculation (Pagi 06-11, Siang 11-15, Sore 15-18, Malam 18-23, Dini Hari 23-06)
+    const daypartBuckets = {
+      pagi: { key: 'pagi' as const, label: 'Pagi', timeRange: '06:00 - 11:00', orderCount: 0, revenue: 0 },
+      siang: { key: 'siang' as const, label: 'Makan Siang', timeRange: '11:00 - 15:00', orderCount: 0, revenue: 0 },
+      sore: { key: 'sore' as const, label: 'Sore Hari', timeRange: '15:00 - 18:00', orderCount: 0, revenue: 0 },
+      malam: { key: 'malam' as const, label: 'Makan Malam', timeRange: '18:00 - 23:00', orderCount: 0, revenue: 0 },
+      larut: { key: 'larut' as const, label: 'Larut / Dini Hari', timeRange: '23:00 - 06:00', orderCount: 0, revenue: 0 },
+    };
+
+    hourlyTotals.forEach((h) => {
+      if (h.hour >= 6 && h.hour < 11) {
+        daypartBuckets.pagi.orderCount += h.orderCount;
+        daypartBuckets.pagi.revenue += h.revenue;
+      } else if (h.hour >= 11 && h.hour < 15) {
+        daypartBuckets.siang.orderCount += h.orderCount;
+        daypartBuckets.siang.revenue += h.revenue;
+      } else if (h.hour >= 15 && h.hour < 18) {
+        daypartBuckets.sore.orderCount += h.orderCount;
+        daypartBuckets.sore.revenue += h.revenue;
+      } else if (h.hour >= 18 && h.hour < 23) {
+        daypartBuckets.malam.orderCount += h.orderCount;
+        daypartBuckets.malam.revenue += h.revenue;
+      } else {
+        daypartBuckets.larut.orderCount += h.orderCount;
+        daypartBuckets.larut.revenue += h.revenue;
+      }
+    });
+
+    const dayparts = Object.values(daypartBuckets).map((dp) => ({
+      ...dp,
+      percentage: totalOrders > 0 ? (dp.orderCount / totalOrders) * 100 : 0,
+    }));
+
+    // Weekday vs Weekend (Sen-Jum vs Sab-Min)
+    let weekdayOrders = 0;
+    let weekdayRevenue = 0;
+    let weekendOrders = 0;
+    let weekendRevenue = 0;
+
+    dayTotals.forEach((d) => {
+      if (d.dayIndex <= 4) {
+        weekdayOrders += d.orderCount;
+        weekdayRevenue += d.revenue;
+      } else {
+        weekendOrders += d.orderCount;
+        weekendRevenue += d.revenue;
+      }
+    });
+
+    const weekdayOrdersPercent = totalOrders > 0 ? (weekdayOrders / totalOrders) * 100 : 0;
+    const weekendOrdersPercent = totalOrders > 0 ? (weekendOrders / totalOrders) * 100 : 0;
 
     // Product performance query
     const trxIds = trxList.map((t) => t.id);
@@ -983,12 +1176,29 @@ export async function getOperationsReport(outletKey: string, params?: DateFilter
           formattedStart: currentStart.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
           formattedEnd: currentEnd.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
         },
+        summary: {
+          totalOrders,
+          totalOrdersGrowth,
+          totalRevenue,
+          totalRevenueGrowth,
+          avgHourlyOrders,
+          avgHourlyOrdersGrowth,
+          busiestHourOrdersGrowth,
+          busiestDayRevenueGrowth,
+          weekdayOrders,
+          weekdayRevenue,
+          weekendOrders,
+          weekendRevenue,
+          weekdayOrdersPercent,
+          weekendOrdersPercent,
+        },
         peakKpis: {
           busiestHour: {
             hour: busiestHour.hour,
             label: busiestHour.label,
             orderCount: busiestHour.orderCount,
             revenue: busiestHour.revenue,
+            growth: busiestHourOrdersGrowth,
           },
           slowestHour: {
             hour: slowestHour.hour,
@@ -1001,6 +1211,7 @@ export async function getOperationsReport(outletKey: string, params?: DateFilter
             dayName: busiestDay.dayFullName,
             orderCount: busiestDay.orderCount,
             revenue: busiestDay.revenue,
+            growth: busiestDayRevenueGrowth,
           },
           slowestDay: {
             dayIndex: slowestDay.dayIndex,
@@ -1009,6 +1220,7 @@ export async function getOperationsReport(outletKey: string, params?: DateFilter
             revenue: slowestDay.revenue,
           },
         },
+        dayparts,
         heatmapGrid,
         hourlyDistribution: hourlyTotals,
         dayDistribution: dayTotals,
@@ -1041,20 +1253,133 @@ export async function getFinanceReport(outletKey: string, params?: DateFilterPar
       return { success: false, error: 'Akses ditolak.' };
     }
 
-    const { currentStart, currentEnd, period } = resolveDateIntervals(params);
+    const { currentStart, currentEnd, prevStart, prevEnd, period } = resolveDateIntervals(params);
 
-    // Fetch transactions
-    const trxList = await db
-      .select()
-      .from(transactions)
-      .where(
-        and(
-          eq(transactions.tenantId, tenant.id),
-          gte(transactions.createdAt, currentStart),
-          lte(transactions.createdAt, currentEnd)
+    // Fetch transactions & previous period transactions
+    const [trxList, prevTrxList, expenseList, prevExpenseList] = await Promise.all([
+      db
+        .select()
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.tenantId, tenant.id),
+            gte(transactions.createdAt, currentStart),
+            lte(transactions.createdAt, currentEnd)
+          )
         )
-      )
-      .orderBy(desc(transactions.createdAt));
+        .orderBy(desc(transactions.createdAt)),
+      db
+        .select()
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.tenantId, tenant.id),
+            gte(transactions.createdAt, prevStart),
+            lte(transactions.createdAt, prevEnd)
+          )
+        ),
+      db
+        .select()
+        .from(expenses)
+        .where(
+          and(
+            eq(expenses.tenantId, tenant.id),
+            gte(expenses.date, currentStart),
+            lte(expenses.date, currentEnd)
+          )
+        )
+        .orderBy(desc(expenses.date)),
+      db
+        .select()
+        .from(expenses)
+        .where(
+          and(
+            eq(expenses.tenantId, tenant.id),
+            gte(expenses.date, prevStart),
+            lte(expenses.date, prevEnd)
+          )
+        ),
+    ]);
+
+    // Time-series Chart Buckets for Hero Cash Flow Chart & MiniSparklines
+    const diffDays = Math.ceil((currentEnd.getTime() - currentStart.getTime()) / (1000 * 60 * 60 * 24));
+    interface FinanceChartBucket {
+      key: string;
+      date: string;
+      label: string;
+      cashIn: number;
+      cashOut: number;
+      netFlow: number;
+    }
+    const chartBucketsMap: Record<string, FinanceChartBucket> = {};
+    const chartBucketsList: FinanceChartBucket[] = [];
+
+    let chartGranularity: 'hourly' | 'daily' | 'monthly' = 'daily';
+
+    if (diffDays <= 1) {
+      chartGranularity = 'hourly';
+      for (let h = 0; h < 24; h++) {
+        const hourStr = String(h).padStart(2, '0') + ':00';
+        const label = h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`;
+        const bucket: FinanceChartBucket = {
+          key: hourStr,
+          date: hourStr,
+          label,
+          cashIn: 0,
+          cashOut: 0,
+          netFlow: 0,
+        };
+        chartBucketsMap[hourStr] = bucket;
+        chartBucketsList.push(bucket);
+      }
+    } else if (diffDays <= 35) {
+      chartGranularity = 'daily';
+      const cursor = new Date(currentStart);
+      while (cursor <= currentEnd) {
+        const ymd = cursor.toISOString().slice(0, 10);
+        const dayNum = cursor.getDate();
+        const monthShort = cursor.toLocaleDateString('id-ID', { month: 'short' });
+        const bucket: FinanceChartBucket = {
+          key: ymd,
+          date: ymd,
+          label: `${dayNum} ${monthShort}`,
+          cashIn: 0,
+          cashOut: 0,
+          netFlow: 0,
+        };
+        chartBucketsMap[ymd] = bucket;
+        chartBucketsList.push(bucket);
+        cursor.setDate(cursor.getDate() + 1);
+      }
+    } else {
+      chartGranularity = 'monthly';
+      const cursor = new Date(currentStart.getFullYear(), currentStart.getMonth(), 1);
+      while (cursor <= currentEnd) {
+        const ym = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`;
+        const monthName = cursor.toLocaleDateString('id-ID', { month: 'short' });
+        const bucket: FinanceChartBucket = {
+          key: ym,
+          date: ym,
+          label: monthName,
+          cashIn: 0,
+          cashOut: 0,
+          netFlow: 0,
+        };
+        chartBucketsMap[ym] = bucket;
+        chartBucketsList.push(bucket);
+        cursor.setMonth(cursor.getMonth() + 1);
+      }
+    }
+
+    const getBucketKey = (d: Date): string => {
+      if (chartGranularity === 'hourly') {
+        return String(d.getHours()).padStart(2, '0') + ':00';
+      } else if (chartGranularity === 'daily') {
+        return d.toISOString().slice(0, 10);
+      } else {
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      }
+    };
 
     // Fetch product items to calculate theoretical COGS
     const trxIds = trxList.map((t) => t.id);
@@ -1110,10 +1435,12 @@ export async function getFinanceReport(outletKey: string, params?: DateFilterPar
       totalGatewayFee += fee;
 
       const rawMethod = (t.paymentMethod || 'TUNAI').trim().toUpperCase();
+      let flowIn = 0;
       if (isCashPayment(rawMethod)) {
         cashGrossSales += subTotal;
         cashDiscount += disc;
         cashCollected += gTotal; // Customer handed physical money including PB1
+        flowIn = gTotal;
         paymentBreakdown['TUNAI'] = (paymentBreakdown['TUNAI'] || 0) + gTotal;
       } else {
         nonCashGrossSales += subTotal;
@@ -1121,7 +1448,14 @@ export async function getFinanceReport(outletKey: string, params?: DateFilterPar
         nonCashDiscount += disc;
         nonCashGatewayFee += fee;
         nonCashSettled += netAmt; // Settled into bank account after MDR fee
+        flowIn = netAmt;
         paymentBreakdown[rawMethod] = (paymentBreakdown[rawMethod] || 0) + netAmt;
+      }
+
+      // Add to time-series bucket
+      const bKey = getBucketKey(new Date(t.createdAt));
+      if (chartBucketsMap[bKey]) {
+        chartBucketsMap[bKey].cashIn += flowIn;
       }
     });
 
@@ -1132,19 +1466,7 @@ export async function getFinanceReport(outletKey: string, params?: DateFilterPar
     const estimatedGrossProfit = Math.max(0, netSales - totalHpp);
     const profitMargin = netSales > 0 ? (estimatedGrossProfit / netSales) * 100 : 0;
 
-    // Fetch Expenses
-    const expenseList = await db
-      .select()
-      .from(expenses)
-      .where(
-        and(
-          eq(expenses.tenantId, tenant.id),
-          gte(expenses.date, currentStart),
-          lte(expenses.date, currentEnd)
-        )
-      )
-      .orderBy(desc(expenses.date));
-
+    // Process Expenses
     let totalExpenses = 0;
     let cashExpenses = 0;
     let nonCashExpenses = 0;
@@ -1160,6 +1482,11 @@ export async function getFinanceReport(outletKey: string, params?: DateFilterPar
       }
       const cat = exp.category || 'LAINNYA';
       expenseByCategory[cat] = (expenseByCategory[cat] || 0) + amt;
+
+      const bKey = getBucketKey(new Date(exp.date));
+      if (chartBucketsMap[bKey]) {
+        chartBucketsMap[bKey].cashOut += amt;
+      }
     });
 
     // Fetch Cash Movements from shifts
@@ -1179,24 +1506,71 @@ export async function getFinanceReport(outletKey: string, params?: DateFilterPar
     movements.forEach((m) => {
       const amt = parseFloat(m.amount || '0') || 0;
       const isAutoExpense = m.description && m.description.startsWith('[Biaya');
-      if (m.type === 'IN') manualCashIn += amt;
-      if (m.type === 'OUT' && !isAutoExpense) manualCashOut += amt;
+      if (m.type === 'IN') {
+        manualCashIn += amt;
+        const bKey = getBucketKey(new Date(m.createdAt));
+        if (chartBucketsMap[bKey]) {
+          chartBucketsMap[bKey].cashIn += amt;
+        }
+      }
+      if (m.type === 'OUT' && !isAutoExpense) {
+        manualCashOut += amt;
+        const bKey = getBucketKey(new Date(m.createdAt));
+        if (chartBucketsMap[bKey]) {
+          chartBucketsMap[bKey].cashOut += amt;
+        }
+      }
     });
 
+    // Compute net flow for all buckets
+    chartBucketsList.forEach((b) => {
+      b.netFlow = b.cashIn - b.cashOut;
+    });
+
+    // Trends for MiniSparklines
+    const cashInTrend = chartBucketsList.map((b) => b.cashIn);
+    const cashOutTrend = chartBucketsList.map((b) => b.cashOut);
+    const netFlowTrend = chartBucketsList.map((b) => b.netFlow);
+    const grossProfitTrend = chartBucketsList.map((b) => Math.max(0, b.cashIn - b.cashOut * 0.4));
+
+    // Previous period calculations for comparative growth %
+    let prevCashIn = 0;
+    prevTrxList.forEach((t) => {
+      const isCanceled =
+        t.status === 'CANCELLED' ||
+        t.status === 'CANCELED' ||
+        t.paymentStatus === 'CANCELED' ||
+        t.paymentStatus === 'REFUNDED';
+      if (isCanceled) return;
+      const gTotal = parseFloat(t.grandTotal || '0') || 0;
+      const fee = calculateGatewayFee(t);
+      const netAmt = t.netAmount ? parseFloat(t.netAmount) : Math.max(0, gTotal - fee);
+      const rawMethod = (t.paymentMethod || 'TUNAI').trim().toUpperCase();
+      prevCashIn += isCashPayment(rawMethod) ? gTotal : netAmt;
+    });
+
+    let prevCashOut = 0;
+    prevExpenseList.forEach((exp) => {
+      prevCashOut += parseFloat(exp.amount || '0') || 0;
+    });
+
+    const prevNetCashFlow = prevCashIn - prevCashOut;
+
     // Comprehensive Cash Flow Accounting:
-    // Real Cash Inflow equals physical cash collected in drawer + digital settlements into bank account + manual cash in
     const totalCashIn = cashCollected + nonCashSettled + manualCashIn;
-    // Total Outflow includes all operational expenses plus manual cash taken out
     const totalCashOut = totalExpenses + manualCashOut;
     const netCashFlow = totalCashIn - totalCashOut;
 
+    const cashInGrowth = prevCashIn > 0 ? ((totalCashIn - prevCashIn) / prevCashIn) * 100 : 0;
+    const cashOutGrowth = prevCashOut > 0 ? ((totalCashOut - prevCashOut) / prevCashOut) * 100 : 0;
+    const netCashFlowGrowth = prevNetCashFlow !== 0 ? ((netCashFlow - prevNetCashFlow) / Math.abs(prevNetCashFlow)) * 100 : 0;
+    const grossProfitGrowth = cashInGrowth;
+
     // Dual-Channel Net Flows:
-    // 1. Kas Fisik Laci Toko (Drawer / Petty Cash)
     const drawerCashIn = cashCollected + manualCashIn;
     const drawerCashOut = cashExpenses + manualCashOut;
     const drawerNetFlow = drawerCashIn - drawerCashOut;
 
-    // 2. Kas Digital Bank & Settlement (QRIS / Transfer)
     const digitalCashIn = nonCashSettled;
     const digitalCashOut = nonCashExpenses;
     const digitalNetFlow = digitalCashIn - digitalCashOut;
@@ -1238,6 +1612,17 @@ export async function getFinanceReport(outletKey: string, params?: DateFilterPar
           endDate: currentEnd.toISOString(),
           formattedStart: currentStart.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
           formattedEnd: currentEnd.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+        },
+        chartBuckets: chartBucketsList,
+        cashInTrend,
+        cashOutTrend,
+        netFlowTrend,
+        grossProfitTrend,
+        growth: {
+          cashIn: cashInGrowth,
+          cashOut: cashOutGrowth,
+          netCashFlow: netCashFlowGrowth,
+          grossProfit: grossProfitGrowth,
         },
         cashFlow: {
           totalCashIn,
@@ -1368,6 +1753,70 @@ export async function createExpenseAction(data: {
   } catch (error: any) {
     console.error('Error creating expense:', error);
     return { success: false, error: error.message || 'Gagal menyimpan pengeluaran.' };
+  }
+}
+
+// -------------------------------------------------------------
+// 4B. ACTION: CATAT KAS MASUK MANUAL (CASH IN)
+// -------------------------------------------------------------
+export async function createCashInAction(data: {
+  outletKey: string;
+  amount: number;
+  description: string;
+}) {
+  try {
+    const user = await getCurrentUser();
+    if (!user || !user.tenantId) {
+      return { success: false, error: 'Unauthorized.' };
+    }
+
+    const [tenant] = await db
+      .select()
+      .from(tenants)
+      .where(eq(tenants.outletKey, data.outletKey))
+      .limit(1);
+
+    if (!tenant || tenant.id !== user.tenantId) {
+      return { success: false, error: 'Outlet tidak valid.' };
+    }
+
+    if (!data.description || data.amount <= 0) {
+      return { success: false, error: 'Deskripsi dan nominal kas masuk wajib diisi dengan benar.' };
+    }
+
+    const [activeShift] = await db
+      .select()
+      .from(shifts)
+      .where(
+        and(
+          eq(shifts.tenantId, tenant.id),
+          eq(shifts.status, 'ACTIVE')
+        )
+      )
+      .limit(1);
+
+    if (!activeShift) {
+      return {
+        success: false,
+        error: 'Tidak ada shift kasir yang aktif saat ini. Buka shift kasir terlebih dahulu untuk mencatat kas masuk laci kasir.',
+      };
+    }
+
+    const [newMovement] = await db
+      .insert(cashMovements)
+      .values({
+        tenantId: tenant.id,
+        shiftId: activeShift.id,
+        type: 'IN',
+        amount: data.amount.toString(),
+        description: `[Kas Masuk] ${data.description.trim()}`,
+      })
+      .returning();
+
+    return { success: true, data: newMovement };
+  } catch (error: any) {
+    console.error('Error creating cash in:', error);
+    return { success: false, error: error.message || 'Gagal menyimpan kas masuk.' };
   }
 }
 

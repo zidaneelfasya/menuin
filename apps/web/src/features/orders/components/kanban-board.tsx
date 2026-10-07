@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useState, useEffect, useMemo } from "react";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
-import { updateOrderStatus, updateOrderItemStatus, syncOrderPaymentStatus, bulkUpdateOrderStatus, getActiveOrders, getOrderByNumberForOutlet } from "@/lib/actions/orders";
+import { updateOrderStatus, updateOrderItemStatus, syncOrderPaymentStatus, bulkUpdateOrderStatus, getActiveOrders, getOrderByNumberForOutlet, confirmOrderPaymentAtCashier } from "@/lib/actions/orders";
 import { toast } from "sonner";
 import { 
   Clock, 
@@ -44,8 +44,11 @@ import {
 import { ReceiptPrinter, ReceiptData, TenantReceiptSettings } from "@/features/pos/components/receipt-printer";
 import { useBarcodeScanner } from "@/hooks/use-barcode-scanner";
 import { OrderCameraScannerDialog } from "./order-camera-scanner-dialog";
+import { OrderPaymentModal } from "./order-payment-modal";
 import { playScanSuccessBeep, playScanErrorBeep, playScanWarningBeep } from "@/lib/utils/sound";
 import { formatPaymentMethodLabel } from "@/lib/utils/format";
+
+import { cn } from "@/lib/utils";
 
 type OrderItem = {
   id: string;
@@ -70,6 +73,7 @@ type Order = {
   tax?: string | null;
   serviceCharge?: string | null;
   platformFee?: string | null;
+  rounding?: string | null;
   grandTotal: string;
   promoCode?: string | null;
   status: string;
@@ -100,10 +104,45 @@ function formatOrderTime(dateInput: Date | string): string {
       hour: "2-digit",
       minute: "2-digit",
       hour12: false
-    }).format(date);
+    }).format(date) + " WIB";
   } catch {
     return "--:--";
   }
+}
+
+function formatOrderFullDate(dateInput: Date | string): string {
+  try {
+    const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
+    return new Intl.DateTimeFormat("id-ID", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      year: "numeric"
+    }).format(date);
+  } catch {
+    return "";
+  }
+}
+
+function getTableBadge(order: { tableNumber?: string | null; orderType?: string | null }) {
+  if (order.tableNumber) {
+    const raw = order.tableNumber.trim();
+    const cleaned = raw.replace(/^meja\s*/i, "").trim();
+    if (/^\d+$/.test(cleaned)) {
+      return {
+        label: cleaned.padStart(2, "0"),
+        isTable: true,
+      };
+    }
+    return {
+      label: cleaned.toUpperCase().substring(0, 3),
+      isTable: true,
+    };
+  }
+  const isTakeaway = order.orderType === "TAKE_AWAY" || order.orderType === "TAKEAWAY";
+  if (isTakeaway) return { label: "TA", isTable: false };
+  if (order.orderType === "ONLINE") return { label: "ON", isTable: false };
+  return { label: "POS", isTable: false };
 }
 
 function formatElapsed(dateInput: Date | string): string {
@@ -170,9 +209,7 @@ function getOrderSource(order: {
 export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", receiptSettings }: KanbanBoardProps) {
   const [orders, setOrders] = useState<Order[]>(initialOrders);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [orderToPrepare, setOrderToPrepare] = useState<Order | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isPrepareModalOpen, setIsPrepareModalOpen] = useState(false);
+  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTypes, setSelectedTypes] = useState<OrderTypeFilter[]>(ALL_FILTER_TYPES);
   const [syncingOrderId, setSyncingOrderId] = useState<string | null>(null);
@@ -282,7 +319,6 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
 
       playScanSuccessBeep();
       setSelectedOrder(existingOrder);
-      setIsDialogOpen(true);
       toast.success(`Pesanan #${existingOrder.orderNumber?.replace(/^#/, "") || ""} siap diproses pembayarannya`);
       return;
     }
@@ -329,7 +365,6 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
 
         playScanSuccessBeep();
         setSelectedOrder(loadedOrder);
-        setIsDialogOpen(true);
         toast.success(`Pesanan #${loadedOrder.orderNumber?.replace(/^#/, "") || ""} siap diproses pembayarannya`);
       } else {
         playScanErrorBeep();
@@ -406,7 +441,7 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
     };
   }, [tenantId, router]);
 
-  const buildReceiptData = (order: Order): ReceiptData => ({
+  const buildReceiptData = (order: Order, paymentOverride?: { paymentMethod?: string; cashReceived?: number; change?: number }): ReceiptData => ({
     transactionId: order.orderNumber || order.id.slice(0, 8).toUpperCase(),
     date: new Date(order.createdAt),
     cashierName: cashierName,
@@ -415,10 +450,11 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
     promoCode: order.promoCode || undefined,
     tax: Number(order.tax || 0),
     serviceCharge: Number(order.serviceCharge || 0),
+    rounding: Number(order.rounding || 0),
     totalAmount: Number(order.grandTotal),
-    cashReceived: Number(order.grandTotal),
-    change: 0,
-    paymentMethod: (order.paymentMethod || 'TUNAI').toUpperCase(),
+    cashReceived: paymentOverride?.cashReceived != null ? paymentOverride.cashReceived : Number(order.grandTotal),
+    change: paymentOverride?.change != null ? paymentOverride.change : 0,
+    paymentMethod: (paymentOverride?.paymentMethod || order.paymentMethod || 'TUNAI').toUpperCase(),
     orderType: order.orderType,
     customerName: order.customerName || undefined,
     tableNumber: order.tableNumber || undefined,
@@ -432,9 +468,9 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
     })),
   });
 
-  const handlePrintReceipt = (order: Order, mode: 'customer' | 'kitchen' | 'all') => {
+  const handlePrintReceipt = (order: Order, mode: 'customer' | 'kitchen' | 'all', paymentOverride?: { paymentMethod?: string; cashReceived?: number; change?: number }) => {
     setIsPrinting(true);
-    const receipt = buildReceiptData(order);
+    const receipt = buildReceiptData(order, paymentOverride);
     setPrintData(receipt);
     setPrintMode(mode);
 
@@ -444,6 +480,75 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
       const label = mode === 'kitchen' ? 'Tiket dapur' : mode === 'customer' ? 'Struk pelanggan' : 'Struk & tiket dapur';
       toast.success(`${label} dicetak.`);
     }, 250);
+  };
+
+  const handleConfirmPaymentFromModal = async (payload: {
+    paymentMethod: 'CASH' | 'QRIS_STATIC' | 'QRIS_DYNAMIC' | 'CARD' | 'TRANSFER';
+    cashReceived?: number;
+    change?: number;
+    printReceipt?: boolean;
+    rounding?: number;
+    grandTotal?: number;
+  }) => {
+    if (!selectedOrder) return;
+    const targetOrder = selectedOrder;
+    setIsSubmittingPayment(true);
+
+    const updatedGrandTotal = payload.grandTotal != null ? payload.grandTotal.toString() : targetOrder.grandTotal;
+    const updatedRounding = payload.rounding != null ? payload.rounding.toString() : (targetOrder.rounding || '0');
+
+    // Optimistic UI update
+    setOrders(prev =>
+      prev.map(o => {
+        if (o.id === targetOrder.id) {
+          return {
+            ...o,
+            status: 'NEW',
+            paymentStatus: 'PAID',
+            paymentMethod: payload.paymentMethod,
+            rounding: updatedRounding,
+            grandTotal: updatedGrandTotal,
+          };
+        }
+        return o;
+      })
+    );
+
+    try {
+      const res = await confirmOrderPaymentAtCashier(targetOrder.id, {
+        paymentMethod: payload.paymentMethod,
+        cashReceived: payload.cashReceived,
+        change: payload.change,
+        rounding: payload.rounding,
+        grandTotal: payload.grandTotal,
+      });
+
+      if (res.error) {
+        toast.error(res.error);
+        router.refresh();
+      } else {
+        toast.success(`Pembayaran ${targetOrder.orderNumber || ''} berhasil dikonfirmasi!`);
+        setSelectedOrder(null);
+
+        // Trigger print if requested
+        if (payload.printReceipt) {
+          handlePrintReceipt({
+            ...targetOrder,
+            rounding: updatedRounding,
+            grandTotal: updatedGrandTotal,
+          }, 'customer', {
+            paymentMethod: payload.paymentMethod,
+            cashReceived: payload.cashReceived,
+            change: payload.change,
+          });
+        }
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Gagal mengonfirmasi pembayaran pesanan");
+      router.refresh();
+    } finally {
+      setIsSubmittingPayment(false);
+    }
   };
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
@@ -472,12 +577,7 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
       } else {
         toast.success("Status pesanan diperbarui");
         if (selectedOrder && selectedOrder.id === orderId) {
-          setIsDialogOpen(false);
           setSelectedOrder(null);
-        }
-        if (orderToPrepare && orderToPrepare.id === orderId) {
-          setIsPrepareModalOpen(false);
-          setOrderToPrepare(null);
         }
       }
     } catch (err: any) {
@@ -485,11 +585,6 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
     } finally {
       setUpdatingOrderId(null);
     }
-  };
-
-  const handleStartPrepareClick = (order: Order) => {
-    setOrderToPrepare(order);
-    setIsPrepareModalOpen(true);
   };
 
   const getNextStatusTitle = (nextStatus: string): string => {
@@ -681,7 +776,7 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
     const columnOrders = filteredOrders.filter(o => o.status === status);
 
     return (
-      <div className="flex-1 min-w-[310px] max-w-[380px] bg-slate-50/70 dark:bg-slate-900/40 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3 flex flex-col h-[calc(100vh-170px)]">
+      <div className="flex-1 min-w-[320px] max-w-[390px] bg-slate-50/70 dark:bg-slate-900/40 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3 flex flex-col h-[calc(100vh-170px)]">
         {/* Column Header */}
         <div className="flex items-center justify-between pb-3 mb-2.5 border-b border-slate-200 dark:border-slate-800 px-1">
           <div className="flex items-center gap-2">
@@ -695,24 +790,26 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
             <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 tabular-nums">
               {columnOrders.length}
             </span>
-            <button
-              type="button"
-              onClick={() => handleBulkAdvanceClick(status, nextStatus, title, columnOrders)}
-              disabled={columnOrders.length === 0}
-              className={`h-6 w-6 rounded-md flex items-center justify-center transition-all ${
-                columnOrders.length === 0
-                  ? "opacity-25 cursor-not-allowed text-slate-400"
-                  : "text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xs active:scale-90 hover:border-emerald-300 cursor-pointer"
-              }`}
-              title={`Selesaikan/Lanjutkan semua pesanan pada status "${title}" ke "${getNextStatusTitle(nextStatus)}"`}
-            >
-              <Check className="w-3.5 h-3.5 stroke-[2.5]" />
-            </button>
+            {status !== "PENDING" && (
+              <button
+                type="button"
+                onClick={() => handleBulkAdvanceClick(status, nextStatus, title, columnOrders)}
+                disabled={columnOrders.length === 0}
+                className={`h-6 w-6 rounded-md flex items-center justify-center transition-all ${
+                  columnOrders.length === 0
+                    ? "opacity-25 cursor-not-allowed text-slate-400"
+                    : "text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xs active:scale-90 hover:border-emerald-300 cursor-pointer"
+                }`}
+                title={`Selesaikan/Lanjutkan semua pesanan pada status "${title}" ke "${getNextStatusTitle(nextStatus)}"`}
+              >
+                <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Order Cards List */}
-        <div className="flex-1 overflow-y-auto space-y-2.5 pr-1 scrollbar-hide">
+        {/* Order Cards List (Matches Image 1 Card Architecture) */}
+        <div className="flex-1 overflow-y-auto space-y-3 pr-1 scrollbar-hide">
           {columnOrders.length === 0 ? (
             <div className="h-44 flex flex-col items-center justify-center text-muted-foreground/60 text-xs text-center p-4">
               <UtensilsCrossed className="w-5 h-5 mb-2 opacity-30" />
@@ -722,170 +819,177 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
             columnOrders.map(order => {
               const completedCount = order.items.filter(i => i.isCompleted).length;
               const totalCount = order.items.length;
-              const allDone = totalCount > 0 && completedCount === totalCount;
 
               const isTakeaway = order.orderType === "TAKE_AWAY" || order.orderType === "TAKEAWAY";
               const isOnline = order.orderType === "ONLINE";
               const isPendingOnline = order.status === "PENDING" && (isOnline || order.paymentMethod === "ONLINE");
 
+              const tableBadge = getTableBadge(order);
+              const orderTypeLabel = isTakeaway
+                ? "Takeaway"
+                : isOnline
+                ? "Online"
+                : order.tableNumber
+                ? "Dine In"
+                : "Makan di Tempat";
+
+              let statusPillStyle = "bg-slate-100 text-slate-900 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700";
+              let statusPillIcon = <Clock className="w-3 h-3 text-slate-900" />;
+              let statusPillText = "Menunggu";
+              let statusDotStyle = "bg-amber-500";
+              let statusIndicatorText = order.paymentStatus === "PAID" ? "Lunas" : "Belum Bayar";
+
+              if (status === "NEW") {
+                statusPillStyle = "bg-blue-50 text-slate-900 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-900";
+                statusPillIcon = <Clock className="w-3 h-3 text-slate-900" />;
+                statusPillText = "Pesanan Baru";
+                statusDotStyle = "bg-blue-500";
+                statusIndicatorText = formatElapsed(order.createdAt);
+              } else if (status === "PROCESSING") {
+                statusPillStyle = "bg-amber-50 text-slate-900 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-900";
+                statusPillIcon = <ChefHat className="w-3 h-3 text-slate-900" />;
+                statusPillText = "In Progress";
+                statusDotStyle = "bg-amber-500";
+                statusIndicatorText = `${completedCount}/${totalCount} Selesai`;
+              } else if (status === "READY") {
+                statusPillStyle = "bg-emerald-50 text-slate-900 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-900";
+                statusPillIcon = <CheckCircle2 className="w-3 h-3 text-slate-900" />;
+                statusPillText = "Siap Disajikan";
+                statusDotStyle = "bg-emerald-500";
+                statusIndicatorText = "Siap Diambil";
+              }
+
               return (
                 <div 
                   key={order.id} 
-                  onClick={() => { setSelectedOrder(order); setIsDialogOpen(true); }} 
-                  className="group cursor-pointer bg-white dark:bg-slate-950 rounded-xl p-3.5 border border-slate-200 dark:border-slate-800 hover:border-blue-400 dark:hover:border-blue-600 hover:shadow-sm transition-all duration-150 relative flex flex-col justify-between"
+                  onClick={() => setSelectedOrder(order)} 
+                  className="group cursor-pointer bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/90 dark:border-slate-800 hover:border-blue-400 dark:hover:border-blue-600 hover:shadow-md transition-all duration-200 flex flex-col justify-between gap-3 relative"
                 >
-                  {/* Top Meta Bar */}
                   <div>
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-sans text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700 tracking-wider">
-                          {order.orderNumber || "#-"}
-                        </span>
-                        
-                        {order.paymentStatus === "PAID" ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 text-emerald-600 border border-emerald-600 bg-emerald-50 rounded-full">
-                            Lunas
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-slate-600 text-slate-600 bg-slate-50">
-                            Belum Bayar
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="inline-flex items-center gap-1 text-[11px] text-muted-foreground/80 font-medium shrink-0">
-                        <Clock className="w-3 h-3 opacity-60" />
-                        <span>{formatElapsed(order.createdAt)}</span>
-                      </div>
-                    </div>
-
-                    {/* Order Title & Source (Sejajar Meja di sebelah kanan) */}
-                    <div className="mt-2.5 flex items-center justify-between gap-2">
-                      <div className="text-[13px] font-semibold text-foreground tracking-tight flex items-center gap-1.5 min-w-0">
-                        {order.tableNumber ? (
-                          <>
-                            <UtensilsCrossed className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                            <span className="truncate">{formatTableLabel(order.tableNumber)}</span>
-                          </>
-                        ) : isTakeaway ? (
-                          <>
-                            <ShoppingBag className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                            <span className="truncate">Bawa Pulang (Takeaway)</span>
-                          </>
-                        ) : isOnline ? (
-                          <>
-                            <Store className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                            <span className="truncate">Pesanan Online</span>
-                          </>
-                        ) : (
-                          <>
-                            <UtensilsCrossed className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                            <span className="truncate">Makan di Tempat</span>
-                          </>
-                        )}
-                      </div>
-
-                      {/* Sumber Pemesanan (Self Order / Kasir) */}
-                      {(() => {
-                        const srcInfo = getOrderSource(order);
-                        return (
-                          <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${
-                            srcInfo.isSelfOrder
-                              ? "border-blue-500/30 bg-blue-50 text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300"
-                              : "border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                          }`}>
-                            {srcInfo.label}
-                          </span>
-                        );
-                      })()}
-                    </div>
-
-                    {/* Customer Info & Metode Bayar (Sejajar Nama Pelanggan di sebelah kanan) */}
-                    <div className="flex items-center justify-between gap-2 mt-1 text-[11px]">
-                      <div className="text-muted-foreground flex items-center gap-1 font-normal min-w-0">
-                        <User className="w-3 h-3 opacity-60 shrink-0" />
-                        <span className="truncate max-w-[150px]">{order.customerName || "Tamu / Umum"}</span>
-                      </div>
-
-                      <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 shrink-0">
-                        {formatPaymentMethodLabel(order.paymentMethod)}
-                      </span>
-                    </div>
-
-                    {/* Items Checklist */}
-                    <div className="space-y-1.5 my-2.5 pt-2 border-t border-dashed border-slate-200 dark:border-slate-800">
-                      {order.items.map((item) => (
-                        <div 
-                          key={item.id} 
-                          className="group/item flex items-center justify-between text-xs py-0.5 rounded px-1 -mx-1 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleToggleItem(order.id, item.id, !item.isCompleted);
-                          }}
-                        >
-                          <div className="flex items-center gap-1.5 flex-1 pr-2 min-w-0">
-                            <div className={`w-3.5 h-3.5 rounded-[4px] border flex items-center justify-center shrink-0 transition-colors ${
-                              item.isCompleted 
-                                ? "bg-blue-600 border-blue-600 text-white" 
-                                : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
-                            }`}>
-                              {item.isCompleted && <Check className="w-2.5 h-2.5 stroke-[2.5]" />}
-                            </div>
-                            
-                            <span className="inline-flex items-center justify-center font-semibold text-[10px] min-w-[20px] h-[18px] px-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 tabular-nums shrink-0">
-                              {item.quantity}x
-                            </span>
-
-                            <span className={`text-xs truncate ${item.isCompleted ? "line-through text-muted-foreground/50" : "text-foreground/90 font-normal"}`}>
-                              {item.productName}
-                            </span>
+                    {/* Header: Table badge (B2), Customer name, Order #, Status pill, Subtext indicator */}
+                    <div className="flex items-start justify-between gap-2.5">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className=" w-10 h-10 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-semibold text-xs sm:text-sm flex items-center justify-center shrink-0 shadow-xs">
+                          {tableBadge.label}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="py-2 text-sm font-semibold text-slate-900 dark:text-slate-100 truncate leading-snug">
+                            {order.customerName || "Tamu / Umum"}
+                          </div>
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate mt-0.5">
+                            Order #{order.orderNumber || "-"} / {orderTypeLabel}
                           </div>
                         </div>
-                      ))}
+                      </div>
+
+                      <div className="flex flex-col items-end shrink-0 gap-1 py-2">
+                        <span className={cn(
+                          "inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold px-2 sm:px-2.5 py-0.5 rounded-sm border shrink-0",
+                          statusPillStyle
+                        )}>
+                          {statusPillIcon}
+                          <span>{statusPillText}</span>
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-medium flex items-center gap-1 shrink-0 mt-1 pr-2">
+                          <span className={cn("w-1.5 h-1.5 rounded-full", statusDotStyle)} />
+                          <span>{statusIndicatorText}</span>
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Date and Time Row */}
+                    <div className="flex items-center justify-between text-xs text-slate-400 dark:text-slate-500 font-medium pt-2 pb-1">
+                      <span>{formatOrderFullDate(order.createdAt)}</span>
+                      <span>{formatOrderTime(order.createdAt)}</span>
+                    </div>
+
+                    {/* Items List Table (Header: Items, Qty, Price) */}
+                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                      <div className="grid grid-cols-12 text-[11px] font-medium text-slate-400 dark:text-slate-500 pb-1.5 border-b border-slate-100 dark:border-slate-800/80">
+                        <span className="col-span-7">Items</span>
+                        <span className="col-span-2 text-center">Qty</span>
+                        <span className="col-span-3 text-right">Price</span>
+                      </div>
+
+                      <div className="space-y-1.5 pt-1.5 max-h-36 overflow-y-auto pr-0.5 scrollbar-hide">
+                        {order.items.map((item) => (
+                          <div 
+                            key={item.id} 
+                            className="grid grid-cols-12 items-center text-sm py-1 group/item cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded px-1 -mx-1 transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleItem(order.id, item.id, !item.isCompleted);
+                            }}
+                            title="Klik untuk menandai menu selesai/belum"
+                          >
+                            <div className="col-span-7 flex items-center gap-1.5 min-w-0 pr-1">
+                              <div className={cn(
+                                "w-3 h-3 rounded-[3px] border flex items-center justify-center shrink-0 transition-colors",
+                                item.isCompleted 
+                                  ? "bg-blue-600 border-blue-600 text-white" 
+                                  : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 opacity-60 group-hover/item:opacity-100"
+                              )}>
+                                {item.isCompleted && <Check className="w-2 h-2 stroke-[2.5]" />}
+                              </div>
+                              <span className={cn(
+                                "truncate text-sm leading-tight",
+                                item.isCompleted ? "line-through text-slate-400 dark:text-slate-500" : "text-slate-800 dark:text-slate-200 font-normal"
+                              )}>
+                                {item.productName}
+                              </span>
+                            </div>
+                            <span className="col-span-2 text-center text-sm font-medium text-slate-600 dark:text-slate-400 tabular-nums">
+                              {item.quantity}
+                            </span>
+                            <span className="col-span-3 text-right text-sm font-medium text-slate-700 dark:text-slate-300 tabular-nums">
+                              {formatCurrency(Number(item.subtotal || 0))}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Footer: Price + Action Button */}
-                  <div className="pt-2.5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 mt-1">
-                    <div className="text-xs font-semibold text-foreground tracking-tight tabular-nums">
-                      {formatCurrency(Number(order.grandTotal))}
+                  {/* Total & Action Buttons */}
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-slate-900 dark:text-slate-100">Total</span>
+                      <span className="text-sm sm:text-sm  font-medium text-slate-900 dark:text-slate-100 tabular-nums">
+                        {formatCurrency(Number(order.grandTotal))}
+                      </span>
                     </div>
-                    
-                    <div className="flex items-center gap-1.5">
-                      {isPendingOnline && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleCheckMidtransPayment(order);
-                          }}
-                          disabled={syncingOrderId === order.id}
-                          className="h-7 text-[11px] px-2 border-blue-200 hover:bg-blue-50 text-blue-700 dark:border-blue-900 dark:text-blue-300"
-                          title="Periksa status pembayaran Midtrans"
-                        >
-                          {syncingOrderId === order.id ? (
-                            <Loader2 className="w-3 h-3 animate-spin mr-1" />
-                          ) : (
-                            <RefreshCw className="w-3 h-3 mr-1" />
-                          )}
-                          Cek Midtrans
-                        </Button>
-                      )}
+
+                    {/* Two Action Buttons: See Details & Primary Status Action */}
+                    <div className="grid grid-cols-2 gap-2 mt-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedOrder(order);
+                        }}
+                        className="h-9.5 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700 transition-colors shadow-2xs cursor-pointer"
+                      >
+                        Lihat Detail
+                      </Button>
 
                       <Button 
+                        type="button"
                         size="sm"
                         disabled={isUpdatingStatus && updatingOrderId === order.id}
                         onClick={(e) => { 
                           e.stopPropagation(); 
-                          if (status === "NEW") {
-                            // Open preparation & print modal first!
-                            handleStartPrepareClick(order);
+                          if (status === "PENDING") {
+                            setSelectedOrder(order);
                           } else {
                             handleStatusChange(order.id, nextStatus); 
                           }
                         }}
-                        className={`h-7 text-xs font-medium gap-1 px-3 rounded-lg shadow-2xs transition-transform active:scale-95 ${accentColor.button} disabled:opacity-60 cursor-pointer`}
+                        className={cn(
+                          "h-8 text-xs font-semibold rounded-xl shadow-xs transition-transform active:scale-95 disabled:opacity-60 cursor-pointer flex items-center justify-center gap-1",
+                          accentColor.button
+                        )}
                       >
                         {updatingOrderId === order.id ? (
                           <>
@@ -900,6 +1004,28 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
                         )}
                       </Button>
                     </div>
+
+                    {isPendingOnline && (
+                      <div className="mt-2 pt-1.5 border-t border-dashed border-slate-100 dark:border-slate-800">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCheckMidtransPayment(order);
+                          }}
+                          disabled={syncingOrderId === order.id}
+                          className="w-full h-7 text-[11px] px-2 border-blue-200 hover:bg-blue-50 text-blue-700 dark:border-blue-900 dark:text-blue-300"
+                        >
+                          {syncingOrderId === order.id ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+                          ) : (
+                            <RefreshCw className="w-3.5 h-3.5 mr-1" />
+                          )}
+                          Cek Midtrans
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -1025,15 +1151,15 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
       {/* Kanban Board Columns */}
       <div className="flex gap-3.5 overflow-x-auto pb-2 flex-1 min-h-0">
         {renderColumn(
-          "Menunggu Bayar", 
+          "Menunggu Pesanan", 
           "PENDING", 
           "NEW", 
-          "Konfirmasi", 
+          "Bayar", 
           <CreditCard className="w-3.5 h-3.5 text-slate-700 dark:text-slate-300" />,
           { 
             badge: "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200", 
-            dot: "bg-amber-500", 
-            button: "bg-slate-800 hover:bg-slate-900 text-white dark:bg-slate-200 dark:hover:bg-slate-100 dark:text-slate-900 shadow-xs" 
+            dot: "bg-slate-800 dark:bg-slate-200", 
+            button: "bg-slate-900 hover:bg-black text-white dark:bg-slate-100 dark:hover:bg-white dark:text-slate-900 shadow-xs" 
           }
         )}
         
@@ -1077,395 +1203,23 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
         )}
       </div>
 
-      {/* Preparation & Print Receipt Modal (Before starting kitchen preparation) */}
-      <Dialog 
-        open={isPrepareModalOpen} 
-        onOpenChange={(open) => {
-          if (!isUpdatingStatus) setIsPrepareModalOpen(open);
+      {/* Unified Image 2 Order Payment & Detail Modal */}
+      <OrderPaymentModal
+        isOpen={!!selectedOrder}
+        onClose={() => {
+          if (!isSubmittingPayment) setSelectedOrder(null);
         }}
-      >
-        <DialogContent className="sm:max-w-md bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
-          <DialogHeader className="border-b pb-3 border-slate-100 dark:border-slate-800">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 flex items-center justify-center">
-                <ChefHat className="w-4 h-4" />
-              </div>
-              <div>
-                <DialogTitle className="text-base font-bold text-slate-900 dark:text-slate-100">
-                  Siapkan Pesanan & Cetak Struk
-                </DialogTitle>
-                <DialogDescription className="text-xs text-slate-500">
-                  {orderToPrepare?.orderNumber} • {orderToPrepare?.tableNumber ? formatTableLabel(orderToPrepare.tableNumber) : orderToPrepare?.orderType.replace("_", " ")}
-                </DialogDescription>
-              </div>
-            </div>
-          </DialogHeader>
-
-          {orderToPrepare && (
-            <div className="space-y-4 py-2">
-              {/* Order Item Summary */}
-              <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl p-3">
-                <div className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2 flex items-center justify-between">
-                  <span>Menu yang Akan Dimasak</span>
-                  <span className="text-[11px] text-muted-foreground">{orderToPrepare.items.length} Menu</span>
-                </div>
-                <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
-                  {orderToPrepare.items.map((item, idx) => (
-                    <div key={idx} className="flex justify-between items-center text-xs py-1 border-b border-dashed border-slate-200 dark:border-slate-800 last:border-0">
-                      <span className="text-slate-800 dark:text-slate-200">
-                        <strong className="text-blue-600 font-sans mr-1.5">{item.quantity}x</strong>
-                        {item.productName}
-                        {item.notes && <span className="block text-[10px] text-slate-400 italic">({item.notes})</span>}
-                      </span>
-                      <span className="text-slate-500 text-[11px] font-sans">{formatCurrency(Number(item.subtotal))}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Receipt Print Quick Actions */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">Cetak Dokumen Fisik</span>
-                  <span className="text-[11px] text-slate-400">Opsional</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => handlePrintReceipt(orderToPrepare, 'kitchen')}
-                    disabled={isPrinting || isUpdatingStatus}
-                    className="h-10 text-xs font-medium border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 text-slate-700 dark:text-slate-300 gap-1.5 disabled:opacity-50"
-                  >
-                    
-                    Tiket Dapur
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => handlePrintReceipt(orderToPrepare, 'customer')}
-                    disabled={isPrinting || isUpdatingStatus}
-                    className="h-10 text-xs font-medium border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 text-slate-700 dark:text-slate-300 gap-1.5 disabled:opacity-50"
-                  >
-                    
-                    Struk Pelanggan
-                  </Button>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => handlePrintReceipt(orderToPrepare, 'all')}
-                  disabled={isPrinting || isUpdatingStatus}
-                  className="w-full h-9 text-xs border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 text-slate-700 dark:text-slate-300 gap-1.5 disabled:opacity-50"
-                >
-                  
-                  Cetak Keduanya
-                </Button>
-              </div>
-
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex gap-2 justify-end">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  disabled={isUpdatingStatus}
-                  onClick={() => setIsPrepareModalOpen(false)}
-                  className="h-10 text-xs disabled:opacity-50 cursor-pointer"
-                >
-                  Batal
-                </Button>
-                <Button 
-                  type="button"
-                  disabled={isUpdatingStatus}
-                  onClick={() => handleStatusChange(orderToPrepare.id, 'PROCESSING')}
-                  className="h-10 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white gap-1.5 shadow-sm disabled:opacity-75 cursor-pointer"
-                >
-                  {isUpdatingStatus ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Memproses...</span>
-                    </>
-                  ) : (
-                    <>
-                      
-                      <span>Proses Pesanan</span>
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Order Detail Modal */}
-      <Dialog 
-        open={isDialogOpen} 
-        onOpenChange={(open) => {
-          if (!isUpdatingStatus) setIsDialogOpen(open);
-        }}
-      >
-        <DialogContent className="sm:max-w-md bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-          <DialogHeader className="border-b pb-3 border-slate-100 dark:border-slate-800">
-            <DialogTitle className="flex items-center gap-2 text-base">
-              <span>Detail Pesanan</span>
-              <span className="font-sans text-blue-600">{selectedOrder?.orderNumber || ""}</span>
-            </DialogTitle>
-            <DialogDescription className="text-xs">
-              Waktu: {selectedOrder ? formatDate(selectedOrder.createdAt) : ""}
-            </DialogDescription>
-          </DialogHeader>
-
-          {selectedOrder && (
-            <div className="space-y-4 pt-2">
-              {/* Order Info (Flat layout, no nested card) */}
-              <div className="grid grid-cols-2 gap-y-2.5 gap-x-4 text-xs pb-3 border-b border-slate-100 dark:border-slate-800">
-                <div>
-                  <span className="text-muted-foreground block text-[11px] mb-0.5">
-                    {selectedOrder.tableNumber ? "Meja" : "Tipe Pesanan"}
-                  </span>
-                  <span className="font-semibold text-foreground">
-                    {selectedOrder.tableNumber ? formatTableLabel(selectedOrder.tableNumber) : selectedOrder.orderType.replace("_", " ")}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground block text-[11px] mb-0.5">Pemesanan Lewat</span>
-                  {(() => {
-                    const srcInfo = getOrderSource(selectedOrder);
-                    return (
-                      <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
-                        srcInfo.isSelfOrder
-                          ? "border-blue-500/30 bg-blue-50 text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300"
-                          : "border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                      }`}>
-                        {srcInfo.label}
-                      </span>
-                    );
-                  })()}
-                </div>
-                <div>
-                  <span className="text-muted-foreground block text-[11px] mb-0.5">Pelanggan</span>
-                  <span className="font-semibold text-foreground">
-                    {selectedOrder.customerName || "Tamu / Umum"}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground block text-[11px] mb-0.5">Metode Bayar</span>
-                  <span className="font-semibold text-foreground">
-                    {formatPaymentMethodLabel(selectedOrder.paymentMethod)}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground block text-[11px] mb-0.5">Status Pembayaran</span>
-                  <span className={`font-semibold ${selectedOrder.paymentStatus === "PAID" ? "text-emerald-600" : "text-slate-500"}`}>
-                    {selectedOrder.paymentStatus === "PAID" ? "LUNAS" : "BELUM LUNAS"}
-                  </span>
-                </div>
-              </div>
-
-              {/* Items List */}
-              <div>
-                <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 dark:border-slate-800">
-                  <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
-                    Daftar Menu
-                  </h4>
-                  <span className="text-[11px] text-muted-foreground">
-                    {selectedOrder.items.filter(i => i.isCompleted).length} dari {selectedOrder.items.length} selesai
-                  </span>
-                </div>
-
-                <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                  {selectedOrder.items.map((item) => (
-                    <div 
-                      key={item.id} 
-                      className={`flex items-center justify-between p-2 rounded-lg transition-colors text-xs ${
-                        isUpdatingStatus ? "opacity-60 cursor-not-allowed" : "hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer"
-                      }`}
-                      onClick={() => !isUpdatingStatus && handleToggleItem(selectedOrder.id, item.id, !item.isCompleted)}
-                    >
-                      <div className="flex items-center gap-2.5 flex-1 pr-2 min-w-0">
-                        <Checkbox 
-                          id={`modal-item-${item.id}`} 
-                          checked={item.isCompleted} 
-                          disabled={isUpdatingStatus}
-                          onCheckedChange={(checked) => !isUpdatingStatus && handleToggleItem(selectedOrder.id, item.id, checked as boolean)}
-                          className="w-4 h-4 disabled:opacity-50"
-                        />
-                        <label 
-                          htmlFor={`modal-item-${item.id}`}
-                          className={`leading-tight truncate ${
-                            isUpdatingStatus ? "cursor-not-allowed" : "cursor-pointer"
-                          } ${item.isCompleted ? "text-muted-foreground line-through" : "text-foreground font-medium"}`}
-                        >
-                          <span className="font-bold mr-1">{item.quantity}x</span> {item.productName}
-                          {item.notes && <span className="block text-[10px] text-muted-foreground italic font-normal">"{item.notes}"</span>}
-                        </label>
-                      </div>
-                      <span className="font-sans text-muted-foreground shrink-0">{formatCurrency(Number(item.subtotal))}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Print buttons inside detail (Flat, no nested card) */}
-              <div className="space-y-1.5 pt-1">
-                <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 block">Cetak Struk:</span>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    disabled={isPrinting || isUpdatingStatus}
-                    onClick={() => handlePrintReceipt(selectedOrder, 'customer')}
-                    className="flex-1 h-8 text-xs gap-1 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs cursor-pointer disabled:opacity-50"
-                  >
-                    <Printer className="w-3.5 h-3.5 text-slate-500 mr-1" />
-                    Struk Pelanggan
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    disabled={isPrinting || isUpdatingStatus}
-                    onClick={() => handlePrintReceipt(selectedOrder, 'kitchen')}
-                    className="flex-1 h-8 text-xs gap-1 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs cursor-pointer disabled:opacity-50"
-                  >
-                    <ReceiptText className="w-3.5 h-3.5 text-slate-500 mr-1" />
-                    Tiket Dapur
-                  </Button>
-                </div>
-              </div>
-
-              {/* Total & Action Buttons */}
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-3">
-                {/* Rincian Biaya (Subtotal, Diskon, Pajak, Layanan, Grand Total) */}
-                {(() => {
-                  const subtotalNum = Number(selectedOrder.totalAmount || 0) > 0 
-                    ? Number(selectedOrder.totalAmount) 
-                    : selectedOrder.items.reduce((sum, item) => sum + Number(item.subtotal || 0), 0);
-                  const discountNum = Number(selectedOrder.discount || 0);
-                  const taxNum = Number(selectedOrder.tax || 0);
-                  const serviceChargeNum = Number(selectedOrder.serviceCharge || 0);
-                  const platformFeeNum = Number(selectedOrder.platformFee || 0);
-                  const grandTotalNum = Number(selectedOrder.grandTotal || 0);
-                  
-                  // Perbedaan yang belum teralokasi (jika ada pesanan legacy)
-                  const knownDiff = taxNum + serviceChargeNum + platformFeeNum - discountNum;
-                  const unexplainedDiff = grandTotalNum - (subtotalNum + knownDiff);
-
-                  return (
-                    <div className="space-y-1.5 text-xs text-muted-foreground pb-2 border-b border-slate-100 dark:border-slate-800">
-                      <div className="flex justify-between items-center">
-                        <span>Subtotal</span>
-                        <span className="font-sans font-medium text-foreground">{formatCurrency(subtotalNum)}</span>
-                      </div>
-
-                      {discountNum > 0 && (
-                        <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400">
-                          <span>Diskon {selectedOrder.promoCode ? `(${selectedOrder.promoCode})` : ""}</span>
-                          <span className="font-sans font-medium">-{formatCurrency(discountNum)}</span>
-                        </div>
-                      )}
-
-                      {serviceChargeNum > 0 && (
-                        <div className="flex justify-between items-center">
-                          <span>Biaya Layanan</span>
-                          <span className="font-sans font-medium text-foreground">{formatCurrency(serviceChargeNum)}</span>
-                        </div>
-                      )}
-
-                      {taxNum > 0 && (
-                        <div className="flex justify-between items-center">
-                          <span>Pajak (PB1)</span>
-                          <span className="font-sans font-medium text-foreground">{formatCurrency(taxNum)}</span>
-                        </div>
-                      )}
-
-                      {platformFeeNum > 0 && (
-                        <div className="flex justify-between items-center">
-                          <span>Biaya Platform</span>
-                          <span className="font-sans font-medium text-foreground">{formatCurrency(platformFeeNum)}</span>
-                        </div>
-                      )}
-
-                      {unexplainedDiff > 0 && taxNum === 0 && (
-                        <div className="flex justify-between items-center">
-                          <span>Pajak & Biaya Lainnya</span>
-                          <span className="font-sans font-medium text-foreground">{formatCurrency(unexplainedDiff)}</span>
-                        </div>
-                      )}
-
-                      <div className="flex justify-between items-center text-sm font-bold text-foreground pt-1.5">
-                        <span>Total Tagihan</span>
-                        <span className="font-sans text-blue-600 text-base font-semibold">
-                          {formatCurrency(grandTotalNum)}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                <div className="flex flex-col gap-2">
-                  {selectedOrder.status === "PENDING" && (selectedOrder.orderType === "ONLINE" || selectedOrder.paymentMethod === "ONLINE") && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => handleCheckMidtransPayment(selectedOrder)}
-                      disabled={isUpdatingStatus || syncingOrderId === selectedOrder.id}
-                      className="w-full h-9 text-xs border-blue-200 text-blue-700 bg-blue-50/50 hover:bg-blue-100/60 font-semibold gap-1.5 disabled:opacity-50"
-                    >
-                      {syncingOrderId === selectedOrder.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-                      Periksa Status Pembayaran Midtrans
-                    </Button>
-                  )}
-
-                  <Button
-                    onClick={() => {
-                      const status = selectedOrder.status;
-                      if (status === "NEW") {
-                        setIsDialogOpen(false);
-                        handleStartPrepareClick(selectedOrder);
-                        return;
-                      }
-                      const next = status === "PENDING" ? "NEW" : status === "PROCESSING" ? "READY" : "COMPLETED";
-                      handleStatusChange(selectedOrder.id, next);
-                    }}
-                    disabled={isUpdatingStatus}
-                    className="w-full h-10 font-semibold gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-sm disabled:opacity-75 cursor-pointer"
-                  >
-                    {isUpdatingStatus ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Memproses...</span>
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle2 className="w-4 h-4" /> 
-                        {selectedOrder.status === "PENDING" ? "Konfirmasi Pembayaran" : 
-                         selectedOrder.status === "NEW" ? "Mulai Siapkan Pesanan" :
-                         selectedOrder.status === "PROCESSING" ? "Tandai Siap Disajikan" : "Selesaikan Pesanan"}
-                      </>
-                    )}
-                  </Button>
-
-                  <Button
-                    variant="ghost"
-                    disabled={isUpdatingStatus}
-                    onClick={() => {
-                      if (confirm("Apakah Anda yakin ingin membatalkan pesanan ini?")) {
-                        handleStatusChange(selectedOrder.id, "FAILED");
-                      }
-                    }}
-                    className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 text-xs h-9 disabled:opacity-50 cursor-pointer"
-                  >
-                    <XCircle className="w-3.5 h-3.5 mr-1" />
-                    Batalkan Pesanan
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+        order={selectedOrder}
+        posSettings={receiptSettings}
+        onConfirm={handleConfirmPaymentFromModal}
+        onStatusChange={handleStatusChange}
+        onToggleItem={handleToggleItem}
+        onPrintReceipt={handlePrintReceipt}
+        onCheckMidtrans={handleCheckMidtransPayment}
+        isProcessing={isSubmittingPayment}
+        updatingOrderId={updatingOrderId}
+        syncingOrderId={syncingOrderId}
+      />
 
       {/* Modal Konfirmasi Selesaikan Semua Pesanan */}
       <Dialog 
@@ -1574,6 +1328,13 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
         isOpen={isCameraScannerOpen}
         onClose={() => setIsCameraScannerOpen(false)}
         onScan={handleScanCode}
+      />
+
+      {/* Physical Thermal Receipt Printer (Screen-hidden, active during window.print) */}
+      <ReceiptPrinter 
+        data={printData} 
+        settings={receiptSettings} 
+        printMode={printMode} 
       />
     </div>
   );
