@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 
 const DataTable = dynamic(
   () => import('@/components/ui/data-table').then((mod) => mod.DataTable),
@@ -1708,85 +1709,46 @@ export function ProductList({
         </div>
       </div>
 
-      {/* Filter Tabs Ketersediaan & Stok */}
-      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 flex-wrap">
-        <button
-          onClick={() => setStatusFilter('ALL')}
-          className={cn(
-            "px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5",
-            statusFilter === 'ALL'
-              ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-semibold shadow-xs"
-              : "text-muted-foreground hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800"
-          )}
-        >
-          <span>Semua Menu</span>
-          <span className={cn(
-            "text-[10px] px-1.5 py-0.2 rounded-full",
-            statusFilter === 'ALL' ? "bg-white/20 text-white dark:bg-slate-900/20 dark:text-slate-900" : "bg-slate-200/60 dark:bg-slate-800"
-          )}>
-            {totalCount}
-          </span>
-        </button>
-
-        <button
-          onClick={() => setStatusFilter('ACTIVE')}
-          className={cn(
-            "px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5",
-            statusFilter === 'ACTIVE'
-              ? "bg-emerald-600 text-white font-semibold shadow-xs"
-              : "text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
-          )}
-        >
-          <CheckCircle2 className="w-3.5 h-3.5" />
-          <span>Tersedia</span>
-          <span className={cn(
-            "text-[10px] px-1.5 py-0.2 rounded-full",
-            statusFilter === 'ACTIVE' ? "bg-white/25 text-white" : "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300"
-          )}>
-            {activeCount}
-          </span>
-        </button>
-
-        {/* Tab Cerdas: Hanya tampil bila ada barang yang melacak stok dan menipis */}
-        {lowStockCount > 0 && (
-          <button
-            onClick={() => setStatusFilter('LOW_STOCK')}
-            className={cn(
-              "px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5",
-              statusFilter === 'LOW_STOCK'
-                ? "bg-amber-600 text-white font-semibold shadow-xs"
-                : "text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40"
-            )}
-          >
-            <AlertCircle className="w-3.5 h-3.5" />
-            <span>Stok Menipis</span>
-            <span className={cn(
-              "text-[10px] px-1.5 py-0.2 rounded-full",
-              statusFilter === 'LOW_STOCK' ? "bg-white/25 text-white" : "bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300"
-            )}>
-              {lowStockCount}
-            </span>
-          </button>
-        )}
-
-        <button
-          onClick={() => setStatusFilter('INACTIVE')}
-          className={cn(
-            "px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5",
-            statusFilter === 'INACTIVE'
-              ? "bg-slate-700 text-white dark:bg-slate-300 dark:text-slate-900 font-semibold shadow-xs"
-              : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-          )}
-        >
-          <PowerOff className="w-3.5 h-3.5" />
-          <span>Tidak Tersedia (86)</span>
-          <span className={cn(
-            "text-[10px] px-1.5 py-0.2 rounded-full",
-            statusFilter === 'INACTIVE' ? "bg-white/25 text-white dark:bg-slate-900/25 dark:text-slate-900" : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
-          )}>
-            {inactiveCount}
-          </span>
-        </button>
+      {/* Status Filter Tabs (Underline SaaS style with live counts) */}
+      <div className="flex items-center gap-6 border-b border-slate-200/80 dark:border-slate-800 overflow-x-auto no-scrollbar">
+        {[
+          { key: 'ALL', label: 'Semua Menu', count: totalCount },
+          { key: 'ACTIVE', label: 'Tersedia', count: activeCount },
+          ...(lowStockCount > 0 ? [{ key: 'LOW_STOCK', label: 'Stok Menipis', count: lowStockCount }] : []),
+          { key: 'INACTIVE', label: 'Tidak Tersedia', count: inactiveCount },
+        ].map((tab) => {
+          const isActive = statusFilter === tab.key;
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setStatusFilter(tab.key as any)}
+              className={cn(
+                "relative pb-3 text-xs sm:text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer whitespace-nowrap",
+                isActive
+                  ? "text-blue-600 dark:text-blue-400 font-semibold"
+                  : "text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
+              )}
+            >
+              <span>{tab.label}</span>
+              <span className={cn(
+                "text-xs px-2 py-0.5 rounded-lg font-medium transition-colors",
+                isActive
+                  ? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300"
+                  : "text-slate-400 dark:text-slate-500"
+              )}>
+                {tab.count}
+              </span>
+              {isActive && (
+                <motion.div
+                  layoutId="activeProductTabUnderline"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-500 rounded-full"
+                  transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                />
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {viewMode === 'list' ? (
@@ -1796,7 +1758,7 @@ export function ProductList({
           searchKey="name" 
           searchPlaceholder="Cari nama item..." 
           onRowClick={handleRowClick}
-          infiniteScroll={true}
+          infiniteScroll={false}
           initialPageSize={10}
           batchSize={10}
           rowSelection={rowSelection}
@@ -1808,12 +1770,12 @@ export function ProductList({
           {/* Card View Toolbar */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center w-full max-w-sm relative">
-              <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
                 placeholder="Cari nama menu atau SKU..."
                 value={cardSearchQuery}
                 onChange={(e) => setCardSearchQuery(e.target.value)}
-                className="pl-9 bg-card"
+                className="pl-9 h-9 text-xs rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus-visible:ring-blue-600"
               />
             </div>
             {batchToolbar}
