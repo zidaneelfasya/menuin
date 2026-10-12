@@ -10,22 +10,16 @@ import {
   RefreshCw,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  Download,
   Calendar as CalendarIcon,
   Sparkles,
   Activity,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { DateRange } from "react-day-picker";
 import { format, subMonths, addMonths } from "date-fns";
 import { id as localeId } from "date-fns/locale";
@@ -433,11 +427,66 @@ export function OperationsReportClient({ initialData, outletKey }: OperationsRep
   }, []);
 
   // Filter Bar Handlers
-  const handleTabChange = (tab: string) => {
-    const nextTab = tab as "harian" | "bulanan" | "tahunan";
-    setCurrentTab(nextTab);
+  const handleSelectToday = () => {
+    setCurrentTab("harian");
+    setCustomRange(undefined);
+    setTempRange(undefined);
+    setIsCalendarOpen(false);
+    loadData("daily", todayDateStr, todayDateStr);
+  };
 
-    if (nextTab === "harian") {
+  const handleSelectThisMonth = () => {
+    setCurrentTab("bulanan");
+    setCustomRange(undefined);
+    setTempRange(undefined);
+    setIsCalendarOpen(false);
+    const thisMonth = format(now, "yyyy-MM");
+    setMonthParam(thisMonth);
+    const [y, m] = thisMonth.split("-").map(Number);
+    const start = format(new Date(y, m - 1, 1), "yyyy-MM-dd");
+    const end = format(new Date(y, m, 0), "yyyy-MM-dd");
+    loadData("monthly", start, end);
+  };
+
+  const handleSelectLastMonth = () => {
+    setCurrentTab("bulanan");
+    setCustomRange(undefined);
+    setTempRange(undefined);
+    setIsCalendarOpen(false);
+    const lastMonth = format(subMonths(now, 1), "yyyy-MM");
+    setMonthParam(lastMonth);
+    const [y, m] = lastMonth.split("-").map(Number);
+    const start = format(new Date(y, m - 1, 1), "yyyy-MM-dd");
+    const end = format(new Date(y, m, 0), "yyyy-MM-dd");
+    loadData("monthly", start, end);
+  };
+
+  const handleSelectThisYear = () => {
+    setCurrentTab("tahunan");
+    setCustomRange(undefined);
+    setTempRange(undefined);
+    setIsCalendarOpen(false);
+    const thisYear = String(now.getFullYear());
+    setYearParam(thisYear);
+    loadData("yearly", `${thisYear}-01-01`, `${thisYear}-12-31`);
+  };
+
+  const handleApplyRange = () => {
+    if (!tempRange?.from) return;
+    setCurrentTab("harian");
+    setCustomRange(tempRange);
+    setIsCalendarOpen(false);
+    const startStr = format(tempRange.from, "yyyy-MM-dd");
+    const endStr = format(tempRange.to || tempRange.from, "yyyy-MM-dd");
+    loadData("custom", startStr, endStr);
+  };
+
+  const handleResetToToday = () => {
+    handleSelectToday();
+  };
+
+  const handleRefresh = () => {
+    if (currentTab === "harian") {
       if (customRange?.from) {
         loadData(
           "custom",
@@ -447,67 +496,45 @@ export function OperationsReportClient({ initialData, outletKey }: OperationsRep
       } else {
         loadData("daily", todayDateStr, todayDateStr);
       }
-    } else if (nextTab === "bulanan") {
+    } else if (currentTab === "bulanan") {
       const [y, m] = monthParam.split("-").map(Number);
-      const start = format(new Date(y, m - 1, 1), "yyyy-MM-dd");
-      const end = format(new Date(y, m, 0), "yyyy-MM-dd");
-      loadData("monthly", start, end);
-    } else if (nextTab === "tahunan") {
+      loadData(
+        "monthly",
+        format(new Date(y, m - 1, 1), "yyyy-MM-dd"),
+        format(new Date(y, m, 0), "yyyy-MM-dd")
+      );
+    } else {
       loadData("yearly", `${yearParam}-01-01`, `${yearParam}-12-31`);
     }
   };
 
-  const handleApplyRange = () => {
-    if (!tempRange?.from) return;
-    setCustomRange(tempRange);
-    setIsCalendarOpen(false);
-    const startStr = format(tempRange.from, "yyyy-MM-dd");
-    const endStr = format(tempRange.to || tempRange.from, "yyyy-MM-dd");
-    loadData("custom", startStr, endStr);
-  };
-
-  const handleResetToToday = () => {
-    setCustomRange(undefined);
-    setTempRange(undefined);
-    setIsCalendarOpen(false);
-    loadData("daily", todayDateStr, todayDateStr);
-  };
-
-  const handleMonthSelect = (val: string) => {
-    setMonthParam(val);
-    const [y, m] = val.split("-").map(Number);
-    const start = format(new Date(y, m - 1, 1), "yyyy-MM-dd");
-    const end = format(new Date(y, m, 0), "yyyy-MM-dd");
-    loadData("monthly", start, end);
-  };
-
-  const handleMonthStep = (step: number) => {
-    const [y, m] = monthParam.split("-").map(Number);
-    const d = step > 0 ? addMonths(new Date(y, m - 1, 1), 1) : subMonths(new Date(y, m - 1, 1), 1);
-    const newVal = format(d, "yyyy-MM");
-    handleMonthSelect(newVal);
-  };
-
-  const handleYearSelect = (val: string) => {
-    setYearParam(val);
-    loadData("yearly", `${val}-01-01`, `${val}-12-31`);
-  };
-
-  const handleYearStep = (step: number) => {
-    const currentY = parseInt(yearParam, 10);
-    const nextY = String(currentY + step);
-    handleYearSelect(nextY);
-  };
-
-  const dateButtonLabel = React.useMemo(() => {
-    if (!customRange?.from) return "Hari Ini";
-    const fromStr = format(customRange.from, "d MMM", { locale: localeId });
-    if (!customRange.to || format(customRange.from, "yyyy-MM-dd") === format(customRange.to, "yyyy-MM-dd")) {
-      return fromStr;
+  const currentPeriodLabel = React.useMemo(() => {
+    if (customRange?.from) {
+      const fromStr = format(customRange.from, "d MMM", { locale: localeId });
+      if (
+        !customRange.to ||
+        format(customRange.from, "yyyy-MM-dd") === format(customRange.to, "yyyy-MM-dd")
+      ) {
+        if (format(customRange.from, "yyyy-MM-dd") === todayDateStr) {
+          return "Hari Ini";
+        }
+        return format(customRange.from, "d MMM yyyy", { locale: localeId });
+      }
+      return `${fromStr} - ${format(customRange.to, "d MMM yyyy", { locale: localeId })}`;
     }
-    const toStr = format(customRange.to, "d MMM yyyy", { locale: localeId });
-    return `${fromStr} - ${toStr}`;
-  }, [customRange]);
+    if (currentTab === "harian") {
+      return "Hari Ini";
+    }
+    if (currentTab === "bulanan") {
+      const [y, m] = monthParam.split("-").map(Number);
+      const d = new Date(y, m - 1, 1);
+      return format(d, "MMM yyyy", { locale: localeId });
+    }
+    if (currentTab === "tahunan") {
+      return `Thn ${yearParam}`;
+    }
+    return "Semua Waktu";
+  }, [currentTab, monthParam, yearParam, customRange, todayDateStr]);
 
   const hasCustomDate = Boolean(customRange?.from);
 
@@ -624,276 +651,235 @@ export function OperationsReportClient({ initialData, outletKey }: OperationsRep
       </div>
 
       {/* ==================================================== */}
-      {/* 2. SCREEN EDITORIAL HEADER */}
+      {/* 2. SCREEN EDITORIAL HEADER & TOOLBAR (CASHFLOW STYLE) */}
       {/* ==================================================== */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 print:hidden">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 print:hidden">
         <div>
-          <div className="text-[11px] font-medium text-slate-400 uppercase tracking-widest">
-            Analisis Operasional &bull; {tenant.name}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[11px] font-medium text-slate-400 uppercase tracking-widest">
+              Analisis Operasional &bull; {tenant.name}
+            </span>
+            {isLoading && (
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200/60 text-[10px] font-medium text-[#0e59f9] transition-all">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#0e59f9] animate-pulse" />
+                Memperbarui...
+              </span>
+            )}
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 mt-0.5">
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900 mt-0.5">
             Operasional &amp; Peak Hours
           </h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Total {formatNumber(summary?.totalOrders || 0)} transaksi 
-           
-          </p>
         </div>
 
-        {/* Action Buttons: Export & Print */}
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleExportExcel}
-            className="h-8 px-3 rounded-xl border-[#EAEFF8] text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-xs"
-          >
-            <FileSpreadsheet className="h-3.5 w-3.5 mr-1.5 text-emerald-600" />
-            Ekspor Excel
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handlePrint}
-            className="h-8 px-3 rounded-xl border-[#EAEFF8] text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-xs"
-          >
-            <Printer className="h-3.5 w-3.5 mr-1.5 text-slate-500" />
-            Cetak
-          </Button>
-        </div>
-      </div>
-
-      {/* ==================================================== */}
-      {/* 3. MODERN FILTER BAR (TABS + MODERN DATEPICKER POPOVER) */}
-      {/* Identical standard to /reports and /reports/sales */}
-      {/* ==================================================== */}
-      <div className="bg-white rounded-2xl border border-[#EAEFF8] p-3 sm:p-3.5 shadow-sm print:hidden">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 lg:gap-4">
-          {/* Left: Tabs + Contextual Modern Selector */}
-          <div className="flex flex-wrap items-center gap-2.5">
-            {/* Pill Tabs for Mode */}
-            <Tabs value={currentTab} onValueChange={handleTabChange} className="w-auto">
-              <TabsList className="bg-slate-100 p-1 border border-slate-200/60 rounded-xl h-9">
-                <TabsTrigger
-                  value="harian"
-                  className="data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs text-xs font-semibold px-3.5 rounded-lg transition-all h-7"
-                >
-                  Harian
-                </TabsTrigger>
-                <TabsTrigger
-                  value="bulanan"
-                  className="data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs text-xs font-semibold px-3.5 rounded-lg transition-all h-7"
-                >
-                  Bulanan
-                </TabsTrigger>
-                <TabsTrigger
-                  value="tahunan"
-                  className="data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs text-xs font-semibold px-3.5 rounded-lg transition-all h-7"
-                >
-                  Tahunan (Recap)
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-
-            {/* HARIAN CONTROLS: Modern Date Range Popover */}
-            {currentTab === "harian" && (
-              <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={cn(
-                      "h-9 text-xs font-medium gap-2 px-3 border-[#EAEFF8] text-slate-700 hover:bg-slate-50 transition-colors shadow-xs rounded-xl",
-                      hasCustomDate && "border-blue-300 bg-blue-50/50 text-[#0e59f9] font-semibold"
-                    )}
-                  >
-                    <CalendarIcon className="w-3.5 h-3.5 text-slate-500" />
-                    <span>{dateButtonLabel}</span>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 rounded-2xl shadow-xl border border-[#EAEFF8]" align="start">
-                  <div className="p-3 border-b border-slate-100 flex items-center justify-between">
-                    <div className="text-xs font-semibold text-slate-900">
-                      Pilih Rentang Tanggal
-                    </div>
-                    {hasCustomDate && (
-                      <button
-                        type="button"
-                        onClick={handleResetToToday}
-                        className="text-[11px] text-slate-500 hover:text-slate-900 transition-colors underline"
-                      >
-                        Reset ke Hari Ini
-                      </button>
-                    )}
-                  </div>
-                  <div className="p-2">
-                    <Calendar
-                      mode="range"
-                      defaultMonth={tempRange?.from || customRange?.from || now}
-                      selected={tempRange}
-                      onSelect={setTempRange}
-                      numberOfMonths={1}
-                      locale={localeId}
-                    />
-                  </div>
-                  <div className="p-3 border-t border-slate-100 flex items-center justify-between bg-slate-50/50 rounded-b-2xl">
-                    <div className="text-[11px] text-slate-500">
-                      {tempRange?.from ? (
-                        <>
-                          {format(tempRange.from, "d MMM", { locale: localeId })}
-                          {tempRange.to ? ` - ${format(tempRange.to, "d MMM yyyy", { locale: localeId })}` : ""}
-                        </>
-                      ) : (
-                        "Pilih rentang tanggal di kalender"
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setIsCalendarOpen(false)}
-                        className="h-8 text-xs font-medium text-slate-500 hover:text-slate-800"
-                      >
-                        Batal
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={handleApplyRange}
-                        disabled={!tempRange?.from}
-                        className="h-8 text-xs font-semibold bg-[#0e59f9] text-white hover:bg-blue-700 rounded-xl px-3"
-                      >
-                        Terapkan
-                      </Button>
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            )}
-
-            {/* BULANAN CONTROLS: Chevron Month Navigation + Modern Select */}
-            {currentTab === "bulanan" && (
-              <div className="flex items-center gap-1.5">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-9 w-9 text-slate-600 border-[#EAEFF8] hover:bg-slate-50 rounded-xl"
-                  onClick={() => handleMonthStep(-1)}
-                  title="Bulan Sebelumnya"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </Button>
-
-                <Select value={monthParam} onValueChange={handleMonthSelect}>
-                  <SelectTrigger className="h-9 w-[170px] text-xs font-medium border-[#EAEFF8] rounded-xl bg-white shadow-xs">
-                    <SelectValue placeholder="Pilih Bulan" />
-                  </SelectTrigger>
-                  <SelectContent align="start" className="rounded-xl border-[#EAEFF8]">
-                    {monthOptions.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value} className="text-xs cursor-pointer">
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-9 w-9 text-slate-600 border-[#EAEFF8] hover:bg-slate-50 rounded-xl"
-                  onClick={() => handleMonthStep(1)}
-                  title="Bulan Berikutnya"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
-            )}
-
-            {/* TAHUNAN CONTROLS: Chevron Year Navigation + Modern Select */}
-            {currentTab === "tahunan" && (
-              <div className="flex items-center gap-1.5">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-9 w-9 text-slate-600 border-[#EAEFF8] hover:bg-slate-50 rounded-xl"
-                  onClick={() => handleYearStep(-1)}
-                  title="Tahun Sebelumnya"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </Button>
-
-                <Select value={yearParam} onValueChange={handleYearSelect}>
-                  <SelectTrigger className="h-9 w-[120px] text-xs font-medium border-[#EAEFF8] rounded-xl bg-white shadow-xs">
-                    <SelectValue placeholder="Pilih Tahun" />
-                  </SelectTrigger>
-                  <SelectContent align="start" className="rounded-xl border-[#EAEFF8]">
-                    {yearOptions.map((y) => (
-                      <SelectItem key={y} value={String(y)} className="text-xs cursor-pointer">
-                        Tahun {y}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-9 w-9 text-slate-600 border-[#EAEFF8] hover:bg-slate-50 rounded-xl"
-                  onClick={() => handleYearStep(1)}
-                  title="Tahun Berikutnya"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
-            )}
-
-            {/* Active Range Pill Display */}
-            <span className="hidden lg:inline-flex items-center text-xs font-medium text-slate-500 bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-xl">
-              {reportPeriod.formattedStart} &mdash; {reportPeriod.formattedEnd}
-            </span>
-          </div>
-
-          {/* Right: Refresh Button */}
-          <div className="flex items-center gap-2 self-end lg:self-auto">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                if (currentTab === "harian") {
-                  if (customRange?.from) {
-                    loadData(
-                      "custom",
-                      format(customRange.from, "yyyy-MM-dd"),
-                      format(customRange.to || customRange.from, "yyyy-MM-dd")
-                    );
-                  } else {
-                    loadData("daily", todayDateStr, todayDateStr);
-                  }
-                } else if (currentTab === "bulanan") {
-                  const [y, m] = monthParam.split("-").map(Number);
-                  loadData(
-                    "monthly",
-                    format(new Date(y, m - 1, 1), "yyyy-MM-dd"),
-                    format(new Date(y, m, 0), "yyyy-MM-dd")
-                  );
-                } else {
-                  loadData("yearly", `${yearParam}-01-01`, `${yearParam}-12-31`);
-                }
-              }}
-              disabled={isLoading}
-              className="h-9 px-3 rounded-xl border border-[#EAEFF8] text-xs font-medium text-slate-600 hover:bg-slate-50 shadow-xs"
+        {/* Right Toolbar Controls */}
+        <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
+          {/* Date Selector Popover (with Hari Ini, Bulan Ini, Bulan Lalu, Tahun Ini presets) */}
+          <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className={cn(
+                  "h-9 px-3 rounded-xl bg-white border border-[#EAEFF8] text-xs font-medium text-slate-700 hover:bg-slate-50 shadow-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer",
+                  hasCustomDate &&
+                    "border-blue-300 bg-blue-50/40 text-[#0e59f9] font-semibold"
+                )}
+              >
+                <CalendarIcon className="w-3.5 h-3.5 text-slate-400" />
+                <span className="capitalize">{currentPeriodLabel}</span>
+                {isLoading ? (
+                  <RefreshCw className="w-3 h-3 text-[#0e59f9] animate-spin ml-0.5" />
+                ) : (
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                )}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="end"
+              className="w-auto p-0 rounded-2xl shadow-xl border border-[#EAEFF8]"
             >
-              <RefreshCw className={cn("h-3.5 w-3.5 mr-1.5 text-slate-500", isLoading && "animate-spin")} />
-              <span>Segarkan</span>
-            </Button>
-          </div>
+              <div className="p-3 border-b border-slate-100 flex items-center justify-between gap-3">
+                <div className="text-xs font-semibold text-slate-900">
+                  Pilih Jangka Waktu Laporan
+                </div>
+                {hasCustomDate && (
+                  <button
+                    type="button"
+                    onClick={handleResetToToday}
+                    className="text-[11px] text-slate-500 hover:text-slate-900 transition-colors underline cursor-pointer"
+                  >
+                    Reset ke Hari Ini
+                  </button>
+                )}
+              </div>
+
+              {/* Grid 4 Presets: Hari Ini, Bulan Ini, Bulan Lalu, Tahun Ini */}
+              <div className="p-2 border-b border-slate-100 grid grid-cols-2 sm:grid-cols-4 gap-1">
+                <button
+                  type="button"
+                  onClick={handleSelectToday}
+                  className={cn(
+                    "px-2.5 py-1 text-xs rounded-lg text-center font-medium transition-colors cursor-pointer",
+                    currentTab === "harian" && !hasCustomDate
+                      ? "bg-[#0e59f9] text-white font-semibold"
+                      : "bg-slate-50 hover:bg-slate-100 text-slate-700"
+                  )}
+                >
+                  Hari Ini
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSelectThisMonth}
+                  className={cn(
+                    "px-2.5 py-1 text-xs rounded-lg text-center font-medium transition-colors cursor-pointer",
+                    currentTab === "bulanan" &&
+                      monthParam === format(now, "yyyy-MM") &&
+                      !hasCustomDate
+                      ? "bg-[#0e59f9] text-white font-semibold"
+                      : "bg-slate-50 hover:bg-slate-100 text-slate-700"
+                  )}
+                >
+                  Bulan Ini
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSelectLastMonth}
+                  className={cn(
+                    "px-2.5 py-1 text-xs rounded-lg text-center font-medium transition-colors cursor-pointer",
+                    currentTab === "bulanan" &&
+                      monthParam === format(subMonths(now, 1), "yyyy-MM") &&
+                      !hasCustomDate
+                      ? "bg-[#0e59f9] text-white font-semibold"
+                      : "bg-slate-50 hover:bg-slate-100 text-slate-700"
+                  )}
+                >
+                  Bulan Lalu
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSelectThisYear}
+                  className={cn(
+                    "px-2.5 py-1 text-xs rounded-lg text-center font-medium transition-colors cursor-pointer",
+                    currentTab === "tahunan" &&
+                      yearParam === String(now.getFullYear()) &&
+                      !hasCustomDate
+                      ? "bg-[#0e59f9] text-white font-semibold"
+                      : "bg-slate-50 hover:bg-slate-100 text-slate-700"
+                  )}
+                >
+                  Tahun Ini
+                </button>
+              </div>
+
+              {/* Custom Date Range Calendar */}
+              <div className="p-2">
+                <Calendar
+                  mode="range"
+                  defaultMonth={tempRange?.from || customRange?.from || now}
+                  selected={tempRange}
+                  onSelect={setTempRange}
+                  numberOfMonths={1}
+                  locale={localeId}
+                />
+              </div>
+
+              {/* Footer: Date Preview, Batal & Terapkan */}
+              <div className="p-3 border-t border-slate-100 flex items-center justify-between bg-slate-50/50 rounded-b-2xl">
+                <div className="text-[11px] text-slate-500">
+                  {tempRange?.from ? (
+                    <>
+                      {format(tempRange.from, "d MMM", { locale: localeId })}
+                      {tempRange.to
+                        ? ` - ${format(tempRange.to, "d MMM yyyy", { locale: localeId })}`
+                        : ""}
+                    </>
+                  ) : (
+                    "Pilih rentang tanggal"
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsCalendarOpen(false)}
+                    className="h-8 text-xs font-medium text-slate-500 hover:text-slate-800"
+                  >
+                    Batal
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleApplyRange}
+                    disabled={!tempRange?.from}
+                    className="h-8 text-xs font-semibold bg-[#0e59f9] text-white hover:bg-blue-700 rounded-xl px-3"
+                  >
+                    Terapkan
+                  </Button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          {/* Export Dropdown Button */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="h-9 px-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5 text-white/80" />
+                <span>Export</span>
+                <ChevronDown className="w-3 h-3 text-white/70" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="end"
+              className="w-48 p-1.5 bg-white rounded-xl border border-[#EAEFF8] shadow-lg text-slate-800"
+            >
+              <button
+                type="button"
+                onClick={handleExportExcel}
+                className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg text-left hover:bg-slate-50 transition-colors text-slate-700 cursor-pointer"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Unduh Excel (.xlsx)</span>
+              </button>
+              <button
+                type="button"
+                onClick={handlePrint}
+                className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg text-left hover:bg-slate-50 transition-colors text-slate-700 cursor-pointer"
+              >
+                <Printer className="w-3.5 h-3.5 text-slate-500" />
+                <span>Cetak Laporan</span>
+              </button>
+            </PopoverContent>
+          </Popover>
+
+          {/* Refresh Button with Spin Animation */}
+          <button
+            type="button"
+            onClick={handleRefresh}
+            disabled={isLoading}
+            className="w-9 h-9 rounded-xl border border-[#EAEFF8] bg-white hover:bg-slate-50 text-slate-600 shadow-xs flex items-center justify-center transition-colors cursor-pointer"
+            title="Segarkan Data"
+          >
+            <RefreshCw
+              className={cn(
+                "w-4 h-4 text-slate-500",
+                isLoading && "animate-spin text-[#0e59f9]"
+              )}
+            />
+          </button>
         </div>
       </div>
+
+      {/* Content wrapper with opacity dimming when loading */}
+      <div
+        className={cn(
+          "space-y-6 transition-opacity duration-200",
+          isLoading && "opacity-50 pointer-events-none select-none"
+        )}
+      >
 
       {/* ==================================================== */}
       {/* 4. 4 TOP KPI CARDS (HIGH DATA-INK, SPARKLINE & BADGES) */}
@@ -1403,7 +1389,9 @@ export function OperationsReportClient({ initialData, outletKey }: OperationsRep
             <span>Total Mingguan: <strong className="text-slate-900 font-semibold">{formatKpiCurrency(summary?.totalRevenue || 0)}</strong></span>
           </div>
         </div>
-x``      </div>
+      </div>
+      {/* End of content wrapper */}
+      </div>
     </div>
   );
 }
