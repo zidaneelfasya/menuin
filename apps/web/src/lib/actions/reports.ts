@@ -9,9 +9,11 @@ import {
   shifts, 
   cashMovements,
   expenses,
+  incomes,
   categories,
   memberships,
-  accounts
+  accounts,
+  categoryBudgets
 } from '@/lib/db/schema';
 import { eq, and, gte, lte, desc, inArray, sql } from 'drizzle-orm';
 import { getCurrentUser } from './auth';
@@ -254,7 +256,13 @@ export async function getSalesReport(outletKey: string, params?: DateFilterParam
         .from(transactionItems)
         .leftJoin(products, eq(transactionItems.productId, products.id))
         .leftJoin(categories, eq(products.categoryId, categories.id))
-        .where(inArray(transactionItems.transactionId, trxIds));
+        .where(
+          and(
+            eq(transactionItems.tenantId, tenant.id),
+            gte(transactionItems.createdAt, currentStart),
+            lte(transactionItems.createdAt, currentEnd)
+          )
+        );
 
       allItems.forEach((it) => {
         const qty = it.quantity || 1;
@@ -1256,7 +1264,7 @@ export async function getFinanceReport(outletKey: string, params?: DateFilterPar
     const { currentStart, currentEnd, prevStart, prevEnd, period } = resolveDateIntervals(params);
 
     // Fetch transactions & previous period transactions
-    const [trxList, prevTrxList, expenseList, prevExpenseList] = await Promise.all([
+    const [trxList, prevTrxList, expenseList, prevExpenseList, incomeList, prevIncomeList] = await Promise.all([
       db
         .select()
         .from(transactions)
@@ -1299,6 +1307,27 @@ export async function getFinanceReport(outletKey: string, params?: DateFilterPar
             lte(expenses.date, prevEnd)
           )
         ),
+      db
+        .select()
+        .from(incomes)
+        .where(
+          and(
+            eq(incomes.tenantId, tenant.id),
+            gte(incomes.date, currentStart),
+            lte(incomes.date, currentEnd)
+          )
+        )
+        .orderBy(desc(incomes.date)),
+      db
+        .select()
+        .from(incomes)
+        .where(
+          and(
+            eq(incomes.tenantId, tenant.id),
+            gte(incomes.date, prevStart),
+            lte(incomes.date, prevEnd)
+          )
+        ),
     ]);
 
     // Time-series Chart Buckets for Hero Cash Flow Chart & MiniSparklines
@@ -1314,25 +1343,10 @@ export async function getFinanceReport(outletKey: string, params?: DateFilterPar
     const chartBucketsMap: Record<string, FinanceChartBucket> = {};
     const chartBucketsList: FinanceChartBucket[] = [];
 
-    let chartGranularity: 'hourly' | 'daily' | 'monthly' = 'daily';
+    // Granularity for cashflow is strictly daily (per tanggal) or monthly (per bulan), never hourly
+    let chartGranularity: 'daily' | 'monthly' = 'daily';
 
-    if (diffDays <= 1) {
-      chartGranularity = 'hourly';
-      for (let h = 0; h < 24; h++) {
-        const hourStr = String(h).padStart(2, '0') + ':00';
-        const label = h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`;
-        const bucket: FinanceChartBucket = {
-          key: hourStr,
-          date: hourStr,
-          label,
-          cashIn: 0,
-          cashOut: 0,
-          netFlow: 0,
-        };
-        chartBucketsMap[hourStr] = bucket;
-        chartBucketsList.push(bucket);
-      }
-    } else if (diffDays <= 35) {
+    if (diffDays <= 35) {
       chartGranularity = 'daily';
       const cursor = new Date(currentStart);
       while (cursor <= currentEnd) {
@@ -1372,20 +1386,16 @@ export async function getFinanceReport(outletKey: string, params?: DateFilterPar
     }
 
     const getBucketKey = (d: Date): string => {
-      if (chartGranularity === 'hourly') {
-        return String(d.getHours()).padStart(2, '0') + ':00';
-      } else if (chartGranularity === 'daily') {
+      if (chartGranularity === 'daily') {
         return d.toISOString().slice(0, 10);
       } else {
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       }
     };
 
-    // Fetch product items to calculate theoretical COGS
-    const trxIds = trxList.map((t) => t.id);
+    // Fetch product items to calculate theoretical COGS using indexed tenantId and date range
     let totalHpp = 0;
-
-    if (trxIds.length > 0) {
+    if (trxList.length > 0) {
       const allItems = await db
         .select({
           quantity: transactionItems.quantity,
@@ -1393,7 +1403,13 @@ export async function getFinanceReport(outletKey: string, params?: DateFilterPar
         })
         .from(transactionItems)
         .leftJoin(products, eq(transactionItems.productId, products.id))
-        .where(inArray(transactionItems.transactionId, trxIds));
+        .where(
+          and(
+            eq(transactionItems.tenantId, tenant.id),
+            gte(transactionItems.createdAt, currentStart),
+            lte(transactionItems.createdAt, currentEnd)
+          )
+        );
 
       allItems.forEach((it) => {
         const qty = it.quantity || 1;
@@ -1489,6 +1505,29 @@ export async function getFinanceReport(outletKey: string, params?: DateFilterPar
       }
     });
 
+    // Process Incomes (Manual non-sales: MODAL, LAINNYA)
+    let totalManualIncomes = 0;
+    let cashIncomes = 0;
+    let nonCashIncomes = 0;
+    const manualIncomeByCategory: Record<string, number> = {};
+
+    incomeList.forEach((inc) => {
+      const amt = parseFloat(inc.amount || '0') || 0;
+      totalManualIncomes += amt;
+      if (isCashPayment(inc.paymentMethod)) {
+        cashIncomes += amt;
+      } else {
+        nonCashIncomes += amt;
+      }
+      const cat = inc.category || 'LAINNYA';
+      manualIncomeByCategory[cat] = (manualIncomeByCategory[cat] || 0) + amt;
+
+      const bKey = getBucketKey(new Date(inc.date));
+      if (chartBucketsMap[bKey]) {
+        chartBucketsMap[bKey].cashIn += amt;
+      }
+    });
+
     // Fetch Cash Movements from shifts
     const movements = await db
       .select()
@@ -1506,7 +1545,8 @@ export async function getFinanceReport(outletKey: string, params?: DateFilterPar
     movements.forEach((m) => {
       const amt = parseFloat(m.amount || '0') || 0;
       const isAutoExpense = m.description && m.description.startsWith('[Biaya');
-      if (m.type === 'IN') {
+      const isAutoIncome = m.description && m.description.startsWith('[Pemasukan');
+      if (m.type === 'IN' && !isAutoIncome) {
         manualCashIn += amt;
         const bKey = getBucketKey(new Date(m.createdAt));
         if (chartBucketsMap[bKey]) {
@@ -1548,6 +1588,9 @@ export async function getFinanceReport(outletKey: string, params?: DateFilterPar
       const rawMethod = (t.paymentMethod || 'TUNAI').trim().toUpperCase();
       prevCashIn += isCashPayment(rawMethod) ? gTotal : netAmt;
     });
+    prevIncomeList.forEach((inc) => {
+      prevCashIn += parseFloat(inc.amount || '0') || 0;
+    });
 
     let prevCashOut = 0;
     prevExpenseList.forEach((exp) => {
@@ -1557,7 +1600,8 @@ export async function getFinanceReport(outletKey: string, params?: DateFilterPar
     const prevNetCashFlow = prevCashIn - prevCashOut;
 
     // Comprehensive Cash Flow Accounting:
-    const totalCashIn = cashCollected + nonCashSettled + manualCashIn;
+    const salesInflow = cashCollected + nonCashSettled;
+    const totalCashIn = salesInflow + totalManualIncomes + manualCashIn;
     const totalCashOut = totalExpenses + manualCashOut;
     const netCashFlow = totalCashIn - totalCashOut;
 
@@ -1567,13 +1611,65 @@ export async function getFinanceReport(outletKey: string, params?: DateFilterPar
     const grossProfitGrowth = cashInGrowth;
 
     // Dual-Channel Net Flows:
-    const drawerCashIn = cashCollected + manualCashIn;
+    const drawerCashIn = cashCollected + cashIncomes + manualCashIn;
     const drawerCashOut = cashExpenses + manualCashOut;
     const drawerNetFlow = drawerCashIn - drawerCashOut;
 
-    const digitalCashIn = nonCashSettled;
+    const digitalCashIn = nonCashSettled + nonCashIncomes;
     const digitalCashOut = nonCashExpenses;
     const digitalNetFlow = digitalCashIn - digitalCashOut;
+
+    // Income Category Breakdown (strictly PENJUALAN, MODAL, LAINNYA):
+    const modalAmount = manualIncomeByCategory['MODAL'] || 0;
+    const lainnyaAmount = (manualIncomeByCategory['LAINNYA'] || 0) + manualCashIn;
+    const manualSalesAmount = manualIncomeByCategory['PENJUALAN'] || 0;
+    const totalSalesAmount = salesInflow + manualSalesAmount;
+
+    const rawIncomeBreakdown = [
+      { category: 'PENJUALAN', label: 'Penjualan', amount: totalSalesAmount },
+      { category: 'MODAL', label: 'Setoran Modal', amount: modalAmount },
+      { category: 'LAINNYA', label: 'Pemasukan Lainnya', amount: lainnyaAmount },
+    ];
+
+    const incomeCategoryBreakdown = rawIncomeBreakdown
+      .sort((a, b) => b.amount - a.amount)
+      .map((item) => ({
+        category: item.category,
+        label: item.label,
+        amount: item.amount,
+        percentage: totalCashIn > 0 ? (item.amount / totalCashIn) * 100 : 0,
+      }));
+
+    // Top single income records (combining sales transactions and manual incomes)
+    const combinedIncomeRows = [
+      ...trxList
+        .filter(
+          (t) =>
+            t.status !== 'CANCELED' &&
+            t.paymentStatus !== 'CANCELED' &&
+            t.paymentStatus !== 'REFUNDED'
+        )
+        .map((t) => ({
+          id: t.id,
+          title: t.orderNumber
+            ? `Pesanan #${t.orderNumber.replace(/^#+/, '')}`
+            : `Penjualan #${t.id.slice(0, 6)}`,
+          description: t.customerName ? `Pelanggan: ${t.customerName}` : 'Transaksi Penjualan POS',
+          category: 'PENJUALAN',
+          amount: parseFloat(t.grandTotal || '0') || 0,
+          date: t.createdAt ? t.createdAt.toISOString() : new Date().toISOString(),
+          paymentMethod: t.paymentMethod || 'TUNAI',
+        })),
+      ...incomeList.map((inc) => ({
+        id: inc.id,
+        title: inc.description || (inc.category === 'MODAL' ? 'Setoran Modal' : 'Pemasukan Kas'),
+        description: inc.category === 'MODAL' ? 'Setoran Modal Pemilik' : 'Pemasukan Non-Penjualan',
+        category: inc.category,
+        amount: parseFloat(inc.amount || '0') || 0,
+        date: inc.date ? (inc.date instanceof Date ? inc.date.toISOString() : String(inc.date)) : new Date().toISOString(),
+        paymentMethod: inc.paymentMethod || 'TUNAI',
+      })),
+    ].sort((a, b) => b.amount - a.amount);
 
     // Fetch recent shifts for reconciliation with cashier name
     const shiftList = await db
@@ -1597,6 +1693,34 @@ export async function getFinanceReport(outletKey: string, params?: DateFilterPar
       .where(eq(shifts.tenantId, tenant.id))
       .orderBy(desc(shifts.startTime))
       .limit(10);
+
+    // Fetch category budgets for this tenant (active month or DEFAULT)
+    const activeMonthYear = `${currentStart.getFullYear()}-${String(currentStart.getMonth() + 1).padStart(2, '0')}`;
+    const budgetList = await db
+      .select()
+      .from(categoryBudgets)
+      .where(
+        and(
+          eq(categoryBudgets.tenantId, tenant.id),
+          inArray(categoryBudgets.periodMonth, [activeMonthYear, 'DEFAULT'])
+        )
+      );
+
+    const expenseBudgets: Record<string, number> = {};
+    const incomeBudgets: Record<string, number> = {};
+
+    budgetList.forEach((b) => {
+      const amt = parseFloat(b.targetAmount || '0') || 0;
+      if (b.flowType === 'EXPENSE') {
+        if (expenseBudgets[b.category] === undefined || b.periodMonth === activeMonthYear) {
+          expenseBudgets[b.category] = amt;
+        }
+      } else if (b.flowType === 'INCOME') {
+        if (incomeBudgets[b.category] === undefined || b.periodMonth === activeMonthYear) {
+          incomeBudgets[b.category] = amt;
+        }
+      }
+    });
 
     return {
       success: true,
@@ -1626,9 +1750,13 @@ export async function getFinanceReport(outletKey: string, params?: DateFilterPar
         },
         cashFlow: {
           totalCashIn,
+          salesInflow,
           cashSalesTotal: cashCollected,
           cashSalesNet,
           manualCashIn,
+          totalManualIncomes,
+          cashIncomes,
+          nonCashIncomes,
           nonCashSalesTotal: nonCashSettled,
           nonCashGrandTotal,
           nonCashGatewayFee,
@@ -1658,12 +1786,20 @@ export async function getFinanceReport(outletKey: string, params?: DateFilterPar
           totalExpenses,
           disclaimer: 'Estimasi Laba Kotor berdasarkan HPP modal produk resep yang terjual, belum dikurangi beban sewa & depresiasi.',
         },
+        incomes: incomeList,
+        incomeCategoryBreakdown,
+        topIncomeRows: combinedIncomeRows.slice(0, 15),
         expenses: expenseList,
         expenseCategoryBreakdown: Object.entries(expenseByCategory).map(([cat, amount]) => ({
           category: cat,
           amount,
           percentage: totalExpenses > 0 ? (amount / totalExpenses) * 100 : 0,
         })),
+        budgets: {
+          periodMonth: activeMonthYear,
+          expense: expenseBudgets,
+          income: incomeBudgets,
+        },
         shifts: shiftList,
       },
     };
@@ -1757,17 +1893,25 @@ export async function createExpenseAction(data: {
 }
 
 // -------------------------------------------------------------
-// 4B. ACTION: CATAT KAS MASUK MANUAL (CASH IN)
+// 4B. ACTION: PENCATATAN PEMASUKAN MANUAL (INCOME LOGGING)
 // -------------------------------------------------------------
-export async function createCashInAction(data: {
+export async function createIncomeAction(data: {
   outletKey: string;
+  category: string;
   amount: number;
+  paymentMethod: string;
   description: string;
+  date?: string;
+  receiptUrl?: string;
 }) {
   try {
     const user = await getCurrentUser();
     if (!user || !user.tenantId) {
-      return { success: false, error: 'Unauthorized.' };
+      return { success: false, error: 'Unauthorized: Sesi tidak ditemukan.' };
+    }
+
+    if (user.role !== 'OWNER' && user.role !== 'MANAGER' && (user.role as string) !== 'SYSTEM_ADMIN') {
+      return { success: false, error: 'Hanya Pemilik atau Manajer yang dapat mencatat pemasukan.' };
     }
 
     const [tenant] = await db
@@ -1781,42 +1925,167 @@ export async function createCashInAction(data: {
     }
 
     if (!data.description || data.amount <= 0) {
-      return { success: false, error: 'Deskripsi dan nominal kas masuk wajib diisi dengan benar.' };
+      return { success: false, error: 'Deskripsi dan nominal pemasukan wajib diisi dengan benar.' };
     }
 
-    const [activeShift] = await db
-      .select()
-      .from(shifts)
-      .where(
-        and(
-          eq(shifts.tenantId, tenant.id),
-          eq(shifts.status, 'ACTIVE')
-        )
-      )
-      .limit(1);
+    const incomeDate = data.date ? new Date(data.date) : new Date();
+    const category = ['MODAL', 'PENJUALAN', 'LAINNYA'].includes(data.category) ? data.category : 'LAINNYA';
 
-    if (!activeShift) {
-      return {
-        success: false,
-        error: 'Tidak ada shift kasir yang aktif saat ini. Buka shift kasir terlebih dahulu untuk mencatat kas masuk laci kasir.',
-      };
-    }
-
-    const [newMovement] = await db
-      .insert(cashMovements)
+    const [newIncome] = await db
+      .insert(incomes)
       .values({
         tenantId: tenant.id,
-        shiftId: activeShift.id,
-        type: 'IN',
+        category,
         amount: data.amount.toString(),
-        description: `[Kas Masuk] ${data.description.trim()}`,
+        paymentMethod: data.paymentMethod || 'TUNAI',
+        description: data.description.trim(),
+        date: incomeDate,
+        receiptUrl: data.receiptUrl,
+        createdByMembershipId: user.id as any,
       })
       .returning();
 
-    return { success: true, data: newMovement };
+    // If paid via TUNAI or CASH, check if there is an active shift to log automatic Cash In mirror
+    if (['TUNAI', 'CASH'].includes((data.paymentMethod || '').trim().toUpperCase())) {
+      const [activeShift] = await db
+        .select()
+        .from(shifts)
+        .where(
+          and(
+            eq(shifts.tenantId, tenant.id),
+            eq(shifts.status, 'ACTIVE')
+          )
+        )
+        .limit(1);
+
+      if (activeShift) {
+        await db.insert(cashMovements).values({
+          tenantId: tenant.id,
+          shiftId: activeShift.id,
+          type: 'IN',
+          amount: data.amount.toString(),
+          description: `[Pemasukan ${category}] ${data.description.trim()}`,
+        });
+      }
+    }
+
+    return { success: true, data: newIncome };
   } catch (error: any) {
-    console.error('Error creating cash in:', error);
-    return { success: false, error: error.message || 'Gagal menyimpan kas masuk.' };
+    console.error('Error creating income:', error);
+    return { success: false, error: error.message || 'Gagal menyimpan pemasukan.' };
+  }
+}
+
+// -------------------------------------------------------------
+// 4B. ACTION: ATUR TARGET ANGGARAN & PEMASUKAN PER KATEGORI
+// -------------------------------------------------------------
+export async function saveCategoryBudgetsAction(data: {
+  outletKey: string;
+  flowType: 'EXPENSE' | 'INCOME';
+  periodMonth?: string;
+  budgets: { category: string; targetAmount: number }[];
+}) {
+  try {
+    const user = await getCurrentUser();
+    if (!user || !user.tenantId) {
+      return { success: false, error: 'Unauthorized: Sesi tidak ditemukan.' };
+    }
+
+    if (user.role !== 'OWNER' && user.role !== 'MANAGER' && (user.role as string) !== 'SYSTEM_ADMIN') {
+      return { success: false, error: 'Hanya Pemilik atau Manajer yang dapat mengatur target anggaran.' };
+    }
+
+    const [tenant] = await db
+      .select()
+      .from(tenants)
+      .where(eq(tenants.outletKey, data.outletKey))
+      .limit(1);
+
+    if (!tenant || tenant.id !== user.tenantId) {
+      return { success: false, error: 'Outlet tidak valid.' };
+    }
+
+    const periodMonth = data.periodMonth || 'DEFAULT';
+
+    for (const item of data.budgets) {
+      const targetAmt = String(Math.max(0, item.targetAmount || 0));
+      await db
+        .insert(categoryBudgets)
+        .values({
+          tenantId: tenant.id,
+          flowType: data.flowType,
+          category: item.category,
+          targetAmount: targetAmt,
+          periodMonth,
+        })
+        .onConflictDoUpdate({
+          target: [categoryBudgets.tenantId, categoryBudgets.flowType, categoryBudgets.category, categoryBudgets.periodMonth],
+          set: {
+            targetAmount: targetAmt,
+            updatedAt: new Date(),
+          },
+        });
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error saving category budgets:', error);
+    return { success: false, error: error.message || 'Gagal menyimpan target anggaran.' };
+  }
+}
+
+// Backward compatibility alias for cash drawer operations
+export async function createCashInAction(data: {
+  outletKey: string;
+  amount: number;
+  description: string;
+}) {
+  return createIncomeAction({
+    outletKey: data.outletKey,
+    category: 'LAINNYA',
+    amount: data.amount,
+    paymentMethod: 'TUNAI',
+    description: data.description,
+  });
+}
+
+// -------------------------------------------------------------
+// 4C. ACTION: HAPUS PEMASUKAN MANUAL
+// -------------------------------------------------------------
+export async function deleteIncomeAction(incomeId: string, outletKey: string) {
+  try {
+    const user = await getCurrentUser();
+    if (!user || !user.tenantId) {
+      return { success: false, error: 'Unauthorized.' };
+    }
+
+    if (user.role !== 'OWNER' && user.role !== 'MANAGER' && (user.role as string) !== 'SYSTEM_ADMIN') {
+      return { success: false, error: 'Hanya Pemilik atau Manajer yang dapat menghapus pemasukan.' };
+    }
+
+    const [tenant] = await db
+      .select()
+      .from(tenants)
+      .where(eq(tenants.outletKey, outletKey))
+      .limit(1);
+
+    if (!tenant || tenant.id !== user.tenantId) {
+      return { success: false, error: 'Outlet tidak valid.' };
+    }
+
+    await db
+      .delete(incomes)
+      .where(
+        and(
+          eq(incomes.id, incomeId),
+          eq(incomes.tenantId, tenant.id)
+        )
+      );
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error deleting income:', error);
+    return { success: false, error: error.message || 'Gagal menghapus pemasukan.' };
   }
 }
 
