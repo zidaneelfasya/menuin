@@ -41,7 +41,7 @@ export function VisibilityClient({ products }: { products: ProductDto[] }) {
         <span>Produk yang diaktifkan sebagai <b>Produk Unggulan (Best Seller)</b> akan otomatis diposisikan di deretan teratas pada Kasir POS dan Katalog Online.</span>
       </div>
 
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-card overflow-hidden shadow-xs">
+      <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-950 overflow-hidden shadow-xs">
         <Table>
           <TableHeader>
             <TableRow>

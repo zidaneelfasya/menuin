@@ -717,14 +717,14 @@ export function ShiftDashboard({
           </div>
 
           {/* Tabel Log Mutasi Kas */}
-          <div className="bg-card rounded-2xl border border-border/70 overflow-hidden shadow-xs">
-            <div className="p-4 md:px-6 border-b border-border/60">
+          <div className="bg-white dark:bg-slate-950 rounded-2xl border border-slate-200/90 dark:border-slate-800 overflow-hidden shadow-xs">
+            <div className="p-4 md:px-6 border-b border-slate-200/80 dark:border-slate-800">
               <h3 className="font-semibold text-sm text-foreground">Log Mutasi Kas Laci Shift Ini</h3>
             </div>
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="text-xs border-none bg-transparent hover:bg-transparent">
+                  <TableRow>
                     <TableHead className="w-[100px]">Waktu</TableHead>
                     <TableHead className="w-[140px]">Jenis</TableHead>
                     <TableHead>Keterangan / Keperluan</TableHead>
@@ -740,7 +740,7 @@ export function ShiftDashboard({
                     </TableRow>
                   ) : (
                     activeShift.cashMovements.map((m: any) => (
-                      <TableRow key={m.id} className="text-xs hover:bg-muted/30 transition-colors border-border/60">
+                      <TableRow key={m.id} className="text-xs hover:bg-blue-50/50 dark:hover:bg-blue-950/25 transition-colors">
                         <TableCell className="text-muted-foreground font-financial tabular-nums">
                           {format(new Date(m.createdAt), "HH:mm")}
                         </TableCell>
@@ -789,8 +789,8 @@ export function ShiftDashboard({
 
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader className="bg-muted/30">
-                <TableRow className="text-xs border-border/60">
+              <TableHeader>
+                <TableRow>
                   <TableHead className="w-[140px]">No. Order</TableHead>
                   <TableHead className="w-[100px]">Waktu</TableHead>
                   <TableHead className="w-[160px]">Tipe & Meja</TableHead>
@@ -807,7 +807,7 @@ export function ShiftDashboard({
                   </TableRow>
                 ) : (
                   activeShift.transactions.map((tx: any) => (
-                    <TableRow key={tx.id} className="text-xs hover:bg-muted/30 transition-colors border-border/60">
+                    <TableRow key={tx.id} className="text-xs hover:bg-blue-50/50 dark:hover:bg-blue-950/25 transition-colors">
                       <TableCell className="font-mono font-semibold text-foreground">
                         {tx.orderNumber || "#-"}
                       </TableCell>
@@ -838,9 +838,9 @@ export function ShiftDashboard({
       {/* TAB 4: RIWAYAT & REKAP SHIFT (AUDIT) */}
       {/* ========================================================================= */}
       {activeTab === "history" && (
-        <div className="bg-card rounded-2xl border border-border/70 shadow-xs overflow-hidden">
+        <div className="bg-white dark:bg-slate-950 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs overflow-hidden">
           {/* Table Card Header */}
-          <div className="p-4 md:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/60">
+          <div className="p-4 md:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 dark:border-slate-800">
             <div>
               <h2 className="font-semibold text-sm md:text-base text-foreground tracking-tight">
                 Riwayat & Arsip Shift Kasir
@@ -864,8 +864,8 @@ export function ShiftDashboard({
           {/* Table Content */}
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader className="bg-muted/30">
-                <TableRow className="text-xs text-muted-foreground border-border/60">
+              <TableHeader>
+                <TableRow>
                   <TableHead className="w-[260px]">Kasir & Tanggal</TableHead>
                   <TableHead className="w-[180px]">Waktu & Durasi</TableHead>
                   <TableHead className="w-[160px]">Total Omzet</TableHead>
@@ -888,7 +888,7 @@ export function ShiftDashboard({
                     return (
                       <TableRow
                         key={shift.id}
-                        className="text-xs hover:bg-muted/40 transition-colors border-border/60 cursor-pointer"
+                        className="text-xs hover:bg-blue-50/50 dark:hover:bg-blue-950/25 transition-colors cursor-pointer"
                         onClick={() => setModalShiftId(shift.id)}
                       >
                         <TableCell>
