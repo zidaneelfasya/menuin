@@ -3,13 +3,12 @@
 import * as React from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { 
   generatePrefixSuggestions, 
   sanitizeOrderPrefix, 
   generateOrderSuffix 
 } from '@/lib/utils/order-number';
-import { Sparkles, RefreshCw, Hash } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface OrderPrefixPickerProps {
@@ -37,7 +36,6 @@ export function OrderPrefixPicker({
 
   const activePrefix = sanitizeOrderPrefix(value || suggestions[0] || 'ORD');
 
-  // Refresh sample preview with new random 8 characters
   const handleRefreshSample = (e?: React.MouseEvent) => {
     if (e) e.preventDefault();
     setSampleSuffix(generateOrderSuffix(8));
@@ -55,111 +53,105 @@ export function OrderPrefixPicker({
   };
 
   return (
-    <div className={cn("space-y-4 rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm", className)}>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
-        <div>
-          <Label className="text-sm font-semibold text-slate-800 flex items-center gap-1.5">
-            <Hash className="w-4 h-4 text-slate-500" />
-            Kode Karakter Awal ID Pesanan (Order Prefix)
-          </Label>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Awalan kode pesanan unik untuk outlet ini, dilanjutkan 8 digit acak.
-          </p>
-        </div>
+    <div className={cn("grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 items-start", className)}>
+      <div className="md:col-span-4 space-y-0.5">
+        <Label className="text-sm font-semibold text-foreground">
+          Format ID Pesanan (Prefix)
+        </Label>
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          Awalan kode unik pesanan outlet (diikuti 8 karakter acak).
+        </p>
       </div>
 
-      {/* Suggestion Chips */}
-      {suggestions.length > 0 && (
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-1 text-xs text-slate-500 font-medium">
-            <span>Rekomendasi dari nama outlet:</span>
+      <div className="md:col-span-8 space-y-3.5">
+        {/* Suggestion Chips */}
+        {suggestions.length > 0 && (
+          <div className="space-y-1.5">
+            <span className="text-xs text-muted-foreground font-medium">
+              Rekomendasi dari nama outlet:
+            </span>
+            <div className="flex flex-wrap gap-2 pt-0.5">
+              {suggestions.map((sug) => {
+                const isSelected = activePrefix === sug;
+                return (
+                  <button
+                    key={sug}
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => handleSelectSuggestion(sug)}
+                    className={cn(
+                      "px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all duration-150 cursor-pointer",
+                      isSelected
+                        ? "bg-foreground text-background border-foreground shadow-2xs"
+                        : "bg-muted/40 text-foreground border-border/80 hover:bg-muted/70 hover:border-border"
+                    )}
+                  >
+                    {sug}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2 pt-0.5">
-            {suggestions.map((sug) => {
-              const isSelected = activePrefix === sug;
-              return (
-                <button
-                  key={sug}
-                  type="button"
-                  disabled={disabled}
-                  onClick={() => handleSelectSuggestion(sug)}
-                  className={cn(
-                    "px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all duration-150 flex items-center gap-1",
-                    isSelected
-                      ? "bg-slate-900 text-white border-slate-900 shadow-sm"
-                      : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300"
-                  )}
-                >
-                  <span>{sug}</span>
-                 
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
+        )}
 
-      {/* Input + Preview Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-        <div className="space-y-1.5">
-          <Label htmlFor="orderPrefixInput" className="text-xs font-medium text-slate-600">
-            Kustomisasi Kode Awalan
-          </Label>
-          <div className="relative">
-            <Input
-              id="orderPrefixInput"
-              value={value}
-              onChange={handleCustomChange}
-              disabled={disabled}
-              placeholder={suggestions[0] || 'MG'}
-              maxLength={12}
-              className="font-mono text-sm tracking-wide uppercase bg-slate-50/50"
-            />
-            {value && (
-              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-mono text-slate-400">
-                {value.length} kar
-              </span>
-            )}
-          </div>
-          <p className="text-[11px] text-slate-400">
-            Hanya huruf dan angka (A-Z, 0-9). Otomatis huruf kapital.
-          </p>
-        </div>
-
-        {/* Live Preview Simulation Card */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <Label className="text-xs font-medium text-slate-600">
-              Pratinjau ID Pesanan Pelanggan
+        {/* Input + Preview Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-0.5">
+          <div className="space-y-1.5">
+            <Label htmlFor="orderPrefixInput" className="text-xs font-medium text-muted-foreground">
+              Kustomisasi Kode Awalan
             </Label>
-            <button
-              type="button"
-              onClick={handleRefreshSample}
-              title="Acak contoh 8 karakter"
-              className="text-[11px] text-slate-500 hover:text-slate-800 flex items-center gap-1 transition-colors"
-            >
-              <RefreshCw className="w-3 h-3" />
-              <span>Acak Sampel</span>
-            </button>
+            <div className="relative">
+              <Input
+                id="orderPrefixInput"
+                value={value}
+                onChange={handleCustomChange}
+                disabled={disabled}
+                placeholder={suggestions[0] || 'MG'}
+                maxLength={12}
+                className="font-mono text-xs font-semibold tracking-wider uppercase h-10 bg-background/80 hover:bg-background border-border/80 rounded-xl"
+              />
+              {value && (
+                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-mono text-muted-foreground">
+                  {value.length} kar
+                </span>
+              )}
+            </div>
           </div>
-          <div className="h-9 px-3 rounded-md border border-dashed border-slate-300 bg-slate-50 flex items-center justify-between">
-            <div className="font-mono text-xs sm:text-sm tracking-wider">
-              <span className="font-semibold px-1 py-0.5 ">
-                {activePrefix}
-              </span>
-              <span className="text-slate-700 font-medium">
-                {sampleSuffix}
+
+          {/* Live Preview Simulation Card */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs font-medium text-muted-foreground">
+                Pratinjau Kode Struk
+              </Label>
+              <button
+                type="button"
+                onClick={handleRefreshSample}
+                title="Acak contoh 8 karakter"
+                className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors cursor-pointer"
+              >
+                <RefreshCw className="w-3 h-3" />
+                <span>Acak Sampel</span>
+              </button>
+            </div>
+            <div className="h-10 px-3 rounded-xl border border-dashed border-border/80 bg-muted/20 flex items-center justify-between">
+              <div className="font-mono text-xs tracking-wider">
+                <span className="font-bold text-foreground">
+                  {activePrefix}-
+                </span>
+                <span className="text-muted-foreground font-medium">
+                  {sampleSuffix}
+                </span>
+              </div>
+              <span className="text-[10px] text-muted-foreground font-mono">
+                8 kar
               </span>
             </div>
-            <span className="text-[10px] text-slate-400 font-normal">
-              8 kar acak
-            </span>
           </div>
-          <p className="text-[11px] text-slate-400">
-            Format yang akan muncul di struk kasir, status online, & tiket dapur.
-          </p>
         </div>
       </div>
     </div>
   );
 }
+
+export default OrderPrefixPicker;
