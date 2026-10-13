@@ -125,12 +125,123 @@ Untuk menjaga kejujuran akuntansi dan audit:
 
 ---
 
-## 8. Panduan Eksekusi bagi AI Coding Agent
+## 8. Standar Universal Table View & Data Grid Layout (The Single Source of Truth for Tables)
+
+Seluruh halaman dengan tampilan tabel di platform Menuin (Riwayat Transaksi, Laporan Arus Kas / Finance, Daftar Menu / Katalog, Diskon & Promo, Shift Kasir, dsb.) **WAJIB MENGIKUTI STRUKTUR ANATOMI DAN LAYOUT YANG PERSIS SAMA**.
+
+### 8.1. Anatomi Tata Letak (Universal 3-Zone Architecture)
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ 1. TOOLBAR ROW                                                                         │
+│ [Tab Semua (7588)] [Tab Sukses (7499)] [Tab Batal (88)]  │ [Search...] [Filter] [Sort] │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│ 2. TABLE DATA CONTAINER (rounded-2xl border border-slate-200/90 shadow-xs)             │
+│  No. Transaksi  │  Identitas / Klien  │  Metode  │  Waktu   │  Nominal  │ Status │ Aksi│
+│  #KJ-8573       │  (DP) Dinda Permata │  QRIS    │ 11 Okt   │ Rp 35.000 │ Sukses │ [:] │
+│                 │      Meja 04        │  Lunas   │ 22:48    │           │        │     │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│ 3. FOOTER PAGINATION BAR                                                               │
+│ Items Per Page [10 v]                                    │ <  1  [2]  3  4  .. 759  >  │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 8.2. Zona 1: Tabs & Toolbar Row
+1. **Sisi Kiri: Underline Status Filter Tabs**
+   - Menggunakan tombol horizontal dengan transisi warna halus.
+   - **Teks Tab:** `text-xs sm:text-sm font-medium`. Saat aktif: `text-blue-600 dark:text-blue-400 font-semibold`. Saat inaktif: `text-slate-500 hover:text-blue-600`.
+   - **Pill Hitungan (Count Badge):** `text-xs px-2 py-0.5 rounded-lg font-medium`. Saat aktif: `bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300`. Saat inaktif: `text-slate-400 dark:text-slate-500`.
+   - **Garis Bawah Aktif (Underline Indicator):** `motion.div` dari Framer Motion dengan `layoutId` unik, kelas `absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-500 rounded-full`, transisi spring `{ type: "spring", stiffness: 450, damping: 35 }`.
+2. **Sisi Kanan: Alat Pencarian & Filter**
+   - **Search Input:**
+     - Lebar responsif: `w-full sm:w-56`.
+     - Ketinggian & bentuk: `h-9 text-xs rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800`.
+     - Ikon `Search` di kiri (`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400`).
+     - Tombol clear `X` di kanan saat input terisi.
+   - **Filter Popover Button (Funnel Icon):**
+     - Ukuran: `h-9 w-9 rounded-xl border-slate-200 dark:border-slate-800`.
+     - Indikator Aktif: Dot biru solid `w-2 h-2 rounded-full bg-blue-600 ring-2 ring-white dark:ring-slate-900` di pojok kanan atas (`top-1.5 right-1.5`) saat filter non-default diterapkan.
+     - Konten Popover: `w-80 p-4 rounded-xl shadow-xl space-y-4`. Header memuat judul `text-xs font-semibold` dan link `Reset Filter` (`text-[11px] text-blue-600 hover:underline`). Bagian filter menggunakan grid tombol preset (`rounded-xl py-1.5 text-xs border`). Tombol eksekusi `Terapkan` di pojok kanan bawah.
+   - **Sort Dropdown Button (SlidersHorizontal Icon):**
+     - Ukuran: `h-9 w-9 rounded-xl border-slate-200 dark:border-slate-800`.
+     - Menu Dropdown: `w-48 p-1 rounded-xl shadow-lg border-slate-200 dark:border-slate-800`.
+     - Item terpilih ditandai `font-semibold text-blue-600`.
+   - **Primary Action Button (Opsional):**
+     - Jika ada aksi pembuatan data baru (misal: "Tambah Biaya", "Tambah Menu"), tombol ditempatkan berdampingan: `h-9 px-4 text-xs font-semibold rounded-xl bg-[#0e59f9] hover:bg-blue-600 text-white shadow-xs`.
+
+### 8.3. Zona 2: Table Data Container & Cells
+1. **Wadah Tabel (Surface Container):**
+   - `rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-950 overflow-hidden shadow-xs`.
+   - Menggunakan pembungkus `relative w-full overflow-x-auto` agar ramah layar sentuh / mobile.
+2. **Kepala Kolom (`<thead>` & `<th>`):**
+   - Baris: `bg-slate-50/70 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-200/80 dark:border-slate-800`.
+   - Sel: `py-3.5 px-4 text-xs font-semibold whitespace-nowrap tracking-tight` (Zero bold!). Dilarang menyematkan ikon dekoratif di samping nama kolom.
+3. **Baris Data (`<tbody>` & `<tr>`):**
+   - Pembatas baris: `divide-y divide-slate-100 dark:divide-slate-800/80`.
+   - Interaksi hover: `hover:bg-blue-50/50 dark:hover:bg-blue-950/25 transition-colors cursor-pointer`.
+   - Padding sel: `py-3.5 px-4 text-xs align-middle whitespace-nowrap text-slate-700 dark:text-slate-300`.
+4. **Format Standar Isi Sel (Cell Data Standards):**
+   - **Kolom Identitas / Klien vs Transaksi / Item:**
+     - **Entitas Pengguna/Pelanggan (Orang):** Menggunakan avatar bulat inisial `w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold shrink-0` dengan palet warna terkurasi, teks utama `font-medium text-slate-800 dark:text-slate-200 truncate`, dan subteks `text-[10px] text-muted-foreground truncate`.
+     - **Entitas Transaksi Keuangan / Produk / Non-Orang:** **Tidak menggunakan avatar inisial**. Langsung menggunakan tata letak 2-baris yang bersih (baris atas: judul `font-semibold text-slate-900 dark:text-slate-100 text-xs truncate`, baris bawah: kategori `text-[10px] text-slate-400 dark:text-slate-500 truncate`). Hal ini memberikan ruang baca teks yang lebih luas dan tidak rancu dengan profil pengguna.
+   - **Kolom Waktu & Tanggal:**
+     - Tanggal: `text-slate-700 dark:text-slate-300 font-medium text-xs`.
+     - Jam: `text-[10px] text-muted-foreground` di bawahnya.
+   - **Kolom Nilai Keuangan (Nominal):**
+     - Wajib menggunakan `font-financial tabular-nums`.
+     - Nilai biasa: `font-semibold text-xs text-slate-900 dark:text-slate-100`.
+     - Pemasukan kas / inflow: `text-emerald-600 font-semibold` dengan awalan `+`.
+     - Pengeluaran kas / outflow: `text-slate-900 font-semibold` atau `text-rose-600 font-semibold` dengan awalan `-`.
+   - **Kolom Status Diskrit:**
+     - Wajib menggunakan pill badge lembut tanpa border: `inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-medium`.
+     - **Dilarang menambahkan bulatan/dot berwarna** di dalam badge status tabel agar tampilan bersih dan minimalis sesuai screenshot history transaksi.
+     - Palet status:
+       - Sukses / Lunas: `bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300` (Teks: "Sukses")
+       - Diproses / Aktif: `bg-purple-100/80 text-purple-700 dark:bg-purple-950/70 dark:text-purple-300` (Teks: "On Process")
+       - Menunggu Bayar: `bg-sky-100/80 text-sky-700 dark:bg-sky-950/70 dark:text-sky-300`
+       - Batal / Void: `bg-rose-100/70 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300`
+   - **Kolom Metode Pembayaran & Tipe Aliran (Badge Kategori/Metode):**
+     - Wajib tanpa border (`border-none`): `inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-medium`.
+     - Menggunakan palet lembut yang menyatu dengan tema Menuin (hindari warna terlalu kontras seperti kuning/amber pekat):
+       - Kasir Tunai / Cash: `bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300` (Netral & harmonis).
+       - Digital / QRIS / Transfer Bank: `bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300` (Menuin Royal Blue pastel).
+       - Cash In (Pemasukan): `bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300` (disertai ikon `ArrowDownLeft`).
+       - Cash Out (Pengeluaran): `bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300` (disertai ikon `ArrowUpRight`).
+   - **Kolom Aksi (Action Menu):**
+     - Rata kanan (`text-right`), memuat tombol dropdown `MoreVertical` (`h-8 w-8 p-0 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg`).
+     - Isi dropdown: menu tindakan terstruktur (`w-48 p-1 rounded-xl shadow-lg border-slate-200`).
+
+### 8.4. Zona 3: Footer Pagination Bar
+1. **Struktur Kontainer:**
+   - `flex flex-col sm:flex-row items-center justify-between gap-4 pt-1`.
+2. **Sisi Kiri: Pemilih Ukuran Halaman (Items Per Page):**
+   - Label: `text-xs text-slate-500`.
+   - Trigger: `Button variant="outline" size="sm" className="h-8 px-3 rounded-xl border-slate-200 text-xs font-medium gap-1.5 cursor-pointer"`.
+   - Pilihan: `[10, 20, 50, 100]`.
+3. **Sisi Kanan: Pengendali Nomor Halaman:**
+   - Tombol Prev & Next: `Button variant="outline" size="icon" className="h-8 w-8 rounded-lg border-slate-200 text-slate-500 hover:text-blue-600 hover:bg-blue-50/50"`.
+   - Tombol Angka Halaman:
+     - Halaman aktif: `bg-blue-600 text-white shadow-xs font-medium h-8 min-w-[32px] px-2 text-xs rounded-lg`.
+     - Halaman lain: `text-slate-600 hover:bg-blue-50 hover:text-blue-600 h-8 min-w-[32px] px-2 text-xs rounded-lg font-medium`.
+     - Pemotong elipsis: `span className="px-1.5 text-xs text-slate-400"` dengan teks `...`.
+
+### 8.5. Standar State Kosong (Authentic Empty State)
+Saat hasil pencarian atau filter bernilai 0:
+- Ikon: `<PackageSearch className="w-9 h-9 text-slate-300 dark:text-slate-600" />`.
+- Judul: `text-sm font-semibold text-slate-800 dark:text-slate-200`.
+- Subteks: `text-xs text-muted-foreground max-w-sm`.
+- Padding wadah: `py-16 text-center`.
+
+---
+
+## 9. Panduan Eksekusi bagi AI Coding Agent
 
 Sebelum menyerahkan kode frontend ke pengguna:
 1. Pastikan **tidak ada `font-bold`** di seluruh berkas yang dimodifikasi.
 2. Pastikan **tidak ada `bg-gradient-...`**.
 3. Pastikan tidak ada ikon hiasan di samping judul kolom tabel atau nama kategori.
 4. Pastikan tidak ada border badge berlebihan pada tanggal, jam, atau nama kategori.
-5. Pastikan tidak ada kalimat instruksional yang menggurui (*"Arahkan kursor...", "Berikut adalah..."*).
-6. Jalankan validasi `npx tsc --noEmit` untuk menjamin tidak ada kesalahan tipe TypeScript.
+5. Pastikan seluruh tabel mengikuti **Standar 3-Zona** (Underline Tabs di kiri, Search/Filter/Sort di kanan, Tabel Card rounded-2xl, Footer Pagination Items Per Page & Page Numbers).
+6. Pastikan tidak ada kalimat instruksional yang menggurui (*"Arahkan kursor...", "Berikut adalah..."*).
+7. Jalankan validasi `npx tsc --noEmit` untuk menjamin tidak ada kesalahan tipe TypeScript.
+
