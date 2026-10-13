@@ -48,6 +48,10 @@ import {
 	Megaphone,
 	Layers,
 	Target,
+	Search,
+	MoreVertical,
+	PackageSearch,
+	X,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -89,6 +93,14 @@ import {
 	DialogDescription,
 	DialogFooter,
 } from "@/components/ui/dialog";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { motion } from "framer-motion";
 import { DateRange } from "react-day-picker";
 import { format, subMonths, addMonths } from "date-fns";
 import { id as localeId } from "date-fns/locale";
@@ -209,6 +221,71 @@ const INCOME_CATEGORIES = [
 	{ id: "LAINNYA", label: "Pemasukan Lainnya" },
 ];
 
+export interface UnifiedCashFlowItem {
+	id: string;
+	type: "EXPENSE" | "INCOME";
+	category: string;
+	amount: string | number;
+	paymentMethod: string;
+	description: string;
+	date: string | Date;
+}
+
+function getCategoryLabel(cat: string): string {
+	const foundExp = EXPENSE_CATEGORIES.find((c) => c.id === cat);
+	if (foundExp) return foundExp.label;
+	const foundInc = INCOME_CATEGORIES.find((c) => c.id === cat);
+	if (foundInc) return foundInc.label;
+	if (cat === "PENJUALAN") return "Penjualan POS";
+	if (cat === "MODAL") return "Setoran Modal";
+	return cat;
+}
+
+function formatTrxDate(d: string | Date): string {
+	try {
+		const parsed = new Date(d);
+		if (isNaN(parsed.getTime())) return String(d);
+		return format(parsed, "d MMM yyyy", { locale: localeId });
+	} catch {
+		return String(d);
+	}
+}
+
+function formatTrxTime(d: string | Date): string {
+	try {
+		const parsed = new Date(d);
+		if (isNaN(parsed.getTime())) return "";
+		if (typeof d === "string" && !d.includes("T") && !d.includes(":")) {
+			return "";
+		}
+		return `${format(parsed, "HH:mm")} WIB`;
+	} catch {
+		return "";
+	}
+}
+
+const CASH_FLOW_FILTER_CATEGORIES = [
+	{ id: "ALL", label: "Semua Kategori" },
+	{ id: "PENJUALAN", label: "Penjualan POS" },
+	{ id: "MODAL", label: "Setoran Modal" },
+	{ id: "BAHAN_BAKU", label: "Bahan Baku & Dapur" },
+	{ id: "PACKAGING", label: "Kemasan & Plastik" },
+	{ id: "OPERASIONAL", label: "Operasional Listrik/Air" },
+	{ id: "GAJI", label: "Gaji & Upah" },
+	{ id: "PEMELIHARAAN", label: "Pemeliharaan & Alat" },
+	{ id: "MARKETING", label: "Promosi & Iklan" },
+	{ id: "LAINNYA", label: "Lain-lain" },
+];
+
+const CASH_FLOW_PAYMENT_METHODS = [
+	{ id: "ALL", label: "Semua Metode" },
+	{ id: "TUNAI", label: "Kasir Tunai" },
+	{ id: "QRIS", label: "QRIS" },
+	{ id: "TRANSFER", label: "Transfer Bank" },
+	{ id: "DEBIT", label: "Kartu Debit" },
+	{ id: "KREDIT", label: "Kartu Kredit" },
+];
+
 const EXPENSE_GROUPS = [
 	{
 		id: "BAHAN_KEMASAN",
@@ -296,6 +373,49 @@ const INCOME_GROUPS = [
 			bar: "bg-[#38bdf8] hover:bg-[#0ea5e9]",
 			hex: "#38bdf8",
 		},
+	},
+];
+
+// Warna pilar bar chart berurutan berdasarkan peringkat persentase:
+// Paling kiri (persentase tertinggi) = Hitam, lalu gradasi Biru, dan paling ujung kanan = Biru paling muda
+const PILLAR_RANK_COLORS_4 = [
+	{
+		cap: "bg-[#0f172a]",
+		bar: "bg-[#0f172a] hover:bg-[#1e293b]",
+		hex: "#0f172a",
+	},
+	{
+		cap: "bg-[#2563eb]",
+		bar: "bg-[#2563eb] hover:bg-[#1d4ed8]",
+		hex: "#2563eb",
+	},
+	{
+		cap: "bg-[#0284c7]",
+		bar: "bg-[#0284c7] hover:bg-[#0369a1]",
+		hex: "#0284c7",
+	},
+	{
+		cap: "bg-[#38bdf8]",
+		bar: "bg-[#38bdf8] hover:bg-[#0ea5e9]",
+		hex: "#38bdf8",
+	},
+];
+
+const PILLAR_RANK_COLORS_3 = [
+	{
+		cap: "bg-[#0f172a]",
+		bar: "bg-[#0f172a] hover:bg-[#1e293b]",
+		hex: "#0f172a",
+	},
+	{
+		cap: "bg-[#0e59f9]",
+		bar: "bg-[#0e59f9] hover:bg-[#0b48cb]",
+		hex: "#0e59f9",
+	},
+	{
+		cap: "bg-[#38bdf8]",
+		bar: "bg-[#38bdf8] hover:bg-[#0ea5e9]",
+		hex: "#38bdf8",
 	},
 ];
 
@@ -758,6 +878,17 @@ export function FinanceReportClient({
 	const [transactionTypeFilter, setTransactionTypeFilter] = React.useState<
 		"ALL" | "EXPENSE" | "INCOME"
 	>("ALL");
+	const [searchQuery, setSearchQuery] = React.useState("");
+	const [categoryFilter, setCategoryFilter] = React.useState("ALL");
+	const [paymentMethodFilter, setPaymentMethodFilter] = React.useState("ALL");
+	const [sortBy, setSortBy] = React.useState<
+		"newest" | "oldest" | "amount_high" | "amount_low"
+	>("newest");
+	const [currentPage, setCurrentPage] = React.useState(1);
+	const [itemsPerPage, setItemsPerPage] = React.useState(10);
+	const [isFilterPopoverOpen, setIsFilterPopoverOpen] = React.useState(false);
+	const [selectedDetailTransaction, setSelectedDetailTransaction] =
+		React.useState<UnifiedCashFlowItem | null>(null);
 
 	// Shift reconciliation audit collapse toggle
 	const [isShiftAuditExpanded, setIsShiftAuditExpanded] = React.useState(true);
@@ -1728,6 +1859,18 @@ export function FinanceReportClient({
 			return b.amount - a.amount;
 		});
 
+		// Tetapkan warna pilar sesuai urutan posisi (rank), bukan kategori tetap:
+		// Posisi paling kiri (ke-0, persentase tertinggi): Hitam
+		// Posisi berikutnya: Gradasi Biru
+		// Posisi paling ujung kanan (persentase terendah): Biru paling muda
+		const rankColors =
+			items.length === 3 ? PILLAR_RANK_COLORS_3 : PILLAR_RANK_COLORS_4;
+		items.forEach((item, index) => {
+			if (rankColors[index]) {
+				item.color = rankColors[index];
+			}
+		});
+
 		const totalSum = items.reduce((acc, curr) => acc + curr.amount, 0);
 		const totalTargetSum = items.reduce(
 			(acc, curr) => acc + (curr.targetAmount || 0),
@@ -1782,22 +1925,15 @@ export function FinanceReportClient({
 		return shifts.find((s) => s.status === "ACTIVE");
 	}, [shifts]);
 
-	// Filtered transactions list for table (Unified Incomes & Expenses)
-	interface UnifiedTransactionItem {
-		id: string;
-		type: "EXPENSE" | "INCOME";
-		category: string;
-		amount: string | number;
-		paymentMethod: string;
-		description: string;
-		date: string | Date;
-	}
+	// Unified transactions list for Cash Flow Table (combining POS Sales + Incomes + Expenses)
+	const allTransactionsUnfiltered = React.useMemo<UnifiedCashFlowItem[]>(() => {
+		const list: UnifiedCashFlowItem[] = [];
+		const seenIds = new Set<string>();
 
-	const filteredTransactions = React.useMemo<UnifiedTransactionItem[]>(() => {
-		const list: UnifiedTransactionItem[] = [];
-
-		if (transactionTypeFilter !== "INCOME") {
-			(expenses || []).forEach((e) => {
+		// 1. Add Expenses (Cash Out)
+		(expenses || []).forEach((e) => {
+			if (!seenIds.has(e.id)) {
+				seenIds.add(e.id);
 				list.push({
 					id: e.id,
 					type: "EXPENSE",
@@ -1807,29 +1943,178 @@ export function FinanceReportClient({
 					description: e.description,
 					date: e.date,
 				});
+			}
+		});
+
+		// 2. Add POS Sales from topIncomeRows (Cash In)
+		if (data.topIncomeRows && data.topIncomeRows.length > 0) {
+			data.topIncomeRows.forEach((r: any) => {
+				if (!seenIds.has(r.id)) {
+					seenIds.add(r.id);
+					list.push({
+						id: r.id,
+						type: "INCOME",
+						category: r.category || "PENJUALAN",
+						amount: r.amount,
+						paymentMethod: r.paymentMethod || "TUNAI",
+						description: r.title
+							? `${r.title}${r.description ? ` • ${r.description}` : ""}`
+							: (r.description || "Penjualan POS"),
+						date: r.date,
+					});
+				}
 			});
 		}
 
-		if (transactionTypeFilter !== "EXPENSE") {
-			(incomes || []).forEach((inc: any) => {
+		// 3. Add Manual Incomes (Cash In)
+		(incomes || []).forEach((inc: any) => {
+			if (!seenIds.has(inc.id)) {
+				seenIds.add(inc.id);
 				list.push({
 					id: inc.id,
 					type: "INCOME",
 					category: inc.category,
 					amount: inc.amount,
-					paymentMethod: inc.paymentMethod,
-					description: inc.description,
+					paymentMethod: inc.paymentMethod || "TUNAI",
+					description: inc.description || "Pemasukan Kas",
 					date: inc.date,
 				});
+			}
+		});
+
+		return list;
+	}, [expenses, incomes, data.topIncomeRows]);
+
+	// Live count tabs for Zone 1
+	const cashFlowTabs = React.useMemo(() => [
+		{
+			key: "ALL" as const,
+			label: "Semua Arus Kas",
+			count: allTransactionsUnfiltered.length,
+		},
+		{
+			key: "INCOME" as const,
+			label: "Pemasukan (Cash In)",
+			count: allTransactionsUnfiltered.filter((t) => t.type === "INCOME").length,
+		},
+		{
+			key: "EXPENSE" as const,
+			label: "Pengeluaran (Cash Out)",
+			count: allTransactionsUnfiltered.filter((t) => t.type === "EXPENSE").length,
+		},
+	], [allTransactionsUnfiltered]);
+
+	// Filtered & Sorted Transactions
+	const filteredTransactions = React.useMemo<UnifiedCashFlowItem[]>(() => {
+		let result = allTransactionsUnfiltered;
+
+		// Tab filter: ALL / INCOME / EXPENSE
+		if (transactionTypeFilter !== "ALL") {
+			result = result.filter((t) => t.type === transactionTypeFilter);
+		}
+
+		// Search query filter
+		if (searchQuery.trim()) {
+			const query = searchQuery.toLowerCase().trim();
+			result = result.filter((t) => {
+				const desc = (t.description || "").toLowerCase();
+				const cat = (t.category || "").toLowerCase();
+				const catLabel = getCategoryLabel(t.category).toLowerCase();
+				const method = (t.paymentMethod || "").toLowerCase();
+				const formattedMethod = formatPaymentMethodLabel(t.paymentMethod).toLowerCase();
+				return (
+					desc.includes(query) ||
+					cat.includes(query) ||
+					catLabel.includes(query) ||
+					method.includes(query) ||
+					formattedMethod.includes(query)
+				);
 			});
 		}
 
-		return list.sort(
-			(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-		);
-	}, [expenses, incomes, transactionTypeFilter]);
+		// Category filter from Popover
+		if (categoryFilter !== "ALL") {
+			result = result.filter((t) => t.category === categoryFilter);
+		}
+
+		// Payment method filter from Popover
+		if (paymentMethodFilter !== "ALL") {
+			result = result.filter((t) => {
+				const norm = (t.paymentMethod || "").toUpperCase();
+				if (paymentMethodFilter === "TUNAI") {
+					return norm === "TUNAI" || norm === "CASH";
+				}
+				return norm.includes(paymentMethodFilter.toUpperCase());
+			});
+		}
+
+		// Sort
+		return [...result].sort((a, b) => {
+			if (sortBy === "newest") {
+				return new Date(b.date).getTime() - new Date(a.date).getTime();
+			}
+			if (sortBy === "oldest") {
+				return new Date(a.date).getTime() - new Date(b.date).getTime();
+			}
+			if (sortBy === "amount_high") {
+				return Number(b.amount || 0) - Number(a.amount || 0);
+			}
+			if (sortBy === "amount_low") {
+				return Number(a.amount || 0) - Number(b.amount || 0);
+			}
+			return 0;
+		});
+	}, [
+		allTransactionsUnfiltered,
+		transactionTypeFilter,
+		searchQuery,
+		categoryFilter,
+		paymentMethodFilter,
+		sortBy,
+	]);
 
 	const filteredExpenses = filteredTransactions;
+
+	// Pagination variables
+	const totalPages = Math.max(1, Math.ceil(filteredTransactions.length / itemsPerPage));
+	const paginatedTransactions = React.useMemo(() => {
+		const start = (currentPage - 1) * itemsPerPage;
+		return filteredTransactions.slice(start, start + itemsPerPage);
+	}, [filteredTransactions, currentPage, itemsPerPage]);
+
+	const hasActiveExtraFilters =
+		categoryFilter !== "ALL" || paymentMethodFilter !== "ALL";
+
+	const getPaginationNumbers = () => {
+		const delta = 1;
+		const range: (number | string)[] = [];
+		const rangeWithDots: (number | string)[] = [];
+		let l: number | undefined;
+
+		for (let i = 1; i <= totalPages; i++) {
+			if (
+				i === 1 ||
+				i === totalPages ||
+				(i >= currentPage - delta && i <= currentPage + delta)
+			) {
+				range.push(i);
+			}
+		}
+
+		for (const i of range) {
+			if (l) {
+				if ((i as number) - l === 2) {
+					rangeWithDots.push(l + 1);
+				} else if ((i as number) - l !== 1) {
+					rangeWithDots.push("...");
+				}
+			}
+			rangeWithDots.push(i);
+			l = i as number;
+		}
+
+		return rangeWithDots;
+	};
 
 	return (
 		<div className="space-y-6 print:p-0">
@@ -2973,386 +3258,708 @@ export function FinanceReportClient({
 			{/* ==================================================== */}
 
 			{/* ==================================================== */}
-			{/* 6. RECENT TRANSACTIONS SECTION (VELA-FINANCE STYLE TABLE) */}
+			{/* 6. CASH FLOW TRANSACTIONS TABLE (STANDAR UNIVERSAL MENUIN 3-ZONA) */}
 			{/* ==================================================== */}
-			<div className="bg-white rounded-2xl border border-[#EAEFF8] shadow-xs overflow-hidden">
-				{/* Table Header & Controls */}
-				<div className="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-					<div className="flex items-center gap-2.5">
-						<div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center flex-shrink-0">
-							<Receipt className="w-4 h-4 text-slate-700" />
-						</div>
-						<div>
-							<h3 className="text-base font-semibold text-slate-900 tracking-tight">
-								Recent transactions
-							</h3>
-							<p className="text-xs text-slate-400 mt-0.5">
-								Riwayat arus kas masuk &amp; pengeluaran operasional outlet
-							</p>
-						</div>
+			<div className="space-y-4">
+				{/* Zone 1: Toolbar Row (Left: Underline Tabs, Right: Search, Filter, Sort, Export, Tambah Biaya) */}
+				<div className="flex flex-col lg:flex-row lg:items-center justify-between border-b border-slate-200 dark:border-slate-800 gap-4">
+					{/* Left: Underline Tabs */}
+					<div className="flex items-center gap-6 overflow-x-auto no-scrollbar pt-1">
+						{cashFlowTabs.map((tab) => {
+							const isActive = transactionTypeFilter === tab.key;
+							return (
+								<button
+									key={tab.key}
+									type="button"
+									onClick={() => {
+										setTransactionTypeFilter(tab.key);
+										setCurrentPage(1);
+									}}
+									className={cn(
+										"relative pb-3 text-xs sm:text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer whitespace-nowrap",
+										isActive
+											? "text-blue-600 dark:text-blue-400 font-semibold"
+											: "text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400",
+									)}
+								>
+									<span>{tab.label}</span>
+									<span
+										className={cn(
+											"text-xs px-2 py-0.5 rounded-lg font-medium transition-colors",
+											isActive
+												? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300"
+												: "text-slate-400 dark:text-slate-500",
+										)}
+									>
+										{tab.count}
+									</span>
+									{isActive && (
+										<motion.div
+											layoutId="activeCashFlowTabUnderline"
+											className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-500 rounded-full"
+											transition={{ type: "spring", stiffness: 450, damping: 35 }}
+										/>
+									)}
+								</button>
+							);
+						})}
 					</div>
 
-					{/* Right Action Buttons */}
-					<div className="flex items-center gap-2">
+					{/* Right: Search, Filter Popover, Sort Dropdown, Export, & Tambah Biaya */}
+					<div className="flex items-center gap-2 pb-2.5 lg:pb-3 flex-wrap">
+						{/* Search Input */}
+						<div className="relative w-full sm:w-56">
+							<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+							<Input
+								type="text"
+								placeholder="Search..."
+								value={searchQuery}
+								onChange={(e) => {
+									setSearchQuery(e.target.value);
+									setCurrentPage(1);
+								}}
+								className="pl-9 h-9 text-xs rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus-visible:ring-blue-600"
+							/>
+							{searchQuery && (
+								<button
+									type="button"
+									onClick={() => {
+										setSearchQuery("");
+										setCurrentPage(1);
+									}}
+									className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+								>
+									<X className="w-3.5 h-3.5" />
+								</button>
+							)}
+						</div>
+
+						{/* Filter Popover (Funnel icon) */}
+						<Popover
+							open={isFilterPopoverOpen}
+							onOpenChange={setIsFilterPopoverOpen}
+						>
+							<PopoverTrigger asChild>
+								<Button
+									variant="outline"
+									size="icon"
+									className={cn(
+										"h-9 w-9 rounded-xl border-slate-200 dark:border-slate-800 relative cursor-pointer",
+										hasActiveExtraFilters &&
+											"border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 text-blue-600",
+									)}
+									title="Filter Transaksi Arus Kas"
+								>
+									<Filter className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+									{hasActiveExtraFilters && (
+										<span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-blue-600 ring-2 ring-white dark:ring-slate-900" />
+									)}
+								</Button>
+							</PopoverTrigger>
+							<PopoverContent
+								align="end"
+								className="w-80 p-4 rounded-xl shadow-xl border-slate-200 dark:border-slate-800 space-y-4"
+							>
+								<div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+									<span className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+										Filter Tambahan
+									</span>
+									{hasActiveExtraFilters && (
+										<button
+											type="button"
+											onClick={() => {
+												setCategoryFilter("ALL");
+												setPaymentMethodFilter("ALL");
+												setCurrentPage(1);
+											}}
+											className="text-[11px] text-blue-600 hover:underline font-medium cursor-pointer"
+										>
+											Reset Filter
+										</button>
+									)}
+								</div>
+
+								{/* Kategori Filter */}
+								<div className="space-y-1.5">
+									<Label className="text-[11px] font-medium text-slate-500 uppercase">
+										Kategori Arus Kas
+									</Label>
+									<div className="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto pr-1">
+										{CASH_FLOW_FILTER_CATEGORIES.map((cat) => (
+											<button
+												key={cat.id}
+												type="button"
+												onClick={() => {
+													setCategoryFilter(cat.id);
+													setCurrentPage(1);
+												}}
+												className={cn(
+													"py-1.5 px-2 text-xs rounded-xl border text-center transition-colors cursor-pointer truncate",
+													categoryFilter === cat.id
+														? "bg-blue-600 text-white border-transparent font-medium shadow-xs"
+														: "border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 dark:hover:bg-blue-950/40 dark:hover:text-blue-400",
+												)}
+											>
+												{cat.label}
+											</button>
+										))}
+									</div>
+								</div>
+
+								{/* Metode Pembayaran Filter */}
+								<div className="space-y-1.5">
+									<Label className="text-[11px] font-medium text-slate-500 uppercase">
+										Metode Pembayaran
+									</Label>
+									<div className="grid grid-cols-3 gap-1.5">
+										{CASH_FLOW_PAYMENT_METHODS.map((pm) => (
+											<button
+												key={pm.id}
+												type="button"
+												onClick={() => {
+													setPaymentMethodFilter(pm.id);
+													setCurrentPage(1);
+												}}
+												className={cn(
+													"py-1.5 text-xs rounded-xl border text-center transition-colors cursor-pointer truncate",
+													paymentMethodFilter === pm.id
+														? "bg-blue-600 text-white border-transparent font-medium shadow-xs"
+														: "border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 dark:hover:bg-blue-950/40 dark:hover:text-blue-400",
+												)}
+											>
+												{pm.label}
+											</button>
+										))}
+									</div>
+								</div>
+
+								<div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+									<Button
+										size="sm"
+										className="h-8 text-xs rounded-xl px-4 bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+										onClick={() => setIsFilterPopoverOpen(false)}
+									>
+										Terapkan
+									</Button>
+								</div>
+							</PopoverContent>
+						</Popover>
+
+						{/* Sort Dropdown */}
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button
+									variant="outline"
+									size="icon"
+									className="h-9 w-9 rounded-xl border-slate-200 dark:border-slate-800 cursor-pointer"
+									title="Urutkan Data"
+								>
+									<SlidersHorizontal className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent
+								align="end"
+								className="w-48 p-1 rounded-xl shadow-lg border-slate-200 dark:border-slate-800"
+							>
+								<DropdownMenuItem
+									className={cn(
+										"text-xs py-2 px-3 rounded-lg cursor-pointer",
+										sortBy === "newest" && "font-semibold text-blue-600",
+									)}
+									onClick={() => setSortBy("newest")}
+								>
+									Terbaru
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									className={cn(
+										"text-xs py-2 px-3 rounded-lg cursor-pointer",
+										sortBy === "oldest" && "font-semibold text-blue-600",
+									)}
+									onClick={() => setSortBy("oldest")}
+								>
+									Terlama
+								</DropdownMenuItem>
+								<DropdownMenuSeparator className="my-1 border-slate-100 dark:border-slate-800" />
+								<DropdownMenuItem
+									className={cn(
+										"text-xs py-2 px-3 rounded-lg cursor-pointer",
+										sortBy === "amount_high" && "font-semibold text-blue-600",
+									)}
+									onClick={() => setSortBy("amount_high")}
+								>
+									Nominal Terbesar
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									className={cn(
+										"text-xs py-2 px-3 rounded-lg cursor-pointer",
+										sortBy === "amount_low" && "font-semibold text-blue-600",
+									)}
+									onClick={() => setSortBy("amount_low")}
+								>
+									Nominal Terkecil
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
+
+						{/* Export Excel Button */}
 						<Button
 							variant="outline"
+							size="sm"
+							onClick={handleExportExcel}
+							className="h-9 px-3 rounded-xl border-slate-200 dark:border-slate-800 text-xs font-medium gap-1.5 cursor-pointer text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900"
+							title="Ekspor laporan ke file Excel"
+						>
+							<FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+							<span className="hidden sm:inline">Export Excel</span>
+						</Button>
+
+						{/* Primary Action Button: Tambah Biaya */}
+						<Button
 							size="sm"
 							onClick={() => {
 								setModalMode("EXPENSE");
 								setIsModalOpen(true);
 							}}
-							className="h-8 text-xs gap-1.5 border-[#EAEFF8] hover:bg-slate-50 text-slate-700 rounded-xl"
+							className="h-9 px-4 text-xs font-semibold rounded-xl bg-[#0e59f9] hover:bg-blue-600 text-white shadow-xs gap-1.5 cursor-pointer"
 						>
-							<Plus className="w-3.5 h-3.5 text-slate-500" />
+							<Plus className="w-3.5 h-3.5" />
 							<span>Tambah Biaya</span>
-						</Button>
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={handleExportExcel}
-							className="h-8 text-xs gap-1.5 border-[#EAEFF8] hover:bg-slate-50 text-slate-700 rounded-xl"
-						>
-							<SlidersHorizontal className="w-3.5 h-3.5 text-slate-500" />
-							<span>Filters</span>
 						</Button>
 					</div>
 				</div>
 
-				{/* Alert Notice Banner (like Vela-finance '1 payment failed...') */}
-				{activeShift && (
-					<div className="mx-4 sm:mx-5 mt-4 p-3 rounded-xl bg-rose-50/70 border border-rose-200/80 flex items-center justify-between gap-3 text-xs">
-						<div className="flex items-center gap-2 text-rose-900">
-							<AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
-							<span>
-								<strong>Shift Kasir Aktif:</strong> Shift #
-								{activeShift.id.slice(0, 8)} oleh kasir sedang berjalan.
-								Pastikan uang fisik laci diaudit saat pergantian shift.
-							</span>
-						</div>
-						<button
-							type="button"
-							onClick={() => setIsShiftAuditExpanded(true)}
-							className="px-2.5 py-1 rounded-lg bg-rose-600 text-white font-semibold text-[11px] hover:bg-rose-700 transition-colors flex-shrink-0 shadow-2xs"
-						>
-							Audit Shift
-						</button>
-					</div>
-				)}
+				{/* Zone 2: Table Data Container */}
+				<div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-950 overflow-hidden shadow-xs">
+					<div className="relative w-full overflow-x-auto">
+						<table className="w-full text-left text-xs">
+							<thead>
+								<tr className="bg-slate-50/70 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-200/80 dark:border-slate-800">
+									<th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap min-w-[200px]">
+										Transaksi &amp; Kategori
+									</th>
+									<th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap w-[140px]">
+										Tipe Arus Kas
+									</th>
+									<th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap w-[150px]">
+										Tanggal &amp; Waktu
+									</th>
+									<th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap w-[140px]">
+										Metode Pembayaran
+									</th>
+									<th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-right w-[140px]">
+										Nominal
+									</th>
+									<th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-center w-[110px]">
+										Status
+									</th>
+									<th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-right w-[60px] print:hidden">
+										Aksi
+									</th>
+								</tr>
+							</thead>
 
-				{/* Table Content */}
-				<div className="overflow-x-auto">
-					<Table className="w-full text-xs text-left">
-						<TableHeader>
-							<TableRow className="border-b border-slate-100 bg-slate-50/50 hover:bg-slate-50/50">
-								<TableHead className="py-3 px-4 text-slate-400 font-medium w-10"></TableHead>
-								<TableHead className="py-3 px-4 text-slate-500 font-medium">
-									Transaksi &amp; Kategori
-								</TableHead>
-								<TableHead className="py-3 px-4 text-slate-500 font-medium">
-									Tanggal
-								</TableHead>
-								<TableHead className="py-3 px-4 text-slate-500 font-medium">
-									Metode Pembayaran
-								</TableHead>
-								<TableHead className="py-3 px-4 text-right text-slate-500 font-medium">
-									Nominal
-								</TableHead>
-								<TableHead className="py-3 px-4 text-center text-slate-500 font-medium">
-									Status
-								</TableHead>
-								<TableHead className="py-3 px-4 text-center print:hidden w-12 text-slate-500 font-medium"></TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody className="divide-y divide-slate-100 font-sans">
-							{filteredTransactions.length === 0 ? (
-								<TableRow>
-									<TableCell
-										colSpan={7}
-										className="py-12 text-center text-slate-400"
-									>
-										<Receipt className="h-8 w-8 mx-auto mb-2 text-slate-300 opacity-60" />
-										Belum ada riwayat transaksi pada rentang waktu ini.
-									</TableCell>
-								</TableRow>
-							) : (
-								filteredTransactions.slice(0, 15).map((trx, idx) => {
-									const isIncome = trx.type === "INCOME";
-									const initials =
-										trx.description?.slice(0, 2).toUpperCase() ||
-										trx.category.slice(0, 2);
-									const isCash =
-										trx.paymentMethod === "TUNAI" ||
-										trx.paymentMethod === "CASH";
+							<tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+								{paginatedTransactions.length > 0 ? (
+									paginatedTransactions.map((trx) => {
+										const isIncome = trx.type === "INCOME";
+										const isCash =
+											trx.paymentMethod === "TUNAI" ||
+											trx.paymentMethod === "CASH";
+										const isPosOrder = trx.category === "PENJUALAN";
 
-									return (
-										<TableRow
-											key={trx.id}
-											className="hover:bg-slate-50/60 transition-colors group"
-										>
-											{/* Checkbox / Bullet */}
-											<TableCell className="py-3 px-4 text-slate-300 text-center">
-												<div className="w-3.5 h-3.5 rounded border border-slate-300 mx-auto" />
-											</TableCell>
-
-											{/* Avatar Initials + Title & Category */}
-											<TableCell className="py-3 px-4">
-												<div className="flex items-center gap-2.5">
-													<div
-														className={cn(
-															"w-8 h-8 rounded-full flex items-center justify-center font-semibold text-xs flex-shrink-0 shadow-2xs",
-															isIncome
-																? "bg-emerald-100 text-emerald-700"
-																: idx % 3 === 0
-																	? "bg-blue-100 text-[#0e59f9]"
-																	: idx % 3 === 1
-																		? "bg-amber-100 text-amber-700"
-																		: "bg-purple-100 text-purple-700",
-														)}
-													>
-														{initials}
-													</div>
-													<div>
-														<div className="font-semibold text-slate-900 text-xs">
+										return (
+											<tr
+												key={trx.id}
+												onClick={() => setSelectedDetailTransaction(trx)}
+												className="hover:bg-blue-50/50 dark:hover:bg-blue-950/25 transition-colors cursor-pointer group"
+											>
+												{/* 1. Transaksi & Kategori */}
+												<td className="py-3.5 px-4">
+													<div className="flex flex-col min-w-0 max-w-[280px] sm:max-w-[340px]">
+														<span
+															className="font-semibold text-slate-900 dark:text-slate-100 text-xs truncate"
+															title={trx.description}
+														>
 															{trx.description ||
 																(isIncome
 																	? "Pemasukan Kas"
 																	: "Biaya Operasional")}
-														</div>
-														<div className="text-[10px] text-slate-400">
-															{trx.category}{" "}
-															{isIncome ? "• Pemasukan" : "• Pengeluaran"}
-														</div>
+														</span>
+														<span className="text-[10px] text-slate-400 dark:text-slate-500 truncate">
+															{getCategoryLabel(trx.category)}
+														</span>
 													</div>
-												</div>
-											</TableCell>
+												</td>
 
-											{/* Date */}
-											<TableCell className="py-3 px-4 text-slate-500 whitespace-nowrap text-xs">
-												{new Date(trx.date).toLocaleDateString("id-ID", {
-													day: "2-digit",
-													month: "short",
-													year: "numeric",
-												})}
-											</TableCell>
-
-											{/* Method */}
-											<TableCell className="py-3 px-4">
-												<span
-													className={cn(
-														"inline-block px-2 py-0.5 rounded-md text-[10px] font-medium border",
-														isCash
-															? "bg-amber-50 text-amber-700 border-amber-200"
-															: "bg-blue-50 text-[#0e59f9] border-blue-200",
-													)}
-												>
-													{isCash ? "Kasir Tunai" : trx.paymentMethod}
-												</span>
-											</TableCell>
-
-											{/* Amount */}
-											<TableCell
-												className={cn(
-													"py-3 px-4 text-right font-semibold font-sans text-xs whitespace-nowrap",
-													isIncome ? "text-emerald-600" : "text-slate-900",
-												)}
-											>
-												{isIncome
-													? `+${formatRupiah(trx.amount)}`
-													: `-${formatRupiah(trx.amount)}`}
-											</TableCell>
-
-											{/* Status */}
-											<TableCell className="py-3 px-4 text-center">
-												<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-													<span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-													<span>Berhasil</span>
-												</span>
-											</TableCell>
-
-											{/* Action Menu / Delete */}
-											<TableCell className="py-3 px-4 text-center print:hidden">
-												<button
-													type="button"
-													onClick={() =>
-														isIncome
-															? handleDeleteIncome(trx.id)
-															: handleDeleteExpense(trx.id)
-													}
-													className="text-slate-400 hover:text-rose-600 p-1 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
-													title="Hapus"
-												>
-													<Trash2 className="h-3.5 w-3.5" />
-												</button>
-											</TableCell>
-										</TableRow>
-									);
-								})
-							)}
-						</TableBody>
-					</Table>
-				</div>
-			</div>
-
-			{/* ==================================================== */}
-			{/* 7. CASH DRAWER SHIFT RECONCILIATION AUDIT (COLLAPSIBLE CARD) */}
-			{/* ==================================================== */}
-			<div
-				id="shift-reconciliation-section"
-				className="bg-white rounded-2xl border border-[#EAEFF8] shadow-xs overflow-hidden scroll-mt-6"
-			>
-				<div
-					onClick={() => setIsShiftAuditExpanded(!isShiftAuditExpanded)}
-					className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between cursor-pointer hover:bg-slate-50/50 transition-colors"
-				>
-					<div className="flex items-center gap-2.5">
-						<div className="w-8 h-8 rounded-xl bg-blue-50 text-[#0e59f9] flex items-center justify-center flex-shrink-0">
-							<ShieldCheck className="h-4 w-4 text-[#0e59f9]" />
-						</div>
-						<div>
-							<h3 className="text-base font-semibold text-slate-900 tracking-tight">
-								Rekonsiliasi Shift &amp; Uang Laci Kasir ({shifts.length})
-							</h3>
-							<p className="text-xs text-slate-400 mt-0.5">
-								Audit perbandingan uang sistem vs fisik aktual saat kasir tutup
-								shift
-							</p>
-						</div>
-					</div>
-					<button
-						type="button"
-						className="p-1 rounded-lg hover:bg-slate-100 text-slate-400"
-					>
-						<ChevronDown
-							className={cn(
-								"w-4 h-4 transition-transform",
-								isShiftAuditExpanded && "rotate-180",
-							)}
-						/>
-					</button>
-				</div>
-
-				{isShiftAuditExpanded && (
-					<div className="overflow-x-auto">
-						<Table className="w-full text-xs text-left">
-							<TableHeader>
-								<TableRow className="border-b border-slate-100 bg-slate-50/50 hover:bg-slate-50/50">
-									<TableHead className="py-3 px-4 text-slate-500 font-medium">
-										Shift &amp; Kasir
-									</TableHead>
-									<TableHead className="py-3 px-4 text-slate-500 font-medium">
-										Status
-									</TableHead>
-									<TableHead className="py-3 px-4 text-slate-500 font-medium">
-										Waktu Buka / Tutup
-									</TableHead>
-									<TableHead className="py-3 px-4 text-right text-slate-500 font-medium">
-										Modal Awal
-									</TableHead>
-									<TableHead className="py-3 px-4 text-right text-slate-500 font-medium">
-										Diharapkan (Sistem)
-									</TableHead>
-									<TableHead className="py-3 px-4 text-right text-slate-500 font-medium">
-										Aktual Laci
-									</TableHead>
-									<TableHead className="py-3 px-4 text-right text-slate-500 font-medium">
-										Selisih
-									</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody className="divide-y divide-slate-100 font-sans">
-								{shifts.length === 0 ? (
-									<TableRow>
-										<TableCell
-											colSpan={7}
-											className="py-8 text-center text-slate-400"
-										>
-											<ShieldCheck className="h-7 w-7 mx-auto mb-1.5 text-slate-300 opacity-60" />
-											Belum ada riwayat shift kasir pada periode ini.
-										</TableCell>
-									</TableRow>
-								) : (
-									shifts.map((s) => {
-										const diff = parseFloat(s.cashDifference || "0");
-										const cashier = (s as any).cashierName || "Kasir";
-										return (
-											<TableRow
-												key={s.id}
-												className="hover:bg-slate-50/60 transition-colors"
-											>
-												<TableCell className="py-3 px-4">
-													<div className="font-semibold text-slate-900 font-sans text-xs">
-														#{s.id.slice(0, 8)}
-													</div>
-													<div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
-														<User className="h-3 w-3 text-slate-400" />
-														<span>{cashier}</span>
-													</div>
-												</TableCell>
-												<TableCell className="py-3 px-4">
+												{/* 2. Tipe Arus Kas */}
+												<td className="py-3.5 px-4 whitespace-nowrap">
 													<span
 														className={cn(
-															"px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase",
-															s.status === "ACTIVE"
-																? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-																: "bg-slate-100 text-slate-700",
+															"inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-medium",
+															isIncome
+																? "bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300"
+																: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
 														)}
 													>
-														{s.status === "ACTIVE" ? "AKTIF" : "SELESAI"}
+														{isIncome ? (
+															<>
+																<ArrowDownLeft className="w-3 h-3 text-emerald-600" />
+																<span>Cash In</span>
+															</>
+														) : (
+															<>
+																<ArrowUpRight className="w-3 h-3 text-slate-500" />
+																<span>Cash Out</span>
+															</>
+														)}
 													</span>
-												</TableCell>
-												<TableCell className="py-3 px-4 text-slate-500 text-[11px]">
-													<div>
-														Mulai:{" "}
-														{new Date(s.startTime).toLocaleTimeString("id-ID", {
-															hour: "2-digit",
-															minute: "2-digit",
-														})}
+												</td>
+
+												{/* 3. Tanggal & Waktu */}
+												<td className="py-3.5 px-4 whitespace-nowrap">
+													<div className="flex flex-col">
+														<span className="font-medium text-slate-800 dark:text-slate-200 text-xs">
+															{formatTrxDate(trx.date)}
+														</span>
+														<span className="text-[10px] text-muted-foreground">
+															{formatTrxTime(trx.date)}
+														</span>
 													</div>
-													{s.endTime && (
-														<div className="text-slate-400">
-															Tutup:{" "}
-															{new Date(s.endTime).toLocaleTimeString("id-ID", {
-																hour: "2-digit",
-																minute: "2-digit",
-															})}
-														</div>
+												</td>
+
+												{/* 4. Metode Pembayaran */}
+												<td className="py-3.5 px-4 whitespace-nowrap">
+													<span
+														className={cn(
+															"inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-medium",
+															isCash
+																? "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+																: "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300",
+														)}
+													>
+														{isCash
+															? "Kasir Tunai"
+															: formatPaymentMethodLabel(trx.paymentMethod)}
+													</span>
+												</td>
+
+												{/* 5. Nominal */}
+												<td
+													className={cn(
+														"py-3.5 px-4 text-right font-semibold tabular-nums text-xs whitespace-nowrap",
+														isIncome
+															? "text-emerald-600 dark:text-emerald-400"
+															: "text-slate-900 dark:text-slate-100",
 													)}
-												</TableCell>
-												<TableCell className="py-3 px-4 text-right font-sans">
-													{formatRupiah(s.startingCash)}
-												</TableCell>
-												<TableCell className="py-3 px-4 text-right font-sans">
-													{formatRupiah(s.expectedCash)}
-												</TableCell>
-												<TableCell className="py-3 px-4 text-right font-sans font-semibold text-slate-900">
-													{s.actualCash ? formatRupiah(s.actualCash) : "-"}
-												</TableCell>
-												<TableCell className="py-3 px-4 text-right font-sans font-semibold">
-													{s.status === "ACTIVE" ? (
-														<span className="text-slate-400 font-normal">
-															Shift berjalan
-														</span>
-													) : diff === 0 ? (
-														<span className="text-emerald-600">Pas (Rp 0)</span>
-													) : diff > 0 ? (
-														<span className="text-emerald-700">
-															+{formatRupiah(diff)}
-														</span>
-													) : (
-														<span className="text-rose-600">
-															-{formatRupiah(Math.abs(diff))}
-														</span>
-													)}
-												</TableCell>
-											</TableRow>
+												>
+													{isIncome
+														? `+${formatRupiah(trx.amount)}`
+														: `-${formatRupiah(trx.amount)}`}
+												</td>
+
+												{/* 6. Status */}
+												<td className="py-3.5 px-4 text-center whitespace-nowrap">
+													<span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-medium bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300">
+														Sukses
+													</span>
+												</td>
+
+												{/* 7. Aksi (MoreVertical Dropdown) */}
+												<td
+													className="py-3.5 px-4 text-right whitespace-nowrap print:hidden"
+													onClick={(e) => e.stopPropagation()}
+												>
+													<DropdownMenu>
+														<DropdownMenuTrigger asChild>
+															<Button
+																variant="ghost"
+																size="icon"
+																className="h-8 w-8 p-0 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-950/30 rounded-lg cursor-pointer"
+															>
+																<span className="sr-only">Menu aksi</span>
+																<MoreVertical className="h-4 w-4" />
+															</Button>
+														</DropdownMenuTrigger>
+														<DropdownMenuContent
+															align="end"
+															className="w-44 p-1 rounded-xl shadow-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
+														>
+															<DropdownMenuItem
+																className="text-xs font-medium py-2 px-3 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2"
+																onClick={() => setSelectedDetailTransaction(trx)}
+															>
+																<Eye className="h-3.5 w-3.5 text-slate-500" />
+																<span>Rincian arus kas</span>
+															</DropdownMenuItem>
+
+															{!isPosOrder && (
+																<>
+																	<DropdownMenuSeparator className="my-1 border-slate-100 dark:border-slate-800" />
+																	<DropdownMenuItem
+																		onClick={() =>
+																			isIncome
+																				? handleDeleteIncome(trx.id)
+																				: handleDeleteExpense(trx.id)
+																		}
+																		className="text-xs font-medium py-2 px-3 rounded-lg cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/40 flex items-center gap-2"
+																	>
+																		<Trash2 className="h-3.5 w-3.5 text-red-600" />
+																		<span>Hapus catatan</span>
+																	</DropdownMenuItem>
+																</>
+															)}
+														</DropdownMenuContent>
+													</DropdownMenu>
+												</td>
+											</tr>
 										);
 									})
+								) : (
+									<tr>
+										<td colSpan={7} className="py-16 text-center text-muted-foreground">
+											<div className="flex flex-col items-center justify-center space-y-2">
+												<PackageSearch className="w-9 h-9 text-slate-300 dark:text-slate-600" />
+												<p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+													Tidak ada transaksi arus kas ditemukan
+												</p>
+												<p className="text-xs text-muted-foreground max-w-sm">
+													Coba sesuaikan kata kunci pencarian atau ganti filter jenis arus kas / kategori.
+												</p>
+											</div>
+										</td>
+									</tr>
 								)}
-							</TableBody>
-						</Table>
+							</tbody>
+						</table>
 					</div>
-				)}
+				</div>
+
+				{/* Zone 3: Footer Pagination Bar */}
+				<div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-1">
+					{/* Left: Items Per Page Selector */}
+					<div className="flex items-center gap-2 text-xs text-slate-500">
+						<span>Items Per Page</span>
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button
+									variant="outline"
+									size="sm"
+									className="h-8 px-3 rounded-xl border-slate-200 dark:border-slate-800 text-xs font-medium gap-1.5 cursor-pointer"
+								>
+									<span>{itemsPerPage}</span>
+									<ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent
+								align="start"
+								className="w-24 p-1 rounded-xl shadow-lg border-slate-200 dark:border-slate-800"
+							>
+								{[10, 20, 50, 100].map((size) => (
+									<DropdownMenuItem
+										key={size}
+										onClick={() => {
+											setItemsPerPage(size);
+											setCurrentPage(1);
+										}}
+										className={cn(
+											"text-xs py-1.5 px-3 rounded-lg cursor-pointer",
+											itemsPerPage === size && "font-semibold text-blue-600",
+										)}
+									>
+										{size}
+									</DropdownMenuItem>
+								))}
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</div>
+
+					{/* Right: Page Numbers < 1 2 3 ... 8 > */}
+					{totalPages > 1 && (
+						<div className="flex items-center gap-1">
+							<Button
+								variant="outline"
+								size="icon"
+								disabled={currentPage === 1}
+								onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+								className="h-8 w-8 rounded-lg border-slate-200 dark:border-slate-800 text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:text-blue-400 dark:hover:border-blue-700 dark:hover:bg-blue-950/30 disabled:opacity-40 cursor-pointer"
+								aria-label="Halaman sebelumnya"
+							>
+								<ChevronLeft className="w-4 h-4" />
+							</Button>
+
+							{getPaginationNumbers().map((pageItem, index) => {
+								if (pageItem === "...") {
+									return (
+										<span
+											key={`ellipsis-${index}`}
+											className="px-1.5 text-xs text-slate-400"
+										>
+											...
+										</span>
+									);
+								}
+								const pageNum = pageItem as number;
+								const isCurrent = pageNum === currentPage;
+								return (
+									<button
+										key={pageNum}
+										type="button"
+										onClick={() => setCurrentPage(pageNum)}
+										className={cn(
+											"h-8 min-w-[32px] px-2 text-xs rounded-lg font-medium transition-colors cursor-pointer",
+											isCurrent
+												? "bg-blue-600 text-white shadow-xs"
+												: "text-slate-600 dark:text-slate-400 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/40 dark:hover:text-blue-400",
+										)}
+									>
+										{pageNum}
+									</button>
+								);
+							})}
+
+							<Button
+								variant="outline"
+								size="icon"
+								disabled={currentPage === totalPages}
+								onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+								className="h-8 w-8 rounded-lg border-slate-200 dark:border-slate-800 text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:text-blue-400 dark:hover:border-blue-700 dark:hover:bg-blue-950/30 disabled:opacity-40 cursor-pointer"
+								aria-label="Halaman berikutnya"
+							>
+								<ChevronRight className="w-4 h-4" />
+							</Button>
+						</div>
+					)}
+				</div>
 			</div>
+
+			{/* Detail Modal for Selected Cash Flow Item */}
+			<Dialog
+				open={!!selectedDetailTransaction}
+				onOpenChange={(open) => {
+					if (!open) setSelectedDetailTransaction(null);
+				}}
+			>
+				<DialogContent className="sm:max-w-md rounded-2xl p-6">
+					<DialogHeader>
+						<DialogTitle className="text-base font-semibold text-slate-900 dark:text-slate-100">
+							Rincian Transaksi Arus Kas
+						</DialogTitle>
+						<DialogDescription className="text-xs text-slate-500">
+							Informasi detail pencatatan arus kas operasional outlet.
+						</DialogDescription>
+					</DialogHeader>
+
+					{selectedDetailTransaction && (
+						<div className="space-y-4 pt-2">
+							<div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-2">
+								<div className="flex items-center justify-between text-xs">
+									<span className="text-slate-500">Tipe Arus Kas</span>
+									<span
+										className={cn(
+											"inline-flex items-center gap-1 font-semibold px-2 py-0.5 rounded-md text-[11px]",
+											selectedDetailTransaction.type === "INCOME"
+												? "bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300"
+												: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+										)}
+									>
+										{selectedDetailTransaction.type === "INCOME" ? (
+											<>
+												<ArrowDownLeft className="w-3 h-3 text-emerald-600" />
+												<span>Pemasukan (Cash In)</span>
+											</>
+										) : (
+											<>
+												<ArrowUpRight className="w-3 h-3 text-slate-500" />
+												<span>Pengeluaran (Cash Out)</span>
+											</>
+										)}
+									</span>
+								</div>
+								<div className="flex items-center justify-between text-xs">
+									<span className="text-slate-500">Nominal</span>
+									<span
+										className={cn(
+											"font-semibold text-sm tabular-nums",
+											selectedDetailTransaction.type === "INCOME"
+												? "text-emerald-600"
+												: "text-slate-900 dark:text-slate-100",
+										)}
+									>
+										{selectedDetailTransaction.type === "INCOME"
+											? `+${formatRupiah(selectedDetailTransaction.amount)}`
+											: `-${formatRupiah(selectedDetailTransaction.amount)}`}
+									</span>
+								</div>
+								<div className="flex items-center justify-between text-xs">
+									<span className="text-slate-500">Status</span>
+									<span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-medium bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300">
+										Sukses
+									</span>
+								</div>
+							</div>
+
+							<div className="space-y-2 text-xs divide-y divide-slate-100 dark:divide-slate-800">
+								<div className="flex justify-between py-2">
+									<span className="text-slate-500">Keterangan</span>
+									<span className="font-medium text-slate-800 dark:text-slate-200 text-right max-w-[220px]">
+										{selectedDetailTransaction.description || "-"}
+									</span>
+								</div>
+								<div className="flex justify-between py-2">
+									<span className="text-slate-500">Kategori</span>
+									<span className="font-medium text-slate-800 dark:text-slate-200">
+										{getCategoryLabel(selectedDetailTransaction.category)}
+									</span>
+								</div>
+								<div className="flex justify-between py-2">
+									<span className="text-slate-500">Metode Pembayaran</span>
+									<span
+										className={cn(
+											"inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium",
+											selectedDetailTransaction.paymentMethod === "TUNAI" ||
+												selectedDetailTransaction.paymentMethod === "CASH"
+												? "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+												: "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300",
+										)}
+									>
+										{formatPaymentMethodLabel(
+											selectedDetailTransaction.paymentMethod,
+										)}
+									</span>
+								</div>
+								<div className="flex justify-between py-2">
+									<span className="text-slate-500">Tanggal &amp; Waktu</span>
+									<span className="font-medium text-slate-800 dark:text-slate-200">
+										{formatTrxDate(selectedDetailTransaction.date)}
+										{formatTrxTime(selectedDetailTransaction.date)
+											? `, ${formatTrxTime(selectedDetailTransaction.date)}`
+											: ""}
+									</span>
+								</div>
+								<div className="flex justify-between py-2">
+									<span className="text-slate-500">ID Referensi</span>
+									<span className="font-mono text-[11px] text-slate-400">
+										{selectedDetailTransaction.id}
+									</span>
+								</div>
+							</div>
+						</div>
+					)}
+
+					<DialogFooter className="pt-2">
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => setSelectedDetailTransaction(null)}
+							className="rounded-xl text-xs h-9 cursor-pointer"
+						>
+							Tutup
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			
 
 			{/* ==================================================== */}
 			{/* 8. MODAL: CATAT TRANSAKSI KAS (PEMASUKAN / PENGELUARAN) */}
