@@ -468,7 +468,7 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
             <div className="flex items-center gap-1.5 min-w-0">
               <Tag size={13} className="shrink-0 text-emerald-600" />
               {appliedPromo.code && (
-                <span className="shrink-0 px-1.5 py-0.5 rounded bg-emerald-200/60 dark:bg-emerald-900/60 text-emerald-900 dark:text-emerald-200 font-mono text-[10px] font-bold">
+                <span className="shrink-0 px-1.5 py-0.5 rounded-md bg-emerald-200/60 dark:bg-emerald-900/60 text-emerald-900 dark:text-emerald-200 font-mono text-[10px] font-semibold">
                   {appliedPromo.code}
                 </span>
               )}
@@ -626,13 +626,13 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-1.5 min-w-0">
                           {p.code && (
-                            <span className="shrink-0 px-1.5 py-0.5 rounded bg-blue-100/80 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300 font-mono text-[10px] font-bold">
+                            <span className="shrink-0 px-1.5 py-0.5 rounded-md bg-blue-100/80 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300 font-mono text-[10px] font-semibold">
                               {p.code}
                             </span>
                           )}
                           <span className="text-xs font-semibold text-foreground truncate">{p.name}</span>
                         </div>
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 shrink-0">
+                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-md border-none bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 shrink-0">
                           {discountTag}
                         </span>
                       </div>

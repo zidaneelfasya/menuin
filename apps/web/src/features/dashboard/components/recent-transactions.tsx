@@ -15,7 +15,7 @@ type RecentTransactionsProps = {
 
 export function RecentTransactions({ transactions }: RecentTransactionsProps) {
   return (
-    <Card className="rounded-xl shadow-sm border-border/50">
+    <Card className="rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs">
       <CardHeader>
         <CardTitle className="text-base font-semibold">Transaksi Terbaru</CardTitle>
       </CardHeader>
@@ -32,11 +32,13 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-sm font-bold text-foreground font-financial tabular-nums">
+                <p className="text-sm font-semibold text-foreground font-financial tabular-nums">
                   {formatCurrency(Number(tx.totalAmount))}
                 </p>
-                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                  tx.status.toLowerCase() === 'completed' ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
+                <span className={`text-[10px] font-medium px-2 py-0.5 rounded-md border-none ${
+                  tx.status.toLowerCase() === 'completed' 
+                    ? 'bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300' 
+                    : 'bg-rose-100/80 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300'
                 }`}>
                   {tx.status}
                 </span>

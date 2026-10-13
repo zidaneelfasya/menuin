@@ -55,7 +55,7 @@ export function TableQrDialog({ tableName, url }: TableQrDialogProps) {
       </DialogTrigger>
       <DialogContent className="sm:max-w-sm flex flex-col items-center p-8">
         <DialogHeader className="w-full text-center mb-4">
-          <DialogTitle className="text-2xl font-bold">QR Code {tableName}</DialogTitle>
+          <DialogTitle className="text-2xl font-semibold">QR Code {tableName}</DialogTitle>
         </DialogHeader>
         
         <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-6">
@@ -68,7 +68,7 @@ export function TableQrDialog({ tableName, url }: TableQrDialogProps) {
           />
         </div>
         
-        <Button onClick={handleDownload} className="w-full gap-2 h-12 text-md font-bold bg-catalog-primary hover:bg-catalog-primary/90 text-white rounded-xl">
+        <Button onClick={handleDownload} className="w-full gap-2 h-12 text-md font-semibold bg-catalog-primary hover:bg-catalog-primary/90 text-white rounded-xl">
           <Download className="w-5 h-5" />
           Download QR Code
         </Button>

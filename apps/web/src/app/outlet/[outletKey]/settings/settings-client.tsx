@@ -432,7 +432,7 @@ export function SettingsClient({
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <span className="text-muted-foreground text-lg font-bold">
+                            <span className="text-muted-foreground text-lg font-semibold">
                               {storeName ? storeName.slice(0, 2).toUpperCase() : 'MN'}
                             </span>
                           )}
@@ -664,7 +664,7 @@ export function SettingsClient({
             <div className="bg-card border border-border/70 rounded-2xl p-6 sm:p-8 shadow-xs">
               <form onSubmit={handleSaveTax} className="space-y-6">
                 <div className="pb-5 border-b border-border/60">
-                  <h2 className="text-lg font-bold tracking-tight text-foreground">
+                  <h2 className="text-lg font-semibold tracking-tight text-foreground">
                     Pajak Restoran & Biaya Layanan
                   </h2>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -766,7 +766,7 @@ export function SettingsClient({
             <div className="bg-card border border-border/70 rounded-2xl p-6 sm:p-8 shadow-xs">
               <form onSubmit={handleSavePlatformFees} className="space-y-6">
                 <div className="pb-5 border-b border-border/60">
-                  <h2 className="text-lg font-bold tracking-tight text-foreground">
+                  <h2 className="text-lg font-semibold tracking-tight text-foreground">
                     Potongan Komisi Online Food
                   </h2>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -873,7 +873,7 @@ export function SettingsClient({
               <div className="bg-card border border-border/70 rounded-2xl p-6 sm:p-8 shadow-xs">
                 <form onSubmit={handleSavePayment} className="space-y-6">
                   <div className="pb-5 border-b border-border/60">
-                    <h2 className="text-lg font-bold tracking-tight text-foreground">
+                    <h2 className="text-lg font-semibold tracking-tight text-foreground">
                       Integrasi Midtrans Snap API
                     </h2>
                     <p className="text-xs text-muted-foreground mt-1">
@@ -974,7 +974,7 @@ export function SettingsClient({
             <div className="bg-card border border-border/70 rounded-2xl p-6 sm:p-8 shadow-xs">
               <form onSubmit={handleSaveDisplay} className="space-y-6">
                 <div className="pb-5 border-b border-border/60">
-                  <h2 className="text-lg font-bold tracking-tight text-foreground">
+                  <h2 className="text-lg font-semibold tracking-tight text-foreground">
                     Preferensi Tampilan Katalog POS
                   </h2>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -1039,7 +1039,7 @@ export function SettingsClient({
                         <div className="divide-y divide-border/60">
                           {/* HEADER TEXT */}
                           <div className="py-4 space-y-1.5">
-                            <Label htmlFor="receiptHeader" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                            <Label htmlFor="receiptHeader" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                               Header Struk (Alamat & Kontak Outlet)
                             </Label>
                             <Textarea
@@ -1054,7 +1054,7 @@ export function SettingsClient({
 
                           {/* FOOTER TEXT */}
                           <div className="py-4 space-y-1.5">
-                            <Label htmlFor="receiptFooter" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                            <Label htmlFor="receiptFooter" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                               Footer Struk (Pesan Penutup)
                             </Label>
                             <Textarea
@@ -1069,7 +1069,7 @@ export function SettingsClient({
 
                           {/* WIFI NOTE */}
                           <div className="py-4 space-y-1.5">
-                            <Label htmlFor="receiptCustomNote" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                            <Label htmlFor="receiptCustomNote" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                               Catatan Khusus / Info WiFi
                             </Label>
                             <Input
@@ -1147,7 +1147,7 @@ export function SettingsClient({
                           <div className="py-3">
                             <div className="flex items-center justify-between p-4 border border-primary/20 rounded-2xl bg-primary/5">
                               <div className="space-y-0.5">
-                                <Label className="font-bold text-xs text-foreground">
+                                <Label className="font-semibold text-xs text-foreground">
                                   Otomatis Cetak Tiket Dapur Saat Bayar
                                 </Label>
                                 <p className="text-[11px] text-muted-foreground">
@@ -1160,7 +1160,7 @@ export function SettingsClient({
 
                           {/* TITLE */}
                           <div className="py-4 space-y-1.5">
-                            <Label htmlFor="kitchenTicketTitle" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                            <Label htmlFor="kitchenTicketTitle" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                               Judul Tiket Dapur
                             </Label>
                             <Input
@@ -1174,7 +1174,7 @@ export function SettingsClient({
 
                           {/* NOTES */}
                           <div className="py-4 space-y-1.5">
-                            <Label htmlFor="kitchenTicketNotes" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                            <Label htmlFor="kitchenTicketNotes" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                               Catatan Kaki Dapur
                             </Label>
                             <Input
@@ -1257,7 +1257,7 @@ export function SettingsClient({
                       className={cn(
                         "flex-1 text-xs font-semibold py-2 px-3 rounded-lg transition-all cursor-pointer",
                         previewTab === 'customer'
-                          ? "bg-background shadow-xs text-foreground font-bold"
+                          ? "bg-background shadow-xs text-foreground font-semibold"
                           : "text-muted-foreground hover:text-foreground"
                       )}
                     >
@@ -1269,7 +1269,7 @@ export function SettingsClient({
                       className={cn(
                         "flex-1 text-xs font-semibold py-2 px-3 rounded-lg transition-all cursor-pointer",
                         previewTab === 'kitchen'
-                          ? "bg-background shadow-xs text-foreground font-bold"
+                          ? "bg-background shadow-xs text-foreground font-semibold"
                           : "text-muted-foreground hover:text-foreground"
                       )}
                     >
@@ -1290,13 +1290,13 @@ export function SettingsClient({
                                 className="h-10 w-10 object-contain rounded-full border border-zinc-200" 
                               />
                             ) : (
-                              <div className="h-10 w-10 rounded-full bg-zinc-900 text-white flex items-center justify-center font-bold text-xs tracking-wider">
+                              <div className="h-10 w-10 rounded-full bg-zinc-900 text-white flex items-center justify-center font-semibold text-xs tracking-wider">
                                 {storeName?.slice(0, 2)?.toUpperCase() || 'MN'}
                               </div>
                             )}
                           </div>
                         )}
-                        <div className="font-bold text-sm tracking-wider uppercase">
+                        <div className="font-semibold text-sm tracking-wider uppercase">
                           {storeName || 'NAMA OUTLET'}
                         </div>
                         {receiptHeader ? (
@@ -1317,7 +1317,7 @@ export function SettingsClient({
                         </div>
                         <div className="flex justify-between">
                           <span className="text-zinc-500">NO. STRUK</span>
-                          <span className="font-bold">#TRX-8921</span>
+                          <span className="font-semibold">#TRX-8921</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-zinc-500">CHANNEL</span>
@@ -1338,7 +1338,7 @@ export function SettingsClient({
                         {receiptShowTable && (
                           <div className="flex justify-between">
                             <span className="text-zinc-500">MEJA</span>
-                            <span className="font-bold">NO. 05</span>
+                            <span className="font-semibold">NO. 05</span>
                           </div>
                         )}
                         <div className="flex justify-between">
@@ -1349,7 +1349,7 @@ export function SettingsClient({
 
                       <div className="py-3 border-b border-dashed border-zinc-300 space-y-2">
                         <div>
-                          <div className="flex justify-between font-bold text-[11px]">
+                          <div className="flex justify-between font-semibold text-[11px]">
                             <span>Nasi Goreng Spesial</span>
                           </div>
                           <div className="flex justify-between text-[11px] text-zinc-700">
@@ -1363,7 +1363,7 @@ export function SettingsClient({
                           )}
                         </div>
                         <div>
-                          <div className="flex justify-between font-bold text-[11px]">
+                          <div className="flex justify-between font-semibold text-[11px]">
                             <span>Es Teh Manis</span>
                           </div>
                           <div className="flex justify-between text-[11px] text-zinc-700">
@@ -1394,7 +1394,7 @@ export function SettingsClient({
                       </div>
 
                       <div className="py-2.5 border-b border-zinc-900">
-                        <div className="flex justify-between font-bold text-sm text-zinc-900">
+                        <div className="flex justify-between font-semibold text-sm text-zinc-900">
                           <span>TOTAL</span>
                           <span>Rp 58.600</span>
                         </div>
@@ -1412,7 +1412,7 @@ export function SettingsClient({
                             {receiptFooter}
                           </div>
                         ) : (
-                          <div className="text-[10px] font-bold tracking-wider text-zinc-700">TERIMA KASIH</div>
+                          <div className="text-[10px] font-semibold tracking-wider text-zinc-700">TERIMA KASIH</div>
                         )}
                       </div>
                     </div>
@@ -1422,7 +1422,7 @@ export function SettingsClient({
                   {previewTab === 'kitchen' && (
                     <div className="bg-white p-6 sm:p-7 rounded-2xl shadow-md border border-border/80 font-mono text-xs leading-relaxed text-zinc-900 select-none">
                       <div className="text-center space-y-1 pb-3 border-b border-zinc-900">
-                        <div className="font-bold text-sm tracking-wider uppercase">
+                        <div className="font-semibold text-sm tracking-wider uppercase">
                           {kitchenTicketTitle || 'TIKET DAPUR'}
                         </div>
                         <div className="text-[10px] text-zinc-500">
@@ -1433,17 +1433,17 @@ export function SettingsClient({
                       <div className="py-2.5 border-b border-dashed border-zinc-300 space-y-1 text-[11px]">
                         <div className="flex justify-between">
                           <span className="text-zinc-500">CHANNEL</span>
-                          <span className="font-bold">DINE_IN</span>
+                          <span className="font-semibold">DINE_IN</span>
                         </div>
                         {kitchenShowTable && (
-                          <div className="flex justify-between text-sm font-bold pt-0.5">
+                          <div className="flex justify-between text-sm font-semibold pt-0.5">
                             <span>MEJA</span>
                             <span>NO. 05</span>
                           </div>
                         )}
                         <div className="flex justify-between">
                           <span className="text-zinc-500">NO. ORDER</span>
-                          <span className="font-bold">#TRX-8921</span>
+                          <span className="font-semibold">#TRX-8921</span>
                         </div>
                         {kitchenShowCustomer && (
                           <div className="flex justify-between">
@@ -1460,11 +1460,11 @@ export function SettingsClient({
                       </div>
 
                       <div className="py-3 border-b border-dashed border-zinc-300 space-y-2.5">
-                        <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
+                        <div className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">
                           Pesanan Masak:
                         </div>
                         <div className="space-y-0.5 pb-1.5 border-b border-zinc-100">
-                          <div className="flex justify-between items-baseline font-bold text-[11px]">
+                          <div className="flex justify-between items-baseline font-semibold text-[11px]">
                             <span>Nasi Goreng Spesial</span>
                             <span>x1</span>
                           </div>
@@ -1475,7 +1475,7 @@ export function SettingsClient({
                           )}
                         </div>
                         <div className="space-y-0.5">
-                          <div className="flex justify-between items-baseline font-bold text-[11px]">
+                          <div className="flex justify-between items-baseline font-semibold text-[11px]">
                             <span>Es Teh Manis</span>
                             <span>x2</span>
                           </div>
@@ -1487,7 +1487,7 @@ export function SettingsClient({
                         </div>
                       </div>
 
-                      <div className="py-2.5 flex justify-between font-bold text-[11px] border-b border-zinc-900">
+                      <div className="py-2.5 flex justify-between font-semibold text-[11px] border-b border-zinc-900">
                         <span>TOTAL ITEM</span>
                         <span>3 Pcs</span>
                       </div>

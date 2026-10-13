@@ -3959,7 +3959,6 @@ export function FinanceReportClient({
 				</DialogContent>
 			</Dialog>
 
-			
 
 			{/* ==================================================== */}
 			{/* 8. MODAL: CATAT TRANSAKSI KAS (PEMASUKAN / PENGELUARAN) */}

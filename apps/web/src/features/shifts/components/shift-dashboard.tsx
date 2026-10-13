@@ -21,28 +21,38 @@ import { startShift, endShift, addCashMovement } from "@/lib/actions/shifts";
 import { toast } from "sonner";
 import Link from "next/link";
 import {
-  IconClock,
-  IconUser,
-  IconHistory,
-  IconShoppingCart,
-  IconCreditCard,
-  IconPlus,
-  IconCalendar,
-  IconReceipt,
-  IconSearch,
-  IconCheck,
-  IconAlertTriangle,
-  IconCalculator,
-  IconPrinter,
-  IconArrowsExchange,
-  IconArrowDownLeft,
-  IconArrowUpRight,
-  IconLogout,
-  IconX,
-  IconCoin,
-  IconCash,
-  IconFileText
-} from "@tabler/icons-react";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
+import {
+  Clock,
+  User,
+  History,
+  ShoppingCart,
+  CreditCard,
+  Plus,
+  Calendar,
+  Receipt,
+  Search,
+  Check,
+  AlertTriangle,
+  Calculator,
+  Printer,
+  ArrowLeftRight,
+  ArrowDownLeft,
+  ArrowUpRight,
+  LogOut,
+  X,
+  Coins,
+  Banknote,
+  FileText,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+} from "lucide-react";
 import { ShiftDetailModal } from "./shift-detail-modal";
 
 const QUICK_DENOMINATIONS = [0, 50000, 100000, 200000, 300000, 500000, 1000000];
@@ -115,6 +125,8 @@ export function ShiftDashboard({
 
   // Search & Filter state
   const [historySearch, setHistorySearch] = React.useState("");
+  const [historyPage, setHistoryPage] = React.useState(1);
+  const [historyItemsPerPage, setHistoryItemsPerPage] = React.useState(10);
 
   // Calculate total from denomination calculator
   const calculatorTotal = React.useMemo(() => {
@@ -238,6 +250,29 @@ export function ShiftDashboard({
     );
   }, [shiftHistory, historySearch]);
 
+  const totalHistoryPages = Math.max(1, Math.ceil(filteredHistory.length / historyItemsPerPage));
+
+  const paginatedHistory = React.useMemo(() => {
+    const start = (historyPage - 1) * historyItemsPerPage;
+    return filteredHistory.slice(start, start + historyItemsPerPage);
+  }, [filteredHistory, historyPage, historyItemsPerPage]);
+
+  const getHistoryPaginationNumbers = () => {
+    const pages: (number | string)[] = [];
+    if (totalHistoryPages <= 7) {
+      for (let i = 1; i <= totalHistoryPages; i++) pages.push(i);
+    } else {
+      if (historyPage <= 4) {
+        pages.push(1, 2, 3, 4, '...', totalHistoryPages);
+      } else if (historyPage >= totalHistoryPages - 3) {
+        pages.push(1, '...', totalHistoryPages - 3, totalHistoryPages - 2, totalHistoryPages - 1, totalHistoryPages);
+      } else {
+        pages.push(1, '...', historyPage - 1, historyPage, historyPage + 1, '...', totalHistoryPages);
+      }
+    }
+    return pages;
+  };
+
   const shiftDuration = React.useMemo(() => {
     if (!activeShift?.startTime) return "";
     try {
@@ -329,15 +364,14 @@ export function ShiftDashboard({
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-border/60">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-semibold">
-                    <IconClock className="w-5 h-5" />
+                    <Clock className="w-5 h-5" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
                       <h2 className="text-lg font-semibold text-foreground tracking-tight">
                         Sesi Shift Sedang Berjalan
                       </h2>
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-md bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border-none">
                         Aktif
                       </span>
                     </div>
@@ -351,7 +385,7 @@ export function ShiftDashboard({
                   {outletKey && (
                     <Link href={`/outlet/${outletKey}/pos`}>
                       <Button variant="outline" className="rounded-xl border-border/80 text-xs font-semibold h-9 gap-1.5 shadow-2xs">
-                        <IconShoppingCart className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                        <ShoppingCart className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                         Buka POS
                       </Button>
                     </Link>
@@ -366,7 +400,7 @@ export function ShiftDashboard({
                     }}
                     className="rounded-xl text-xs font-semibold h-9 gap-1.5 shadow-xs"
                   >
-                    <IconLogout className="w-3.5 h-3.5" />
+                    <LogOut className="w-3.5 h-3.5" />
                     Tutup Shift & Rekonsiliasi
                   </Button>
                 </div>
@@ -425,11 +459,11 @@ export function ShiftDashboard({
                 <div className="bg-muted/20 rounded-2xl border border-destructive/40 p-5 space-y-4 animate-in fade-in duration-200">
                   <div className="flex items-center justify-between pb-3 border-b border-border/60">
                     <div className="flex items-center gap-2 text-destructive">
-                      <IconLogout className="w-5 h-5" />
+                      <LogOut className="w-5 h-5" />
                       <h3 className="font-semibold text-sm">Rekonsiliasi Kas & Konfirmasi Tutup Shift</h3>
                     </div>
                     <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-full" onClick={() => setActivePanel("NONE")}>
-                      <IconX className="w-4 h-4" />
+                      <X className="w-4 h-4" />
                     </Button>
                   </div>
 
@@ -468,7 +502,7 @@ export function ShiftDashboard({
                           return (
                             <div className="text-xs p-3 rounded-xl border bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300 flex items-center justify-between font-financial tabular-nums">
                               <span className="flex items-center gap-1.5 font-semibold font-sans">
-                                <IconCheck className="w-4 h-4 text-emerald-600" /> Kas Sesuai (Pas)
+                                <Check className="w-4 h-4 text-emerald-600" /> Kas Sesuai (Pas)
                               </span>
                               <span className="font-semibold">Rp 0</span>
                             </div>
@@ -478,7 +512,7 @@ export function ShiftDashboard({
                           return (
                             <div className="text-xs p-3 rounded-xl border bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300 flex items-center justify-between font-financial tabular-nums">
                               <span className="flex items-center gap-1.5 font-semibold font-sans">
-                                <IconAlertTriangle className="w-4 h-4 text-rose-600" /> Kas Kurang (Minus)
+                                <AlertTriangle className="w-4 h-4 text-rose-600" /> Kas Kurang (Minus)
                               </span>
                               <span className="font-semibold">-{formatCurrency(Math.abs(diff))}</span>
                             </div>
@@ -487,7 +521,7 @@ export function ShiftDashboard({
                         return (
                           <div className="text-xs p-3 rounded-xl border bg-blue-500/10 border-blue-500/30 text-blue-700 dark:text-blue-300 flex items-center justify-between font-financial tabular-nums">
                             <span className="flex items-center gap-1.5 font-semibold font-sans">
-                              <IconCheck className="w-4 h-4 text-blue-600" /> Kas Lebih (Plus)
+                              <Check className="w-4 h-4 text-blue-600" /> Kas Lebih (Plus)
                             </span>
                             <span className="font-semibold">+{formatCurrency(diff)}</span>
                           </div>
@@ -513,7 +547,7 @@ export function ShiftDashboard({
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-border/60">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-semibold">
-                    <IconCash className="w-5 h-5" />
+                    <Banknote className="w-5 h-5" />
                   </div>
                   <div>
                     <h2 className="text-lg font-semibold text-foreground tracking-tight">
@@ -532,7 +566,7 @@ export function ShiftDashboard({
                   className="h-9 text-xs gap-1.5 rounded-xl"
                   onClick={() => setUseCalculator(!useCalculator)}
                 >
-                  <IconCalculator className="w-4 h-4" />
+                  <Calculator className="w-4 h-4" />
                   {useCalculator ? "Mode Input Cepat" : "Hitung Pecahan Lembaran"}
                 </Button>
               </div>
@@ -643,7 +677,7 @@ export function ShiftDashboard({
                   className={movementType === "IN" ? "bg-emerald-600 text-white hover:bg-emerald-700 text-xs font-semibold rounded-lg" : "text-xs rounded-lg"}
                   onClick={() => setMovementType("IN")}
                 >
-                  <IconArrowDownLeft className="w-4 h-4 mr-1.5" />
+                  <ArrowDownLeft className="w-4 h-4 mr-1.5" />
                   Kas Masuk (In)
                 </Button>
                 <Button
@@ -653,7 +687,7 @@ export function ShiftDashboard({
                   className={movementType === "OUT" ? "bg-rose-600 text-white hover:bg-rose-700 text-xs font-semibold rounded-lg" : "text-xs rounded-lg"}
                   onClick={() => setMovementType("OUT")}
                 >
-                  <IconArrowUpRight className="w-4 h-4 mr-1.5" />
+                  <ArrowUpRight className="w-4 h-4 mr-1.5" />
                   Kas Keluar (Out)
                 </Button>
               </div>
@@ -746,12 +780,12 @@ export function ShiftDashboard({
                         </TableCell>
                         <TableCell>
                           {m.type === "IN" ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/50">
-                              <IconArrowDownLeft className="w-3.5 h-3.5" /> Kas Masuk
+                            <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md border-none bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+                              <ArrowDownLeft className="w-3.5 h-3.5" /> Kas Masuk
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200/50">
-                              <IconArrowUpRight className="w-3.5 h-3.5" /> Kas Keluar
+                            <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md border-none bg-rose-100/80 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300">
+                              <ArrowUpRight className="w-3.5 h-3.5" /> Kas Keluar
                             </span>
                           )}
                         </TableCell>
@@ -818,7 +852,16 @@ export function ShiftDashboard({
                         {tx.tableNumber ? `Meja ${tx.tableNumber}` : tx.orderType || "Takeaway"}
                       </TableCell>
                       <TableCell>
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-muted text-foreground border border-border/50">
+                        <span className={cn(
+                          "text-[10px] font-medium px-2 py-0.5 rounded-md border-none inline-block",
+                          tx.paymentMethod === "CASH"
+                            ? "bg-amber-100/70 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300"
+                            : tx.paymentMethod === "QRIS"
+                            ? "bg-blue-100/70 text-blue-800 dark:bg-blue-950/50 dark:text-blue-300"
+                            : tx.paymentMethod === "TRANSFER"
+                            ? "bg-purple-100/70 text-purple-800 dark:bg-purple-950/50 dark:text-purple-300"
+                            : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                        )}>
                           {tx.paymentMethod || "CASH"}
                         </span>
                       </TableCell>
@@ -838,128 +881,237 @@ export function ShiftDashboard({
       {/* TAB 4: RIWAYAT & REKAP SHIFT (AUDIT) */}
       {/* ========================================================================= */}
       {activeTab === "history" && (
-        <div className="bg-white dark:bg-slate-950 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs overflow-hidden">
-          {/* Table Card Header */}
-          <div className="p-4 md:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 dark:border-slate-800">
-            <div>
-              <h2 className="font-semibold text-sm md:text-base text-foreground tracking-tight">
-                Riwayat & Arsip Shift Kasir
-              </h2>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Audit riwayat penutupan shift, rekonsiliasi kas, dan rekap omzet harian.
-              </p>
+        <div className="space-y-4">
+          {/* Zone 1: Toolbar Row */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-2 sm:p-2.5 rounded-2xl border border-slate-200/90 shadow-xs">
+            <div className="flex items-center gap-2 px-2">
+              <History className="h-4 w-4 text-slate-400" />
+              <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
+                {shiftHistory.length} Riwayat Shift
+              </span>
+              {historySearch && (
+                <span className="text-xs text-slate-400">
+                  ({filteredHistory.length} ditemukan)
+                </span>
+              )}
             </div>
 
             <div className="relative w-full sm:w-64">
-              <IconSearch className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
               <Input
                 placeholder="Cari kasir / ID shift..."
                 value={historySearch}
-                onChange={(e) => setHistorySearch(e.target.value)}
-                className="h-8 pl-8 text-xs bg-background rounded-lg"
+                onChange={(e) => {
+                  setHistorySearch(e.target.value);
+                  setHistoryPage(1);
+                }}
+                className="h-9 pl-9 pr-8 text-xs rounded-xl bg-slate-50/70 dark:bg-slate-800/60 border-slate-200/90 focus:bg-white transition-all"
               />
+              {historySearch && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHistorySearch("");
+                    setHistoryPage(1);
+                  }}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Table Content */}
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[260px]">Kasir & Tanggal</TableHead>
-                  <TableHead className="w-[180px]">Waktu & Durasi</TableHead>
-                  <TableHead className="w-[160px]">Total Omzet</TableHead>
-                  <TableHead className="w-[160px]">Selisih Kas</TableHead>
-                  <TableHead className="w-[120px]">Status</TableHead>
-                  <TableHead className="w-[90px] text-right">Aksi</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredHistory.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-12 text-xs text-muted-foreground">
-                      Belum ada riwayat shift kemarin atau sebelumnya.
-                    </TableCell>
+          {/* Zone 2: Modern Table Container */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <Table className="w-full text-left text-xs min-w-[760px]">
+                <TableHeader>
+                  <TableRow className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 hover:bg-slate-50/70 text-slate-500 dark:text-slate-400">
+                    <TableHead className="py-3 px-4 text-xs font-semibold whitespace-nowrap">Kasir & Tanggal</TableHead>
+                    <TableHead className="py-3 px-4 text-xs font-semibold whitespace-nowrap">Waktu & Durasi</TableHead>
+                    <TableHead className="py-3 px-4 text-xs font-semibold whitespace-nowrap">Total Omzet</TableHead>
+                    <TableHead className="py-3 px-4 text-xs font-semibold whitespace-nowrap">Selisih Kas</TableHead>
+                    <TableHead className="py-3 px-4 text-xs font-semibold whitespace-nowrap text-center">Status</TableHead>
+                    <TableHead className="py-3 px-4 text-xs font-semibold whitespace-nowrap text-right">Aksi</TableHead>
                   </TableRow>
-                ) : (
-                  filteredHistory.map((shift) => {
-                    const diff = Number(shift.cashDifference || 0);
+                </TableHeader>
+                <TableBody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                  {paginatedHistory.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-12 text-xs text-muted-foreground">
+                        Belum ada riwayat shift yang sesuai dengan pencarian.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    paginatedHistory.map((shift) => {
+                      const diff = Number(shift.cashDifference || 0);
 
-                    return (
-                      <TableRow
-                        key={shift.id}
-                        className="text-xs hover:bg-blue-50/50 dark:hover:bg-blue-950/25 transition-colors cursor-pointer"
-                        onClick={() => setModalShiftId(shift.id)}
+                      return (
+                        <TableRow
+                          key={shift.id}
+                          className="text-xs hover:bg-blue-50/50 dark:hover:bg-blue-950/25 transition-colors cursor-pointer"
+                          onClick={() => setModalShiftId(shift.id)}
+                        >
+                          <TableCell className="py-3 px-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold flex items-center justify-center text-xs shrink-0">
+                                {shift.cashierName ? shift.cashierName.charAt(0).toUpperCase() : "K"}
+                              </div>
+                              <div>
+                                <div className="font-semibold text-slate-900 dark:text-slate-100">
+                                  {shift.cashierName || "Kasir"}
+                                </div>
+                                <div className="text-[11px] text-slate-400 mt-0.5">
+                                  {format(new Date(shift.startTime), "dd MMMM yyyy", { locale: id })}
+                                </div>
+                              </div>
+                            </div>
+                          </TableCell>
+
+                          <TableCell className="py-3 px-4 whitespace-nowrap">
+                            <div className="font-medium text-slate-800 dark:text-slate-200">
+                              {format(new Date(shift.startTime), "HH:mm")} - {shift.endTime ? format(new Date(shift.endTime), "HH:mm") : "Selesai"}
+                            </div>
+                            <div className="text-[11px] text-slate-400">
+                              {shift.endTime ? formatDistanceStrict(new Date(shift.startTime), new Date(shift.endTime), { locale: id }) : "-"}
+                            </div>
+                          </TableCell>
+
+                          <TableCell className="py-3 px-4 whitespace-nowrap">
+                            <div className="font-semibold text-slate-900 dark:text-white font-financial tabular-nums">
+                              {formatCurrency(Number(shift.totalSales) || 0)}
+                            </div>
+                            <div className="text-[11px] text-slate-400 font-financial tabular-nums">
+                              {shift.totalTransactions || 0} transaksi
+                            </div>
+                          </TableCell>
+
+                          <TableCell className="py-3 px-4 whitespace-nowrap">
+                            {diff === 0 ? (
+                              <span className="font-financial tabular-nums text-emerald-600 font-semibold">Pas (Rp 0)</span>
+                            ) : diff < 0 ? (
+                              <span className="font-financial tabular-nums text-rose-600 font-semibold">Kurang {formatCurrency(Math.abs(diff))}</span>
+                            ) : (
+                              <span className="font-financial tabular-nums text-blue-600 font-semibold">Lebih {formatCurrency(diff)}</span>
+                            )}
+                          </TableCell>
+
+                          <TableCell className="py-3 px-4 whitespace-nowrap text-center">
+                            <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-md border-none bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+                              Selesai
+                            </span>
+                          </TableCell>
+
+                          <TableCell className="py-3 px-4 text-right whitespace-nowrap">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2.5 text-xs font-medium rounded-lg text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/40"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setModalShiftId(shift.id);
+                              }}
+                            >
+                              Detail
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+
+          {/* Zone 3: Footer Pagination Bar */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-1">
+            <div className="flex items-center gap-3 text-xs text-slate-500">
+              <div className="flex items-center gap-2">
+                <span>Items Per Page</span>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 px-3 rounded-xl border-slate-200 dark:border-slate-800 text-xs font-medium gap-1.5 cursor-pointer"
+                    >
+                      <span>{historyItemsPerPage}</span>
+                      <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-24 p-1 rounded-xl shadow-lg border-slate-200 dark:border-slate-800">
+                    {[10, 20, 50].map((size) => (
+                      <DropdownMenuItem
+                        key={size}
+                        onClick={() => {
+                          setHistoryItemsPerPage(size);
+                          setHistoryPage(1);
+                        }}
+                        className={cn("text-xs py-1.5 px-3 rounded-lg cursor-pointer", historyItemsPerPage === size && "font-semibold text-blue-600")}
                       >
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-muted text-foreground/80 font-semibold flex items-center justify-center text-xs shrink-0 border border-border/60">
-                              {shift.cashierName ? shift.cashierName.charAt(0).toUpperCase() : "K"}
-                            </div>
-                            <div>
-                              <div className="font-semibold text-foreground">
-                                {shift.cashierName || "Kasir"}
-                              </div>
-                              <div className="text-[11px] text-muted-foreground mt-0.5">
-                                {format(new Date(shift.startTime), "dd MMMM yyyy", { locale: id })}
-                              </div>
-                            </div>
-                          </div>
-                        </TableCell>
+                        {size}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
 
-                        <TableCell>
-                          <div className="font-medium text-foreground">
-                            {format(new Date(shift.startTime), "HH:mm")} - {shift.endTime ? format(new Date(shift.endTime), "HH:mm") : "Selesai"}
-                          </div>
-                          <div className="text-[11px] text-muted-foreground">
-                            {shift.endTime ? formatDistanceStrict(new Date(shift.startTime), new Date(shift.endTime), { locale: id }) : "-"}
-                          </div>
-                        </TableCell>
+              <span className="hidden sm:inline text-slate-300 dark:text-slate-700">&bull;</span>
+              <span className="hidden sm:inline">
+                Menampilkan {(historyPage - 1) * historyItemsPerPage + 1} - {Math.min(historyPage * historyItemsPerPage, filteredHistory.length)} dari {filteredHistory.length} shift
+              </span>
+            </div>
 
-                        <TableCell>
-                          <div className="font-semibold text-foreground font-financial tabular-nums">
-                            {formatCurrency(Number(shift.totalSales) || 0)}
-                          </div>
-                          <div className="text-[11px] text-muted-foreground font-financial tabular-nums">
-                            {shift.totalTransactions || 0} transaksi
-                          </div>
-                        </TableCell>
+            {totalHistoryPages > 1 && (
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  disabled={historyPage === 1}
+                  onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
+                  className="h-8 w-8 rounded-lg border-slate-200 dark:border-slate-800 text-slate-500 hover:text-blue-600 disabled:opacity-40 cursor-pointer"
+                  aria-label="Halaman sebelumnya"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
 
-                        <TableCell>
-                          {diff === 0 ? (
-                            <span className="font-financial tabular-nums text-emerald-600 font-semibold">Pas (Rp 0)</span>
-                          ) : diff < 0 ? (
-                            <span className="font-financial tabular-nums text-rose-600 font-semibold">Kurang {formatCurrency(Math.abs(diff))}</span>
-                          ) : (
-                            <span className="font-financial tabular-nums text-blue-600 font-semibold">Lebih {formatCurrency(diff)}</span>
-                          )}
-                        </TableCell>
+                {getHistoryPaginationNumbers().map((pageItem, index) => {
+                  if (pageItem === '...') {
+                    return <span key={`h-ellipsis-${index}`} className="px-1.5 text-xs text-slate-400">...</span>;
+                  }
+                  const pageNum = pageItem as number;
+                  const isCurrent = pageNum === historyPage;
+                  return (
+                    <button
+                      key={`h-page-${pageNum}`}
+                      type="button"
+                      onClick={() => setHistoryPage(pageNum)}
+                      className={cn(
+                        "w-8 h-8 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center justify-center",
+                        isCurrent
+                          ? "bg-[#0e59f9] text-white shadow-xs"
+                          : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
+                      )}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
 
-                        <TableCell>
-                          <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950/70 dark:text-blue-300">
-                            Completed
-                          </span>
-                        </TableCell>
-
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 px-2.5 text-xs font-medium rounded-lg text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/40"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setModalShiftId(shift.id);
-                            }}
-                          >
-                            Detail
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  disabled={historyPage === totalHistoryPages}
+                  onClick={() => setHistoryPage((p) => Math.min(totalHistoryPages, p + 1))}
+                  className="h-8 w-8 rounded-lg border-slate-200 dark:border-slate-800 text-slate-500 hover:text-blue-600 disabled:opacity-40 cursor-pointer"
+                  aria-label="Halaman selanjutnya"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -972,7 +1124,7 @@ export function ShiftDashboard({
           <div className="flex items-center justify-between pb-4 border-b border-border/60">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-semibold">
-                <IconCalendar className="w-5 h-5" />
+                <Calendar className="w-5 h-5" />
               </div>
               <div>
                 <h2 className="font-semibold text-base text-foreground tracking-tight">

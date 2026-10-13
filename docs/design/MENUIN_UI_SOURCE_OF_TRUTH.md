@@ -85,20 +85,26 @@ Hierarki dibangun dari perpaduan ukuran font, warna teks, dan tracking:
 
 ---
 
-## 5. Regulasi Ketat Badge & Label (Anti-Badge Inflation)
+## 5. Regulasi Ketat Badge & Label (Anti-Badge Inflation & Borderless Standards)
 
-### 5.1. Kriteria Resmi Penggunaan Badge
-Badge dengan border dan background opacity (`px-2.5 py-0.5 rounded-full text-[11px] font-semibold border`) **HANYA BOLEH DIGUNAKAN UNTUK:**
-1. **Status Sistem Diskrit:**
-   - `LUNAS`, `BATAL`, `PENDING`, `DRAFT`, `AKTIF`, `NONAKTIF`.
-2. **Delta Tren Pertumbuhan:**
-   - `+12%`, `-5%` (dengan panah arah mikro).
+### 5.1. Prinsip Utama: Borderless Secara Default
+Tema desain Menuin mengutamakan tampilan bersih, ringan, dan modern:
+1. **Default: Badge Tanpa Border (`border-none`):**
+   - Seluruh badge status, tipe aliran, dan chip kategori utama harus berformat **borderless** dengan latar belakang warna pastel lembut (`px-2.5 py-0.5 rounded-md text-[11px] font-medium border-none`).
+2. **Kasus Khusus yang Menggunakan Border (Outline Badge):**
+   - Garis tepi (`border`) **HANYA DIGUNAKAN** saat badge **tidak memiliki warna background** (latar transparan/polos).
+   - Pada kasus khusus ini, pembeda identitas antar badge adalah **warna ikon di dalam badge** yang berbeda-beda, bukan dari variasi warna border yang ramai.
+3. **Status Sistem Selalu Borderless:**
+   - Badge status sistem diskrit (`Sukses`, `On Process`, `Batal`, `Aktif`) **WAJIB SELALU BORDERLESS** dengan background lembut, persis seperti pada riwayat transaksi.
+4. **Larangan Mutlak Bulatan / Dot Berwarna (Zero Dot Policy):**
+   - Dilarang keras menyematkan bulatan/dot warna (`<span className="w-1.5 h-1.5 rounded-full ..."/>`) di dalam badge jenis apapun. Tampilan badge harus bersih, minimalis, dan langsung menampilkan teks status atau ikon fungsional.
 
 ### 5.2. Larangan Total Penggunaan Badge (Gunakan Teks Biasa)
 - ❌ **Kategori Produk & Pengeluaran:** Teks polos `text-xs font-normal text-slate-700`.
 - ❌ **Tanggal & Periode:** Teks polos `text-[11px] font-normal text-slate-400`.
-- ❌ **Metode Pembayaran:** Teks polos `text-xs font-normal text-slate-600`.
+- ❌ **Metode Pembayaran dalam Data Plain:** Teks polos `text-xs font-normal text-slate-600` (atau badge lembut borderless jika di dalam sel tabel khusus).
 - ❌ **Nominal Angka:** Selalu disajikan sebagai nilai numerik bersih, bukan badge.
+
 
 ---
 

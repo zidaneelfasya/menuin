@@ -143,7 +143,7 @@ function SidebarContent({ collapsed, setCollapsed, user }: { collapsed: boolean;
                   >
                     <item.icon className={cn('h-5 w-5 flex-shrink-0', isActive ? 'text-[#0e59f9]' : 'text-white/80 group-hover:text-white')} />
                     {item.href.includes('/orders') && incomingOrders.length > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full shadow-sm">
+                      <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-semibold px-1.5 py-0.2 rounded-full shadow-sm">
                         {incomingOrders.length}
                       </span>
                     )}
@@ -166,7 +166,7 @@ function SidebarContent({ collapsed, setCollapsed, user }: { collapsed: boolean;
                     </span>
                     {item.href.includes('/orders') && incomingOrders.length > 0 && (
                       <span className={cn(
-                        "text-xs font-bold px-2 py-0.5 rounded-full shadow-sm",
+                        "text-xs font-semibold px-2 py-0.5 rounded-full shadow-sm",
                         isActive ? "bg-[#0e59f9] text-white" : "bg-white text-[#0e59f9]"
                       )}>
                         {incomingOrders.length}

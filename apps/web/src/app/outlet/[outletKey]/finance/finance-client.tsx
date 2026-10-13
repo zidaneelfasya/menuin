@@ -160,25 +160,25 @@ export function FinanceClient({ initialData }: { initialData: FinancialData }) {
               className="h-16 w-16 object-contain rounded-lg border border-slate-300"
             />
           ) : (
-            <div className="h-16 w-16 bg-slate-900 text-white rounded-lg flex items-center justify-center font-bold text-xl">
+            <div className="h-16 w-16 bg-slate-900 text-white rounded-lg flex items-center justify-center font-semibold text-xl">
               {tenant.name.slice(0, 2).toUpperCase()}
             </div>
           )}
           <div>
-            <h1 className="text-2xl font-bold uppercase tracking-tight text-slate-900">{tenant.name}</h1>
+            <h1 className="text-2xl font-semibold uppercase tracking-tight text-slate-900">{tenant.name}</h1>
             <p className="text-xs text-slate-600">{tenant.receiptHeader || tenant.storeDescription || 'Laporan Penjualan & Laba Bersih Outlet'}</p>
           </div>
         </div>
         <div className="text-right">
           <div className="text-xs font-semibold uppercase text-slate-500">Periode Laporan</div>
-          <div className="text-sm font-bold text-slate-900">{reportPeriod.formattedStart} - {reportPeriod.formattedEnd}</div>
+          <div className="text-sm font-semibold text-slate-900">{reportPeriod.formattedStart} - {reportPeriod.formattedEnd}</div>
         </div>
       </div>
 
       {/* HEADER SCREEN VIEW */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 print:hidden">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Laporan Penjualan & Keuangan</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Laporan Penjualan & Keuangan</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Analisis omset real-time, HPP modal produk, laba kotor, dan rekapitulasi pembayaran.
           </p>
@@ -314,7 +314,7 @@ export function FinanceClient({ initialData }: { initialData: FinancialData }) {
               </div>
             </div>
             <div className="mt-3">
-              <div className="text-2xl font-bold text-slate-900">
+              <div className="text-2xl font-semibold text-slate-900">
                 Rp {summary.totalOmset.toLocaleString('id-ID')}
               </div>
               <div className="text-xs text-muted-foreground mt-1 flex items-center justify-between">
@@ -335,7 +335,7 @@ export function FinanceClient({ initialData }: { initialData: FinancialData }) {
               </div>
             </div>
             <div className="mt-3">
-              <div className="text-2xl font-bold text-slate-900">
+              <div className="text-2xl font-semibold text-slate-900">
                 Rp {summary.totalHpp.toLocaleString('id-ID')}
               </div>
               <div className="text-xs text-muted-foreground mt-1">
@@ -355,7 +355,7 @@ export function FinanceClient({ initialData }: { initialData: FinancialData }) {
               </div>
             </div>
             <div className="mt-3">
-              <div className="text-2xl font-bold text-blue-700">
+              <div className="text-2xl font-semibold text-blue-700">
                 Rp {summary.labaKotor.toLocaleString('id-ID')}
               </div>
               <div className="text-xs font-semibold text-emerald-600 mt-1">
@@ -375,7 +375,7 @@ export function FinanceClient({ initialData }: { initialData: FinancialData }) {
               </div>
             </div>
             <div className="mt-3">
-              <div className="text-2xl font-bold text-slate-900">
+              <div className="text-2xl font-semibold text-slate-900">
                 Rp {(summary.totalPajak + summary.totalLayanan).toLocaleString('id-ID')}
               </div>
               <div className="text-xs text-muted-foreground mt-1 flex justify-between">
@@ -390,7 +390,7 @@ export function FinanceClient({ initialData }: { initialData: FinancialData }) {
       {/* METODE PEMBAYARAN */}
       <Card className="border-0 shadow-sm ring-1 ring-slate-200">
         <CardHeader className="p-5 pb-3">
-          <CardTitle className="text-base font-bold flex items-center gap-2">
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
             <CreditCard className="h-4 w-4 text-slate-700" />
             Rekapitulasi Kanal Pembayaran
           </CardTitle>
@@ -412,7 +412,7 @@ export function FinanceClient({ initialData }: { initialData: FinancialData }) {
                     <span className="font-semibold text-slate-800 uppercase tracking-wide">
                       {pm.method || 'LAINNYA'} ({pm.count}x)
                     </span>
-                    <span className="font-bold text-slate-900">
+                    <span className="font-semibold text-slate-900">
                       Rp {pm.total.toLocaleString('id-ID')} <span className="text-slate-400 font-normal">({percentage.toFixed(1)}%)</span>
                     </span>
                   </div>
@@ -433,7 +433,7 @@ export function FinanceClient({ initialData }: { initialData: FinancialData }) {
       <Card className="border-0 shadow-sm ring-1 ring-slate-200 overflow-hidden">
         <CardHeader className="p-5 border-b bg-slate-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <CardTitle className="text-base font-bold flex items-center gap-2">
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
               <FileText className="h-4 w-4 text-slate-700" />
               Daftar Transaksi ({filteredTransactions.length})
             </CardTitle>
@@ -478,7 +478,7 @@ export function FinanceClient({ initialData }: { initialData: FinancialData }) {
                   const isCanceled = trx.status === 'CANCELLED' || trx.status === 'CANCELED' || trx.paymentStatus === 'CANCELED' || trx.paymentStatus === 'REFUNDED';
                   return (
                     <TableRow key={trx.id} className={`hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-colors ${isCanceled ? 'opacity-50 line-through bg-slate-50/40' : ''}`}>
-                      <TableCell className="py-3 px-4 font-bold text-slate-900">
+                      <TableCell className="py-3 px-4 font-semibold text-slate-900">
                         {trx.orderNumber || trx.id.slice(0, 8)}
                       </TableCell>
                       <TableCell className="py-3 px-4 font-sans text-slate-500 text-[11px]">
@@ -498,11 +498,11 @@ export function FinanceClient({ initialData }: { initialData: FinancialData }) {
                       </TableCell>
                       <TableCell className="py-3 px-4 font-sans">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 text-slate-800 border">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium uppercase bg-slate-100 text-slate-800 border-none">
                             {trx.paymentMethod || 'TUNAI'}
                           </span>
                           {isCanceled && (
-                            <span className="px-1.5 py-0.5 text-[9px] text-red-700 bg-red-100 rounded font-bold uppercase border border-red-200">
+                            <span className="px-1.5 py-0.5 text-[9px] text-red-700 bg-red-100 rounded font-medium uppercase border-none">
                               BATAL
                             </span>
                           )}
@@ -519,7 +519,7 @@ export function FinanceClient({ initialData }: { initialData: FinancialData }) {
                       <TableCell className="py-3 px-4 text-right text-slate-600">
                         Rp {parseFloat(trx.tax || '0').toLocaleString('id-ID')}
                       </TableCell>
-                      <TableCell className="py-3 px-4 text-right font-bold text-slate-950 font-sans">
+                      <TableCell className="py-3 px-4 text-right font-semibold text-slate-950 font-sans">
                         Rp {parseFloat(trx.grandTotal || '0').toLocaleString('id-ID')}
                       </TableCell>
                     </TableRow>
@@ -528,7 +528,7 @@ export function FinanceClient({ initialData }: { initialData: FinancialData }) {
               )}
             </TableBody>
             {filteredTransactions.length > 0 && (
-              <TableFooter className="bg-slate-100/90 font-bold border-t-2 border-slate-300 text-slate-900">
+              <TableFooter className="bg-slate-100/90 font-semibold border-t-2 border-slate-300 text-slate-900">
                 <TableRow>
                   <TableCell colSpan={5} className="py-3 px-4 text-right uppercase font-sans">TOTAL:</TableCell>
                   <TableCell className="py-3 px-4 text-right font-mono">Rp {(summary.totalOmset - summary.totalPajak - summary.totalLayanan + summary.totalDiskon).toLocaleString('id-ID')}</TableCell>
@@ -551,7 +551,7 @@ export function FinanceClient({ initialData }: { initialData: FinancialData }) {
         <div className="text-center space-y-12">
           <p className="font-semibold text-slate-800">Mengetahui,<br />Pemilik Outlet</p>
           <div className="border-b border-slate-800 w-44 mx-auto" />
-          <p className="font-bold text-slate-900">{tenant.name}</p>
+          <p className="font-semibold text-slate-900">{tenant.name}</p>
         </div>
       </div>
 
@@ -560,7 +560,7 @@ export function FinanceClient({ initialData }: { initialData: FinancialData }) {
         <DialogContent className="sm:max-w-md">
           <form onSubmit={handleSendEmail}>
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-lg font-bold">
+              <DialogTitle className="flex items-center gap-2 text-lg font-semibold">
                 <Mail className="h-5 w-5 text-primary" />
                 Kirim Laporan Keuangan ke Email
               </DialogTitle>

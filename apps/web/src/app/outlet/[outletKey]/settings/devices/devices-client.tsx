@@ -12,12 +12,12 @@ import {
 } from '@/components/ui/table';
 import { QRCodeSVG } from 'qrcode.react';
 import { 
-  IconPlus, 
-  IconDots, 
-  IconDeviceLaptop, 
-  IconDeviceMobile, 
-  IconTrash 
-} from '@tabler/icons-react';
+  Plus, 
+  MoreVertical, 
+  Laptop, 
+  Smartphone, 
+  Trash2 
+} from 'lucide-react';
 import { generatePairingCodeAction, revokeDeviceAction } from '@/lib/actions/devices';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
@@ -65,8 +65,6 @@ export function DevicesClient({ initialDevices, canManage }: { initialDevices: D
   // Update local state when initialDevices changes (from router.refresh)
   useEffect(() => {
     setDevices(initialDevices);
-    // If the number of devices increased, we can assume pairing was successful
-    // We don't have the exact previous count easily here without a ref, but simple approach is fine.
   }, [initialDevices]);
 
   const handleGenerateCode = async () => {
@@ -97,95 +95,109 @@ export function DevicesClient({ initialDevices, canManage }: { initialDevices: D
     <div className="space-y-4">
       {canManage && (
         <div className="flex justify-end">
-          <Button onClick={handleGenerateCode} disabled={isLoading} className="gap-2 h-11 rounded-xl px-5 font-semibold cursor-pointer">
-            <IconPlus className="w-4 h-4" />
-            Tautkan Perangkat Baru
+          <Button 
+            onClick={handleGenerateCode} 
+            disabled={isLoading} 
+            className="inline-flex items-center gap-1.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white h-9 px-4 rounded-xl text-xs font-medium transition-all duration-150 ease-out hover:-translate-y-px shadow-xs cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Tautkan Perangkat Baru</span>
           </Button>
         </div>
       )}
 
-      <div className="bg-card border border-border/70 rounded-2xl shadow-xs overflow-hidden">
+      <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-950 overflow-hidden shadow-xs">
         {devices.length === 0 ? (
-          <div className="p-10 text-center text-muted-foreground text-sm">
-            Belum ada perangkat kasir yang tertaut ke outlet ini.
+          <div className="p-12 text-center text-muted-foreground text-xs space-y-2">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto">
+              <Laptop className="w-5 h-5" />
+            </div>
+            <p className="font-medium text-slate-800 dark:text-slate-200">Belum ada perangkat kasir</p>
+            <p className="text-muted-foreground max-w-sm mx-auto">
+              Tautkan tablet atau laptop kasir ke outlet ini untuk mulai memproses pesanan di POS.
+            </p>
           </div>
         ) : (
-          <Table className="w-full text-sm text-left">
-            <TableHeader>
-              <TableRow className="border-none bg-transparent hover:bg-transparent">
-                <TableHead className="px-6 py-4">Perangkat</TableHead>
-                <TableHead className="px-6 py-4">Status</TableHead>
-                <TableHead className="px-6 py-4">Terakhir Aktif</TableHead>
-                <TableHead className="px-6 py-4 text-right">Aksi</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody className="divide-y divide-border/50">
-              {devices.map((device) => (
-                <TableRow key={device.id} className="hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-colors">
-                  <TableCell className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 text-primary">
-                        <IconDeviceLaptop className="w-5 h-5" />
+          <div className="relative w-full overflow-x-auto">
+            <Table className="w-full text-xs text-left">
+              <TableHeader>
+                <tr className="bg-slate-50/70 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-200/80 dark:border-slate-800">
+                  <TableHead className="px-6 py-3.5 text-xs font-semibold whitespace-nowrap text-slate-500 dark:text-slate-400 tracking-tight">Perangkat</TableHead>
+                  <TableHead className="px-6 py-3.5 text-xs font-semibold whitespace-nowrap text-slate-500 dark:text-slate-400 tracking-tight">Status</TableHead>
+                  <TableHead className="px-6 py-3.5 text-xs font-semibold whitespace-nowrap text-slate-500 dark:text-slate-400 tracking-tight">Terakhir Aktif</TableHead>
+                  <TableHead className="px-6 py-3.5 text-xs font-semibold whitespace-nowrap text-right text-slate-500 dark:text-slate-400 tracking-tight">Aksi</TableHead>
+                </tr>
+              </TableHeader>
+              <TableBody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                {devices.map((device) => (
+                  <TableRow key={device.id} className="h-16 hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-colors">
+                    <TableCell className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 shrink-0">
+                          <Laptop className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="font-medium text-slate-900 dark:text-slate-100">{device.name}</div>
+                          <div className="text-[11px] text-muted-foreground font-mono">ID: {device.deviceIdentifier}</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="font-semibold text-foreground">{device.name}</div>
-                        <div className="text-xs text-muted-foreground font-mono">ID: {device.deviceIdentifier}</div>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="px-6 py-4">
-                    {device.status === 'ACTIVE' ? (
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
-                        Aktif
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-muted text-muted-foreground">
-                        {device.status}
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell className="px-6 py-4 text-muted-foreground text-xs">
-                    {device.lastSeenAt ? new Date(device.lastSeenAt).toLocaleString('id-ID') : '-'}
-                  </TableCell>
-                  <TableCell className="px-6 py-4 text-right">
-                    {canManage && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0 rounded-lg cursor-pointer">
-                            <span className="sr-only">Open menu</span>
-                            <IconDots className="h-4 w-4 text-muted-foreground" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="rounded-xl shadow-lg">
-                          <DropdownMenuItem 
-                            onClick={() => handleRevoke(device.id)}
-                            className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer rounded-lg text-xs"
-                          >
-                            <IconTrash className="mr-2 h-4 w-4" />
-                            Putuskan Sambungan
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                    </TableCell>
+                    <TableCell className="px-6 py-4">
+                      {device.status === 'ACTIVE' ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border-none">
+                          Aktif
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-none">
+                          {device.status}
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="px-6 py-4 text-muted-foreground text-xs font-inter">
+                      {device.lastSeenAt ? new Date(device.lastSeenAt).toLocaleString('id-ID') : '-'}
+                    </TableCell>
+                    <TableCell className="px-6 py-4 text-right">
+                      {canManage && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 p-0 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer">
+                              <span className="sr-only">Open menu</span>
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-[180px] p-1 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs">
+                            <DropdownMenuItem 
+                              onClick={() => handleRevoke(device.id)}
+                              className="py-1.5 px-2.5 rounded-lg cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/40 font-medium"
+                            >
+                              <Trash2 className="mr-2 h-3.5 w-3.5 text-red-600" />
+                              Putuskan Sambungan
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </div>
 
       <Dialog open={isPairingModalOpen} onOpenChange={setIsPairingModalOpen}>
-        <DialogContent className="max-w-sm rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-center font-bold text-lg">Tautkan Perangkat Kasir</DialogTitle>
-            <DialogDescription className="text-center text-xs">
+        <DialogContent className="max-w-sm rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-2xl">
+          <DialogHeader className="text-center">
+            <DialogTitle className="text-center font-semibold text-base text-slate-900 dark:text-slate-100">
+              Tautkan Perangkat Kasir
+            </DialogTitle>
+            <DialogDescription className="text-center text-xs text-muted-foreground mt-1">
               Masukkan kode pairing ini di aplikasi POS atau scan QR Code berikut.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex flex-col items-center justify-center py-6 space-y-6">
-            <div className="p-4 bg-white border border-border/80 rounded-2xl shadow-sm">
+          <div className="flex flex-col items-center justify-center py-4 space-y-5">
+            <div className="p-4 bg-white border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs">
               {pairingCode && (
                 <QRCodeSVG 
                   value={JSON.stringify({ code: pairingCode })} 
@@ -196,13 +208,13 @@ export function DevicesClient({ initialDevices, canManage }: { initialDevices: D
             </div>
 
             <div className="text-center">
-              <div className="text-sm text-gray-500 mb-1">Kode Pairing</div>
-              <div className="text-3xl font-mono font-bold tracking-widest text-blue-600">
+              <div className="text-xs text-muted-foreground mb-1">Kode Pairing</div>
+              <div className="text-3xl font-mono font-semibold tracking-widest text-blue-600 dark:text-blue-400">
                 {pairingCode}
               </div>
             </div>
             
-            <p className="text-xs text-gray-500 text-center px-4">
+            <p className="text-[11px] text-muted-foreground text-center px-4 leading-relaxed">
               Kode ini berlaku selama 10 menit. Tampilan akan otomatis tertutup saat perangkat berhasil terhubung.
             </p>
           </div>

@@ -85,7 +85,7 @@ export function CatalogSettingsForm({ settings, domain, catalogUrl }: { settings
           <CardContent className="p-4 flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-primary">Katalog Anda Live di:</p>
-              <a href={catalogUrl} target="_blank" rel="noopener noreferrer" className="text-lg font-bold text-primary hover:underline flex items-center gap-2 mt-1">
+              <a href={catalogUrl} target="_blank" rel="noopener noreferrer" className="text-lg font-semibold text-primary hover:underline flex items-center gap-2 mt-1">
                 {settings.slug}.{domain}
                 <ExternalLink className="h-4 w-4" />
               </a>
