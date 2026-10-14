@@ -35,6 +35,15 @@ export const tenants = pgTable('tenants', {
   storeBannerUrl: text('store_banner_url'),
   primaryColor: text('primary_color').default('#2563EB'), // Default blue
   
+  // Storefront & Outlet Information (Gojek-style rich storefront)
+  openHours: text('open_hours'),
+  address: text('address'),
+  city: text('city'),
+  mapsUrl: text('maps_url'),
+  cuisineType: text('cuisine_type'),
+  wifiSsid: text('wifi_ssid'),
+  wifiPassword: text('wifi_password'),
+  
   // Ordering settings
   orderPrefix: text('order_prefix'),
   dineInEnabled: boolean('dine_in_enabled').default(true).notNull(),

@@ -251,3 +251,50 @@ Sebelum menyerahkan kode frontend ke pengguna:
 6. Pastikan tidak ada kalimat instruksional yang menggurui (*"Arahkan kursor...", "Berikut adalah..."*).
 7. Jalankan validasi `npx tsc --noEmit` untuk menjamin tidak ada kesalahan tipe TypeScript.
 
+---
+
+## 10. Standar Tampilan Storefront Mobile (Self-Order QR)
+
+Desain storefront publik (katalog menu yang diakses pelanggan via scan QR di meja / smartphone) wajib mematuhi ketentuan berikut:
+
+### 10.1. Zero Emoticons & Clean Typography
+- **Dilarang Keras Menggunakan Emoticon:** Seluruh tombol layanan, status resto, badge, dan label dilarang menggunakan emoticon/emoji (misal: dilarang `🍽️ Makan di Sini`, `🛍️ Bawa Pulang`, `🟢 Buka`, `🪑 Meja`). Wajib gunakan teks bersih dan profesional: `Makan di Sini`, `Bawa Pulang`, `Buka`.
+- **Plafon Font Weight:** Maksimal `font-semibold` (600). Dilarang keras menggunakan `font-bold` atau `font-black`.
+
+### 10.2. Icon Scarcity & Essential-Only Icons
+- Ikon pada storefront hanya digunakan untuk aksi esensial fungsional (misal: tombol kembali `ArrowLeft`, menu hamburger, penutup `X`, dan navigasi detail `ChevronRight`).
+- Dilarang menaruh ikon dekoratif di samping setiap label metrik atau tombol sakelar.
+
+### 10.3. Zero Divider Clutter (No Redundant Border Lines)
+- Dilarang membagi area dalam kartu dengan terlalu banyak garis pembatas horizontal (`border-t`, `divide-y`) yang memotong ritme visual.
+- Pembagian kelompok informasi harus memanfaatkan **whitespace proporsional** dan **hierarki warna teks** (`text-slate-900`, `text-slate-500`, `text-slate-400`).
+
+### 10.4. Chevron Right Borderless
+- Ikon chevron penunjuk detail (`ChevronRight`) wajib tampil bersih tanpa lingkaran latar belakang ataupun border di sekelilingnya (`border-none`, tanpa box/circle background).
+
+### 10.5. Eliminasi Redundansi Fitur pada Card Atas
+- **Pengubahan Nomor Meja:** Dilarang meletakkan tombol ubah meja di card depan atas karena pengaturan nomor meja sudah tersedia di halaman checkout/order.
+- **Panggil Pelayan:** Dilarang meletakkan tombol panggil pelayan di card atas.
+- **Wi-Fi:** Dilarang meletakkan chip Wi-Fi di card depan atas; informasi Wi-Fi disajikan pada struk belanja atau lembar modal info resto.
+- **Promo Carousel:** Dilarang meletakkan strip kartu promo di card atas; kode kupon diskon dapat dimasukkan langsung oleh pelanggan pada halaman checkout pemesanan.
+
+### 10.6. Standar Modal Modifier / Custom Pembelian Menu (Gojek-Inspired UI)
+- **Seleksi Bulat (Radio) vs Kotak (Checkbox):**
+  - **Pilihan Wajib & Maksimal 1 (`isRequired && maxSelections === 1`):** Wajib menggunakan **Bulat (Radio Button)**. Lingkaran luar berdiameter 22px, saat terpilih berborder warna tema katalog (`var(--catalog-primary)`) dengan bulatan solid di tengahnya.
+  - **Pilihan Opsional atau Multi-Select (`!isRequired || maxSelections > 1`):** Wajib menggunakan **Kotak Persegi (Checkbox)** dengan sudut `rounded-sm` sehingga jelas berbentuk kotak tegas (bukan bulat/squircle). Saat terpilih berlatar warna tema dengan icon centang putih.
+- **Konsistensi Font & Tipografi Opsi (Gojek Style):**
+  - Nama opsi modifier wajib menggunakan **`font-normal text-slate-900`** secara konsisten, baik dalam keadaan aktif (terpilih) maupun tidak aktif. Dilarang mengubah teks menjadi tebal (`font-medium` / `font-semibold`) saat aktif.
+  - Jika stok habis, sertakan teks `(Habis)` berwarna merah/rose dengan teks dicoret (`line-through text-slate-400`).
+- **Tata Letak Baris Modifier (Alur Kiri ke Kanan):**
+  - **Kiri:** Nama modifier dalam format normal case (bukan `uppercase`).
+  - **Kanan:** Nilai harga (`Gratis` atau `+Rp X.XXX`) diletakkan di sebelah kiri tombol kontrol selector, dan tombol kontrol (bulat/checkbox) selalu rata kanan.
+- **Format Penulisan Status & Bahasa:**
+  - Wajib menggunakan bahasa Indonesia yang ramah, bukan bahasa Inggris kaku (`Must be selected...` dilarang).
+  - Format wajib: `Harus dipilih • Pilih 1` (tulisan `Harus dipilih` wajib mengikuti warna tema katalog `text-catalog-primary`) atau `Harus dipilih • Pilih N-M`.
+  - Format opsional: `Opsional • Pilih maks. N` atau `Opsional • Bebas pilih`.
+  - Catatan menu: `Catatan Pesanan` (placeholder: *"Contoh: Jangan terlalu manis, es dipisah..."*).
+- **Sticky Footer & CTA Button:**
+  - Stepper kuantitas bertuliskan `Jumlah pembelian` di kiri dan tombol stepper lingkaran `(-) N (+)` di kanan.
+  - Tombol CTA berbentuk kapsul / rounded pill (`rounded-full`) dengan teks `Tambah Pesanan - Rp XX.XXX` (atau `Simpan Perubahan`).
+
+
