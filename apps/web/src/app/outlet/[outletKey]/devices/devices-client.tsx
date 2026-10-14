@@ -502,7 +502,7 @@ export function DevicesClient({
                 Kode Pairing 6 Digit
               </span>
               <div className="flex items-center gap-3">
-                <span className="text-3xl font-mono font-bold tracking-widest text-blue-600 dark:text-blue-400">
+                <span className="text-3xl font-mono font-semibold tracking-widest text-blue-600 dark:text-blue-400">
                   {pairingCode}
                 </span>
                 <Button

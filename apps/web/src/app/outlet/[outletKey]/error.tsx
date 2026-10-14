@@ -24,7 +24,7 @@ export default function TenantsError({
         <div className="mb-6 rounded-full bg-blue-100 p-4">
           <Lock className="h-12 w-12 text-blue-600" />
         </div>
-        <h2 className="mb-2 text-2xl font-bold">Fitur Terkunci</h2>
+        <h2 className="mb-2 text-2xl font-semibold">Fitur Terkunci</h2>
         <p className="mb-8 max-w-md text-muted-foreground">
           {error.message || 'Anda memerlukan paket langganan aktif untuk mengakses fitur ini.'}
         </p>
@@ -46,7 +46,7 @@ export default function TenantsError({
         <div className="mb-6 rounded-full bg-red-100 p-4">
           <AlertCircle className="h-12 w-12 text-red-600" />
         </div>
-        <h2 className="mb-2 text-2xl font-bold">Akses Ditolak</h2>
+        <h2 className="mb-2 text-2xl font-semibold">Akses Ditolak</h2>
         <p className="mb-8 max-w-md text-muted-foreground">
           Anda tidak memiliki izin (role) yang cukup untuk mengakses halaman ini.
         </p>
@@ -67,7 +67,7 @@ export default function TenantsError({
       <div className="mb-6 rounded-full bg-red-100 p-4">
         <AlertCircle className="h-12 w-12 text-red-600" />
       </div>
-      <h2 className="mb-2 text-2xl font-bold">Terjadi Kesalahan</h2>
+      <h2 className="mb-2 text-2xl font-semibold">Terjadi Kesalahan</h2>
       <p className="mb-8 max-w-md text-muted-foreground">
         Maaf, sistem mengalami kesalahan tidak terduga saat memuat data halaman ini.
       </p>

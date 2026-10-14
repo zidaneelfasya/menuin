@@ -181,7 +181,7 @@ export function StartShiftModal({
                           const qty = parseInt(e.target.value, 10) || 0;
                           setBillCounts(prev => ({ ...prev, [bill.value]: qty }));
                         }}
-                        className="w-20 h-7 text-right font-bold text-xs"
+                        className="w-20 h-7 text-right font-semibold text-xs"
                       />
                       <span className="text-muted-foreground w-24 text-right font-medium">
                         {formatCurrency((billCounts[bill.value] || 0) * bill.value)}
@@ -200,7 +200,7 @@ export function StartShiftModal({
                       placeholder="0"
                       value={coinAmount}
                       onChange={(e) => setCoinAmount(e.target.value.replace(/\D/g, ''))}
-                      className="w-36 h-7 text-right font-bold text-xs"
+                      className="w-36 h-7 text-right font-semibold text-xs"
                     />
                   </div>
                 </div>

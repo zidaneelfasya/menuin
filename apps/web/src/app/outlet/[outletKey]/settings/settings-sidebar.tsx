@@ -132,7 +132,7 @@ export function SettingsSidebar({ outletKey, userRole }: SettingsSidebarProps) {
 
           return (
             <div key={section.title} className="flex space-x-1.5 md:flex-col md:space-x-0 md:space-y-1">
-              <h3 className="hidden md:block px-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+              <h3 className="hidden md:block px-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
                 {section.title}
               </h3>
               {visibleItems.map((item) => {

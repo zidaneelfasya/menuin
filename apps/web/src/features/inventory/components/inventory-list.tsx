@@ -135,7 +135,7 @@ export function InventoryList({ initialData }: { initialData: Product[] }) {
 
         if (!isTracked) {
           return (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900/50">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-medium bg-blue-100/80 text-blue-700 dark:bg-blue-950/70 dark:text-blue-300">
               Tanpa Batas
             </span>
           );
@@ -145,8 +145,8 @@ export function InventoryList({ initialData }: { initialData: Product[] }) {
         const minStock = product.minStock;
         
         let textColor = 'text-foreground';
-        if (stock <= minStock && stock > 0) textColor = 'text-warning font-bold';
-        if (stock === 0) textColor = 'text-destructive font-bold';
+        if (stock <= minStock && stock > 0) textColor = 'text-amber-600 font-semibold';
+        if (stock === 0) textColor = 'text-rose-600 font-semibold';
         
         return <div className={`text-base font-semibold ${textColor}`}>{stock}</div>;
       },
@@ -169,30 +169,30 @@ export function InventoryList({ initialData }: { initialData: Product[] }) {
 
         if (!isTracked) {
           return (
-            <div className="px-2 py-1 rounded-full text-xs font-semibold w-fit bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900/50">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-medium bg-blue-100/80 text-blue-700 dark:bg-blue-950/70 dark:text-blue-300">
               Selalu Ada
-            </div>
+            </span>
           );
         }
 
         const stock = parseInt(row.getValue('stock'));
         const minStock = product.minStock;
         
-        let badgeClass = 'bg-success/10 text-success';
+        let badgeClass = 'bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300';
         let text = 'Aman';
         
         if (stock === 0) {
-          badgeClass = 'bg-destructive/10 text-destructive';
+          badgeClass = 'bg-rose-100/80 text-rose-700 dark:bg-rose-950/70 dark:text-rose-300';
           text = 'Habis';
         } else if (stock <= minStock) {
-          badgeClass = 'bg-warning/10 text-warning';
+          badgeClass = 'bg-amber-100/80 text-amber-700 dark:bg-amber-950/70 dark:text-amber-300';
           text = 'Menipis';
         }
         
         return (
-          <div className={`px-2 py-1 rounded-full text-xs font-semibold w-fit ${badgeClass}`}>
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-medium ${badgeClass}`}>
             {text}
-          </div>
+          </span>
         );
       },
     },
@@ -234,7 +234,7 @@ export function InventoryList({ initialData }: { initialData: Product[] }) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Manajemen Stok</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Manajemen Stok</h1>
           <p className="text-sm text-muted-foreground">Pantau sisa stok, status ketersediaan, dan atur apakah stok berkurang otomatis atau tanpa batas.</p>
         </div>
       </div>
@@ -246,7 +246,7 @@ export function InventoryList({ initialData }: { initialData: Product[] }) {
           <DialogHeader>
             <DialogTitle>{adjustType === 'IN' ? 'Stok Masuk' : 'Stok Keluar'}</DialogTitle>
             <DialogDescription>
-              Penyesuaian stok untuk produk <b>{selectedProduct?.name}</b> (SKU: {selectedProduct?.sku})
+              Penyesuaian stok untuk produk <span className="font-semibold text-slate-900 dark:text-slate-100">{selectedProduct?.name}</span> (SKU: {selectedProduct?.sku})
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={form.handleSubmit(onSubmitAdjust)}>

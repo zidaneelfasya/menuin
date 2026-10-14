@@ -30,11 +30,17 @@ import {
   LayoutList,
   LayoutGrid,
   Search as SearchIcon,
-  PackageSearch
+  PackageSearch,
+  Filter
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 
 const DataTable = dynamic(
   () => import('@/components/ui/data-table').then((mod) => mod.DataTable),
@@ -793,8 +799,9 @@ export function ProductList({
   const [viewMode, setViewMode] = React.useState<'list' | 'grid'>('list');
   // Category Filter: 'ALL' | categoryId
   const [categoryFilter, setCategoryFilter] = React.useState<string>('ALL');
-  // Search query for card view
-  const [cardSearchQuery, setCardSearchQuery] = React.useState<string>('');
+  const [isFilterPopoverOpen, setIsFilterPopoverOpen] = React.useState(false);
+  // Unified Search Query (for both list and card views)
+  const [searchQuery, setSearchQuery] = React.useState<string>('');
 
   // Status Filter: 'ALL' | 'ACTIVE' | 'LOW_STOCK' | 'INACTIVE'
   const [statusFilter, setStatusFilter] = React.useState<'ALL' | 'ACTIVE' | 'LOW_STOCK' | 'INACTIVE'>('ALL');
@@ -821,17 +828,18 @@ export function ProductList({
       list = list.filter((p) => p.categoryId === categoryFilter);
     }
 
-    return list;
-  }, [productsList, statusFilter, categoryFilter]);
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter((p) => 
+        p.name.toLowerCase().includes(q) || 
+        (p.sku && p.sku.toLowerCase().includes(q))
+      );
+    }
 
-  const cardGridProducts = React.useMemo(() => {
-    if (!cardSearchQuery.trim()) return displayedProducts;
-    const q = cardSearchQuery.toLowerCase().trim();
-    return displayedProducts.filter((p) => 
-      p.name.toLowerCase().includes(q) || 
-      (p.sku && p.sku.toLowerCase().includes(q))
-    );
-  }, [displayedProducts, cardSearchQuery]);
+    return list;
+  }, [productsList, statusFilter, categoryFilter, searchQuery]);
+
+  const cardGridProducts = displayedProducts;
 
   // Row selection & Bulk Action states
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
@@ -1221,12 +1229,12 @@ export function ProductList({
                     e.currentTarget.nextElementSibling?.classList.add('flex');
                   }}
                 />
-                <div className="hidden w-10 h-10 bg-primary/10 rounded-lg mr-3 items-center justify-center text-primary font-bold">
+                <div className="hidden w-10 h-10 bg-primary/10 rounded-lg mr-3 items-center justify-center text-primary font-semibold">
                   {product.name.charAt(0)}
                 </div>
               </>
             ) : (
-              <div className="w-10 h-10 bg-primary/10 rounded-lg mr-3 flex items-center justify-center text-primary font-bold">
+              <div className="w-10 h-10 bg-primary/10 rounded-lg mr-3 flex items-center justify-center text-primary font-semibold">
                 {product.name.charAt(0)}
               </div>
             )}
@@ -1303,7 +1311,7 @@ export function ProductList({
         
         if (!isTracked) {
           return (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
               Tanpa Batas
             </span>
           );
@@ -1332,11 +1340,11 @@ export function ProductList({
                   {stock} porsi
                 </span>
                 {isZero ? (
-                  <span className="text-[10px] px-1.5 py-0.2 rounded font-medium bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/50">
+                  <span className="text-[10px] px-2 py-0.5 rounded-md font-medium bg-rose-100/70 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300">
                     Habis
                   </span>
                 ) : isLow ? (
-                  <span className="text-[10px] px-1.5 py-0.2 rounded font-medium bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50">
+                  <span className="text-[10px] px-2 py-0.5 rounded-md font-medium bg-amber-100/80 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">
                     Menipis
                   </span>
                 ) : null}
@@ -1389,12 +1397,12 @@ export function ProductList({
             />
             <span 
               className={cn(
-                "inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border transition-colors",
+                "inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-medium transition-colors",
                 !isActive
-                  ? "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"
+                  ? "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
                   : isOutOfStock
-                  ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50"
-                  : "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/50"
+                  ? "bg-amber-100/80 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300"
+                  : "bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300"
               )}
             >
               {!isActive ? 'Tidak Tersedia' : isOutOfStock ? 'Stok Habis' : 'Tersedia'}
@@ -1521,266 +1529,294 @@ export function ProductList({
   ];
 
 
-  const batchToolbar = (
-    <div className="flex items-center gap-2 flex-wrap sm:ml-auto">
-      {/* Category Filter */}
-      <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-        <SelectTrigger className="h-9 w-[150px] text-xs rounded-xl bg-card border-slate-200 dark:border-slate-800">
-          <SelectValue placeholder="Semua Kategori" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="ALL" className="text-xs">Semua Kategori</SelectItem>
-          {categories.map((cat) => (
-            <SelectItem key={cat.id} value={cat.id} className="text-xs">
-              {cat.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      {/* Tombol Aktifkan Terpilih */}
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        disabled={selectedCount === 0 || isBulkLoading}
-        onClick={() => handleBulkToggleActiveStatus(true)}
-        className={cn(
-          "h-9 px-3 rounded-xl text-xs font-medium transition-all shadow-xs flex items-center gap-1.5",
-          selectedCount === 0 
-            ? "opacity-50 cursor-not-allowed border-slate-200 dark:border-slate-800 text-muted-foreground" 
-            : "border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100"
-        )}
-      >
-        <Power className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-        <span>Aktifkan {selectedCount > 0 ? `(${selectedCount})` : ''}</span>
-      </Button>
-
-      {/* Tombol Matikan Terpilih */}
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        disabled={selectedCount === 0 || isBulkLoading}
-        onClick={() => handleBulkToggleActiveStatus(false)}
-        className={cn(
-          "h-9 px-3 rounded-xl text-xs font-medium transition-all shadow-xs flex items-center gap-1.5",
-          selectedCount === 0 
-            ? "opacity-50 cursor-not-allowed border-slate-200 dark:border-slate-800 text-muted-foreground" 
-            : "border-slate-300 dark:border-slate-700 bg-slate-100/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
-        )}
-      >
-        <PowerOff className="w-3.5 h-3.5 text-slate-500" />
-        <span>Matikan {selectedCount > 0 ? `(${selectedCount})` : ''}</span>
-      </Button>
-
-      {/* Tombol Best Seller / Rekomendasi */}
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        disabled={selectedCount === 0 || isBulkLoading}
-        onClick={handleBulkToggleBestSeller}
-        className={cn(
-          "h-9 px-3 rounded-xl text-xs font-medium transition-all shadow-xs flex items-center gap-1.5",
-          selectedCount === 0 
-            ? "opacity-50 cursor-not-allowed border-slate-200 dark:border-slate-800 text-muted-foreground" 
-            : allAreFeatured
-              ? "border-blue-300 dark:border-blue-800/80 bg-blue-50/60 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 hover:bg-blue-100/70"
-              : "border-blue-400 dark:border-blue-700 bg-blue-50 dark:bg-blue-950/50 text-blue-800 dark:text-blue-200 hover:bg-blue-100"
-        )}
-      >
-        {allAreFeatured ? (
-          <>
-            <ThumbsUp className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 opacity-60" />
-            <span>Batalkan Rekomendasi {selectedCount > 0 ? `(${selectedCount})` : ''}</span>
-          </>
-        ) : (
-          <>
-            <ThumbsUp className={cn("w-3.5 h-3.5 text-blue-600", selectedCount > 0 && "fill-blue-500")} />
-            <span>Jadikan Rekomendasi {selectedCount > 0 ? `(${selectedCount})` : ''}</span>
-          </>
-        )}
-      </Button>
-
-      {/* Tombol Hapus */}
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        disabled={selectedCount === 0 || isBulkLoading}
-        onClick={() => setIsBulkDeleteOpen(true)}
-        className={cn(
-          "h-9 px-3 rounded-xl text-xs font-medium transition-all shadow-xs flex items-center gap-1.5",
-          selectedCount === 0 
-            ? "opacity-50 cursor-not-allowed border-slate-200 dark:border-slate-800 text-muted-foreground" 
-            : "border-red-200 dark:border-red-900/60 bg-red-50/70 dark:bg-red-950/40 text-red-600 dark:text-red-400 hover:bg-red-100 hover:text-red-700"
-        )}
-      >
-        <Trash2 className={cn("w-3.5 h-3.5", selectedCount > 0 ? "text-red-600 dark:text-red-400" : "text-muted-foreground")} />
-        <span>Hapus {selectedCount > 0 ? `(${selectedCount})` : ''}</span>
-      </Button>
-
-      {/* Export Terpilih */}
-      {selectedCount > 0 && (
-        <ExportMenuDropdown
-          products={productsList}
-          selectedProducts={selectedProducts}
-          variant="outline"
-          size="sm"
-          className="h-9 px-3 rounded-xl text-xs font-medium border-slate-200 dark:border-slate-800"
-        />
-      )}
-
-      {/* Selection counter & Batal */}
-      {selectedCount > 0 && (
-        <div className="flex items-center gap-1.5 pl-1">
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-            {selectedCount} terpilih
-          </span>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setRowSelection({})}
-            className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground rounded-lg"
-          >
-            Batal
-          </Button>
-        </div>
-      )}
-
-      {/* Switcher Tampilan (List vs Card) */}
-      <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl border border-slate-200 dark:border-slate-700">
-        <button
-          type="button"
-          onClick={() => setViewMode('list')}
-          className={cn(
-            "px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5",
-            viewMode === 'list'
-              ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs font-semibold"
-              : "text-muted-foreground hover:text-foreground"
-          )}
-          title="Tampilan Tabel"
-        >
-          <LayoutList className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Tabel</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setViewMode('grid')}
-          className={cn(
-            "px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5",
-            viewMode === 'grid'
-              ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs font-semibold"
-              : "text-muted-foreground hover:text-foreground"
-          )}
-          title="Tampilan Kartu"
-        >
-          <LayoutGrid className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Kartu</span>
-        </button>
-      </div>
-    </div>
-  );
-
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* 1. Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">Daftar Menu</h1>
-          <p className="text-sm text-muted-foreground">Kelola katalog menu, harga jual, ketersediaan, dan sisa stok produk outlet.</p>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Kelola katalog menu, harga jual, ketersediaan, dan sisa stok produk outlet.</p>
         </div>
         <div className="flex items-center gap-2">
           <ExportMenuDropdown products={productsList} selectedProducts={selectedProducts} />
           <ImportProductDialog />
-          <Button 
-            onClick={() => { 
-              form.reset({ name: '', sku: '', categoryId: null, price: 0, costPrice: 0, stock: 0, minStock: 5, trackStock: true, imageUrl: '', description: '', barcode: '', modifierGroupIds: [] }); 
+        </div>
+      </div>
+
+      {/* 2. ZONE 1: TABS & TOOLBAR ROW (Single Universal Row) */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between border-b border-slate-200 dark:border-slate-800 gap-4">
+        {/* Left: Underline Status Filter Tabs */}
+        <div className="flex items-center gap-6 overflow-x-auto no-scrollbar pt-1">
+          {[
+            { key: 'ALL', label: 'Semua Menu', count: totalCount },
+            { key: 'ACTIVE', label: 'Tersedia', count: activeCount },
+            ...(lowStockCount > 0 ? [{ key: 'LOW_STOCK', label: 'Stok Menipis', count: lowStockCount }] : []),
+            { key: 'INACTIVE', label: 'Tidak Tersedia', count: inactiveCount },
+          ].map((tab) => {
+            const isActive = statusFilter === tab.key;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setStatusFilter(tab.key as any)}
+                className={cn(
+                  "relative pb-3 text-xs sm:text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer whitespace-nowrap",
+                  isActive
+                    ? "text-blue-600 dark:text-blue-400 font-semibold"
+                    : "text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
+                )}
+              >
+                <span>{tab.label}</span>
+                <span className={cn(
+                  "text-xs px-2 py-0.5 rounded-lg font-medium transition-colors",
+                  isActive
+                    ? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300"
+                    : "text-slate-400 dark:text-slate-500"
+                )}>
+                  {tab.count}
+                </span>
+                {isActive && (
+                  <motion.div
+                    layoutId="activeProductTabUnderline"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-500 rounded-full"
+                    transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                  />
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Right: Search, Category Filter Popover, View Switcher, and Primary Action */}
+        <div className="flex items-center gap-2 pb-2.5 lg:pb-3 flex-wrap">
+          {/* Search Input */}
+          <div className="relative w-full sm:w-56">
+            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Input
+              type="text"
+              placeholder="Cari nama atau SKU..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 pr-8 h-9 text-xs rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus-visible:ring-blue-600"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Category Filter Popover (Funnel icon with active dot) */}
+          <Popover open={isFilterPopoverOpen} onOpenChange={setIsFilterPopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className={cn(
+                  "h-9 w-9 rounded-xl border-slate-200 dark:border-slate-800 relative cursor-pointer shadow-xs",
+                  categoryFilter !== 'ALL' && "border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 text-blue-600"
+                )}
+                title="Filter Kategori"
+              >
+                <Filter className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                {categoryFilter !== 'ALL' && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-blue-600 ring-2 ring-white dark:ring-slate-900" />
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-64 p-3 rounded-xl shadow-xl border-slate-200 dark:border-slate-800 space-y-2 bg-white dark:bg-slate-900">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+                <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">Kategori Menu</span>
+                {categoryFilter !== 'ALL' && (
+                  <button
+                    type="button"
+                    onClick={() => setCategoryFilter('ALL')}
+                    className="text-[11px] text-blue-600 hover:underline font-medium cursor-pointer"
+                  >
+                    Reset Filter
+                  </button>
+                )}
+              </div>
+              <div className="space-y-1 max-h-56 overflow-y-auto no-scrollbar">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCategoryFilter('ALL');
+                    setIsFilterPopoverOpen(false);
+                  }}
+                  className={cn(
+                    "w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors text-left cursor-pointer",
+                    categoryFilter === 'ALL'
+                      ? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 font-semibold"
+                      : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                  )}
+                >
+                  <span>Semua Kategori</span>
+                  {categoryFilter === 'ALL' && <Check className="w-3.5 h-3.5 text-blue-600" />}
+                </button>
+                {categories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => {
+                      setCategoryFilter(cat.id);
+                      setIsFilterPopoverOpen(false);
+                    }}
+                    className={cn(
+                      "w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors text-left cursor-pointer",
+                      categoryFilter === cat.id
+                        ? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 font-semibold"
+                        : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                    )}
+                  >
+                    <span className="truncate">{cat.name}</span>
+                    {categoryFilter === cat.id && <Check className="w-3.5 h-3.5 text-blue-600 shrink-0" />}
+                  </button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          {/* Switcher Tampilan (List vs Card) */}
+          <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl border border-slate-200 dark:border-slate-700 h-9">
+            <button
+              type="button"
+              onClick={() => setViewMode('list')}
+              className={cn(
+                "h-8 px-2.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer",
+                viewMode === 'list'
+                  ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs font-semibold"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              title="Tampilan Tabel"
+            >
+              <LayoutList className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Tabel</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('grid')}
+              className={cn(
+                "h-8 px-2.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer",
+                viewMode === 'grid'
+                  ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs font-semibold"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              title="Tampilan Kartu"
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Kartu</span>
+            </button>
+          </div>
+
+          {/* Tombol Primary: Tambah Item */}
+          <Button
+            onClick={() => {
+              form.reset({ name: '', sku: '', categoryId: null, price: 0, costPrice: 0, stock: 0, minStock: 5, trackStock: true, imageUrl: '', description: '', barcode: '', modifierGroupIds: [] });
               setImageFile(null);
               setSelectedProduct(null);
-              setIsAddOpen(true); 
+              setIsAddOpen(true);
             }}
-            className="rounded-xl px-4 flex items-center bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
+            className="h-9 px-4 text-xs font-semibold rounded-xl bg-[#0e59f9] hover:bg-blue-600 text-white shadow-xs cursor-pointer flex items-center gap-1.5"
           >
-            <Plus className="mr-2 h-4 w-4" />
-            Tambah Item
+            <Plus className="h-4 w-4" />
+            <span>Tambah Item</span>
           </Button>
         </div>
       </div>
 
-      {/* Status Filter Tabs (Underline SaaS style with live counts) */}
-      <div className="flex items-center gap-6 border-b border-slate-200/80 dark:border-slate-800 overflow-x-auto no-scrollbar">
-        {[
-          { key: 'ALL', label: 'Semua Menu', count: totalCount },
-          { key: 'ACTIVE', label: 'Tersedia', count: activeCount },
-          ...(lowStockCount > 0 ? [{ key: 'LOW_STOCK', label: 'Stok Menipis', count: lowStockCount }] : []),
-          { key: 'INACTIVE', label: 'Tidak Tersedia', count: inactiveCount },
-        ].map((tab) => {
-          const isActive = statusFilter === tab.key;
-          return (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setStatusFilter(tab.key as any)}
-              className={cn(
-                "relative pb-3 text-xs sm:text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer whitespace-nowrap",
-                isActive
-                  ? "text-blue-600 dark:text-blue-400 font-semibold"
-                  : "text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
-              )}
-            >
-              <span>{tab.label}</span>
-              <span className={cn(
-                "text-xs px-2 py-0.5 rounded-lg font-medium transition-colors",
-                isActive
-                  ? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300"
-                  : "text-slate-400 dark:text-slate-500"
-              )}>
-                {tab.count}
-              </span>
-              {isActive && (
-                <motion.div
-                  layoutId="activeProductTabUnderline"
-                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-500 rounded-full"
-                  transition={{ type: "spring", stiffness: 450, damping: 35 }}
-                />
-              )}
-            </button>
-          );
-        })}
-      </div>
+      {/* 3. Contextual Batch Action Bar (Muncul hanya saat item dicentang) */}
+      {selectedCount > 0 && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 px-4 rounded-2xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60 shadow-xs animate-in fade-in slide-in-from-top-1">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-[#0e59f9] text-white">
+              {selectedCount} item terpilih
+            </span>
+            <span className="text-xs text-slate-700 dark:text-slate-300 hidden sm:inline">
+              Aksi massal pada menu yang dipilih:
+            </span>
+          </div>
 
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={isBulkLoading}
+              onClick={() => handleBulkToggleActiveStatus(true)}
+              className="h-8 px-3 rounded-xl text-xs font-medium border-emerald-300 dark:border-emerald-800 bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 shadow-xs flex items-center gap-1.5 cursor-pointer"
+            >
+              <Power className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span>Aktifkan</span>
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={isBulkLoading}
+              onClick={() => handleBulkToggleActiveStatus(false)}
+              className="h-8 px-3 rounded-xl text-xs font-medium border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 shadow-xs flex items-center gap-1.5 cursor-pointer"
+            >
+              <PowerOff className="w-3.5 h-3.5 text-slate-500" />
+              <span>Matikan</span>
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={isBulkLoading}
+              onClick={handleBulkToggleBestSeller}
+              className="h-8 px-3 rounded-xl text-xs font-medium border-blue-300 dark:border-blue-800 bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-300 hover:bg-blue-50 shadow-xs flex items-center gap-1.5 cursor-pointer"
+            >
+              <ThumbsUp className={cn("w-3.5 h-3.5 text-blue-600", allAreFeatured ? "opacity-60" : "fill-blue-500")} />
+              <span>{allAreFeatured ? 'Batal Rekomendasi' : 'Rekomendasi'}</span>
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={isBulkLoading}
+              onClick={() => setIsBulkDeleteOpen(true)}
+              className="h-8 px-3 rounded-xl text-xs font-medium border-rose-300 dark:border-rose-900/60 bg-white dark:bg-slate-900 text-rose-600 dark:text-rose-400 hover:bg-rose-50 shadow-xs flex items-center gap-1.5 cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+              <span>Hapus</span>
+            </Button>
+
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setRowSelection({})}
+              className="h-8 px-2.5 text-xs text-muted-foreground hover:text-foreground rounded-xl cursor-pointer"
+            >
+              Batal
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* 4. Table vs Card View Container */}
       {viewMode === 'list' ? (
         <DataTable 
           columns={columns} 
           data={displayedProducts} 
-          searchKey="name" 
-          searchPlaceholder="Cari nama item..." 
           onRowClick={handleRowClick}
           infiniteScroll={false}
           initialPageSize={10}
           batchSize={10}
           rowSelection={rowSelection}
           onRowSelectionChange={setRowSelection}
-          toolbar={batchToolbar}
         />
       ) : (
         <div className="space-y-4">
-          {/* Card View Toolbar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center w-full max-w-sm relative">
-              <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <Input
-                placeholder="Cari nama menu atau SKU..."
-                value={cardSearchQuery}
-                onChange={(e) => setCardSearchQuery(e.target.value)}
-                className="pl-9 h-9 text-xs rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus-visible:ring-blue-600"
-              />
-            </div>
-            {batchToolbar}
-          </div>
-
           {/* Cards Grid */}
           {cardGridProducts.length === 0 ? (
             <div className="text-center py-16 px-4 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-slate-50/50 dark:bg-slate-900/20">
@@ -1936,7 +1972,7 @@ export function ProductList({
 
                       {product.potongan && parseFloat(product.potongan) > 0 ? (
                         <div className="flex items-baseline gap-1.5 mb-2.5">
-                          <span className="text-rose-600 dark:text-rose-400 font-bold text-sm">
+                          <span className="text-rose-600 dark:text-rose-400 font-semibold text-sm">
                             {formatCurrency(Math.max(0, parseFloat(product.price) - parseFloat(product.potongan)))}
                           </span>
                           <span className="text-xs text-muted-foreground line-through">
@@ -2025,17 +2061,17 @@ export function ProductList({
                     className="w-16 h-16 rounded-xl object-cover border border-slate-200 dark:border-slate-800 shadow-xs flex-shrink-0" 
                   />
                 ) : (
-                  <div className="w-16 h-16 rounded-xl bg-primary/10 text-primary font-bold text-xl flex items-center justify-center flex-shrink-0">
+                  <div className="w-16 h-16 rounded-xl bg-primary/10 text-primary font-semibold text-xl flex items-center justify-center flex-shrink-0">
                     {detailProduct.name.charAt(0)}
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 truncate">
+                    <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 truncate">
                       {detailProduct.name}
                     </h2>
                     {detailProduct.isFeatured && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900/50">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
                         <ThumbsUp className="w-3 h-3 fill-blue-500 text-blue-600" /> Rekomendasi
                       </span>
                     )}
@@ -2045,10 +2081,10 @@ export function ProductList({
                     {detailProduct.categoryName && ` • ${detailProduct.categoryName}`}
                   </p>
                   <div className="mt-2 flex items-center gap-2">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                    <span className={`px-2.5 py-0.5 rounded-md text-[11px] font-medium ${
                       detailProduct.status === 'active' 
-                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/50' 
-                        : 'bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400'
+                        ? 'bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300' 
+                        : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
                     }`}>
                       {detailProduct.status === 'active' ? 'Tersedia' : 'Habis'}
                     </span>
@@ -2088,7 +2124,7 @@ export function ProductList({
                     <span className="text-[11px] font-medium text-muted-foreground block">Harga Jual</span>
                     {detailProduct.potongan && parseFloat(detailProduct.potongan) > 0 ? (
                       <div>
-                        <span className="text-sm font-bold text-rose-600 dark:text-rose-400 block">
+                        <span className="text-sm font-semibold text-rose-600 dark:text-rose-400 block">
                           {formatCurrency(Math.max(0, parseFloat(detailProduct.price) - parseFloat(detailProduct.potongan)))}
                         </span>
                         <span className="text-[10px] text-muted-foreground line-through block">
@@ -2096,7 +2132,7 @@ export function ProductList({
                         </span>
                       </div>
                     ) : (
-                      <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                      <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                         {formatCurrency(parseFloat(detailProduct.price))}
                       </span>
                     )}
@@ -2117,7 +2153,7 @@ export function ProductList({
                       const profit = finalSp - cp;
                       const margin = finalSp > 0 ? Math.round((profit / finalSp) * 100) : 0;
                       return (
-                        <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 block truncate">
+                        <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 block truncate">
                           +{formatCurrency(profit)} ({margin}%)
                         </span>
                       );
@@ -2136,7 +2172,7 @@ export function ProductList({
                   <div className="grid grid-cols-2 gap-3 text-xs pt-1">
                     <div>
                       <span className="text-muted-foreground block">Sisa Stok Saat Ini</span>
-                      <span className="text-base font-bold text-slate-900 dark:text-slate-100">
+                      <span className="text-base font-semibold text-slate-900 dark:text-slate-100">
                         {detailProduct.trackStock !== false ? `${detailProduct.stock} unit` : '∞ (Unlimited)'}
                       </span>
                     </div>
@@ -2294,8 +2330,8 @@ export function ProductList({
       <Dialog open={isBulkDeleteOpen} onOpenChange={setIsBulkDeleteOpen}>
         <DialogContent className="max-w-md p-6 rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold text-red-600 flex items-center gap-2">
-              <Trash2 className="w-5 h-5 text-red-600" />
+            <DialogTitle className="text-lg font-semibold text-rose-600 flex items-center gap-2">
+              <Trash2 className="w-5 h-5 text-rose-600" />
               Hapus {selectedCount} Item Terpilih?
             </DialogTitle>
             <DialogDescription className="text-sm text-slate-600 dark:text-slate-400 pt-2">

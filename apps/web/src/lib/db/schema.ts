@@ -35,6 +35,15 @@ export const tenants = pgTable('tenants', {
   storeBannerUrl: text('store_banner_url'),
   primaryColor: text('primary_color').default('#2563EB'), // Default blue
   
+  // Storefront & Outlet Information (Gojek-style rich storefront)
+  openHours: text('open_hours'),
+  address: text('address'),
+  city: text('city'),
+  mapsUrl: text('maps_url'),
+  cuisineType: text('cuisine_type'),
+  wifiSsid: text('wifi_ssid'),
+  wifiPassword: text('wifi_password'),
+  
   // Ordering settings
   orderPrefix: text('order_prefix'),
   dineInEnabled: boolean('dine_in_enabled').default(true).notNull(),
@@ -546,5 +555,38 @@ export const expenses = pgTable('expenses', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
+
+export const incomes = pgTable('incomes', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
+  category: text('category').notNull(), // 'MODAL', 'LAINNYA'
+  amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
+  paymentMethod: text('payment_method').default('TUNAI').notNull(), // 'TUNAI', 'BANK_TRANSFER', 'EWALLET'
+  description: text('description').notNull(),
+  date: timestamp('date', { withTimezone: true }).defaultNow().notNull(),
+  receiptUrl: text('receipt_url'),
+  createdByMembershipId: uuid('created_by_membership_id'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const categoryBudgets = pgTable('category_budgets', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  flowType: text('flow_type').notNull(), // 'EXPENSE' | 'INCOME'
+  category: text('category').notNull(), // 'BAHAN_BAKU', 'OPERASIONAL', 'GAJI', 'PENJUALAN', etc.
+  targetAmount: decimal('target_amount', { precision: 12, scale: 2 }).notNull(),
+  periodMonth: text('period_month').notNull().default('DEFAULT'), // 'YYYY-MM' e.g. '2026-10' or 'DEFAULT'
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex('category_budgets_tenant_flow_cat_month_idx').on(
+    table.tenantId,
+    table.flowType,
+    table.category,
+    table.periodMonth
+  ),
+]);
+
 
 

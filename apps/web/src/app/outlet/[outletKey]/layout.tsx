@@ -31,7 +31,7 @@ async function AuthWrapper({ children }: { children: React.ReactNode }) {
     return (
       <div className="flex h-screen w-full flex-col items-center justify-center bg-background p-4">
         <div className="mx-auto max-w-md text-center space-y-4">
-          <h1 className="text-3xl font-bold text-destructive">Akses Ditolak</h1>
+          <h1 className="text-3xl font-semibold text-destructive">Akses Ditolak</h1>
           <p className="text-muted-foreground">Akun Staff tidak memiliki izin untuk mengakses Dashboard Web. Silakan gunakan Aplikasi POS untuk melakukan operasional.</p>
         </div>
       </div>

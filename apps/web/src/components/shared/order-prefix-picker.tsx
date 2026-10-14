@@ -136,7 +136,7 @@ export function OrderPrefixPicker({
             </div>
             <div className="h-10 px-3 rounded-xl border border-dashed border-border/80 bg-muted/20 flex items-center justify-between">
               <div className="font-mono text-xs tracking-wider">
-                <span className="font-bold text-foreground">
+                <span className="font-semibold text-foreground">
                   {activePrefix}-
                 </span>
                 <span className="text-muted-foreground font-medium">
