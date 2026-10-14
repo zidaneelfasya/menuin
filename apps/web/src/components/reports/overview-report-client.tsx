@@ -1133,8 +1133,7 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
               Ringkasan Eksekutif &bull; {data.tenant?.name || "Outlet"}
             </span>
             {isLoading && (
-              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200/60 text-[10px] font-medium text-[#0e59f9] transition-all">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#0e59f9] animate-pulse" />
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-blue-100/80 text-[10px] font-medium text-[#0e59f9] transition-all">
                 Memperbarui...
               </span>
             )}
@@ -1147,8 +1146,7 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
               {heroKpis.totalOrders} total transaksi &bull; Pertumbuhan omzet {heroKpis.netSalesGrowth >= 0 ? `+${heroKpis.netSalesGrowth.toFixed(1)}%` : `${heroKpis.netSalesGrowth.toFixed(1)}%`}
             </p>
             {financeSnapshot.activeShift && (
-              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/50">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-medium text-emerald-700 bg-emerald-100/80 dark:bg-emerald-950/70 dark:text-emerald-300">
                 Shift aktif: {financeSnapshot.activeShift.cashierName}
               </span>
             )}
@@ -1379,10 +1377,10 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
               </div>
               <div
                 className={cn(
-                  "inline-flex items-center gap-0.5 text-xs font-semibold px-2.5 py-1 rounded-full backdrop-blur-xs",
+                  "inline-flex items-center gap-0.5 text-xs font-medium px-2.5 py-0.5 rounded-md backdrop-blur-xs",
                   heroKpis.netSalesGrowth >= 0
-                    ? "bg-white/20 text-white border border-white/25"
-                    : "bg-rose-500/30 text-rose-100 border border-rose-300/30"
+                    ? "bg-white/20 text-white"
+                    : "bg-rose-500/30 text-rose-100"
                 )}
               >
                 {heroKpis.netSalesGrowth >= 0 ? (
@@ -1432,7 +1430,7 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
               <div className="w-10 h-10 rounded-full bg-[#0e59f9] text-white flex items-center justify-center shadow-xs flex-shrink-0">
                 <TrendingUp className="w-5 h-5 text-white" />
               </div>
-              <div className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <div className="inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-md bg-emerald-100/80 text-emerald-700">
                 {heroKpis.profitMargin.toFixed(1)}% Margin
               </div>
             </div>
@@ -1472,10 +1470,10 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
               </div>
               <div
                 className={cn(
-                  "inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full",
+                  "inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-md",
                   heroKpis.netCashFlow >= 0
-                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                    : "bg-rose-50 text-rose-700 border border-rose-200"
+                    ? "bg-emerald-100/80 text-emerald-700"
+                    : "bg-rose-100/80 text-rose-700"
                 )}
               >
                 {heroKpis.netCashFlow >= 0 ? "Surplus" : "Defisit"}
@@ -1517,10 +1515,10 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
               </div>
               <div
                 className={cn(
-                  "inline-flex items-center gap-0.5 text-xs font-semibold px-2.5 py-1 rounded-full",
+                  "inline-flex items-center gap-0.5 text-xs font-medium px-2.5 py-0.5 rounded-md",
                   heroKpis.ordersGrowth >= 0
-                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                    : "bg-rose-50 text-rose-700 border border-rose-200"
+                    ? "bg-emerald-100/80 text-emerald-700"
+                    : "bg-rose-100/80 text-rose-700"
                 )}
               >
                 {heroKpis.ordersGrowth >= 0 ? (
@@ -1602,10 +1600,10 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
                   <div className="mt-2.5">
                     <div
                       className={cn(
-                        "inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ",
+                        "inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-md",
                         heroKpis.netSalesGrowth >= 0
-                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
-                          : "bg-rose-50 text-rose-700 border border-rose-200/60"
+                          ? "bg-emerald-100/80 text-emerald-700"
+                          : "bg-rose-100/80 text-rose-700"
                       )}
                     >
                       {heroKpis.netSalesGrowth >= 0 ? (
@@ -2228,12 +2226,12 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
               <div className="text-right">
                 <span
                   className={cn(
-                    "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium",
+                    "inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-medium border-none",
                     heroKpis.profitMargin >= 50
-                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                      ? "bg-emerald-100/80 text-emerald-700"
                       : heroKpis.profitMargin >= 30
-                      ? "bg-amber-50 text-amber-700 border border-amber-200"
-                      : "bg-rose-50 text-rose-700 border border-rose-200"
+                      ? "bg-amber-100/80 text-amber-700"
+                      : "bg-rose-100/80 text-rose-700"
                   )}
                 >
                   {heroKpis.profitMargin >= 50 ? "Margin Sehat" : heroKpis.profitMargin >= 30 ? "Margin Cukup" : "Perlu Evaluasi"}
