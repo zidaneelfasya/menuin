@@ -201,8 +201,6 @@ export function POSPage({
       isSubmittingPaymentRef.current = false;
     }
   };
-    }
-  };
 
   const handleQrisPaid = (transactionId: string) => {
     const paymentData = qrisPaymentDataRef.current;
