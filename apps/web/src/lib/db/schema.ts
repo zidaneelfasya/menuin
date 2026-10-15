@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer, decimal, boolean, uuid, uniqueIndex, unique, foreignKey, pgEnum, jsonb, pgSchema } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, integer, decimal, boolean, uuid, uniqueIndex, unique, foreignKey, pgEnum, jsonb, pgSchema, index, check } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
 
 // Supabase Auth Schema Reference
@@ -79,7 +79,13 @@ export const tenants = pgTable('tenants', {
   // DOKU Payment Gateway Settings (Sub-Account & QRIS Dinamis)
   dokuClientId: text('doku_client_id'),
   dokuSecretKey: text('doku_secret_key'),
+  // Model Platform: kredensial DOKU ada di env platform; tenant cukup punya Sub Account.
+  // dokuClientId/dokuSecretKey/dokuEnvironment tidak dipakai lagi (legacy).
   dokuSubAccountId: text('doku_sub_account_id'),
+  dokuSubAccountStatus: text('doku_sub_account_status'),
+  // QRIS dinamis POS (SNAP): merchant & terminal QRIS outlet dari DOKU (NMID per outlet).
+  dokuQrisMerchantId: text('doku_qris_merchant_id'),
+  dokuQrisTerminalId: text('doku_qris_terminal_id'),
   dokuEnvironment: text('doku_environment').default('sandbox'),
 
   // Custom Receipt & Kitchen Ticket Settings (OWNER / MANAGER)
@@ -503,6 +509,136 @@ export const payments = pgTable('payments', {
     })
   };
 });
+
+// Tagihan langganan Menuin ke tenant. Harga & paket ditentukan server (lib/billing/plans).
+export const subscriptionInvoices = pgTable('subscription_invoices', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
+  planCode: text('plan_code').notNull(), // starter, business
+  plan: text('plan').notNull(), // BASIC, PRO (entitlement)
+  amount: integer('amount').notNull(), // rupiah
+  periodDays: integer('period_days').notNull(),
+  status: text('status').notNull().default('PENDING'), // PENDING, PAID, CANCELED
+  createdByMembershipId: uuid('created_by_membership_id'),
+  subscriptionId: uuid('subscription_id').references(() => subscriptions.id),
+  periodStart: timestamp('period_start', { withTimezone: true }),
+  periodEnd: timestamp('period_end', { withTimezone: true }),
+  paidAt: timestamp('paid_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => {
+  return {
+    amountCheck: check('subscription_invoices_amount_check', sql`${table.amount} > 0`),
+    statusCheck: check('subscription_invoices_status_check', sql`${table.status} in ('PENDING', 'PAID', 'CANCELED')`),
+    // Maksimal satu tagihan terbuka per tenant.
+    onePendingPerTenant: uniqueIndex('subscription_invoices_one_pending_uq')
+      .on(table.tenantId)
+      .where(sql`status = 'PENDING'`),
+  };
+}).enableRLS();
+
+// Satu baris per percobaan pembayaran ke gateway. Satu order/tagihan bisa punya
+// beberapa attempt (mis. attempt pertama expired lalu pelanggan bayar ulang).
+export const paymentAttempts = pgTable('payment_attempts', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
+  purpose: text('purpose').notNull().default('ORDER'), // ORDER, SUBSCRIPTION
+  transactionId: uuid('transaction_id'),
+  subscriptionInvoiceId: uuid('subscription_invoice_id'),
+  provider: text('provider').notNull(), // DOKU
+  product: text('product').notNull(), // CHECKOUT, SNAP_QRIS
+  environment: text('environment').notNull(), // sandbox, production
+  invoiceNumber: text('invoice_number').notNull(),
+  amount: integer('amount').notNull(), // rupiah, bilangan bulat
+  status: text('status').notNull().default('CREATED'), // CREATED, PENDING, PAID, FAILED, EXPIRED, CANCELED
+  subAccountId: text('sub_account_id'),
+  paymentUrl: text('payment_url'),
+  qrContent: text('qr_content'), // SNAP_QRIS: string QRIS untuk dirender
+  gatewayMerchantId: text('gateway_merchant_id'), // SNAP_QRIS: merchantId saat generate (dipakai untuk query)
+  providerReference: text('provider_reference'),
+  providerStatus: text('provider_status'),
+  paymentChannel: text('payment_channel'),
+  expiresAt: timestamp('expires_at', { withTimezone: true }),
+  paidAt: timestamp('paid_at', { withTimezone: true }),
+  feeAmount: integer('fee_amount'),
+  netAmount: integer('net_amount'),
+  feeSource: text('fee_source'), // ESTIMATED, SETTLEMENT
+  requiresReview: boolean('requires_review').default(false).notNull(),
+  reviewReason: text('review_reason'),
+  // Penyelesaian review oleh outlet/admin: REFUNDED atau NO_ACTION.
+  reviewResolution: text('review_resolution'),
+  reviewNote: text('review_note'),
+  reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+  reviewedByMembershipId: uuid('reviewed_by_membership_id'),
+  // Refund dicatat setelah dieksekusi di dashboard DOKU.
+  refundedAmount: integer('refunded_amount'),
+  refundReference: text('refund_reference'),
+  refundedAt: timestamp('refunded_at', { withTimezone: true }),
+  // Settlement riil dari laporan DOKU (menggantikan fee estimasi).
+  settledAt: timestamp('settled_at', { withTimezone: true }),
+  lastError: text('last_error'),
+  lastCheckedAt: timestamp('last_checked_at', { withTimezone: true }),
+  rawCreateResponse: jsonb('raw_create_response'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => {
+  return {
+    transactionFk: foreignKey({
+      name: 'payment_attempts_transaction_fk',
+      columns: [table.tenantId, table.transactionId],
+      foreignColumns: [transactions.tenantId, transactions.id]
+    }),
+    // Nama eksplisit: nama default drizzle > 63 karakter dan akan dipotong Postgres.
+    subscriptionInvoiceFk: foreignKey({
+      name: 'payment_attempts_sub_invoice_fk',
+      columns: [table.subscriptionInvoiceId],
+      foreignColumns: [subscriptionInvoices.id]
+    }),
+    invoiceUnique: uniqueIndex('payment_attempts_provider_invoice_uq').on(table.provider, table.invoiceNumber),
+    // Maksimal satu attempt aktif per order: mencegah invoice ganda saat pelanggan klik berkali-kali.
+    oneActivePerTransaction: uniqueIndex('payment_attempts_one_active_per_tx_uq')
+      .on(table.transactionId)
+      .where(sql`status in ('CREATED', 'PENDING')`),
+    oneActivePerSubscriptionInvoice: uniqueIndex('payment_attempts_one_active_per_sub_invoice_uq')
+      .on(table.subscriptionInvoiceId)
+      .where(sql`status in ('CREATED', 'PENDING')`),
+    targetCheck: check(
+      'payment_attempts_target_check',
+      sql`(${table.purpose} = 'ORDER' and ${table.transactionId} is not null and ${table.subscriptionInvoiceId} is null)
+        or (${table.purpose} = 'SUBSCRIPTION' and ${table.subscriptionInvoiceId} is not null and ${table.transactionId} is null)`
+    ),
+    statusIdx: index('payment_attempts_status_created_idx').on(table.status, table.createdAt),
+    amountCheck: check('payment_attempts_amount_check', sql`${table.amount} > 0`),
+    refundCheck: check(
+      'payment_attempts_refund_check',
+      sql`${table.refundedAmount} is null or (${table.refundedAmount} > 0 and ${table.refundedAmount} <= ${table.amount})`
+    ),
+    reviewIdx: index('payment_attempts_review_idx').on(table.tenantId, table.requiresReview, table.reviewedAt),
+    statusCheck: check(
+      'payment_attempts_status_check',
+      sql`${table.status} in ('CREATED', 'PENDING', 'PAID', 'FAILED', 'EXPIRED', 'CANCELED')`
+    ),
+  };
+}).enableRLS();
+
+// Log mentah setiap notifikasi gateway: audit, dedupe, dan bahan replay/debug.
+export const paymentWebhookEvents = pgTable('payment_webhook_events', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  provider: text('provider').notNull(),
+  requestId: text('request_id').notNull(),
+  invoiceNumber: text('invoice_number'),
+  signatureValid: boolean('signature_valid').notNull(),
+  headers: jsonb('headers'),
+  rawBody: text('raw_body').notNull(),
+  processedAt: timestamp('processed_at', { withTimezone: true }),
+  result: text('result'),
+  error: text('error'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => {
+  return {
+    requestUnique: uniqueIndex('payment_webhook_events_provider_request_uq').on(table.provider, table.requestId),
+  };
+}).enableRLS();
 
 export const tables = pgTable('tables', {
   id: uuid('id').primaryKey().defaultRandom(),

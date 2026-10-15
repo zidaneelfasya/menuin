@@ -684,9 +684,9 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
     }
   };
 
-  const handleCheckMidtransPayment = async (order: Order) => {
+  const handleCheckOnlinePayment = async (order: Order) => {
     setSyncingOrderId(order.id);
-    const toastId = toast.loading("Memeriksa status pembayaran di Midtrans...");
+    const toastId = toast.loading("Memeriksa status pembayaran online...");
     try {
       const res = await syncOrderPaymentStatus(order.id);
       toast.dismiss(toastId);
@@ -697,7 +697,7 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
           setSelectedOrder(prev => prev ? { ...prev, paymentStatus: 'PAID', status: res.status || 'NEW' } : null);
         }
       } else if (res.success && !res.isPaid) {
-        toast.info("Belum ada pembayaran lunas yang tercatat di Midtrans.");
+        toast.info("Belum ada pembayaran online yang lunas untuk pesanan ini.");
       } else {
         toast.error(res.error || "Gagal sinkronisasi pembayaran.");
       }
@@ -958,7 +958,6 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
                         {formatCurrency(Number(order.grandTotal))}
                       </span>
                     </div>
-
                     {/* Two Action Buttons: See Details & Primary Status Action */}
                     <div className="grid grid-cols-2 gap-2 mt-3">
                       <Button
@@ -1012,7 +1011,7 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
                           variant="outline"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleCheckMidtransPayment(order);
+                            handleCheckOnlinePayment(order);
                           }}
                           disabled={syncingOrderId === order.id}
                           className="w-full h-7 text-[11px] px-2 border-blue-200 hover:bg-blue-50 text-blue-700 dark:border-blue-900 dark:text-blue-300"
@@ -1022,7 +1021,7 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
                           ) : (
                             <RefreshCw className="w-3.5 h-3.5 mr-1" />
                           )}
-                          Cek Midtrans
+                          Cek Pembayaran Online
                         </Button>
                       </div>
                     )}
@@ -1215,7 +1214,7 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
         onStatusChange={handleStatusChange}
         onToggleItem={handleToggleItem}
         onPrintReceipt={handlePrintReceipt}
-        onCheckMidtrans={handleCheckMidtransPayment}
+        onCheckMidtrans={handleCheckOnlinePayment}
         isProcessing={isSubmittingPayment}
         updatingOrderId={updatingOrderId}
         syncingOrderId={syncingOrderId}

@@ -9,7 +9,7 @@ export default async function CatalogOrderingPage() {
       <div>
         <h2 className="text-xl font-semibold">Pengaturan Pesanan & Pembayaran</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Atur tipe pesanan yang didukung dan hubungkan akun Midtrans Anda.
+          Atur tipe pesanan yang didukung dan pembayaran online.
         </p>
       </div>
 

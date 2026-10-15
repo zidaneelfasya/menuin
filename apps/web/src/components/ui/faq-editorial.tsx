@@ -32,7 +32,7 @@ const faqData: FAQItem[] = [
   {
     question: 'Bagaimana dana dari pembayaran QRIS dicairkan?',
     answer:
-      'Pembayaran online diproses melalui Midtrans sebagai penyelenggara jasa pembayaran berizin, lalu diteruskan ke rekening bisnis Anda mengikuti jadwal settlement Midtrans.',
+      'Pembayaran online diproses melalui DOKU sebagai penyelenggara jasa pembayaran berizin Bank Indonesia, lalu diteruskan ke rekening bisnis Anda mengikuti jadwal settlement DOKU.',
   },
   {
     question: 'Apakah saya perlu membeli iPad atau perangkat khusus?',

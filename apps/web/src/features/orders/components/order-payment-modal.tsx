@@ -783,7 +783,7 @@ export function OrderPaymentModal({
                       ) : (
                         <RefreshCw className="w-3.5 h-3.5" />
                       )}
-                      Periksa Status Pembayaran Midtrans
+                      Periksa Status Pembayaran Online
                     </Button>
                   )}
                 </div>

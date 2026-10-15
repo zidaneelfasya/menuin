@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { ShoppingBag, Clock, AlertTriangle } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils/format';
 import { createTransaction } from '@/lib/actions/transactions';
+import { startPosQrisCheckout, type PosQrisSession } from '@/lib/actions/pos-qris';
 import { getActiveShift } from '@/lib/actions/shifts';
 import {
   Drawer,
@@ -16,6 +17,7 @@ import {
   DrawerTitle
 } from '@/components/ui/drawer';
 import { PaymentModal } from './payment-modal';
+import { QrisPaymentDialog } from './qris-payment-dialog';
 import { PaymentSuccessModal } from './payment-success-modal';
 import { ReceiptPrinter, ReceiptData } from './receipt-printer';
 import { StartShiftModal } from './start-shift-modal';
@@ -26,6 +28,22 @@ type Product = {
   id: string; sku: string; name: string; price: string; stock: number;
   categoryName: string | null; categoryId: string | null; status: string;
   imageUrl: string | null; barcode: string | null;
+};
+
+type PaymentData = {
+  cashReceived: number;
+  change: number;
+  paymentMethod: string;
+  orderType: string;
+  customerName?: string;
+  tableNumber?: string;
+  discount: number;
+  promoCode?: string;
+  tax: number;
+  serviceCharge: number;
+  platformFee: number;
+  rounding?: number;
+  grandTotal: number;
 };
 
 export function POSPage({ 
@@ -49,6 +67,9 @@ export function POSPage({
   const [isShiftSummaryOpen, setIsShiftSummaryOpen] = React.useState(false);
   const [isMobileCartOpen, setIsMobileCartOpen] = React.useState(false);
   const [receiptData, setReceiptData] = React.useState<ReceiptData | null>(null);
+  // QRIS dinamis yang sedang ditampilkan ke pelanggan, beserta data pembayarannya untuk struk.
+  const [qrisSession, setQrisSession] = React.useState<PosQrisSession | null>(null);
+  const qrisPaymentDataRef = React.useRef<PaymentData | null>(null);
   const [printMode, setPrintMode] = React.useState<'all' | 'customer' | 'kitchen'>('all');
   const [currentShift, setCurrentShift] = React.useState(activeShift);
   
@@ -79,27 +100,52 @@ export function POSPage({
     setIsPaymentModalOpen(true);
   }, [items.length, currentShift]);
 
+  const completeCheckout = (transactionId: string, paymentData: PaymentData) => {
+    const cashier = currentShift?.cashierName || 'Kasir';
+    const newReceipt: ReceiptData = {
+      transactionId: transactionId || 'TRX-UNKNOWN',
+      date: new Date(),
+      cashierName: cashier,
+      subtotal: getTotal(),
+      discount: paymentData.discount,
+      promoCode: paymentData.promoCode,
+      tax: paymentData.tax,
+      serviceCharge: paymentData.serviceCharge,
+      rounding: paymentData.rounding || 0,
+      totalAmount: paymentData.grandTotal,
+      cashReceived: paymentData.cashReceived,
+      change: paymentData.change,
+      paymentMethod: paymentData.paymentMethod.toUpperCase(),
+      orderType: paymentData.orderType,
+      customerName: paymentData.customerName,
+      tableNumber: paymentData.tableNumber,
+      items: items.map(item => ({
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+        subtotal: item.price * item.quantity,
+        notes: item.notes,
+        modifiers: item.modifiers,
+      }))
+    };
+
+    const initialMode = (posSettings?.kitchenPrintEnabled ?? false) ? 'all' : 'customer';
+    setPrintMode(initialMode);
+    setReceiptData(newReceipt);
+    setIsPaymentModalOpen(false);
+    setIsSuccessModalOpen(true);
+    clearCart();
+  };
+
   const isSubmittingPaymentRef = React.useRef(false);
 
-  const handleConfirmPayment = async (paymentData: {
-    cashReceived: number;
-    change: number;
-    paymentMethod: string;
-    orderType: string;
-    customerName?: string;
-    tableNumber?: string;
-    discount: number;
-    promoCode?: string;
-    tax: number;
-    serviceCharge: number;
-    platformFee: number;
-    rounding?: number;
-    grandTotal: number;
-  }) => {
+  const handleConfirmPayment = async (paymentData: PaymentData) => {
     if (isSubmittingPaymentRef.current) return;
     isSubmittingPaymentRef.current = true;
     setIsProcessing(true);
-    const toastId = toast.loading('Memproses transaksi...');
+
+    const isQrisDynamic = paymentData.paymentMethod === 'qris_dynamic';
+    const toastId = toast.loading(isQrisDynamic ? 'Membuat QRIS...' : 'Memproses transaksi...');
 
     try {
       const payload = {
@@ -126,57 +172,50 @@ export function POSPage({
         }))
       };
 
-      const result = await createTransaction(payload);
-      toast.dismiss(toastId);
+      if (isQrisDynamic) {
+        const qris = await startPosQrisCheckout(payload);
+        if (qris.success && qris.session) {
+          toast.dismiss(toastId);
+          qrisPaymentDataRef.current = { ...paymentData, cashReceived: paymentData.grandTotal, change: 0 };
+          setIsPaymentModalOpen(false);
+          setQrisSession(qris.session);
+        } else {
+          toast.error(qris.error || 'Gagal membuat QRIS.', { id: toastId });
+        }
+        return;
+      }
 
+      const result = await createTransaction(payload);
       if (result.success && result.transactionId) {
-        toast.success('Transaksi berhasil!', { duration: 3500 });
-        
-        const cashier = currentShift?.cashierName || 'Kasir';
-        const newReceipt: ReceiptData = {
-          transactionId: result.transactionId || 'TRX-UNKNOWN',
-          date: new Date(),
-          cashierName: cashier,
-          subtotal: getTotal(),
-          discount: paymentData.discount,
-          promoCode: paymentData.promoCode,
-          tax: paymentData.tax,
-          serviceCharge: paymentData.serviceCharge,
-          rounding: paymentData.rounding || 0,
-          totalAmount: paymentData.grandTotal,
-          cashReceived: paymentData.cashReceived,
-          change: paymentData.change,
-          paymentMethod: paymentData.paymentMethod.toUpperCase(),
-          orderType: paymentData.orderType,
-          customerName: paymentData.customerName,
-          tableNumber: paymentData.tableNumber,
-          items: items.map(item => ({
-            name: item.name,
-            quantity: item.quantity,
-            price: item.price,
-            subtotal: item.price * item.quantity,
-            notes: item.notes,
-            modifiers: item.modifiers,
-          }))
-        };
-        
-        const initialMode = (posSettings?.kitchenPrintEnabled ?? false) ? 'all' : 'customer';
-        setPrintMode(initialMode);
-        setReceiptData(newReceipt);
-        setIsPaymentModalOpen(false);
-        setIsSuccessModalOpen(true);
-        clearCart();
+        toast.success('Transaksi berhasil!', { id: toastId });
+        completeCheckout(result.transactionId, paymentData);
       } else {
-        toast.error(result.error || 'Terjadi kesalahan.', { duration: 4000 });
+        toast.error(result.error || 'Terjadi kesalahan.', { id: toastId });
       }
     } catch (err: any) {
       console.error('Error in handleConfirmPayment:', err);
       toast.dismiss(toastId);
-      toast.error(err?.message || 'Gagal memproses transaksi. Silakan coba lagi.', { duration: 4000 });
+      toast.error(err?.message || 'Gagal memproses transaksi. Silakan coba lagi.', { id: toastId });
     } finally {
       setIsProcessing(false);
       isSubmittingPaymentRef.current = false;
     }
+  };
+    }
+  };
+
+  const handleQrisPaid = (transactionId: string) => {
+    const paymentData = qrisPaymentDataRef.current;
+    setQrisSession(null);
+    qrisPaymentDataRef.current = null;
+    if (paymentData) completeCheckout(transactionId, paymentData);
+  };
+
+  const handleQrisCancelled = () => {
+    setQrisSession(null);
+    qrisPaymentDataRef.current = null;
+    // Keranjang tetap utuh; buka lagi pilihan metode pembayaran.
+    setIsPaymentModalOpen(true);
   };
 
   const handlePrint = (mode: 'all' | 'customer' | 'kitchen') => {
@@ -188,7 +227,7 @@ export function POSPage({
 
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'F4' && !isPaymentModalOpen && !isSuccessModalOpen) {
+      if (e.key === 'F4' && !isPaymentModalOpen && !isSuccessModalOpen && !qrisSession) {
         e.preventDefault();
         handleCheckoutClick();
       }
@@ -196,7 +235,7 @@ export function POSPage({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [items, isPaymentModalOpen, isSuccessModalOpen, handleCheckoutClick]);
+  }, [items, isPaymentModalOpen, isSuccessModalOpen, qrisSession, handleCheckoutClick]);
 
   const totalItems = mounted ? items.reduce((sum, item) => sum + item.quantity, 0) : 0;
   const cartSubtotal = mounted ? getSubtotal() : 0;
@@ -281,6 +320,12 @@ export function POSPage({
         subtotalAmount={cartSubtotal}
         onConfirm={handleConfirmPayment}
         posSettings={posSettings}
+      />
+
+      <QrisPaymentDialog
+        session={qrisSession}
+        onPaid={handleQrisPaid}
+        onCancelled={handleQrisCancelled}
       />
 
       <PaymentSuccessModal
