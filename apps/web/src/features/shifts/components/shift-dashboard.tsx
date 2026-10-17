@@ -323,15 +323,6 @@ export function ShiftDashboard({
 
   const transactionColumns = React.useMemo<AppTableColumn<any>[]>(() => [
     {
-      key: "orderNumber",
-      header: "No. Order",
-      render: (tx) => (
-        <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">
-          {tx.orderNumber || "#-"}
-        </span>
-      ),
-    },
-    {
       key: "time",
       header: "Waktu",
       render: (tx) => (
@@ -341,24 +332,35 @@ export function ShiftDashboard({
       ),
     },
     {
-      key: "tableNumber",
-      header: "Tipe & Meja",
+      key: "orderNumber",
+      header: "No. Order",
       render: (tx) => (
-        <div>
-          <span className="font-medium text-slate-800 dark:text-slate-200">
-            {tx.tableNumber ? `Meja ${tx.tableNumber}` : formatOrderTypeLabel(tx.orderType)}
-          </span>
-          {tx.tableNumber && tx.orderType && (
-            <span className="text-[11px] text-slate-400 block font-normal">
-              {formatOrderTypeLabel(tx.orderType)}
-            </span>
-          )}
-        </div>
+        <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">
+          {tx.orderNumber || "#-"}
+        </span>
+      ),
+    },
+    {
+      key: "orderType",
+      header: "Tipe Pesanan",
+      render: (tx) => (
+        <span className="font-medium text-slate-800 dark:text-slate-200">
+          {formatOrderTypeLabel(tx.orderType)}
+        </span>
+      ),
+    },
+    {
+      key: "tableNumber",
+      header: "Meja",
+      render: (tx) => (
+        <span className="text-slate-600 dark:text-slate-300">
+          {tx.tableNumber ? `Meja ${tx.tableNumber}` : "-"}
+        </span>
       ),
     },
     {
       key: "paymentMethod",
-      header: "Pembayaran",
+      header: "Metode Bayar",
       render: (tx) => (
         <span className="font-semibold text-xs text-slate-800 dark:text-slate-200">
           {formatPaymentMethodLabel(tx.paymentMethod)}
@@ -367,7 +369,7 @@ export function ShiftDashboard({
     },
     {
       key: "total",
-      header: "Total",
+      header: "Total Belanja",
       align: "right",
       render: (tx) => (
         <span className="font-financial font-semibold text-slate-900 dark:text-white tabular-nums">
@@ -449,7 +451,8 @@ export function ShiftDashboard({
           id: m.id,
           type: m.type === "IN" ? "CASH_IN" : "CASH_OUT",
           title: m.type === "IN" ? "Kas Masuk" : "Kas Keluar",
-          subtitle: m.description,
+          details: m.description,
+          paymentMethod: "Kas Laci",
           amount: Number(m.amount),
           time: new Date(m.createdAt),
           badgeColor: m.type === "IN" ? "border-l-blue-500" : "border-l-rose-500",
@@ -463,7 +466,8 @@ export function ShiftDashboard({
           id: t.id,
           type: "SALE",
           title: `Pesanan ${t.orderNumber || "#-"}`,
-          subtitle: `${formatPaymentMethodLabel(t.paymentMethod)} • ${t.tableNumber ? `Meja ${t.tableNumber}` : formatOrderTypeLabel(t.orderType)}`,
+          details: t.tableNumber ? `${formatOrderTypeLabel(t.orderType)} (Meja ${t.tableNumber})` : formatOrderTypeLabel(t.orderType),
+          paymentMethod: formatPaymentMethodLabel(t.paymentMethod),
           amount: Number(t.grandTotal || t.totalAmount || 0),
           time: new Date(t.createdAt),
           badgeColor: "border-l-emerald-500",
