@@ -134,24 +134,24 @@ export function QrisPaymentDialog({ session, onPaid, onCancelled }: Props) {
         showCloseButton={false}
         onEscapeKeyDown={(e) => e.preventDefault()}
         onPointerDownOutside={(e) => e.preventDefault()}
-        className="max-w-[380px] p-0 overflow-hidden rounded-2xl"
+        className="max-w-[380px] p-0 overflow-hidden rounded-2xl bg-white border border-[#EAEFF8] shadow-xl"
       >
-        <DialogHeader className="p-4 pb-3 border-b bg-slate-50/70 dark:bg-slate-900/50">
-          <DialogTitle className="text-base font-semibold flex items-center gap-2">
-            <QrCode className="w-4 h-4 text-blue-600" /> Bayar dengan QRIS
+        <DialogHeader className="p-4 pb-3 border-b border-[#EAEFF8] bg-slate-50/70">
+          <DialogTitle className="text-base font-semibold text-slate-900 flex items-center gap-2">
+            <QrCode className="w-4 h-4 text-[#0e59f9]" /> Bayar dengan QRIS
           </DialogTitle>
-          <DialogDescription className="text-xs">
+          <DialogDescription className="text-xs text-slate-500">
             {session.orderNumber ? `Pesanan ${session.orderNumber} • ` : ''}Pindai dengan aplikasi bank atau e-wallet.
           </DialogDescription>
         </DialogHeader>
 
         <div className="p-5 flex flex-col items-center gap-3">
           <div className="text-center">
-            <p className="text-xs text-muted-foreground">Total</p>
-            <p className="text-2xl font-bold tracking-tight">{formatCurrency(session.amount)}</p>
+            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Total Tagihan</p>
+            <p className="text-2xl font-semibold tracking-tight text-slate-900 font-financial tabular-nums">{formatCurrency(session.amount)}</p>
           </div>
 
-          <div className="relative rounded-xl border bg-white p-3">
+          <div className="relative rounded-xl border border-[#EAEFF8] bg-white p-3">
             {qr && (
               <QRCodeSVG
                 value={qr.qrContent}
@@ -163,25 +163,25 @@ export function QrisPaymentDialog({ session, onPaid, onCancelled }: Props) {
               />
             )}
             {paid && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-emerald-600">
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-emerald-600 bg-white/90 rounded-xl">
                 <CheckCircle2 className="w-14 h-14" />
                 <span className="text-sm font-semibold">Pembayaran diterima</span>
               </div>
             )}
             {!paid && expired && (
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-sm font-semibold text-foreground bg-white/90 rounded-lg px-3 py-1.5">QR kedaluwarsa</span>
+                <span className="text-xs font-semibold text-slate-800 bg-white/95 rounded-lg px-3 py-1.5 border border-[#EAEFF8] shadow-xs">QR kedaluwarsa</span>
               </div>
             )}
           </div>
 
           {!paid && (
-            <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+            <p className="text-xs text-slate-500 flex items-center gap-1.5 font-normal">
               {expired ? (
                 'Buat QR baru bila pelanggan belum membayar.'
               ) : (
                 <>
-                  <Loader2 className="w-3 h-3 animate-spin" /> Menunggu pembayaran • berlaku {label}
+                  <Loader2 className="w-3 h-3 animate-spin text-[#0e59f9]" /> Menunggu pembayaran • berlaku <span className="font-semibold text-slate-800 font-financial tabular-nums">{label}</span>
                 </>
               )}
             </p>
@@ -189,17 +189,17 @@ export function QrisPaymentDialog({ session, onPaid, onCancelled }: Props) {
         </div>
 
         {!paid && (
-          <div className="p-4 pt-3 border-t bg-slate-50/70 dark:bg-slate-900/50 flex gap-2">
-            <Button variant="outline" className="flex-1" onClick={handleCancel} disabled={busy !== null}>
+          <div className="p-4 pt-3 border-t border-[#EAEFF8] bg-slate-50/70 flex gap-2">
+            <Button variant="outline" className="flex-1 h-10 border-[#EAEFF8] text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-xl cursor-pointer" onClick={handleCancel} disabled={busy !== null}>
               {busy === 'cancel' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Batalkan'}
             </Button>
             {expired ? (
-              <Button className="flex-1" onClick={handleRegenerate} disabled={busy !== null}>
+              <Button className="flex-1 h-10 bg-[#0e59f9] hover:bg-[#0b4de0] text-white text-xs font-semibold rounded-xl shadow-xs cursor-pointer" onClick={handleRegenerate} disabled={busy !== null}>
                 {busy === 'regenerate' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Buat QR Baru'}
               </Button>
             ) : (
-              <Button variant="secondary" className="flex-1" onClick={handleManualCheck} disabled={busy !== null}>
-                {busy === 'check' ? <Loader2 className="w-4 h-4 animate-spin" /> : <><RefreshCw className="w-4 h-4 mr-1.5" /> Cek Status</>}
+              <Button variant="outline" className="flex-1 h-10 border-[#EAEFF8] bg-white hover:bg-slate-50 text-slate-800 text-xs font-semibold rounded-xl cursor-pointer shadow-2xs" onClick={handleManualCheck} disabled={busy !== null}>
+                {busy === 'check' ? <Loader2 className="w-4 h-4 animate-spin" /> : <><RefreshCw className="w-3.5 h-3.5 mr-1.5" /> Cek Status</>}
               </Button>
             )}
           </div>

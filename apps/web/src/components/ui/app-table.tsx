@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Search, ChevronLeft, ChevronRight, ChevronDown, PackageSearch } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, ChevronDown, PackageSearch, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -35,6 +35,8 @@ export interface AppTableProps<T> {
   keyExtractor?: (item: T, index: number) => string | number;
   searchKey?: keyof T | ((item: T) => string);
   searchPlaceholder?: string;
+  title?: React.ReactNode;
+  subtitle?: React.ReactNode;
   toolbar?: React.ReactNode;
   onRowClick?: (item: T) => void;
   pageSize?: number;
@@ -50,6 +52,8 @@ export function AppTable<T>({
   keyExtractor,
   searchKey,
   searchPlaceholder = 'Cari data...',
+  title,
+  subtitle,
   toolbar,
   onRowClick,
   pageSize = 10,
@@ -119,28 +123,56 @@ export function AppTable<T>({
 
   return (
     <div className={cn('space-y-4', className)}>
-      {/* Top Bar: Search Input (Left) & Toolbar Actions (Right) */}
-      {(searchKey || toolbar) && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          {searchKey ? (
-            <div className="flex items-center w-full max-w-sm relative">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder={searchPlaceholder}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9.5 h-9 bg-white dark:bg-slate-900 rounded-xl border-slate-200 dark:border-slate-800 text-xs focus-visible:ring-blue-600"
-              />
+      {/* Top Bar: Title/Subtitle (Left) & Search Input + Toolbar (Right) */}
+      {(title || subtitle || searchKey || toolbar) && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-2.5 sm:px-4 sm:py-3 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs">
+          {(title || subtitle) ? (
+            <div className="min-w-0">
+              {title && (
+                <div className="font-semibold text-sm text-slate-900 dark:text-white tracking-tight truncate">
+                  {title}
+                </div>
+              )}
+              {subtitle && (
+                <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                  {subtitle}
+                </div>
+              )}
             </div>
           ) : (
-            <div />
+            <div className="hidden sm:block" />
           )}
 
-          {toolbar && (
-            <div className="flex items-center gap-2 flex-wrap sm:ml-auto">
-              {toolbar}
-            </div>
-          )}
+          <div className="flex items-center gap-2 sm:ml-auto w-full sm:w-auto">
+            {searchKey && (
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                <Input
+                  type="text"
+                  placeholder={searchPlaceholder}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 pr-8 h-9 text-xs rounded-xl bg-slate-50/70 dark:bg-slate-800/60 border-slate-200/90 dark:border-slate-800 focus:bg-white dark:focus:bg-slate-900 focus-visible:ring-[#0e59f9] transition-all"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 cursor-pointer"
+                    aria-label="Hapus pencarian"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+            )}
+
+            {toolbar && (
+              <div className="flex items-center gap-2 shrink-0">
+                {toolbar}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
