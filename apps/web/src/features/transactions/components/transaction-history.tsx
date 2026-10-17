@@ -268,9 +268,57 @@ function getAvatarColor(seed: string): string {
 }
 
 /**
+ * Downsamples and smooths an array of numbers into a fixed target count of points (default 7).
+ * Prevents "barcode" jagged spikes on sparklines when handling dozens/hundreds of points,
+ * creating a clean, elegant, readable curve matching Ringkasan Eksekutif (Report & Analytics).
+ */
+function resampleAndSmooth(rawValues: number[], targetPoints: number = 7): number[] {
+  if (!rawValues || rawValues.length === 0) return [];
+  if (rawValues.length === 1) return [rawValues[0], rawValues[0]];
+  if (rawValues.length <= targetPoints) {
+    if (rawValues.length <= 3) return rawValues;
+    const res: number[] = [];
+    for (let i = 0; i < rawValues.length; i++) {
+      if (i === 0 || i === rawValues.length - 1) {
+        res.push(rawValues[i]);
+      } else {
+        res.push(Math.round(rawValues[i - 1] * 0.2 + rawValues[i] * 0.6 + rawValues[i + 1] * 0.2));
+      }
+    }
+    return res;
+  }
+
+  // Divide rawValues into targetPoints chronological chunks
+  const bucketSize = rawValues.length / targetPoints;
+  const buckets: number[] = [];
+
+  for (let i = 0; i < targetPoints; i++) {
+    const start = Math.floor(i * bucketSize);
+    const end = Math.min(rawValues.length, Math.floor((i + 1) * bucketSize));
+    const slice = rawValues.slice(start, end);
+    const sum = slice.reduce((acc, v) => acc + v, 0);
+    const avg = slice.length > 0 ? sum / slice.length : 0;
+    buckets.push(Math.round(avg));
+  }
+
+  // Apply a gentle 3-point smoothing (0.2, 0.6, 0.2) to eliminate abrupt spikes between chunks
+  const smoothed: number[] = [];
+  for (let i = 0; i < buckets.length; i++) {
+    if (i === 0 || i === buckets.length - 1) {
+      smoothed.push(buckets[i]);
+    } else {
+      const smoothedVal = buckets[i - 1] * 0.2 + buckets[i] * 0.6 + buckets[i + 1] * 0.2;
+      smoothed.push(Math.round(smoothedVal));
+    }
+  }
+
+  return smoothed;
+}
+
+/**
  * Visual Spline & Sparkline Helper for SaaS KPI Cards
  */
-function getCubicSplinePath(pts: { x: number; y: number }[]): string {
+function getCubicSplinePath(pts: { x: number; y: number }[], maxY: number = 40): string {
   if (pts.length < 2) return "";
   let d = `M ${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`;
 
@@ -281,9 +329,13 @@ function getCubicSplinePath(pts: { x: number; y: number }[]): string {
     const p3 = pts[Math.min(i + 2, pts.length - 1)];
 
     const cp1x = p1.x + (p2.x - p0.x) / 6;
-    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    let cp1y = p1.y + (p2.y - p0.y) / 6;
     const cp2x = p2.x - (p3.x - p1.x) / 6;
-    const cp2y = p2.y - (p3.y - p1.y) / 6;
+    let cp2y = p2.y - (p3.y - p1.y) / 6;
+
+    // Clamp control points to prevent canvas overshooting
+    cp1y = Math.max(2, Math.min(maxY - 2, cp1y));
+    cp2y = Math.max(2, Math.min(maxY - 2, cp2y));
 
     d += ` C ${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;
   }
@@ -356,56 +408,62 @@ function MiniSparkline({
   const { lineD, areaD, lastPoint } = React.useMemo(() => {
     const pts: { x: number; y: number }[] = [];
 
+    // Ensure data is cleanly limited to 7 points (Report & Analytics style)
+    let cleanData = data;
+    if (cleanData && cleanData.length > 8) {
+      cleanData = resampleAndSmooth(cleanData, 7);
+    }
+
     // Prioritize REAL DATA when provided!
-    if (data && data.length >= 2) {
-      const dataMin = Math.min(...data);
-      const dataMax = Math.max(...data);
+    if (cleanData && cleanData.length >= 2) {
+      const dataMin = Math.min(...cleanData);
+      const dataMax = Math.max(...cleanData);
       const min = dataMin > 0 ? Math.max(0, dataMin * 0.7) : Math.min(0, dataMin);
       const max = Math.max(dataMax, min + 1);
       const range = max - min || 1;
 
-      data.forEach((val, idx) => {
-        const x = padX + (idx / (data.length - 1)) * (width - 2 * padX);
+      cleanData.forEach((val, idx) => {
+        const x = padX + (idx / (cleanData!.length - 1)) * (width - 2 * padX);
         const clampedVal = Math.max(min, Math.min(max, val));
-        const y = height - 5 - ((clampedVal - min) / range) * (height - 10);
+        let y: number;
+        if (dataMax === dataMin) {
+          // Flat horizontal line with breathing room
+          y = midY + 4;
+        } else {
+          y = height - 5 - ((clampedVal - min) / range) * (height - 10);
+        }
         pts.push({ x, y });
       });
     } else {
-      const numPoints = 28;
+      // Clean, elegant 7-point organic spline fallback (matching Ringkasan Eksekutif style)
+      const numPoints = 7;
       const absP = Math.abs(percentage ?? 10);
       const isUp = positive;
 
       const ratio = Math.min(absP / 50, 1.0);
-      const maxClimb = 24;
+      const maxClimb = 16;
       const actualClimb = ratio * maxClimb;
 
-      const yStart = isUp ? midY + actualClimb * 0.47 : midY - actualClimb * 0.47;
-      const yEnd = isUp ? midY - actualClimb * 0.53 : midY + actualClimb * 0.53;
+      const yStart = isUp ? midY + actualClimb * 0.45 : midY - actualClimb * 0.45;
+      const yEnd = isUp ? midY - actualClimb * 0.55 : midY + actualClimb * 0.55;
 
-      const phase = (metricSeed * 0.43) % 1;
+      const phase = (metricSeed * 0.35) % 1;
 
       for (let i = 0; i < numPoints; i++) {
         const t = i / (numPoints - 1);
         const x = padX + t * (width - 2 * padX);
         const linearY = yStart + (yEnd - yStart) * t;
 
-        const oct1 = Math.sin((t * 4.3 + phase * 2.1) * Math.PI * 2) * 2.3;
-        const oct2 = Math.cos((t * 8.7 + phase * 4.3) * Math.PI * 2) * 1.5;
-        const oct3 = Math.sin((t * 13.1 + phase * 1.7) * Math.PI * 2) * 0.8;
-        const drift = Math.sin((t * 2.1 + phase) * Math.PI * 2) * 0.9;
-        const rawNoise = oct1 + oct2 + oct3 + drift;
-
-        const windowFactor = Math.pow(Math.sin(t * Math.PI), 0.65);
-        const wave = rawNoise * windowFactor;
-
-        const y = Math.max(2.0, Math.min(height - 2.5, linearY + wave));
+        // Subtle organic crest or trough without chaotic multi-frequency jitter
+        const crest = Math.sin((t * 1.0 + phase * 0.25) * Math.PI) * (isUp ? -3.0 : 2.5);
+        const y = Math.max(3.0, Math.min(height - 3.5, linearY + crest));
         pts.push({ x, y });
       }
     }
 
     if (pts.length < 2) return { lineD: "", areaD: "", lastPoint: null };
 
-    const splineD = getCubicSplinePath(pts);
+    const splineD = getCubicSplinePath(pts, height);
     const first = pts[0];
     const last = pts[pts.length - 1];
     const fillD = `${splineD} L ${last.x.toFixed(1)},${height} L ${first.x.toFixed(1)},${height} Z`;
@@ -943,21 +1001,21 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
       });
     });
 
-    let sPts: number[] = [];
-    let oPts: number[] = [];
-    let aPts: number[] = [];
-    let iPts: number[] = [];
+    let rawSales: number[] = [];
+    let rawOrders: number[] = [];
+    let rawAov: number[] = [];
+    let rawItems: number[] = [];
 
     if (dateMap.size >= 3) {
       dateMap.forEach((val) => {
-        sPts.push(val.sales);
-        oPts.push(val.orders);
-        aPts.push(val.orders > 0 ? Math.round(val.sales / val.orders) : 0);
-        iPts.push(val.items);
+        rawSales.push(val.sales);
+        rawOrders.push(val.orders);
+        rawAov.push(val.orders > 0 ? Math.round(val.sales / val.orders) : 0);
+        rawItems.push(val.items);
       });
     } else {
-      // Bagi ke dalam 6 - 8 bucket kronologis jika rentang tanggal pendek
-      const BUCKETS = Math.min(8, Math.max(4, Math.ceil(sorted.length / 4)));
+      // Bagi ke dalam 7 bucket kronologis jika rentang tanggal pendek
+      const BUCKETS = 7;
       const bSize = Math.max(1, Math.ceil(sorted.length / BUCKETS));
 
       for (let i = 0; i < sorted.length; i += bSize) {
@@ -984,12 +1042,18 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
           }
         });
 
-        sPts.push(cSales);
-        oPts.push(cOrders);
-        aPts.push(cOrders > 0 ? Math.round(cSales / cOrders) : 0);
-        iPts.push(cItems);
+        rawSales.push(cSales);
+        rawOrders.push(cOrders);
+        rawAov.push(cOrders > 0 ? Math.round(cSales / cOrders) : 0);
+        rawItems.push(cItems);
       }
     }
+
+    // Resample down to clean, smoothed 7 points (matching Ringkasan Eksekutif style)
+    const sPts = resampleAndSmooth(rawSales, 7);
+    const oPts = resampleAndSmooth(rawOrders, 7);
+    const aPts = resampleAndSmooth(rawAov, 7);
+    const iPts = resampleAndSmooth(rawItems, 7);
 
     const calcGrowthVal = (pts: number[]): number => {
       if (!pts || pts.length < 2) return 0;
@@ -1006,10 +1070,10 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
       return `${val >= 0 ? '+' : ''}${val.toFixed(1)}%`;
     };
 
-    const gSales = calcGrowthVal(sPts);
-    const gOrders = calcGrowthVal(oPts);
-    const gAov = calcGrowthVal(aPts);
-    const gItems = calcGrowthVal(iPts);
+    const gSales = calcGrowthVal(rawSales.length >= 2 ? rawSales : sPts);
+    const gOrders = calcGrowthVal(rawOrders.length >= 2 ? rawOrders : oPts);
+    const gAov = calcGrowthVal(rawAov.length >= 2 ? rawAov : aPts);
+    const gItems = calcGrowthVal(rawItems.length >= 2 ? rawItems : iPts);
 
     return {
       netSalesTrend: sPts.length >= 2 ? sPts : undefined,
@@ -1064,7 +1128,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
       {/* 1. TOP HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
             Riwayat Transaksi
           </h1>
           <p className="text-xs text-muted-foreground mt-1">
@@ -1516,13 +1580,13 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                 className={cn("text-xs py-2 px-3 rounded-lg cursor-pointer", sortBy === 'newest' && "font-semibold text-blue-600")}
                 onClick={() => setSortBy('newest')}
               >
-                Terbaru (Waktu ↓)
+                Terbaru
               </DropdownMenuItem>
               <DropdownMenuItem
                 className={cn("text-xs py-2 px-3 rounded-lg cursor-pointer", sortBy === 'oldest' && "font-semibold text-blue-600")}
                 onClick={() => setSortBy('oldest')}
               >
-                Terlama (Waktu ↑)
+                Terlama
               </DropdownMenuItem>
               <DropdownMenuSeparator className="my-1 border-slate-100 dark:border-slate-800" />
               <DropdownMenuItem
@@ -2409,10 +2473,10 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                 <div>
                   <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
                     <AlertTriangle className="h-5 w-5 shrink-0" />
-                    <h3 id="void-dialog-title" className="text-base font-bold">Batalkan (Void) Transaksi</h3>
+                    <h3 id="void-dialog-title" className="text-base font-semibold">Batalkan (Void) Transaksi</h3>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Transaksi yang dibatalkan akan ditandai <strong>BATAL</strong> dan tetap tersimpan di audit trail anti-fraud.
+                    Transaksi yang dibatalkan akan ditandai <strong className="font-semibold">BATAL</strong> dan tetap tersimpan di audit trail anti-fraud.
                   </p>
                 </div>
 

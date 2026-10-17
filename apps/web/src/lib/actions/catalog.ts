@@ -63,6 +63,13 @@ export async function updateCatalogAppearance(formData: FormData) {
   const storeLogoUrl = formData.get("storeLogoUrl") as string;
   const storeBannerUrl = formData.get("storeBannerUrl") as string;
   const primaryColor = formData.get("primaryColor") as string;
+  const openHours = (formData.get("openHours") as string) || null;
+  const address = (formData.get("address") as string) || null;
+  const city = (formData.get("city") as string) || null;
+  const mapsUrl = (formData.get("mapsUrl") as string) || null;
+  const cuisineType = (formData.get("cuisineType") as string) || null;
+  const wifiSsid = (formData.get("wifiSsid") as string) || null;
+  const wifiPassword = (formData.get("wifiPassword") as string) || null;
 
   try {
     await db.update(tenants)
@@ -70,11 +77,19 @@ export async function updateCatalogAppearance(formData: FormData) {
         storeDescription,
         storeLogoUrl,
         storeBannerUrl,
-        primaryColor
+        primaryColor,
+        openHours,
+        address,
+        city,
+        mapsUrl,
+        cuisineType,
+        wifiSsid,
+        wifiPassword,
       })
       .where(eq(tenants.id, user.tenantId));
     
     if (user?.outletKey) revalidatePath(`/outlet/${user.outletKey}`, "layout");
+    revalidatePath("/store/[slug]", "layout");
     return { success: true };
   } catch (error) {
     console.error("Failed to update appearance:", error);

@@ -103,11 +103,15 @@ export async function getSubscription(tenantId: string) {
   return subscription || null;
 }
 
-export function getEntitlements(subscription: any) {
+export function getEntitlements(subscription: any, now: Date = new Date()) {
   let features: FeatureKey[] = [];
   let isLocked = true;
 
-  if (subscription && subscription.status === 'ACTIVE') {
+  // Langganan berbayar berakhir di currentPeriodEnd. Null = tanpa batas (mis. diberikan admin).
+  const periodEnd = subscription?.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : null;
+  const withinPeriod = !periodEnd || periodEnd.getTime() > now.getTime();
+
+  if (subscription && subscription.status === 'ACTIVE' && withinPeriod) {
     isLocked = false;
     if (subscription.plan === 'FREE' || subscription.plan === 'BASIC') {
       features = ['POS', 'CATALOG', 'INVENTORY'];

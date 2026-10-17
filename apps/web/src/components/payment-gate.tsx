@@ -4,40 +4,10 @@ import { Check, Lock, LogOut, ShieldCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import type { UserProfile } from "@/lib/actions/auth";
+import { BILLING_PLANS } from "@/lib/billing/plans";
+import { formatCurrency } from "@/lib/utils/format";
 
-const plans = [
-  {
-    id: "starter",
-    name: "Starter",
-    price: "Rp 99.000",
-    period: "/ bulan",
-    desc: "Untuk bisnis kecil yang baru mulai digital.",
-    features: [
-      "Digital Menu & QR Code",
-      "Custom Catalog Link",
-      "Online Ordering",
-      "Basic Analytics Dashboard",
-      "1 User Kasir",
-    ],
-    highlighted: false,
-  },
-  {
-    id: "business",
-    name: "Business",
-    price: "Rp 199.000",
-    period: "/ bulan",
-    desc: "Untuk operasional F&B yang lebih lengkap.",
-    features: [
-      "Semua fitur Starter",
-      "Sistem Kasir / POS Utama",
-      "Payment Gateway Integration",
-      "Real-time Order Management",
-      "Advanced Analytics & Charts",
-      "Multi-User Staf",
-    ],
-    highlighted: true,
-  },
-];
+const plans = Object.values(BILLING_PLANS);
 
 export function PaymentGate({ user }: { user: UserProfile }) {
   const router = useRouter();
@@ -77,7 +47,7 @@ export function PaymentGate({ user }: { user: UserProfile }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto items-stretch">
           {plans.map((plan) => (
             <div
-              key={plan.id}
+              key={plan.code}
               className={`bg-white p-8 rounded-xl flex flex-col justify-between shadow-sm transition-all duration-300 ${
                 plan.highlighted
                   ? "border-2 border-[#2563EB] shadow-lg relative"
@@ -96,10 +66,10 @@ export function PaymentGate({ user }: { user: UserProfile }) {
                   {plan.name}
                 </h4>
                 <div className="flex items-baseline gap-1.5 mb-2">
-                  <span className="text-3xl font-extrabold text-slate-900">{plan.price}</span>
-                  <span className="text-xs text-slate-400">{plan.period}</span>
+                  <span className="text-3xl font-extrabold text-slate-900">{formatCurrency(plan.amount)}</span>
+                  <span className="text-xs text-slate-400">/ {plan.periodDays} hari</span>
                 </div>
-                <p className="text-xs text-slate-500 mb-4">{plan.desc}</p>
+                <p className="text-xs text-slate-500 mb-4">{plan.description}</p>
                 <div className="h-px bg-slate-100 my-4" />
                 <ul className="space-y-3 text-xs text-slate-600 mb-8">
                   {plan.features.map((feature) => (
@@ -112,7 +82,7 @@ export function PaymentGate({ user }: { user: UserProfile }) {
               </div>
 
               <a
-                href={`/checkout?email=${encodeURIComponent(user.email)}&plan=${plan.id}`}
+                href={`/checkout?plan=${plan.code}`}
                 className={`block text-center py-3 rounded-lg text-xs font-bold transition-colors ${
                   plan.highlighted
                     ? "bg-[#2563EB] text-white hover:bg-[#1D4ED8]"
@@ -130,7 +100,7 @@ export function PaymentGate({ user }: { user: UserProfile }) {
           <div className="flex items-center gap-3">
             <ShieldCheck className="h-5 w-5 text-[#2563EB] shrink-0" />
             <p className="text-xs text-slate-500">
-              Pembayaran diproses aman melalui payment gateway resmi (Midtrans).
+              Pembayaran diproses aman melalui DOKU, payment gateway berizin Bank Indonesia.
             </p>
           </div>
           <button

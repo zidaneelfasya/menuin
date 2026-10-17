@@ -17,8 +17,6 @@ import {
   IconLoader2, 
   IconCreditCard, 
   IconCircleCheck,
-  IconEye,
-  IconEyeOff,
   IconLayout,
   IconPrinter,
   IconReceipt2,
@@ -35,7 +33,7 @@ import {
   updatePlatformFeeSettings, 
   updateDisplaySettings, 
   updateStoreGeneralSettings,
-  updatePaymentIntegration,
+  activateDokuSubAccount,
   updateReceiptSettings,
   updateKitchenTicketSettings
 } from '@/lib/actions/settings';
@@ -83,7 +81,6 @@ export function SettingsClient({
   const [isSavingPayment, setIsSavingPayment] = React.useState(false);
   const [isSavingReceipt, setIsSavingReceipt] = React.useState(false);
   const [isSavingKitchen, setIsSavingKitchen] = React.useState(false);
-  const [showServerKey, setShowServerKey] = React.useState(false);
 
   // Upload states
   const [isUploadingLogo, setIsUploadingLogo] = React.useState(false);
@@ -112,11 +109,6 @@ export function SettingsClient({
 
   // Display Form State
   const [posPinBestSellers, setPosPinBestSellers] = React.useState(tenant?.posPinBestSellers ?? true);
-
-  // Midtrans Payment Form State
-  const [midtransEnvironment, setMidtransEnvironment] = React.useState(tenant?.midtransEnvironment || 'sandbox');
-  const [midtransServerKey, setMidtransServerKey] = React.useState(tenant?.midtransServerKey || '');
-  const [midtransClientKey, setMidtransClientKey] = React.useState(tenant?.midtransClientKey || '');
 
   // Receipt form states
   const [receiptLogoUrl, setReceiptLogoUrl] = React.useState(tenant?.receiptLogoUrl || '');
@@ -165,10 +157,15 @@ export function SettingsClient({
   const hasDisplayChanges = 
     posPinBestSellers !== (tenant?.posPinBestSellers ?? true);
 
-  const hasPaymentChanges = 
-    midtransEnvironment !== (tenant?.midtransEnvironment || 'sandbox') ||
-    midtransServerKey !== (tenant?.midtransServerKey || '') ||
-    midtransClientKey !== (tenant?.midtransClientKey || '');
+  const paymentGateway = tenant?.paymentGateway as
+    | {
+        platformConfigured: boolean;
+        environment: 'sandbox' | 'production' | null;
+        subAccountRequired: boolean;
+        subAccountId: string | null;
+        subAccountStatus: string | null;
+      }
+    | undefined;
 
   const hasReceiptChanges = 
     receiptLogoUrl !== (tenant?.receiptLogoUrl || '') ||
@@ -315,20 +312,15 @@ export function SettingsClient({
     }
   };
 
-  const handleSavePayment = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleActivatePayment = async () => {
     setIsSavingPayment(true);
-    const fd = new FormData();
-    fd.append('midtransEnvironment', midtransEnvironment);
-    fd.append('midtransServerKey', midtransServerKey);
-    fd.append('midtransClientKey', midtransClientKey);
-
-    const res = await updatePaymentIntegration(fd);
+    const res = await activateDokuSubAccount();
     setIsSavingPayment(false);
     if (res.success) {
-      toast.success('Pengaturan Midtrans berhasil disimpan');
+      toast.success('Akun pembayaran online berhasil diaktifkan');
+      router.refresh();
     } else {
-      toast.error(res.error || 'Gagal menyimpan integrasi pembayaran');
+      toast.error(res.error || 'Gagal mengaktifkan akun pembayaran');
     }
   };
 
@@ -432,7 +424,7 @@ export function SettingsClient({
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <span className="text-muted-foreground text-lg font-bold">
+                            <span className="text-muted-foreground text-lg font-semibold">
                               {storeName ? storeName.slice(0, 2).toUpperCase() : 'MN'}
                             </span>
                           )}
@@ -664,7 +656,7 @@ export function SettingsClient({
             <div className="bg-card border border-border/70 rounded-2xl p-6 sm:p-8 shadow-xs">
               <form onSubmit={handleSaveTax} className="space-y-6">
                 <div className="pb-5 border-b border-border/60">
-                  <h2 className="text-lg font-bold tracking-tight text-foreground">
+                  <h2 className="text-lg font-semibold tracking-tight text-foreground">
                     Pajak Restoran & Biaya Layanan
                   </h2>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -766,7 +758,7 @@ export function SettingsClient({
             <div className="bg-card border border-border/70 rounded-2xl p-6 sm:p-8 shadow-xs">
               <form onSubmit={handleSavePlatformFees} className="space-y-6">
                 <div className="pb-5 border-b border-border/60">
-                  <h2 className="text-lg font-bold tracking-tight text-foreground">
+                  <h2 className="text-lg font-semibold tracking-tight text-foreground">
                     Potongan Komisi Online Food
                   </h2>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -867,104 +859,79 @@ export function SettingsClient({
             </div>
           </TabsContent>
 
-          {/* TAB 4: INTEGRASI MIDTRANS */}
+          {/* TAB 4: PEMBAYARAN ONLINE (DOKU) */}
           {isOwnerOnly && (
             <TabsContent value="payment" className="mt-0 outline-none">
-              <div className="bg-card border border-border/70 rounded-2xl p-6 sm:p-8 shadow-xs">
-                <form onSubmit={handleSavePayment} className="space-y-6">
-                  <div className="pb-5 border-b border-border/60">
-                    <h2 className="text-lg font-bold tracking-tight text-foreground">
-                      Integrasi Midtrans Snap API
+              <div className="bg-card border border-border/70 rounded-2xl p-6 sm:p-8 shadow-xs space-y-6">
+                <div className="pb-5 border-b border-border/60 flex items-start justify-between gap-4">
+                  <div>
+                    <h2 className="text-lg font-semibold tracking-tight text-foreground">
+                      Pembayaran Online (DOKU)
                     </h2>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Kredensial payment gateway Midtrans untuk transaksi QRIS dinamis & Virtual Account otomatis.
+                      Terima QRIS, Virtual Account, e-wallet, dan kartu dari pesanan online. Dana masuk ke akun pembayaran outlet Anda.
                     </p>
                   </div>
+                  {paymentGateway?.environment === 'sandbox' && (
+                    <span className="shrink-0 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-amber-100 text-amber-800">
+                      Mode Uji Coba
+                    </span>
+                  )}
+                </div>
 
+                {!paymentGateway?.platformConfigured ? (
+                  <p className="text-sm text-muted-foreground">
+                    Payment gateway belum dikonfigurasi di platform. Hubungi tim Menuin.
+                  </p>
+                ) : (
                   <div className="divide-y divide-border/60">
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-start">
                       <div className="md:col-span-4 space-y-0.5">
-                        <Label htmlFor="midtransEnvironment" className="text-sm font-semibold text-foreground">
-                          Environment Mode
-                        </Label>
+                        <Label className="text-sm font-semibold text-foreground">Akun Pembayaran Outlet</Label>
                         <p className="text-xs text-muted-foreground leading-relaxed">
-                          Pilih Sandbox untuk uji coba, atau Production untuk transaksi asli.
+                          Sub Account DOKU tempat dana pesanan online outlet ini diterima.
                         </p>
                       </div>
-                      <div className="md:col-span-8">
-                        <select
-                          id="midtransEnvironment"
-                          value={midtransEnvironment}
-                          onChange={(e) => setMidtransEnvironment(e.target.value)}
-                          className="w-full h-11 px-3.5 rounded-xl border border-border/80 bg-background/80 hover:bg-background text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                        >
-                          <option value="sandbox">Sandbox (Mode Percobaan / Demo)</option>
-                          <option value="production">Production (Mode Transaksi Asli / Live)</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-start">
-                      <div className="md:col-span-4 space-y-0.5">
-                        <Label htmlFor="midtransClientKey" className="text-sm font-semibold text-foreground">
-                          Midtrans Client Key
-                        </Label>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                          Kunci publik Midtrans untuk antarmuka Snap.
-                        </p>
-                      </div>
-                      <div className="md:col-span-8">
-                        <Input
-                          id="midtransClientKey"
-                          value={midtransClientKey}
-                          onChange={(e) => setMidtransClientKey(e.target.value)}
-                          placeholder="SB-Mid-client-..."
-                          className="rounded-xl h-11 bg-background/80 hover:bg-background focus:bg-background border-border/80 font-mono text-xs focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-start">
-                      <div className="md:col-span-4 space-y-0.5">
-                        <Label htmlFor="midtransServerKey" className="text-sm font-semibold text-foreground">
-                          Midtrans Server Key
-                        </Label>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                          Kunci privat server untuk verifikasi transaksi.
-                        </p>
-                      </div>
-                      <div className="md:col-span-8">
-                        <div className="relative">
-                          <Input
-                            id="midtransServerKey"
-                            type={showServerKey ? 'text' : 'password'}
-                            value={midtransServerKey}
-                            onChange={(e) => setMidtransServerKey(e.target.value)}
-                            placeholder="SB-Mid-server-..."
-                            className="rounded-xl h-11 bg-background/80 hover:bg-background focus:bg-background border-border/80 font-mono text-xs pr-10 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowServerKey(!showServerKey)}
-                            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
-                          >
-                            {showServerKey ? <IconEyeOff className="w-4 h-4" /> : <IconEye className="w-4 h-4" />}
-                          </button>
-                        </div>
+                      <div className="md:col-span-8 space-y-3">
+                        {paymentGateway.subAccountId ? (
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-mono text-xs px-2.5 py-1.5 rounded-lg bg-muted text-foreground">
+                              {paymentGateway.subAccountId}
+                            </span>
+                            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                              {paymentGateway.subAccountStatus || 'ACTIVE'}
+                            </span>
+                          </div>
+                        ) : (
+                          <>
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                              {paymentGateway.subAccountRequired
+                                ? 'Belum aktif. Aktifkan agar pelanggan bisa membayar online.'
+                                : 'Belum aktif. Selama mode uji coba, pembayaran tetap bisa dites tanpa akun outlet.'}
+                              {paymentGateway.subAccountStatus === 'FAILED' && ' Percobaan terakhir gagal, silakan coba lagi.'}
+                            </p>
+                            <Button
+                              type="button"
+                              onClick={handleActivatePayment}
+                              disabled={isSavingPayment}
+                              className="min-w-[180px] h-11 rounded-xl text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all cursor-pointer"
+                            >
+                              {isSavingPayment ? (
+                                <><IconLoader2 className="mr-2 h-4 w-4 animate-spin" /> Mengaktifkan...</>
+                              ) : (
+                                <><IconCreditCard className="mr-2 h-4 w-4" /> Aktifkan Akun Pembayaran</>
+                              )}
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
+                )}
 
-                  <div className="flex justify-end pt-5 border-t border-border/60">
-                    <Button disabled={isSavingPayment || !hasPaymentChanges} type="submit" className="min-w-[150px] h-11 rounded-xl text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all cursor-pointer">
-                      {isSavingPayment ? (
-                        <><IconLoader2 className="mr-2 h-4 w-4 animate-spin" /> Menyimpan...</>
-                      ) : (
-                        <><IconDeviceFloppy className="mr-2 h-4 w-4" /> Simpan Kredensial</>
-                      )}
-                    </Button>
-                  </div>
-                </form>
+                <p className="text-xs text-muted-foreground pt-5 border-t border-border/60">
+                  Pembayaran online untuk pelanggan dinyalakan/dimatikan di menu Katalog → Pemesanan.
+                </p>
               </div>
             </TabsContent>
           )}
@@ -974,7 +941,7 @@ export function SettingsClient({
             <div className="bg-card border border-border/70 rounded-2xl p-6 sm:p-8 shadow-xs">
               <form onSubmit={handleSaveDisplay} className="space-y-6">
                 <div className="pb-5 border-b border-border/60">
-                  <h2 className="text-lg font-bold tracking-tight text-foreground">
+                  <h2 className="text-lg font-semibold tracking-tight text-foreground">
                     Preferensi Tampilan Katalog POS
                   </h2>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -1039,7 +1006,7 @@ export function SettingsClient({
                         <div className="divide-y divide-border/60">
                           {/* HEADER TEXT */}
                           <div className="py-4 space-y-1.5">
-                            <Label htmlFor="receiptHeader" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                            <Label htmlFor="receiptHeader" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                               Header Struk (Alamat & Kontak Outlet)
                             </Label>
                             <Textarea
@@ -1054,7 +1021,7 @@ export function SettingsClient({
 
                           {/* FOOTER TEXT */}
                           <div className="py-4 space-y-1.5">
-                            <Label htmlFor="receiptFooter" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                            <Label htmlFor="receiptFooter" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                               Footer Struk (Pesan Penutup)
                             </Label>
                             <Textarea
@@ -1069,7 +1036,7 @@ export function SettingsClient({
 
                           {/* WIFI NOTE */}
                           <div className="py-4 space-y-1.5">
-                            <Label htmlFor="receiptCustomNote" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                            <Label htmlFor="receiptCustomNote" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                               Catatan Khusus / Info WiFi
                             </Label>
                             <Input
@@ -1147,7 +1114,7 @@ export function SettingsClient({
                           <div className="py-3">
                             <div className="flex items-center justify-between p-4 border border-primary/20 rounded-2xl bg-primary/5">
                               <div className="space-y-0.5">
-                                <Label className="font-bold text-xs text-foreground">
+                                <Label className="font-semibold text-xs text-foreground">
                                   Otomatis Cetak Tiket Dapur Saat Bayar
                                 </Label>
                                 <p className="text-[11px] text-muted-foreground">
@@ -1160,7 +1127,7 @@ export function SettingsClient({
 
                           {/* TITLE */}
                           <div className="py-4 space-y-1.5">
-                            <Label htmlFor="kitchenTicketTitle" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                            <Label htmlFor="kitchenTicketTitle" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                               Judul Tiket Dapur
                             </Label>
                             <Input
@@ -1174,7 +1141,7 @@ export function SettingsClient({
 
                           {/* NOTES */}
                           <div className="py-4 space-y-1.5">
-                            <Label htmlFor="kitchenTicketNotes" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                            <Label htmlFor="kitchenTicketNotes" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                               Catatan Kaki Dapur
                             </Label>
                             <Input
@@ -1257,7 +1224,7 @@ export function SettingsClient({
                       className={cn(
                         "flex-1 text-xs font-semibold py-2 px-3 rounded-lg transition-all cursor-pointer",
                         previewTab === 'customer'
-                          ? "bg-background shadow-xs text-foreground font-bold"
+                          ? "bg-background shadow-xs text-foreground font-semibold"
                           : "text-muted-foreground hover:text-foreground"
                       )}
                     >
@@ -1269,7 +1236,7 @@ export function SettingsClient({
                       className={cn(
                         "flex-1 text-xs font-semibold py-2 px-3 rounded-lg transition-all cursor-pointer",
                         previewTab === 'kitchen'
-                          ? "bg-background shadow-xs text-foreground font-bold"
+                          ? "bg-background shadow-xs text-foreground font-semibold"
                           : "text-muted-foreground hover:text-foreground"
                       )}
                     >
@@ -1290,13 +1257,13 @@ export function SettingsClient({
                                 className="h-10 w-10 object-contain rounded-full border border-zinc-200" 
                               />
                             ) : (
-                              <div className="h-10 w-10 rounded-full bg-zinc-900 text-white flex items-center justify-center font-bold text-xs tracking-wider">
+                              <div className="h-10 w-10 rounded-full bg-zinc-900 text-white flex items-center justify-center font-semibold text-xs tracking-wider">
                                 {storeName?.slice(0, 2)?.toUpperCase() || 'MN'}
                               </div>
                             )}
                           </div>
                         )}
-                        <div className="font-bold text-sm tracking-wider uppercase">
+                        <div className="font-semibold text-sm tracking-wider uppercase">
                           {storeName || 'NAMA OUTLET'}
                         </div>
                         {receiptHeader ? (
@@ -1317,7 +1284,7 @@ export function SettingsClient({
                         </div>
                         <div className="flex justify-between">
                           <span className="text-zinc-500">NO. STRUK</span>
-                          <span className="font-bold">#TRX-8921</span>
+                          <span className="font-semibold">#TRX-8921</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-zinc-500">CHANNEL</span>
@@ -1338,7 +1305,7 @@ export function SettingsClient({
                         {receiptShowTable && (
                           <div className="flex justify-between">
                             <span className="text-zinc-500">MEJA</span>
-                            <span className="font-bold">NO. 05</span>
+                            <span className="font-semibold">NO. 05</span>
                           </div>
                         )}
                         <div className="flex justify-between">
@@ -1349,7 +1316,7 @@ export function SettingsClient({
 
                       <div className="py-3 border-b border-dashed border-zinc-300 space-y-2">
                         <div>
-                          <div className="flex justify-between font-bold text-[11px]">
+                          <div className="flex justify-between font-semibold text-[11px]">
                             <span>Nasi Goreng Spesial</span>
                           </div>
                           <div className="flex justify-between text-[11px] text-zinc-700">
@@ -1363,7 +1330,7 @@ export function SettingsClient({
                           )}
                         </div>
                         <div>
-                          <div className="flex justify-between font-bold text-[11px]">
+                          <div className="flex justify-between font-semibold text-[11px]">
                             <span>Es Teh Manis</span>
                           </div>
                           <div className="flex justify-between text-[11px] text-zinc-700">
@@ -1394,7 +1361,7 @@ export function SettingsClient({
                       </div>
 
                       <div className="py-2.5 border-b border-zinc-900">
-                        <div className="flex justify-between font-bold text-sm text-zinc-900">
+                        <div className="flex justify-between font-semibold text-sm text-zinc-900">
                           <span>TOTAL</span>
                           <span>Rp 58.600</span>
                         </div>
@@ -1412,7 +1379,7 @@ export function SettingsClient({
                             {receiptFooter}
                           </div>
                         ) : (
-                          <div className="text-[10px] font-bold tracking-wider text-zinc-700">TERIMA KASIH</div>
+                          <div className="text-[10px] font-semibold tracking-wider text-zinc-700">TERIMA KASIH</div>
                         )}
                       </div>
                     </div>
@@ -1422,7 +1389,7 @@ export function SettingsClient({
                   {previewTab === 'kitchen' && (
                     <div className="bg-white p-6 sm:p-7 rounded-2xl shadow-md border border-border/80 font-mono text-xs leading-relaxed text-zinc-900 select-none">
                       <div className="text-center space-y-1 pb-3 border-b border-zinc-900">
-                        <div className="font-bold text-sm tracking-wider uppercase">
+                        <div className="font-semibold text-sm tracking-wider uppercase">
                           {kitchenTicketTitle || 'TIKET DAPUR'}
                         </div>
                         <div className="text-[10px] text-zinc-500">
@@ -1433,17 +1400,17 @@ export function SettingsClient({
                       <div className="py-2.5 border-b border-dashed border-zinc-300 space-y-1 text-[11px]">
                         <div className="flex justify-between">
                           <span className="text-zinc-500">CHANNEL</span>
-                          <span className="font-bold">DINE_IN</span>
+                          <span className="font-semibold">DINE_IN</span>
                         </div>
                         {kitchenShowTable && (
-                          <div className="flex justify-between text-sm font-bold pt-0.5">
+                          <div className="flex justify-between text-sm font-semibold pt-0.5">
                             <span>MEJA</span>
                             <span>NO. 05</span>
                           </div>
                         )}
                         <div className="flex justify-between">
                           <span className="text-zinc-500">NO. ORDER</span>
-                          <span className="font-bold">#TRX-8921</span>
+                          <span className="font-semibold">#TRX-8921</span>
                         </div>
                         {kitchenShowCustomer && (
                           <div className="flex justify-between">
@@ -1460,11 +1427,11 @@ export function SettingsClient({
                       </div>
 
                       <div className="py-3 border-b border-dashed border-zinc-300 space-y-2.5">
-                        <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
+                        <div className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">
                           Pesanan Masak:
                         </div>
                         <div className="space-y-0.5 pb-1.5 border-b border-zinc-100">
-                          <div className="flex justify-between items-baseline font-bold text-[11px]">
+                          <div className="flex justify-between items-baseline font-semibold text-[11px]">
                             <span>Nasi Goreng Spesial</span>
                             <span>x1</span>
                           </div>
@@ -1475,7 +1442,7 @@ export function SettingsClient({
                           )}
                         </div>
                         <div className="space-y-0.5">
-                          <div className="flex justify-between items-baseline font-bold text-[11px]">
+                          <div className="flex justify-between items-baseline font-semibold text-[11px]">
                             <span>Es Teh Manis</span>
                             <span>x2</span>
                           </div>
@@ -1487,7 +1454,7 @@ export function SettingsClient({
                         </div>
                       </div>
 
-                      <div className="py-2.5 flex justify-between font-bold text-[11px] border-b border-zinc-900">
+                      <div className="py-2.5 flex justify-between font-semibold text-[11px] border-b border-zinc-900">
                         <span>TOTAL ITEM</span>
                         <span>3 Pcs</span>
                       </div>

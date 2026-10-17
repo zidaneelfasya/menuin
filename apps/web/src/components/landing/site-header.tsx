@@ -1,12 +1,29 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { ArrowRight, ChevronDown } from "lucide-react";
+import {
+  Navbar,
+  NavBody,
+  NavItems,
+  MobileNav,
+  MobileNavHeader,
+  MobileNavToggle,
+  MobileNavMenu,
+  NavbarButton,
+  NavItemType,
+} from "@/components/ui/resizable-navbar";
+import {
+  ArrowRight,
+  QrCode,
+  ChefHat,
+  MonitorCheck,
+  BarChart3,
+  HelpCircle,
+  ShieldCheck,
+} from "lucide-react";
 import { usePageTransition } from "@/components/providers/page-transition-provider";
-import { moreNav, primaryNav } from "@/components/landing/site-config";
 
 export default function SiteHeader({
   isLoggedIn = false,
@@ -15,79 +32,170 @@ export default function SiteHeader({
   isLoggedIn?: boolean;
   userName?: string;
 }) {
-  const pathname = usePathname();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { navigateWithTransition } = usePageTransition();
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [moreOpen, setMoreOpen] = useState(false);
-  const moreRef = useRef<HTMLDivElement>(null);
   const userInitial = (userName || "U").trim().charAt(0).toUpperCase();
 
-  const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
-  const moreActive = moreNav.some((i) => isActive(i.href));
+  const navItems: NavItemType[] = [
+    {
+      name: "Tentang",
+      link: "/tentang",
+    },
+    {
+      name: "Fitur",
+      link: "/fitur",
+      children: (
+        <div className="text-sm grid grid-cols-2 gap-3 p-1">
+          <a
+            href="/fitur#alur"
+            className="group flex space-x-3.5 rounded-xl p-2.5 transition-colors hover:bg-slate-50 max-w-[280px]"
+          >
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#0E59F9] transition-transform group-hover:scale-105">
+              <QrCode className="h-5 w-5" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center space-x-2">
+                <h4 className="text-sm font-semibold text-slate-900 group-hover:text-[#0E59F9] transition-colors">
+                  QR Meja Mandiri
+                </h4>
+                <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-[#0E59F9]">
+                  Populer
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-slate-500 leading-relaxed">
+                Pelanggan scan, pesan, &amp; bayar QRIS langsung dari meja tanpa antre.
+              </p>
+            </div>
+          </a>
 
-  // Tutup menu saat pindah halaman.
-  useEffect(() => {
-    setMobileOpen(false);
-    setMoreOpen(false);
-  }, [pathname]);
+          <a
+            href="/fitur#dapur"
+            className="group flex space-x-3.5 rounded-xl p-2.5 transition-colors hover:bg-slate-50 max-w-[280px]"
+          >
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600 transition-transform group-hover:scale-105">
+              <ChefHat className="h-5 w-5" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center space-x-2">
+                <h4 className="text-sm font-semibold text-slate-900 group-hover:text-[#0E59F9] transition-colors">
+                  Kitchen Display (KDS)
+                </h4>
+                <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-600">
+                  Real-time
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-slate-500 leading-relaxed">
+                Pesanan seketika masuk ke dapur dengan timer warna, nol tiket kertas hilang.
+              </p>
+            </div>
+          </a>
 
-  // Tutup dropdown "Lainnya" saat klik di luar.
-  useEffect(() => {
-    if (!moreOpen) return;
-    const onDown = (e: MouseEvent) => {
-      if (!moreRef.current?.contains(e.target as Node)) setMoreOpen(false);
-    };
-    document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
-  }, [moreOpen]);
+          <a
+            href="/fitur#pos"
+            className="group flex space-x-3.5 rounded-xl p-2.5 transition-colors hover:bg-slate-50 max-w-[280px]"
+          >
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-600 transition-transform group-hover:scale-105">
+              <MonitorCheck className="h-5 w-5" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center space-x-2">
+                <h4 className="text-sm font-semibold text-slate-900 group-hover:text-[#0E59F9] transition-colors">
+                  Kasir POS Cloud
+                </h4>
+              </div>
+              <p className="mt-1 text-xs text-slate-500 leading-relaxed">
+                Multi-perangkat tablet/web, split bill instan, dan cetak struk Bluetooth/LAN.
+              </p>
+            </div>
+          </a>
 
-  const linkClass = (href: string) =>
-    `transition-colors ${isActive(href) ? "text-[#0a0a0a]" : "text-slate-600 hover:text-[#0a0a0a]"}`;
+          <a
+            href="/fitur#laporan"
+            className="group flex space-x-3.5 rounded-xl p-2.5 transition-colors hover:bg-slate-50 max-w-[280px]"
+          >
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 transition-transform group-hover:scale-105">
+              <BarChart3 className="h-5 w-5" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center space-x-2">
+                <h4 className="text-sm font-semibold text-slate-900 group-hover:text-[#0E59F9] transition-colors">
+                  Laporan &amp; Analitik
+                </h4>
+                <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-600">
+                  Otomatis
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-slate-500 leading-relaxed">
+                Analisis omset harian, jam sibuk (peak hours), dan rekap laporan berkala.
+              </p>
+            </div>
+          </a>
+        </div>
+      ),
+    },
+    {
+      name: "Harga",
+      link: "/harga",
+    },
+    {
+      name: "Hubungi kami",
+      link: "/kontak",
+    },
+    {
+      name: "Lainnya",
+      link: "/faq",
+      children: (
+        <div className="flex flex-col space-y-1 w-56 p-1">
+          <Link
+            href="/faq"
+            className="flex items-center space-x-3 rounded-lg px-3 py-2.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-[#0E59F9]"
+          >
+            <HelpCircle className="h-4 w-4 text-[#0E59F9]" />
+            <div>
+              <p className="font-semibold text-slate-900">Tanya Jawab (FAQ)</p>
+              <p className="text-[11px] text-slate-500">Pertanyaan umum seputar Menuin</p>
+            </div>
+          </Link>
+          <Link
+            href="/keamanan"
+            className="flex items-center space-x-3 rounded-lg px-3 py-2.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-[#0E59F9]"
+          >
+            <ShieldCheck className="h-4 w-4 text-emerald-600" />
+            <div>
+              <p className="font-semibold text-slate-900">Keamanan Data</p>
+              <p className="text-[11px] text-slate-500">Standar enkripsi &amp; proteksi data resto</p>
+            </div>
+          </Link>
+        </div>
+      ),
+    },
+  ];
 
   return (
-    <header className="fixed left-0 right-0 top-0 z-50 border-b border-black/[0.06] bg-white/90 backdrop-blur-md">
-      <div className="mx-auto flex h-[64px] max-w-[1280px] items-center justify-between px-6">
-        <Link href="/" className="flex items-center" aria-label="Menuin, ke beranda">
-          <Image src="/menuin.png" alt="Menuin" width={220} height={60} className="h-7 w-auto md:h-8" priority />
+    <Navbar>
+      {/* Desktop Navigation */}
+      <NavBody>
+        {/* Brand Logo */}
+        <Link
+          href="/"
+          className="relative z-20 mr-4 flex items-center"
+          aria-label="Menuin, ke beranda"
+        >
+          <Image
+            src="/menuin.png"
+            alt="Menuin"
+            width={220}
+            height={60}
+            className="h-7 w-auto md:h-8"
+            priority
+          />
         </Link>
 
-        <nav className="hidden items-center gap-8 text-[14px] font-medium md:flex">
-          {primaryNav.map((item) => (
-            <Link key={item.href} href={item.href} className={linkClass(item.href)}>
-              {item.label}
-            </Link>
-          ))}
-          <div ref={moreRef} className="relative">
-            <button
-              type="button"
-              onClick={() => setMoreOpen((v) => !v)}
-              aria-expanded={moreOpen}
-              className={`flex items-center gap-1 transition-colors ${
-                moreActive ? "text-[#0a0a0a]" : "text-slate-600 hover:text-[#0a0a0a]"
-              }`}
-            >
-              Lainnya
-              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${moreOpen ? "rotate-180" : ""}`} />
-            </button>
-            {moreOpen && (
-              <div className="absolute left-1/2 top-9 w-48 -translate-x-1/2 rounded-2xl border border-black/[0.06] bg-white p-1.5 shadow-[0_20px_40px_-20px_rgba(15,23,42,0.3)]">
-                {moreNav.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`block rounded-xl px-3.5 py-2.5 text-[14px] transition-colors hover:bg-[#fafafa] ${
-                      isActive(item.href) ? "text-[#0a0a0a]" : "text-slate-600"
-                    }`}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        </nav>
+        {/* Center Nav Items with Menuin Theme Bubble Hover */}
+        <NavItems items={navItems} />
 
-        <div className="hidden items-center gap-4 md:flex">
+        {/* Right Actions: Auth or Dashboard */}
+        <div className="relative z-20 flex items-center space-x-3">
           {isLoggedIn ? (
             <a
               href="/select-tenant"
@@ -95,9 +203,9 @@ export default function SiteHeader({
                 e.preventDefault();
                 navigateWithTransition("/select-tenant");
               }}
-              className="group flex h-10 items-center gap-2.5 rounded-full bg-slate-900 pl-2 pr-4 text-[13px] font-semibold text-white shadow-sm transition-all hover:bg-slate-800"
+              className="group flex h-9 items-center gap-2 rounded-full bg-slate-900 pl-2 pr-4 text-[13px] font-semibold text-white shadow-sm transition-all hover:bg-slate-800"
             >
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0E59F9] text-[12px] font-bold text-white shadow-sm">
+              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#0E59F9] text-[11px] font-bold text-white shadow-xs">
                 {userInitial}
               </div>
               <span>Buka dashboard</span>
@@ -105,56 +213,69 @@ export default function SiteHeader({
             </a>
           ) : (
             <>
-              <a href="/auth/login" className="mr-2 text-[14px] font-semibold text-slate-700 transition-colors hover:text-[#0E59F9]">
-                Masuk
-              </a>
-              <a
-                href="/auth/signup"
-                className="flex h-10 items-center rounded-full bg-[#0E59F9] px-5 text-[14px] font-semibold text-white shadow-sm transition-all hover:bg-[#0C4CD6] hover:shadow-md"
+              <Link
+                href="/auth/login"
+                className="text-[14px] font-semibold text-slate-700 transition-colors hover:text-[#0E59F9] hover:bg-[#0E59F9]/[0.08] px-3.5 py-1.5 rounded-full"
               >
-                Coba gratis
-              </a>
+                Masuk
+              </Link>
+
+              <NavbarButton
+                href="/auth/signup"
+                variant="primary"
+                className="bg-[#0E59F9] hover:bg-[#0C4CD6] text-white text-[14px] font-semibold px-5 py-2 rounded-full shadow-sm hover:shadow-md transition-all active:scale-95"
+              >
+                <span>Coba gratis</span>
+              </NavbarButton>
             </>
           )}
         </div>
+      </NavBody>
 
-        <button
-          type="button"
-          onClick={() => setMobileOpen(!mobileOpen)}
-          aria-label={mobileOpen ? "Tutup menu" : "Buka menu"}
-          className="flex h-10 w-10 items-center justify-center rounded-lg transition-colors hover:bg-slate-100 md:hidden"
+      {/* Mobile Navigation */}
+      <MobileNav>
+        <MobileNavHeader>
+          <Link href="/" className="flex items-center">
+            <Image
+              src="/menuin.png"
+              alt="Menuin"
+              width={220}
+              height={60}
+              className="h-7 w-auto"
+              priority
+            />
+          </Link>
+
+          <MobileNavToggle
+            isOpen={isMobileMenuOpen}
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          />
+        </MobileNavHeader>
+
+        <MobileNavMenu
+          isOpen={isMobileMenuOpen}
+          onClose={() => setIsMobileMenuOpen(false)}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            {mobileOpen ? (
-              <path d="M6 18L18 6M6 6L18 18" stroke="#0F172A" strokeWidth="2" strokeLinecap="round" />
-            ) : (
-              <path d="M4 12H20M4 6H20M4 18H20" stroke="#0F172A" strokeWidth="2" strokeLinecap="round" />
-            )}
-          </svg>
-        </button>
-      </div>
-
-      {mobileOpen && (
-        <div className="absolute left-0 top-[64px] w-full space-y-5 border-b border-black/[0.06] bg-white px-6 py-6 md:hidden">
-          <nav className="flex flex-col gap-4 text-[15px] font-medium">
-            {[{ label: "Beranda", href: "/" }, ...primaryNav, ...moreNav].map((item) => (
+          <div className="flex flex-col space-y-2 py-2">
+            {navItems.map((item, idx) => (
               <Link
-                key={item.href}
-                href={item.href}
-                className={pathname === item.href ? "text-[#0E59F9]" : "text-slate-700"}
+                key={`mobile-nav-${idx}`}
+                href={item.link}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-[14px] font-medium text-slate-700 hover:text-[#0E59F9] px-2 py-1.5 rounded-lg transition-colors"
               >
-                {item.label}
+                {item.name}
               </Link>
             ))}
-          </nav>
-          <div className="h-px bg-slate-100" />
-          <div className="flex flex-col gap-3">
+          </div>
+
+          <div className="pt-3 border-t border-black/[0.06] flex flex-col space-y-2 w-full">
             {isLoggedIn ? (
               <a
                 href="/select-tenant"
                 onClick={(e) => {
                   e.preventDefault();
-                  setMobileOpen(false);
+                  setIsMobileMenuOpen(false);
                   navigateWithTransition("/select-tenant");
                 }}
                 className="flex h-11 items-center justify-center gap-2.5 rounded-full bg-slate-900 text-[14px] font-semibold text-white"
@@ -166,17 +287,26 @@ export default function SiteHeader({
               </a>
             ) : (
               <>
-                <a href="/auth/login" className="flex h-11 items-center justify-center rounded-full border border-slate-200 text-[14px] font-semibold text-slate-800">
+                <Link
+                  href="/auth/login"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="w-full text-center py-2.5 text-[14px] font-semibold text-slate-800 rounded-full border border-slate-200 hover:bg-slate-50 transition"
+                >
                   Masuk
-                </a>
-                <a href="/auth/signup" className="flex h-11 items-center justify-center rounded-full bg-[#0E59F9] text-[14px] font-semibold text-white">
-                  Coba gratis
-                </a>
+                </Link>
+                <NavbarButton
+                  href="/auth/signup"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  variant="primary"
+                  className="w-full py-2.5 text-center justify-center"
+                >
+                  <span>Coba gratis</span>
+                </NavbarButton>
               </>
             )}
           </div>
-        </div>
-      )}
-    </header>
+        </MobileNavMenu>
+      </MobileNav>
+    </Navbar>
   );
 }

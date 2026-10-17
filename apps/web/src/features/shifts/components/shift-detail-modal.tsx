@@ -6,6 +6,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { format, formatDistanceStrict } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { formatCurrency } from '@/lib/utils/format';
+import { cn } from '@/lib/utils';
 import {
   Loader2,
   Receipt,
@@ -86,18 +87,17 @@ export function ShiftDetailModal({
         <div className="px-6 py-4 border-b bg-muted/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-mono font-semibold px-2.5 py-0.5 rounded-lg bg-primary/10 text-primary border border-primary/20">
+              <span className="text-xs font-mono font-medium px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border-none">
                 SHIFT #{shift?.id?.slice(0, 8).toUpperCase() || '...'}
               </span>
               {shift?.status === 'ACTIVE' ? (
-                <Badge className="bg-emerald-500 text-white gap-1 text-[11px] font-medium">
-                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                <span className="bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border-none rounded-md px-2 py-0.5 text-[11px] font-medium inline-flex items-center">
                   Sedang Aktif
-                </Badge>
+                </span>
               ) : (
-                <Badge variant="secondary" className="text-[11px] font-medium">
+                <span className="bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border-none rounded-md px-2 py-0.5 text-[11px] font-medium inline-flex items-center">
                   Shift Selesai
-                </Badge>
+                </span>
               )}
             </div>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground mt-2">
@@ -382,12 +382,16 @@ export function ShiftDetailModal({
                               {tx.orderNumber ? `#${tx.orderNumber}` : tx.id.slice(0, 8)}
                             </TableCell>
                             <TableCell>
-                              <Badge
-                                variant={tx.source === 'ONLINE' ? 'secondary' : 'outline'}
-                                className="text-[10px]"
+                              <span
+                                className={cn(
+                                  "text-[10px] font-medium px-2 py-0.5 rounded-md border-none inline-block",
+                                  tx.source === 'ONLINE'
+                                    ? "bg-purple-100/70 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300"
+                                    : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                                )}
                               >
                                 {tx.source === 'ONLINE' ? 'Online' : 'POS Kasir'}
-                              </Badge>
+                              </span>
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-1.5">
@@ -475,13 +479,13 @@ export function ShiftDetailModal({
                             </TableCell>
                             <TableCell>
                               {move.type === 'IN' ? (
-                                <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30 text-[10px] gap-1">
+                                <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-md border-none bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
                                   <ArrowDownLeft className="w-3 h-3" /> Kas Masuk
-                                </Badge>
+                                </span>
                               ) : (
-                                <Badge className="bg-rose-500/15 text-rose-600 border-rose-500/30 text-[10px] gap-1">
+                                <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-md border-none bg-rose-100/80 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">
                                   <ArrowUpRight className="w-3 h-3" /> Kas Keluar
-                                </Badge>
+                                </span>
                               )}
                             </TableCell>
                             <TableCell className="font-medium text-foreground">{move.description}</TableCell>

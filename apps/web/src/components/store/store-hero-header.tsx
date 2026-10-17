@@ -4,7 +4,9 @@ import * as React from 'react';
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ChevronRight, BadgeCheck } from 'lucide-react';
+import { useCartStore } from '@/lib/store/cart';
+import { toast } from 'sonner';
 import { OutletDetailModal } from './outlet-detail-modal';
 import { StoreHamburgerMenu } from './store-hamburger-menu';
 
@@ -17,6 +19,13 @@ export interface StoreHeroHeaderProps {
     storeBannerUrl?: string | null;
     storeDescription?: string | null;
     primaryColor?: string | null;
+    openHours?: string | null;
+    address?: string | null;
+    city?: string | null;
+    mapsUrl?: string | null;
+    cuisineType?: string | null;
+    wifiSsid?: string | null;
+    wifiPassword?: string | null;
     dineInEnabled?: boolean;
     takeAwayEnabled?: boolean;
     deliveryEnabled?: boolean;
@@ -30,11 +39,12 @@ export interface StoreHeroHeaderProps {
   homeLink: string;
   totalSold?: number;
   totalProducts?: number;
+  activePromotions?: any[];
 }
 
 export function StoreHeroHeader({
   tenant,
-  tableNumber,
+  tableNumber: initialTableNumber,
   statusLink,
   homeLink,
   totalSold = 0,
@@ -43,16 +53,80 @@ export function StoreHeroHeader({
   const pathname = usePathname();
   const [isOutletDetailOpen, setIsOutletDetailOpen] = useState(false);
 
+  // Cart store for service type
+  const { orderType, setOrderType, tableNumber: cartTableNumber } = useCartStore();
+  const currentTable = cartTableNumber || initialTableNumber;
+
   // Suppress hero banner and outlet card on cart/checkout routes
   if (pathname?.includes('/checkout')) {
     return null;
   }
 
+  // Format sales count
+  const formatSold = (sold: number) => {
+    if (sold >= 1000) {
+      const thousands = sold / 1000;
+      const formatted = (Math.floor(thousands * 10) / 10)
+        .toFixed(1)
+        .replace('.0', '')
+        .replace('.', ',');
+      return `${formatted}rb+ Terjual`;
+    }
+    if (sold > 0) {
+      return `${sold}+ Terjual`;
+    }
+    return null;
+  };
+
+  // Format open status based on openHours if standard "HH:mm - HH:mm"
+  const getOpenStatus = () => {
+    if (!tenant.openHours) {
+      return { isOpen: true, text: 'Buka Sekarang' };
+    }
+
+    const trimmed = tenant.openHours.trim();
+    const match = trimmed.match(/(\d{1,2})[:.](\d{2})\s*[-–]\s*(\d{1,2})[:.](\d{2})/);
+    if (match) {
+      const startH = parseInt(match[1], 10);
+      const startM = parseInt(match[2], 10);
+      const endH = parseInt(match[3], 10);
+      const endM = parseInt(match[4], 10);
+
+      const now = new Date();
+      const nowMinutes = now.getHours() * 60 + now.getMinutes();
+      const startMinutes = startH * 60 + startM;
+      const endMinutes = endH * 60 + endM;
+
+      const isCurrentOpen =
+        startMinutes <= endMinutes
+          ? nowMinutes >= startMinutes && nowMinutes <= endMinutes
+          : nowMinutes >= startMinutes || nowMinutes <= endMinutes;
+
+      if (isCurrentOpen) {
+        return {
+          isOpen: true,
+          text: `Buka sampai ${match[3].padStart(2, '0')}:${match[4]}`,
+        };
+      } else {
+        return {
+          isOpen: false,
+          text: `Tutup • Buka ${match[1].padStart(2, '0')}:${match[2]}`,
+        };
+      }
+    }
+
+    return { isOpen: true, text: `Buka • ${tenant.openHours}` };
+  };
+
+  const openStatus = getOpenStatus();
+  const soldText = formatSold(totalSold);
+  const cityText = tenant.city || 'Banyuwangi';
+
   return (
     <div className="w-full max-w-full overflow-x-clip">
       {/* 1. Hero Banner Area */}
       <div className="w-full h-36 sm:h-44 md:h-52 relative bg-slate-900">
-        {/* Banner Image Container (Clickable to view full outlet photo) */}
+        {/* Banner Image Container */}
         <div
           onClick={() => setIsOutletDetailOpen(true)}
           className="absolute inset-0 w-full h-full overflow-hidden cursor-pointer group"
@@ -67,7 +141,7 @@ export function StoreHeroHeader({
             <div
               className="w-full h-full relative flex items-center justify-center opacity-90"
               style={{
-                background: `linear-gradient(135deg, color-mix(in srgb, var(--catalog-primary, #f43f5e) 85%, #0f172a), #0f172a)`,
+                background: `linear-gradient(135deg, color-mix(in srgb, var(--catalog-primary, #0e59f9) 85%, #0f172a), #0f172a)`,
               }}
             >
               <div className="absolute inset-0 bg-[radial-gradient(#ffffff15_1px,transparent_1px)] [background-size:16px_16px]" />
@@ -75,7 +149,7 @@ export function StoreHeroHeader({
           )}
 
           {/* Top Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-transparent to-black/35" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-transparent to-black/30" />
         </div>
 
         {/* Floating Top Action Bar over Banner */}
@@ -92,64 +166,129 @@ export function StoreHeroHeader({
             <ArrowLeft className="w-4 h-4 stroke-[2.2]" />
           </Link>
 
-          {/* Right: Modern Hamburger Menu with Animation & Rich Options */}
+          {/* Right: Modern Hamburger Menu */}
           <StoreHamburgerMenu
             tenant={tenant}
-            tableNumber={tableNumber}
+            tableNumber={currentTable}
             statusLink={statusLink}
             onOpenOutletDetail={() => setIsOutletDetailOpen(true)}
           />
         </div>
       </div>
 
-      {/* 2. Floating Outlet Card (Clickable to open Outlet Details) */}
-      <div className="w-full px-3.5 sm:px-4 -mt-6 relative z-10">
-        <div
-          onClick={() => setIsOutletDetailOpen(true)}
-          className="bg-white rounded-2xl border border-gray-200/90 shadow-xs hover:shadow-sm px-4 pb-3.5 pt-8 text-center relative cursor-pointer transition-all active:scale-[0.995] group"
-        >
-          {/* Centered Profile Logo */}
-          <div className="absolute -top-7 left-1/2 -translate-x-1/2 w-14 h-14 max-w-[56px] max-h-[56px] rounded-full border-2 border-white shadow-md bg-white overflow-hidden flex items-center justify-center shrink-0 ring-1 ring-gray-100 z-10 group-hover:scale-105 transition-transform duration-300">
-            {tenant.storeLogoUrl ? (
-              <img
-                src={tenant.storeLogoUrl}
-                alt={tenant.name}
-                className="w-full h-full object-cover rounded-full"
-              />
-            ) : (
-              <div className="w-full h-full bg-catalog-primary text-white font-semibold text-xl flex items-center justify-center rounded-full">
-                {tenant.name.charAt(0).toUpperCase()}
-              </div>
-            )}
-          </div>
+      {/* 2. Floating Outlet Card (Clean, Essential-Only, Zero-Emoji) */}
+      <div className="w-full px-3.5 sm:px-4 -mt-7 relative z-10">
+        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-3.5 sm:p-4 text-left transition-all">
+          {/* Top Row: Logo Thumbnail + Name & Info + Detail Chevron (No border on Chevron) */}
+          <div
+            onClick={() => setIsOutletDetailOpen(true)}
+            className="flex items-center gap-3 cursor-pointer group select-none"
+          >
+            {/* Logo Thumbnail (Rounded Box on Left) */}
+            <div className="w-12 h-12 sm:w-13 sm:h-13 rounded-xl border border-slate-150 shadow-2xs bg-white overflow-hidden flex items-center justify-center shrink-0">
+              {tenant.storeLogoUrl ? (
+                <img
+                  src={tenant.storeLogoUrl}
+                  alt={tenant.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+              ) : (
+                <div className="w-full h-full bg-catalog-primary text-white font-semibold text-lg flex items-center justify-center">
+                  {tenant.name.charAt(0).toUpperCase()}
+                </div>
+              )}
+            </div>
 
-          {/* Card Content: Name -> Status Buka -> Description */}
-          <div className="space-y-0.5">
-            {/* 1. Nama Outlet */}
-            <h1 className="text-base font-semibold text-gray-900 tracking-tight leading-snug line-clamp-1 group-hover:text-catalog-primary transition-colors">
-              {tenant.name}
-            </h1>
-
-            {/* 2. Keterangan Buka */}
-            <p className="text-xs font-semibold text-emerald-600">
-              Buka
-            </p>
-
-            {/* 3. Deskripsi Outlet */}
-            {tenant.storeDescription && (
-              <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed pt-0.5">
-                {tenant.storeDescription}
-              </p>
-            )}
-
-            {/* Nomor Meja jika ada */}
-            {tableNumber && (
-              <div className="pt-1.5">
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-catalog-primary/10 text-catalog-primary border border-catalog-primary/20 text-[11px] font-semibold">
-                  Meja #{tableNumber}
+            {/* Merchant Identity & Subtitle */}
+            <div className="flex-1 min-w-0 pr-1">
+              <div className="flex items-baseline gap-1.5 flex-wrap">
+                <h1 className="text-sm sm:text-base font-semibold text-slate-900 tracking-tight leading-snug truncate group-hover:text-catalog-primary transition-colors">
+                  {tenant.name}
+                </h1>
+                <span className="text-[11px] text-slate-400 font-normal">
+                  ({cityText})
                 </span>
               </div>
+
+              {/* Sub-kategori / Konsep Resto */}
+              <p className="text-xs text-slate-500 font-normal truncate mt-0.5">
+                {tenant.cuisineType || tenant.storeDescription || 'Kuliner Pilihan & Minuman Segar'}
+              </p>
+
+              {/* Status Jam Buka & Status Tag */}
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                <span
+                  className={`inline-flex items-center gap-1.5 text-[11px] font-medium ${
+                    openStatus.isOpen ? 'text-emerald-600' : 'text-rose-500'
+                  }`}
+                >
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                      openStatus.isOpen ? 'bg-emerald-500' : 'bg-rose-500'
+                    }`}
+                  />
+                  <span>{openStatus.text}</span>
+                </span>
+
+                <span className="text-slate-300 font-normal">•</span>
+
+                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500">
+                  <BadgeCheck className="w-3 h-3 text-emerald-600 shrink-0 stroke-[2.2]" />
+                  <span>Mitra Resmi</span>
+                </span>
+              </div>
+            </div>
+
+            {/* Chevron Arrow to open Detail Modal (Clean, No border, No circle) */}
+            <div className="flex items-center text-slate-400 group-hover:text-slate-700 transition-colors shrink-0 pl-1">
+              <ChevronRight className="w-5 h-5 stroke-[2] group-hover:translate-x-0.5 transition-transform" />
+            </div>
+          </div>
+
+          {/* Real Metrics Text (Zero Emoji, No decorative icons, No harsh border) */}
+          <div className="flex items-center gap-2 text-xs text-slate-500 font-normal pt-2.5">
+            {soldText && (
+              <>
+                <span className="font-medium text-slate-700">{soldText}</span>
+                <span className="text-slate-300">•</span>
+              </>
             )}
+            <span>
+              {totalProducts > 0 ? `${totalProducts} Pilihan Menu` : 'Menu Lengkap'}
+            </span>
+          </div>
+
+          {/* Service Type Toggle (Makan di Sini vs Bawa Pulang - Zero Emoji) */}
+          <div className="grid grid-cols-2 gap-1 p-1 bg-slate-100 rounded-xl mt-3">
+            <button
+              type="button"
+              onClick={() => {
+                setOrderType('DINE_IN');
+                toast.success('Mode pesanan: Makan di Tempat');
+              }}
+              className={`py-1.5 px-3 rounded-lg text-xs font-semibold text-center transition-all cursor-pointer ${
+                orderType === 'DINE_IN'
+                  ? 'bg-catalog-primary text-white shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Makan di Sini
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setOrderType('TAKEAWAY');
+                toast.success('Mode pesanan: Bawa Pulang');
+              }}
+              className={`py-1.5 px-3 rounded-lg text-xs font-semibold text-center transition-all cursor-pointer ${
+                orderType === 'TAKEAWAY'
+                  ? 'bg-catalog-primary text-white shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Bawa Pulang
+            </button>
           </div>
         </div>
       </div>

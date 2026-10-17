@@ -684,9 +684,9 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
     }
   };
 
-  const handleCheckMidtransPayment = async (order: Order) => {
+  const handleCheckOnlinePayment = async (order: Order) => {
     setSyncingOrderId(order.id);
-    const toastId = toast.loading("Memeriksa status pembayaran di Midtrans...");
+    const toastId = toast.loading("Memeriksa status pembayaran online...");
     try {
       const res = await syncOrderPaymentStatus(order.id);
       toast.dismiss(toastId);
@@ -697,7 +697,7 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
           setSelectedOrder(prev => prev ? { ...prev, paymentStatus: 'PAID', status: res.status || 'NEW' } : null);
         }
       } else if (res.success && !res.isPaid) {
-        toast.info("Belum ada pembayaran lunas yang tercatat di Midtrans.");
+        toast.info("Belum ada pembayaran online yang lunas untuk pesanan ini.");
       } else {
         toast.error(res.error || "Gagal sinkronisasi pembayaran.");
       }
@@ -958,7 +958,6 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
                         {formatCurrency(Number(order.grandTotal))}
                       </span>
                     </div>
-
                     {/* Two Action Buttons: See Details & Primary Status Action */}
                     <div className="grid grid-cols-2 gap-2 mt-3">
                       <Button
@@ -1012,7 +1011,7 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
                           variant="outline"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleCheckMidtransPayment(order);
+                            handleCheckOnlinePayment(order);
                           }}
                           disabled={syncingOrderId === order.id}
                           className="w-full h-7 text-[11px] px-2 border-blue-200 hover:bg-blue-50 text-blue-700 dark:border-blue-900 dark:text-blue-300"
@@ -1022,7 +1021,7 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
                           ) : (
                             <RefreshCw className="w-3.5 h-3.5 mr-1" />
                           )}
-                          Cek Midtrans
+                          Cek Pembayaran Online
                         </Button>
                       </div>
                     )}
@@ -1215,7 +1214,7 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
         onStatusChange={handleStatusChange}
         onToggleItem={handleToggleItem}
         onPrintReceipt={handlePrintReceipt}
-        onCheckMidtrans={handleCheckMidtransPayment}
+        onCheckMidtrans={handleCheckOnlinePayment}
         isProcessing={isSubmittingPayment}
         updatingOrderId={updatingOrderId}
         syncingOrderId={syncingOrderId}
@@ -1237,7 +1236,7 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
                 <CheckCheck className="w-5 h-5" />
               </div>
               <div>
-                <DialogTitle className="text-base font-bold text-slate-900 dark:text-slate-100">
+                <DialogTitle className="text-base font-semibold text-slate-900 dark:text-slate-100">
                   Lanjutkan Semua Pesanan?
                 </DialogTitle>
                 <DialogDescription className="text-xs text-slate-500">
@@ -1250,17 +1249,17 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
           <div className="py-3 space-y-3">
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
               Apakah Anda yakin untuk menyelesaikan semua pesanan pada status{" "}
-              <strong className="text-slate-900 dark:text-slate-100 font-bold">
+              <span className="text-slate-900 dark:text-slate-100 font-semibold">
                 "{bulkModalState.currentStatusTitle}"
-              </strong>{" "}
+              </span>{" "}
               sebanyak{" "}
-              <strong className="text-emerald-600 font-bold">
+              <span className="text-emerald-600 font-semibold">
                 {bulkModalState.orders.length} pesanan
-              </strong>{" "}
+              </span>{" "}
               dan lanjut ke status tahap selanjutnya (
-              <strong className="text-blue-600 font-bold">
+              <span className="text-blue-600 font-semibold">
                 "{bulkModalState.nextStatusTitle}"
-              </strong>)?
+              </span>)?
             </p>
 
             {/* List of Affected Orders */}
@@ -1275,7 +1274,7 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
                     className="flex items-center justify-between p-1.5 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="font-sans text-[11px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
+                      <span className="font-sans text-[11px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
                         {o.orderNumber || "#-"}
                       </span>
                       <span className="text-slate-700 dark:text-slate-300 font-medium truncate max-w-[160px]">
@@ -1297,7 +1296,7 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
               variant="outline"
               onClick={() => setBulkModalState(prev => ({ ...prev, isOpen: false }))}
               disabled={isBulkUpdating}
-              className="border-slate-200 dark:border-slate-800 text-xs font-semibold cursor-pointer"
+              className="border-slate-200 dark:border-slate-800 text-xs font-medium rounded-xl h-9 px-3.5 cursor-pointer"
             >
               Batal
             </Button>
@@ -1305,7 +1304,7 @@ export function   KanbanBoard({ initialOrders, tenantId, cashierName = "Kasir", 
               type="button"
               onClick={handleConfirmBulkAdvance}
               disabled={isBulkUpdating}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-xl h-9 px-4 flex items-center gap-1.5 cursor-pointer shadow-xs"
             >
               {isBulkUpdating ? (
                 <>

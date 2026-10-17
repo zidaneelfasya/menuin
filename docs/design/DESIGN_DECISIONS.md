@@ -43,8 +43,28 @@ Sebelum implementasi ini, modul laporan pada MENUIN hanya menyajikan satu halama
   └── Keuangan & Arus Kas — /outlet/[outletKey]/reports/finance
   ```
 
+### 2.5 Standardisasi Layout Top KPI Cards & Minimalist Header Typography
+* **Keputusan:** Menyelaraskan tata letak 4 kartu KPI teratas di seluruh suite laporan (Sales, Operations):
+  - **Icon:** Dipindahkan ke pojok kanan atas dalam kontainer lingkaran (`w-10 h-10 rounded-full flex items-center justify-center`).
+  - **Judul Metrik:** Diposisikan di pojok kiri atas (`text-[11px] font-semibold uppercase tracking-wider`).
+  - **Nilai & Subteks:** Berada di pojok kiri bawah (`text-xl sm:text-2xl font-semibold` dengan currency compact `formatKpiCurrency`).
+  - **Visual Sparkline:** Berada di pojok kanan bawah (**`MiniSparkline`** SVG Catmull-Rom spline dengan `IntersectionObserver`). Pada Hero Blue Card menggunakan `color="#ffffff"`.
+  - **Pemberantasan AI Slop & Badge Clutter:** Menghapus seluruh pill badge di pojok kanan atas kartu KPI dan mengganti label `Puncak: [Hari]` pada grafik dengan teks datar clean format **`[Hari] : [Nominal]`**.
+
+### 2.6 Layout Asimetris KPI Finansial (Net Flow Hero, Inflow, Outflow)
+* **Keputusan:** Pada modul Laporan Keuangan & Arus Kas (`/reports/finance`), kartu KPI teratas direstrukturisasi dari grid simetris 4 kartu menjadi **Grid Asimetris 3 Kartu (50% : 25% : 25%)**:
+  1. **Net Flow Hero Blue Card (`lg:col-span-2`):** Fokus pada likuiditas kas riil bisnis (`Arus Kas Bersih`). Dilengkapi nominal besar, baseline status surplus/defisit, kurva trendline SVG putih (`MiniSparkline`), dan tombol aksi cepat operasional (*+ Catat Biaya*, *Ekspor Excel*, *Cetak*).
+  2. **Inflow Card (`lg:col-span-1`):** Fokus pada realisasi kas masuk dengan pemisahan sub-metrik ganda (*Dual-Split Sub-Metrics*) antara penerimaan fisik *Kasir Tunai* vs saldo digital *QRIS & Bank*.
+  3. **Outflow Card (`lg:col-span-1`):** Fokus pada beban pengeluaran dengan bilah distribusi proporsional (*Segmented Progress Bar*) kas kecil laci kasir vs transfer rekening bank.
+
+### 2.7 Penghapusan Gradasi & Penyelarasan Solid Menuin Blue pada Hero Card Keuangan
+* **Keputusan:** Menghapus gradasi multi-stop (`bg-gradient-to-br from-[#0e59f9] via-[#0b4de0] to-[#083cb8]`) pada kartu Net Flow di modul Keuangan & Arus Kas, dan menggantinya dengan warna solid **Menuin Royal Blue (`bg-[#0e59f9] border-[#0e59f9]`)** selaras dengan modul Ringkasan, Laporan Penjualan, dan Laporan Operasional.
+* **Standardisasi Icon & Visual:** Mengganti icon squircle transparan dengan lingkaran putih bersih (`w-10 h-10 rounded-full bg-white text-[#0e59f9]`) dan merapikan micro-badge serta tombol aksi cepat.
+* **Source of Truth Terpadu:** Seluruh pedoman visual UI suite laporan terdokumentasi di [`REPORT_ANALYTICS_UI_SOURCE_OF_TRUTH.md`](./REPORT_ANALYTICS_UI_SOURCE_OF_TRUTH.md).
+
 ---
 
 ## 3. Ekspor Data & Auditability
 * Mendukung ekspor menyeluruh ke spreadsheet Excel (`.xlsx`) multi-sheet (Ringkasan, Harian, Metode Pembayaran, Pengeluaran, dan Rekonsiliasi Shift Kasir).
 * Mendukung cetak langsung / cetak PDF (`window.print()`) dengan layout dokumen resmi bersih tanpa elemen kontrol UI.
+
