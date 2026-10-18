@@ -15,7 +15,7 @@ import { getActiveShift } from '@/lib/actions/shifts';
 import { requireFeature } from '@/lib/actions/auth-context';
 import { getPosQrisAvailability } from '@/lib/actions/pos-qris';
 
-async function POSDataWrapper() {
+async function POSDataWrapper({ outletKey }: { outletKey: string }) {
   await requireFeature('POS');
   const [productsResult, categoriesResult, tenantSettings, modifiersResult, activeShiftResult, qrisDynamicEnabled] = await Promise.all([
     getProducts(),
@@ -23,7 +23,7 @@ async function POSDataWrapper() {
     getTenantCatalogSettings(),
     getModifierGroups(),
     getActiveShift(),
-    getPosQrisAvailability(),
+    getPosQrisAvailability(outletKey),
   ]);
 
   const products = productsResult.success && productsResult.data ? productsResult.data : [];
@@ -34,10 +34,11 @@ async function POSDataWrapper() {
   return <POSPage initialProducts={products} initialCategories={categories} posSettings={{ ...tenantSettings, qrisDynamicEnabled }} modifierGroups={modifierGroups} activeShift={activeShift} />;
 }
 
-export default function Page() {
+export default async function Page({ params }: { params: Promise<{ outletKey: string }> }) {
+  const { outletKey } = await params;
   return (
     <Suspense fallback={<POSSkeleton />}>
-      <POSDataWrapper />
+      <POSDataWrapper outletKey={outletKey} />
     </Suspense>
   );
 }

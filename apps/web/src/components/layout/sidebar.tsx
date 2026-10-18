@@ -11,6 +11,7 @@ import {
 	IconChevronRight,
 	IconLogout,
 	IconArrowsExchange,
+	IconShield,
 } from "@tabler/icons-react";
 import {
 	LayoutDashboard,
@@ -27,6 +28,7 @@ import {
 	ChefHat,
 	SlidersHorizontal,
 	Smartphone,
+	ShieldCheck,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
@@ -114,6 +116,12 @@ const getNavItems = (outletKey: string) => [
 		name: "Perangkat Kasir",
 		href: `/outlet/${outletKey}/devices`,
 		icon: Smartphone,
+		roles: ["OWNER", "MANAGER"],
+	},
+	{
+		name: "Verifikasi Bisnis",
+		href: `/outlet/${outletKey}/verification`,
+		icon: ShieldCheck,
 		roles: ["OWNER", "MANAGER"],
 	},
 	{
@@ -348,6 +356,18 @@ function SidebarContent({
 							collapsed && "flex-col mt-1",
 						)}
 					>
+						{(user.systemRole === 'SYSTEM_ADMIN' || user.systemRole === 'SUPERADMIN' || user.systemRole === 'VERIFICATION_ADMIN') && (
+							<button
+								type="button"
+								onClick={() => navigateWithTransition("/system-admin")}
+								className={cn(
+									"text-white/80 hover:text-white hover:bg-white/15 transition-colors h-8 w-8 flex items-center justify-center rounded-lg cursor-pointer",
+								)}
+								title="Konsol System Admin"
+							>
+								<IconShield size={collapsed ? 16 : 18} />
+							</button>
+						)}
 						<button
 							type="button"
 							onClick={() => navigateWithTransition("/select-tenant")}

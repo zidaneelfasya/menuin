@@ -50,7 +50,6 @@ export function PricingCards() {
               }`}
             >
               {c.label}
-              {c.id === "annual" && ` (hemat ${ANNUAL_FREE_MONTHS} bulan)`}
             </button>
           ))}
         </div>
