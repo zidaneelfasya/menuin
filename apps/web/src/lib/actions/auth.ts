@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { db } from '@/lib/db';
-import { memberships, tenants, accounts } from '@/lib/db/schema';
+import { memberships, tenants, accounts, subscriptions } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { getCurrentContext } from './auth-context';
 import { v4 as uuidv4 } from 'uuid';
@@ -29,6 +29,7 @@ export type UserProfile = {
   email: string;
   name: string;
   role: UserRole;
+  systemRole?: string | null;
   tenantId: string | null;
   outletKey: string | null;
   restaurantName: string | null;
@@ -88,6 +89,7 @@ export async function getCurrentUser(): Promise<UserProfile | null> {
     email: context.account.email,
     name: context.account.name,
     role: context.membership.role,
+    systemRole: context.account.systemRole || null,
     tenantId: context.tenant.id,
     outletKey: context.tenant.outletKey,
     restaurantName: context.tenant.name,
@@ -164,6 +166,17 @@ export async function signUpAction(formData: FormData) {
       displayName: name,
       role: 'OWNER',
       status: 'ACTIVE',
+    });
+
+    // 5. Automatically activate 14-day Free Trial (Lengkap / PRO tier)
+    const now = new Date();
+    const trialEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+    await db.insert(subscriptions).values({
+      tenantId: newTenant.id,
+      plan: 'PRO',
+      status: 'TRIALING',
+      currentPeriodStart: now,
+      currentPeriodEnd: trialEnd,
     });
 
     return { success: true };
