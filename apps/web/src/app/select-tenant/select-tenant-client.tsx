@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { IconPlus, IconArrowRight, IconLogout } from '@tabler/icons-react';
+import { IconPlus, IconArrowRight, IconLogout, IconShieldCheck } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
 import { signOutAction } from '@/lib/actions/auth';
 import { selectTenantAction } from '@/lib/actions/tenant';
@@ -28,9 +28,10 @@ export interface AccountInfo {
 interface SelectTenantClientProps {
   account: AccountInfo | null;
   tenants: TenantItem[];
+  isAdmin?: boolean;
 }
 
-export function SelectTenantClient({ account, tenants }: SelectTenantClientProps) {
+export function SelectTenantClient({ account, tenants, isAdmin }: SelectTenantClientProps) {
   const { navigateWithTransition } = usePageTransition();
 
   const getRoleBadge = (role: string) => {
@@ -109,11 +110,23 @@ export function SelectTenantClient({ account, tenants }: SelectTenantClientProps
             />
           </button>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {account && (
               <span className="text-xs text-slate-500 dark:text-slate-400 hidden sm:inline font-medium">
                 {account.email}
               </span>
+            )}
+            {isAdmin && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => navigateWithTransition('/system-admin')}
+                className="text-xs font-semibold text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/40 gap-1.5 h-8 px-2.5 rounded-lg cursor-pointer"
+              >
+                <IconShieldCheck className="w-3.5 h-3.5" />
+                <span>Admin Console</span>
+              </Button>
             )}
             <form action={signOutAction}>
               <Button
@@ -209,6 +222,41 @@ export function SelectTenantClient({ account, tenants }: SelectTenantClientProps
                 </div>
               );
             })}
+
+            {/* System Admin Console Card (Rendered for Platform Admins) */}
+            {isAdmin && (
+              <div className="h-full">
+                <button
+                  type="button"
+                  onClick={() => navigateWithTransition('/system-admin')}
+                  className="w-full h-full min-h-[230px] text-left bg-gradient-to-br from-blue-50/80 via-white to-blue-50/50 dark:from-blue-950/40 dark:via-slate-900/40 dark:to-blue-950/60 backdrop-blur-xs border-2 border-blue-500/30 dark:border-blue-500/30 hover:border-blue-500/80 dark:hover:border-blue-500/70 rounded-2xl p-6 sm:p-7 hover:shadow-[0_12px_36px_rgba(37,99,235,0.15)] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group cursor-pointer relative overflow-hidden"
+                >
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-500" />
+                  <div className="space-y-4 w-full">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="w-16 h-16 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-600/30 group-hover:scale-105 transition-transform duration-300 shrink-0">
+                        <IconShieldCheck className="w-8 h-8" />
+                      </div>
+                      <span className="text-xs font-semibold px-3 py-1 rounded-full border bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/25">
+                        Platform Admin
+                      </span>
+                    </div>
+                    <div className="space-y-1">
+                      <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        Konsol System Admin
+                      </h2>
+                      <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                        Antrean verifikasi bisnis KYC, manajemen tenant, dan statistik platform.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="pt-5 mt-5 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-between text-xs sm:text-sm w-full text-blue-600 dark:text-blue-400 font-semibold">
+                    <span>Buka Konsol Admin</span>
+                    <IconArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
+                  </div>
+                </button>
+              </div>
+            )}
 
             {/* Large Add New Outlet Card */}
             <button
