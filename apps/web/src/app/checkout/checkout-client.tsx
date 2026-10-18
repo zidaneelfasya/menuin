@@ -10,7 +10,7 @@ export function BackButton() {
   return (
     <button
       onClick={() => router.back()}
-      className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-[#2563EB] mb-8 group transition-colors"
+      className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-[#0E59F9] mb-8 group transition-colors"
     >
       <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
       Kembali
@@ -47,7 +47,7 @@ export function PayButton({ planCode }: { planCode: string }) {
       <button
         onClick={handlePayment}
         disabled={isLoading}
-        className="w-full h-12 bg-[#2563EB] hover:bg-[#1D4ED8] disabled:bg-blue-300 text-white rounded-lg font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2 active:scale-[0.98] shadow-md shadow-blue-500/10"
+        className="w-full h-11 bg-[#0E59F9] hover:bg-[#0c4ad4] disabled:bg-blue-300 text-white rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 active:scale-[0.98] shadow-sm"
       >
         <CreditCard className="h-4 w-4" />
         {isLoading ? "Membuka Pembayaran..." : "Bayar Sekarang"}

@@ -163,16 +163,16 @@ export function SettingsSidebar({ outletKey, userRole }: SettingsSidebarProps) {
                     type="button"
                     onClick={() => handleNavigate(item)}
                     className={cn(
-                      "flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs md:text-sm font-medium transition-all duration-150 whitespace-nowrap cursor-pointer text-left w-full",
+                      "flex items-center gap-2.5 rounded-full px-3.5 py-2 text-xs md:text-sm font-medium transition-all duration-150 whitespace-nowrap cursor-pointer text-left w-full",
                       isActive
-                        ? "bg-[#0e59f9]/10 text-[#0e59f9] font-semibold shadow-xs"
+                        ? "bg-[#0e59f9] text-white font-semibold shadow-sm"
                         : "text-gray-600 hover:bg-gray-100/70 hover:text-gray-900"
                     )}
                   >
                     <item.icon
                       className={cn(
                         "h-4 w-4 flex-shrink-0",
-                        isActive ? "text-[#0e59f9]" : "text-gray-500"
+                        isActive ? "text-white" : "text-gray-500"
                       )}
                     />
                     <span className="truncate">{item.label}</span>

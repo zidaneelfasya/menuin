@@ -1,15 +1,22 @@
 import { pgTable, text, timestamp, integer, decimal, boolean, uuid, uniqueIndex, unique, foreignKey, pgEnum, jsonb, pgSchema, index, check } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
-
 // Supabase Auth Schema Reference
-export const authSchema = pgSchema('auth');
-export const authUsers = authSchema.table('users', {
-  id: uuid('id').primaryKey(),
+export const authSchema = pgSchema("auth");
+export const authUsers = authSchema.table("users", {
+	id: uuid("id").primaryKey(),
 });
 
 export const subscriptionTierEnum = pgEnum('subscription_tier', ['FREE', 'BASIC', 'PRO']);
 export const subscriptionStatusEnum = pgEnum('subscription_status', ['TRIALING', 'ACTIVE', 'PAST_DUE', 'CANCELED', 'EXPIRED']);
-export const roleEnum = pgEnum('tenant_role', ['OWNER', 'MANAGER', 'CASHIER', 'STAFF']);
+export const roleEnum = pgEnum('tenant_role', [
+  'OWNER',
+  'MANAGER',
+  'CASHIER',
+  'STAFF',
+  'SYSTEM_ADMIN',
+  'VERIFICATION_ADMIN',
+  'SUPERADMIN',
+]);
 export const invitationStatusEnum = pgEnum('invitation_status', ['PENDING', 'ACCEPTED', 'EXPIRED', 'REVOKED']);
 
 export const accounts = pgTable('accounts', {
@@ -17,14 +24,63 @@ export const accounts = pgTable('accounts', {
   authUserId: uuid('auth_user_id').references(() => authUsers.id, { onDelete: 'cascade' }).unique().notNull(), // Supabase auth.users.id
   email: text('email').notNull(),
   name: text('name').notNull(),
+  systemRole: text('system_role').notNull().default('USER'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index('accounts_system_role_idx').on(table.systemRole),
+]);
+
+
+
+export const businessProfiles = pgTable('business_profiles', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  accountId: uuid('account_id').references(() => accounts.id, { onDelete: 'cascade' }).notNull(),
+  name: text('name').notNull(),
+  entityType: text('entity_type').notNull(), // 'INDIVIDUAL' | 'PT' | 'CV' | 'YAYASAN' | 'KOPERASI'
+  taxId: text('tax_id'),
+  businessLicenseNumber: text('business_license_number'),
+  responsiblePersonName: text('responsible_person_name').notNull(),
+  responsiblePersonNik: text('responsible_person_nik').notNull(),
+  responsiblePersonContact: text('responsible_person_contact').notNull(),
+  responsiblePersonPosition: text('responsible_person_position'),
+  responsiblePersonEmail: text('responsible_person_email'),
+  responsiblePersonNationality: text('responsible_person_nationality'),
+  bankName: text('bank_name'),
+  bankAccountNumber: text('bank_account_number'),
+  bankAccountHolder: text('bank_account_holder'),
+  verificationStatus: text('verification_status').default('not_started').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
-
+export const settlementAccounts = pgTable('settlement_accounts', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  businessProfileId: uuid('business_profile_id')
+    .references(() => businessProfiles.id, { onDelete: 'cascade' })
+    .notNull(),
+  bankName: text('bank_name').notNull(),
+  bankAccountNumber: text('bank_account_number').notNull(),
+  bankAccountNumberMasked: text('bank_account_number_masked').notNull(),
+  bankAccountHolder: text('bank_account_holder').notNull(),
+  proofDocumentKey: text('proof_document_key'),
+  verificationMethod: text('verification_method').default('MANUAL_REVIEW').notNull(), // 'API_INQUIRY' | 'MANUAL_REVIEW' | 'HYBRID'
+  verificationStatus: text('verification_status').default('pending').notNull(), // 'pending' | 'verified' | 'action_required' | 'rejected'
+  nameMatchScore: integer('name_match_score'),
+  verificationNotes: text('verification_notes'),
+  isDefault: boolean('is_default').default(false).notNull(),
+  dokuBeneficiaryId: text('doku_beneficiary_id'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index('settlement_accounts_profile_idx').on(table.businessProfileId),
+  index('settlement_accounts_status_idx').on(table.verificationStatus),
+]);
 
 export const tenants = pgTable('tenants', {
   id: uuid('id').primaryKey().defaultRandom(),
+  businessProfileId: uuid('business_profile_id').references(() => businessProfiles.id, { onDelete: 'set null' }),
+  settlementAccountId: uuid('settlement_account_id').references(() => settlementAccounts.id, { onDelete: 'set null' }),
   name: text('name').notNull(),
   outletKey: text('outlet_key').unique().notNull(),
   slug: text('slug').unique(),
@@ -38,7 +94,15 @@ export const tenants = pgTable('tenants', {
   // Storefront & Outlet Information (Gojek-style rich storefront)
   openHours: text('open_hours'),
   address: text('address'),
+  province: text('province'),
   city: text('city'),
+  district: text('district'),
+  postalCode: text('postal_code'),
+  latitude: decimal('latitude', { precision: 10, scale: 8 }),
+  longitude: decimal('longitude', { precision: 11, scale: 8 }),
+  storefrontPhotoUrl: text('storefront_photo_url'),
+  indoorPhotoUrl: text('indoor_photo_url'),
+  outletComplianceStatus: text('outlet_compliance_status').default('incomplete').notNull(),
   mapsUrl: text('maps_url'),
   cuisineType: text('cuisine_type'),
   wifiSsid: text('wifi_ssid'),
@@ -724,5 +788,184 @@ export const categoryBudgets = pgTable('category_budgets', {
   ),
 ]);
 
+// ============================================================================
+// BUSINESS VERIFICATION & COMPLIANCE TABLES
+// ============================================================================
 
+export const verificationSubmissions = pgTable('verification_submissions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  businessProfileId: uuid('business_profile_id').references(() => businessProfiles.id, { onDelete: 'cascade' }).notNull(),
+  tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'set null' }),
+  submissionScope: text('submission_scope').notNull(), // 'BUSINESS_PROFILE' | 'OUTLET'
+  attemptNumber: integer('attempt_number').default(1).notNull(),
+  status: text('status').notNull(),
+  submissionSnapshot: jsonb('submission_snapshot').notNull(),
+  submittedAt: timestamp('submitted_at', { withTimezone: true }).defaultNow().notNull(),
+  reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+  reviewedBy: uuid('reviewed_by').references(() => accounts.id, { onDelete: 'set null' }),
+  decisionReason: text('decision_reason'),
+  internalNotes: text('internal_notes'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index('verification_submissions_profile_idx').on(table.businessProfileId, table.status),
+  index('verification_submissions_tenant_idx').on(table.tenantId),
+]);
+
+export const verificationDocuments = pgTable('verification_documents', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  submissionId: uuid('submission_id').references(() => verificationSubmissions.id, { onDelete: 'cascade' }).notNull(),
+  tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'set null' }),
+  documentScope: text('document_scope').notNull(), // 'BUSINESS_PROFILE' | 'OUTLET'
+  documentType: text('document_type').notNull(), // KTP, NPWP, NIB, AKTA, BUKU_TABUNGAN, FOTO_TAMPAK_DEPAN, etc.
+  storageKey: text('storage_key').notNull(),
+  fileName: text('file_name').notNull(),
+  fileSizeBytes: integer('file_size_bytes').notNull(),
+  mimeType: text('mime_type').notNull(),
+  reviewStatus: text('review_status').default('PENDING').notNull(), // PENDING, ACCEPTED, REJECTED
+  reviewNote: text('review_note'),
+  uploadedAt: timestamp('uploaded_at', { withTimezone: true }).defaultNow().notNull(),
+  reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+}, (table) => [
+  index('verification_documents_submission_idx').on(table.submissionId, table.reviewStatus),
+  index('verification_documents_tenant_idx').on(table.tenantId),
+]);
+
+export const providerOnboardings = pgTable('provider_onboardings', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  businessProfileId: uuid('business_profile_id').references(() => businessProfiles.id, { onDelete: 'cascade' }).notNull(),
+  tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  provider: text('provider').default('DOKU').notNull(),
+  providerReference: text('provider_reference'), // SAC-xxxx
+  providerStatus: text('provider_status').default('NOT_PROVISIONED').notNull(),
+  idempotencyKey: text('idempotency_key'),
+  lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),
+  lastErrorCode: text('last_error_code'),
+  lastErrorMessage: text('last_error_message'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex('provider_onboardings_provider_tenant_idx').on(table.provider, table.tenantId),
+  index('provider_onboardings_profile_idx').on(table.businessProfileId),
+]);
+
+export const verificationAuditLogs = pgTable('verification_audit_logs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  submissionId: uuid('submission_id').references(() => verificationSubmissions.id, { onDelete: 'cascade' }),
+  businessProfileId: uuid('business_profile_id').references(() => businessProfiles.id, { onDelete: 'cascade' }).notNull(),
+  tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'set null' }),
+  actorId: uuid('actor_id').references(() => accounts.id, { onDelete: 'set null' }),
+  actorRole: text('actor_role').notNull(),
+  action: text('action').notNull(),
+  previousStatus: text('previous_status'),
+  newStatus: text('new_status'),
+  reason: text('reason'),
+  ipAddress: text('ip_address'),
+  metadata: jsonb('metadata'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index('verification_audit_logs_profile_idx').on(table.businessProfileId, table.createdAt),
+  index('verification_audit_logs_tenant_idx').on(table.tenantId),
+]);
+
+export const verificationDrafts = pgTable('verification_drafts', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).unique().notNull(),
+  accountId: uuid('account_id').references(() => accounts.id, { onDelete: 'cascade' }).notNull(),
+  currentStep: integer('current_step').default(1).notNull(),
+  payload: jsonb('payload').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index('verification_drafts_tenant_idx').on(table.tenantId),
+  index('verification_drafts_account_idx').on(table.accountId),
+]);
+
+export const verificationSectionReviews = pgTable('verification_section_reviews', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  submissionId: uuid('submission_id').references(() => verificationSubmissions.id, { onDelete: 'cascade' }).notNull(),
+  section: text('section').notNull(), // 'BUSINESS_PROFILE' | 'REPRESENTATIVE' | 'SETTLEMENT' | 'OUTLET'
+  status: text('status').notNull(), // 'PENDING' | 'APPROVED' | 'CHANGES_REQUESTED' | 'INHERITED'
+  note: text('note'),
+  flaggedFields: jsonb('flagged_fields').$type<string[]>(),
+  reviewedBy: uuid('reviewed_by').references(() => accounts.id, { onDelete: 'set null' }),
+  reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index('verification_section_reviews_sub_idx').on(table.submissionId),
+]);
+
+// ============================================================================
+// VERIFICATION RELATIONS
+// ============================================================================
+
+export const businessProfilesRelations = relations(businessProfiles, ({ one, many }) => ({
+  account: one(accounts, {
+    fields: [businessProfiles.accountId],
+    references: [accounts.id],
+  }),
+  settlementAccounts: many(settlementAccounts),
+  tenants: many(tenants),
+  submissions: many(verificationSubmissions),
+  providerOnboardings: many(providerOnboardings),
+  auditLogs: many(verificationAuditLogs),
+}));
+
+export const settlementAccountsRelations = relations(settlementAccounts, ({ one, many }) => ({
+  businessProfile: one(businessProfiles, {
+    fields: [settlementAccounts.businessProfileId],
+    references: [businessProfiles.id],
+  }),
+  tenants: many(tenants),
+}));
+
+export const verificationSubmissionsRelations = relations(verificationSubmissions, ({ one, many }) => ({
+  businessProfile: one(businessProfiles, {
+    fields: [verificationSubmissions.businessProfileId],
+    references: [businessProfiles.id],
+  }),
+  tenant: one(tenants, {
+    fields: [verificationSubmissions.tenantId],
+    references: [tenants.id],
+  }),
+  reviewer: one(accounts, {
+    fields: [verificationSubmissions.reviewedBy],
+    references: [accounts.id],
+  }),
+  documents: many(verificationDocuments),
+  sectionReviews: many(verificationSectionReviews),
+}));
+
+export const verificationDocumentsRelations = relations(verificationDocuments, ({ one }) => ({
+  submission: one(verificationSubmissions, {
+    fields: [verificationDocuments.submissionId],
+    references: [verificationSubmissions.id],
+  }),
+  tenant: one(tenants, {
+    fields: [verificationDocuments.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
+export const verificationDraftsRelations = relations(verificationDrafts, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [verificationDrafts.tenantId],
+    references: [tenants.id],
+  }),
+  account: one(accounts, {
+    fields: [verificationDrafts.accountId],
+    references: [accounts.id],
+  }),
+}));
+
+export const verificationSectionReviewsRelations = relations(verificationSectionReviews, ({ one }) => ({
+  submission: one(verificationSubmissions, {
+    fields: [verificationSectionReviews.submissionId],
+    references: [verificationSubmissions.id],
+  }),
+  reviewer: one(accounts, {
+    fields: [verificationSectionReviews.reviewedBy],
+    references: [accounts.id],
+  }),
+}));
 

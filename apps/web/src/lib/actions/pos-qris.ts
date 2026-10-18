@@ -168,16 +168,45 @@ export async function cancelPosQris(transactionId: string) {
 }
 
 /** Apakah opsi "QRIS Dinamis" boleh ditampilkan di POS outlet ini. */
-export async function getPosQrisAvailability(): Promise<boolean> {
+export async function getPosQrisAvailability(outletKey?: string): Promise<boolean> {
   try {
-    const user = await requirePosUser();
-    if (!user) return false;
-    const [tenant] = await db
-      .select({ dokuQrisMerchantId: tenants.dokuQrisMerchantId, dokuQrisTerminalId: tenants.dokuQrisTerminalId })
-      .from(tenants)
-      .where(eq(tenants.id, user.tenantId))
-      .limit(1);
-    return tenant ? isPosQrisAvailable(tenant) : false;
+    let tenant: {
+      dokuQrisMerchantId: string | null;
+      dokuQrisTerminalId: string | null;
+      onlinePaymentEnabled: boolean;
+    } | null = null;
+
+    if (outletKey) {
+      const [t] = await db
+        .select({
+          dokuQrisMerchantId: tenants.dokuQrisMerchantId,
+          dokuQrisTerminalId: tenants.dokuQrisTerminalId,
+          onlinePaymentEnabled: tenants.onlinePaymentEnabled,
+        })
+        .from(tenants)
+        .where(eq(tenants.outletKey, outletKey))
+        .limit(1);
+      tenant = t || null;
+    }
+
+    if (!tenant) {
+      const user = await requirePosUser();
+      if (!user) return false;
+      const [t] = await db
+        .select({
+          dokuQrisMerchantId: tenants.dokuQrisMerchantId,
+          dokuQrisTerminalId: tenants.dokuQrisTerminalId,
+          onlinePaymentEnabled: tenants.onlinePaymentEnabled,
+        })
+        .from(tenants)
+        .where(eq(tenants.id, user.tenantId))
+        .limit(1);
+      tenant = t || null;
+    }
+
+    if (!tenant) return false;
+    if (tenant.onlinePaymentEnabled === false) return false;
+    return isPosQrisAvailable(tenant);
   } catch {
     return false;
   }

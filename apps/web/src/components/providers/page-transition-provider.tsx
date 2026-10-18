@@ -84,6 +84,7 @@ export function PageTransitionProvider({ children }: { children: ReactNode }) {
                 src="/menuin-putih.png" 
                 alt="Loading..." 
                 fill 
+                sizes="(max-width: 768px) 192px, 256px"
                 className="object-contain opacity-20" 
                 priority
               />
@@ -104,6 +105,7 @@ export function PageTransitionProvider({ children }: { children: ReactNode }) {
                   src="/menuin-putih.png" 
                   alt="Loading Full..." 
                   fill 
+                  sizes="(max-width: 768px) 192px, 256px"
                   className="object-contain" 
                   priority
                 />

@@ -8,6 +8,18 @@ describe('getBillingPlan', () => {
   it('returns server-side plans by code', () => {
     expect(getBillingPlan('starter')).toBe(BILLING_PLANS.starter);
     expect(getBillingPlan('business')?.plan).toBe('PRO');
+    expect(getBillingPlan('kasir_monthly')?.amount).toBe(49_900);
+    expect(getBillingPlan('kasir_annual')?.amount).toBe(499_000);
+    expect(getBillingPlan('kasir_annual')?.periodDays).toBe(365);
+    expect(getBillingPlan('kasir_plus_monthly')?.amount).toBe(74_900);
+    expect(getBillingPlan('lengkap_monthly')?.amount).toBe(149_000);
+    expect(getBillingPlan('lengkap_annual')?.amount).toBe(1_490_000);
+  });
+
+  it('resolves aliases from landing page', () => {
+    expect(getBillingPlan('kasir')).toBe(BILLING_PLANS.kasir_monthly);
+    expect(getBillingPlan('kasir-plus')).toBe(BILLING_PLANS.kasir_plus_monthly);
+    expect(getBillingPlan('lengkap')).toBe(BILLING_PLANS.lengkap_monthly);
   });
 
   it.each([null, undefined, '', 'enterprise', 'STARTER', '__proto__'])('rejects unknown code %s', (code) => {
