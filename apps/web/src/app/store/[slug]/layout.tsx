@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { tenants, transactionItems, products } from "@/lib/db/schema";
+import { tenants, transactionItems, products, promotions } from "@/lib/db/schema";
 import { eq, sql, and, or } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { ReactNode } from "react";
@@ -50,8 +50,9 @@ export default async function StoreLayout({
 
   const primaryColor = tenant.primaryColor || "#f43f5e"; // Default to a nice rose red for food apps
 
-  // Query total products sold and total product count for this outlet
-  const [totalSalesResult, totalProductsResult] = await Promise.all([
+  // Query total products sold, total product count, and active promotions
+  const now = new Date();
+  const [totalSalesResult, totalProductsResult, allTenantPromos] = await Promise.all([
     db
       .select({
         totalSold: sql<number>`COALESCE(SUM(${transactionItems.quantity}), 0)::int`,
@@ -70,7 +71,18 @@ export default async function StoreLayout({
           eq(products.isAvailableOnline, true)
         )
       ),
+    db
+      .select()
+      .from(promotions)
+      .where(and(eq(promotions.tenantId, tenant.id), eq(promotions.isActive, true)))
+      .orderBy(promotions.name),
   ]);
+
+  const activePromos = allTenantPromos.filter((p) => {
+    if (p.startDate && new Date(p.startDate) > now) return false;
+    if (p.endDate && new Date(p.endDate) < now) return false;
+    return true;
+  });
 
   const totalSold = Number(totalSalesResult[0]?.totalSold || 0);
   const totalProducts = Number(totalProductsResult[0]?.count || 0);
@@ -127,6 +139,7 @@ export default async function StoreLayout({
           homeLink,
           totalSold,
           totalProducts,
+          activePromotions: activePromos,
         }}
       >
         {children}

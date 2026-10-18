@@ -57,8 +57,14 @@ Sebelum implementasi ini, modul laporan pada MENUIN hanya menyajikan satu halama
   2. **Inflow Card (`lg:col-span-1`):** Fokus pada realisasi kas masuk dengan pemisahan sub-metrik ganda (*Dual-Split Sub-Metrics*) antara penerimaan fisik *Kasir Tunai* vs saldo digital *QRIS & Bank*.
   3. **Outflow Card (`lg:col-span-1`):** Fokus pada beban pengeluaran dengan bilah distribusi proporsional (*Segmented Progress Bar*) kas kecil laci kasir vs transfer rekening bank.
 
+### 2.7 Penghapusan Gradasi & Penyelarasan Solid Menuin Blue pada Hero Card Keuangan
+* **Keputusan:** Menghapus gradasi multi-stop (`bg-gradient-to-br from-[#0e59f9] via-[#0b4de0] to-[#083cb8]`) pada kartu Net Flow di modul Keuangan & Arus Kas, dan menggantinya dengan warna solid **Menuin Royal Blue (`bg-[#0e59f9] border-[#0e59f9]`)** selaras dengan modul Ringkasan, Laporan Penjualan, dan Laporan Operasional.
+* **Standardisasi Icon & Visual:** Mengganti icon squircle transparan dengan lingkaran putih bersih (`w-10 h-10 rounded-full bg-white text-[#0e59f9]`) dan merapikan micro-badge serta tombol aksi cepat.
+* **Source of Truth Terpadu:** Seluruh pedoman visual UI suite laporan terdokumentasi di [`REPORT_ANALYTICS_UI_SOURCE_OF_TRUTH.md`](./REPORT_ANALYTICS_UI_SOURCE_OF_TRUTH.md).
+
 ---
 
 ## 3. Ekspor Data & Auditability
 * Mendukung ekspor menyeluruh ke spreadsheet Excel (`.xlsx`) multi-sheet (Ringkasan, Harian, Metode Pembayaran, Pengeluaran, dan Rekonsiliasi Shift Kasir).
 * Mendukung cetak langsung / cetak PDF (`window.print()`) dengan layout dokumen resmi bersih tanpa elemen kontrol UI.
+

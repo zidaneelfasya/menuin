@@ -2,7 +2,7 @@ import { cookies, headers } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { db } from '@/lib/db';
 import { accounts, memberships, tenants, subscriptions } from '@/lib/db/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, inArray } from 'drizzle-orm';
 import { UserRole } from './auth';
 
 export type FeatureKey = 'POS' | 'INVENTORY' | 'CATALOG' | 'REPORTS' | 'FINANCE' | 'TEAM';
@@ -89,25 +89,31 @@ export async function getMembership(accountId: string, tenantId: string) {
 }
 
 export async function getSubscription(tenantId: string) {
-  // We guarantee only 1 active subscription exists due to unique conditional index
+  // We guarantee only 1 active subscription exists due to unique conditional index,
+  // but we also support TRIALING status.
   const [subscription] = await db.select()
     .from(subscriptions)
     .where(
       and(
         eq(subscriptions.tenantId, tenantId),
-        eq(subscriptions.status, 'ACTIVE')
+        inArray(subscriptions.status, ['ACTIVE', 'TRIALING'])
       )
     )
+    .orderBy(desc(subscriptions.createdAt))
     .limit(1);
 
   return subscription || null;
 }
 
-export function getEntitlements(subscription: any) {
+export function getEntitlements(subscription: any, now: Date = new Date()) {
   let features: FeatureKey[] = [];
   let isLocked = true;
 
-  if (subscription && subscription.status === 'ACTIVE') {
+  // Langganan berbayar / trial berakhir di currentPeriodEnd. Null = tanpa batas (mis. diberikan admin).
+  const periodEnd = subscription?.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : null;
+  const withinPeriod = !periodEnd || periodEnd.getTime() > now.getTime();
+
+  if (subscription && (subscription.status === 'ACTIVE' || subscription.status === 'TRIALING') && withinPeriod) {
     isLocked = false;
     if (subscription.plan === 'FREE' || subscription.plan === 'BASIC') {
       features = ['POS', 'CATALOG', 'INVENTORY'];
@@ -127,6 +133,7 @@ export type AuthContext = {
     authUserId: string;
     email: string;
     name: string;
+    systemRole: string;
   };
   tenant: {
     id: string;
@@ -171,6 +178,7 @@ export async function getCurrentContext(): Promise<AuthContext | null> {
         authUserId: account.authUserId,
         email: account.email,
         name: account.name,
+        systemRole: account.systemRole,
       },
       tenant: {
         id: tenant.id,

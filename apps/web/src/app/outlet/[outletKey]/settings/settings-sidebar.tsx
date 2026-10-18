@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { 
   IconBuildingStore, 
@@ -10,7 +10,8 @@ import {
   IconPrinter, 
   IconReceipt, 
   IconMoped, 
-  IconCreditCard
+  IconCreditCard,
+  IconReceiptRefund
 } from '@tabler/icons-react';
 
 interface SettingsSidebarProps {
@@ -27,6 +28,8 @@ interface NavItem {
   tab?: string;
   isRoute?: boolean;
   ownerOnly?: boolean;
+  /** Terlihat untuk OWNER dan MANAGER. */
+  managerUp?: boolean;
 }
 
 interface NavSection {
@@ -92,11 +95,19 @@ const SETTINGS_SECTIONS: NavSection[] = [
       },
       {
         id: 'payment',
-        label: 'Integrasi Midtrans',
+        label: 'Pembayaran Online',
         icon: IconCreditCard,
         href: (k) => `/outlet/${k}/settings?tab=payment`,
         tab: 'payment',
         ownerOnly: true,
+      },
+      {
+        id: 'online-payments',
+        label: 'Transaksi Online',
+        icon: IconReceiptRefund,
+        href: (k) => `/outlet/${k}/settings/online-payments`,
+        isRoute: true,
+        managerUp: true,
       },
     ],
   },
@@ -105,6 +116,9 @@ const SETTINGS_SECTIONS: NavSection[] = [
 export function SettingsSidebar({ outletKey, userRole }: SettingsSidebarProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const pathname = usePathname();
+  const settingsBase = `/outlet/${outletKey}/settings`;
+  const isOnSubRoute = pathname !== settingsBase && pathname.startsWith(`${settingsBase}/`);
 
   const isOwner = userRole === 'OWNER' || userRole === 'SYSTEM_ADMIN' || !userRole;
   const currentTab = searchParams.get('tab') || 'store';
@@ -127,16 +141,21 @@ export function SettingsSidebar({ outletKey, userRole }: SettingsSidebarProps) {
       {/* Nav Items */}
       <nav className="flex space-x-1.5 md:flex-col md:space-x-0 md:space-y-3 overflow-x-auto pb-1 md:pb-0 scrollbar-hide flex-1">
         {SETTINGS_SECTIONS.map((section) => {
-          const visibleItems = section.items.filter((item) => !item.ownerOnly || isOwner);
+          const isManagerUp = isOwner || userRole === 'MANAGER';
+          const visibleItems = section.items.filter(
+            (item) => (!item.ownerOnly || isOwner) && (!item.managerUp || isManagerUp)
+          );
           if (visibleItems.length === 0) return null;
 
           return (
             <div key={section.title} className="flex space-x-1.5 md:flex-col md:space-x-0 md:space-y-1">
-              <h3 className="hidden md:block px-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+              <h3 className="hidden md:block px-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
                 {section.title}
               </h3>
               {visibleItems.map((item) => {
-                const isActive = item.tab === currentTab;
+                const isActive = item.isRoute
+                  ? pathname === item.href(outletKey)
+                  : !isOnSubRoute && item.tab === currentTab;
 
                 return (
                   <button
@@ -144,16 +163,16 @@ export function SettingsSidebar({ outletKey, userRole }: SettingsSidebarProps) {
                     type="button"
                     onClick={() => handleNavigate(item)}
                     className={cn(
-                      "flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs md:text-sm font-medium transition-all duration-150 whitespace-nowrap cursor-pointer text-left w-full",
+                      "flex items-center gap-2.5 rounded-full px-3.5 py-2 text-xs md:text-sm font-medium transition-all duration-150 whitespace-nowrap cursor-pointer text-left w-full",
                       isActive
-                        ? "bg-[#0e59f9]/10 text-[#0e59f9] font-semibold shadow-xs"
+                        ? "bg-[#0e59f9] text-white font-semibold shadow-sm"
                         : "text-gray-600 hover:bg-gray-100/70 hover:text-gray-900"
                     )}
                   >
                     <item.icon
                       className={cn(
                         "h-4 w-4 flex-shrink-0",
-                        isActive ? "text-[#0e59f9]" : "text-gray-500"
+                        isActive ? "text-white" : "text-gray-500"
                       )}
                     />
                     <span className="truncate">{item.label}</span>

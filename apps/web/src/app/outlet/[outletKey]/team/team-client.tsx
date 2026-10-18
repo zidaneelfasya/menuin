@@ -54,17 +54,31 @@ import {
   Loader2,
   XCircle,
   AlertTriangle,
-  RotateCw
+  RotateCw,
+  PackageSearch,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { createAvatar } from '@dicebear/core';
 import { openPeeps } from '@dicebear/collection';
+
+export type TeamRole = 
+  | 'OWNER' 
+  | 'MANAGER' 
+  | 'CASHIER' 
+  | 'STAFF' 
+  | 'SYSTEM_ADMIN' 
+  | 'VERIFICATION_ADMIN' 
+  | 'SUPERADMIN';
 
 interface TeamMember {
   id: string;
   name: string | null;
   email: string;
-  role: 'OWNER' | 'MANAGER' | 'CASHIER' | 'STAFF';
+  role: TeamRole;
   pinHash?: string | null;
   createdAt?: string | Date;
 }
@@ -72,7 +86,7 @@ interface TeamMember {
 interface PendingInvite {
   id: string;
   email: string;
-  role: 'OWNER' | 'MANAGER' | 'CASHIER' | 'STAFF';
+  role: TeamRole;
   createdAt?: string | Date;
   status?: string;
 }
@@ -120,58 +134,55 @@ function DoodleAvatar({ name, email }: { name?: string | null; email: string }) 
   );
 }
 
-// Role badge pill with cohesive blue theme
+// Role badge pill with clean borderless pastel theme
 function RoleBadge({ role }: { role: string }) {
+  if (role === 'SYSTEM_ADMIN' || role === 'SUPERADMIN' || role === 'VERIFICATION_ADMIN') {
+    return (
+      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-purple-100/80 text-purple-800 dark:bg-purple-950/60 dark:text-purple-200 border-none">
+        System Admin
+      </span>
+    );
+  }
   if (role === 'OWNER') {
     return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-100/80 text-blue-800 border border-blue-300/80 dark:bg-blue-950/70 dark:text-blue-200 dark:border-blue-700">
-        <span className="h-2 w-2 rounded-full border-2 border-blue-600 bg-blue-200 dark:bg-blue-400 shrink-0" />
-        <span>Owner</span>
+      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-blue-100/80 text-blue-800 dark:bg-blue-950/60 dark:text-blue-200 border-none">
+        Owner
       </span>
     );
   }
   if (role === 'MANAGER') {
     return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/80">
-        <span className="h-2 w-2 rounded-full border-2 border-blue-500 bg-blue-200 dark:bg-blue-400 shrink-0" />
-        <span>Manager</span>
+      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-indigo-100/80 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-200 border-none">
+        Manager
       </span>
     );
   }
   if (role === 'CASHIER') {
     return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/80">
-        <span className="h-2 w-2 rounded-full border-2 border-blue-500 bg-blue-200 dark:bg-blue-400 shrink-0" />
-        <span>Kasir POS</span>
+      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-teal-100/80 text-teal-800 dark:bg-teal-950/60 dark:text-teal-200 border-none">
+        Kasir POS
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-50 text-slate-600 border border-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800">
-      <span className="h-2 w-2 rounded-full border-2 border-slate-400 bg-slate-200 dark:bg-slate-600 shrink-0" />
-      <span>Staff</span>
+    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-none">
+      Staff
     </span>
   );
 }
 
-// Status badge pill with clean blue & subtle neutral theme
+// Status badge pill with clean borderless pastel theme
 function StatusBadge({ status }: { status: 'ACTIVE' | 'PENDING' }) {
   if (status === 'ACTIVE') {
     return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800/80 text-blue-700 dark:text-blue-300 shadow-xs">
-        <span className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-blue-600 text-white shrink-0">
-          <Check className="w-2 h-2 stroke-[3]" />
-        </span>
-        <span>Active</span>
+      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border-none">
+        Aktif
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 shadow-xs">
-      <span className="flex items-center justify-center w-3.5 h-3.5 rounded-full bg-slate-400 dark:bg-slate-600 text-white shrink-0">
-        <Clock className="w-2 h-2 stroke-[3]" />
-      </span>
-      <span>Pending</span>
+    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-amber-100/80 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border-none">
+      Menunggu
     </span>
   );
 }
@@ -260,6 +271,45 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
   const totalMembersCount = members.length;
   const cashierCount = members.filter((m) => m.role === 'CASHIER').length;
   const pendingCount = pending.length;
+
+  type UnifiedTeamRow = 
+    | { kind: 'MEMBER'; id: string; data: TeamMember }
+    | { kind: 'INVITE'; id: string; data: PendingInvite };
+
+  const allFilteredRows = useMemo<UnifiedTeamRow[]>(() => {
+    const mRows: UnifiedTeamRow[] = filteredMembers.map((m) => ({ kind: 'MEMBER', id: m.id, data: m }));
+    const pRows: UnifiedTeamRow[] = filteredPending.map((p) => ({ kind: 'INVITE', id: p.id, data: p }));
+    return [...mRows, ...pRows];
+  }, [filteredMembers, filteredPending]);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const totalPages = Math.max(1, Math.ceil(allFilteredRows.length / itemsPerPage));
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, activeTab, itemsPerPage]);
+
+  const paginatedRows = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return allFilteredRows.slice(start, start + itemsPerPage);
+  }, [allFilteredRows, currentPage, itemsPerPage]);
+
+  const getPaginationNumbers = () => {
+    const pages: (number | string)[] = [];
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (currentPage > 3) pages.push('...');
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+      for (let i = start; i <= end; i++) pages.push(i);
+      if (currentPage < totalPages - 2) pages.push('...');
+      pages.push(totalPages);
+    }
+    return pages;
+  };
 
   async function onInviteSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -424,7 +474,11 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
 
   function openRoleModal(member: TeamMember) {
     setSelectedMember(member);
-    setNewRole(member.role === 'OWNER' ? 'MANAGER' : member.role);
+    setNewRole(
+      ['OWNER', 'SYSTEM_ADMIN', 'SUPERADMIN', 'VERIFICATION_ADMIN'].includes(member.role)
+        ? 'MANAGER'
+        : (member.role as 'MANAGER' | 'CASHIER' | 'STAFF')
+    );
     setRoleModalOpen(true);
   }
 
@@ -464,106 +518,6 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
             Kelola anggota tim outlet, peran hak akses, dan PIN kasir untuk operasional POS.
           </p>
         </div>
-
-        {/* Primary Action Button */}
-        <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
-          <DialogTrigger asChild>
-            <Button 
-              className="inline-flex items-center gap-2 bg-[#2563EB] hover:bg-[#1D4ED8] active:translate-y-0 text-white h-9 px-4 rounded-xl text-xs font-medium transition-all duration-150 ease-out hover:-translate-y-px shadow-xs shrink-0 cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Invite User</span>
-            </Button>
-          </DialogTrigger>
-
-          {/* Dynamic Flexible Invite Modal */}
-          <DialogContent className="w-[calc(100vw-2rem)] max-w-lg p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl">
-            <DialogHeader className="space-y-1 text-left">
-              <DialogTitle className="text-base font-semibold text-slate-900 dark:text-slate-100">
-                Undang Anggota Tim
-              </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground break-words">
-                Kirim email undangan untuk menambahkan staf atau kasir ke outlet ini.
-              </DialogDescription>
-            </DialogHeader>
-
-            <form onSubmit={onInviteSubmit} className="space-y-4 pt-2">
-              <div className="space-y-1.5 text-left">
-                <Label htmlFor="email" className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                  Alamat Email <span className="text-blue-600">*</span>
-                </Label>
-                <Input 
-                  id="email" 
-                  name="email" 
-                  type="email" 
-                  required 
-                  placeholder="nama@email.com"
-                  className="h-9 text-xs rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus-visible:ring-1 focus-visible:ring-[#2563EB]"
-                />
-              </div>
-              
-              <div className="space-y-2 text-left">
-                <Label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                  Peran / Hak Akses <span className="text-blue-600">*</span>
-                </Label>
-                <RadioGroup name="role" defaultValue="CASHIER" className="flex flex-col space-y-2">
-                  <label htmlFor="r-cashier" className="flex items-start space-x-3 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-blue-50/40 dark:hover:bg-blue-950/20 cursor-pointer transition-colors">
-                    <RadioGroupItem value="CASHIER" id="r-cashier" className="mt-0.5 text-[#2563EB]" />
-                    <div className="flex flex-col text-xs min-w-0">
-                      <span className="font-medium text-slate-900 dark:text-slate-200">Kasir (POS Only)</span>
-                      <span className="text-[11px] text-muted-foreground mt-0.5 break-words">
-                        Dapat login ke perangkat POS untuk menerima pesanan dan pembayaran.
-                      </span>
-                    </div>
-                  </label>
-
-                  <label htmlFor="r-manager" className="flex items-start space-x-3 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-blue-50/40 dark:hover:bg-blue-950/20 cursor-pointer transition-colors">
-                    <RadioGroupItem value="MANAGER" id="r-manager" className="mt-0.5 text-[#2563EB]" />
-                    <div className="flex flex-col text-xs min-w-0">
-                      <span className="font-medium text-slate-900 dark:text-slate-200">Manager</span>
-                      <span className="text-[11px] text-muted-foreground mt-0.5 break-words">
-                        Akses dashboard, kelola tim, menu katalog, dan lihat laporan omzet.
-                      </span>
-                    </div>
-                  </label>
-
-                  <label htmlFor="r-staff" className="flex items-start space-x-3 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-blue-50/40 dark:hover:bg-blue-950/20 cursor-pointer transition-colors">
-                    <RadioGroupItem value="STAFF" id="r-staff" className="mt-0.5 text-[#2563EB]" />
-                    <div className="flex flex-col text-xs min-w-0">
-                      <span className="font-medium text-slate-900 dark:text-slate-200">Staff Dapur / Waiter</span>
-                      <span className="text-[11px] text-muted-foreground mt-0.5 break-words">
-                        Akses display layar dapur (Kitchen Display) dan status tiket pesanan.
-                      </span>
-                    </div>
-                  </label>
-                </RadioGroup>
-              </div>
-              
-              <div className="flex items-center justify-end gap-2 pt-2">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setIsInviteOpen(false)}
-                  disabled={isSubmittingInvite}
-                  className="h-9 px-3.5 text-xs rounded-xl border-slate-200 dark:border-slate-700"
-                >
-                  Batal
-                </Button>
-                <Button 
-                  type="submit" 
-                  disabled={isSubmittingInvite}
-                  className="h-9 px-4 text-xs font-medium rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white transition-colors"
-                >
-                  {isSubmittingInvite ? (
-                    <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Mengirim...</>
-                  ) : (
-                    'Kirim Undangan'
-                  )}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
       </div>
 
       {/* Clean Metric Stats Strip (Unified Blue Palette, Not Extra Bold) */}
@@ -606,343 +560,550 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
       </div>
 
       {/* Search Bar & Unified Blue Filter Tabs */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-1">
-        {/* Search Input */}
-        <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
-          <Input 
-            placeholder="Cari nama, email, atau role..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 h-9 text-xs rounded-xl bg-card border-slate-200 dark:border-slate-800 focus-visible:ring-1 focus-visible:ring-[#2563EB]"
-          />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-2">
+        {/* Tab Filters (Underline style with live counters) */}
+        <div className="flex items-center gap-6 overflow-x-auto pb-1 sm:pb-0">
+          {[
+            { key: 'ALL', label: 'Semua Anggota', count: totalMembersCount + pendingCount },
+            { key: 'ACTIVE', label: 'Aktif', count: totalMembersCount },
+            { key: 'PENDING', label: 'Pending', count: pendingCount },
+            { key: 'CASHIER', label: 'Kasir POS', count: cashierCount },
+          ].map((tab) => {
+            const isActive = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveTab(tab.key as 'ALL' | 'ACTIVE' | 'PENDING' | 'CASHIER')}
+                className={cn(
+                  "relative pb-2.5 text-xs font-medium transition-colors flex items-center gap-2 cursor-pointer whitespace-nowrap",
+                  isActive
+                    ? "text-blue-600 dark:text-blue-400 font-semibold"
+                    : "text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
+                )}
+              >
+                <span>{tab.label}</span>
+                <span className={cn(
+                  "text-xs px-2 py-0.5 rounded-lg font-medium transition-colors",
+                  isActive
+                    ? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300"
+                    : "text-slate-400 dark:text-slate-500"
+                )}>
+                  {tab.count}
+                </span>
+                {isActive && (
+                  <motion.div
+                    layoutId="activeTeamTabUnderline"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-500 rounded-full"
+                    transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                  />
+                )}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Tab Filters */}
-        <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0">
-          <button
-            type="button"
-            onClick={() => setActiveTab('ALL')}
-            className={cn(
-              "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors shrink-0 cursor-pointer",
-              activeTab === 'ALL'
-                ? "bg-[#2563EB] text-white shadow-xs"
-                : "text-muted-foreground hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30"
-            )}
-          >
-            Semua ({totalMembersCount + pendingCount})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('ACTIVE')}
-            className={cn(
-              "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors shrink-0 cursor-pointer",
-              activeTab === 'ACTIVE'
-                ? "bg-[#2563EB] text-white shadow-xs"
-                : "text-muted-foreground hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30"
-            )}
-          >
-            Aktif ({totalMembersCount})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('PENDING')}
-            className={cn(
-              "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors shrink-0 cursor-pointer",
-              activeTab === 'PENDING'
-                ? "bg-[#2563EB] text-white shadow-xs"
-                : "text-muted-foreground hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30"
-            )}
-          >
-            Pending ({pendingCount})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('CASHIER')}
-            className={cn(
-              "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors shrink-0 cursor-pointer",
-              activeTab === 'CASHIER'
-                ? "bg-[#2563EB] text-white shadow-xs"
-                : "text-muted-foreground hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30"
-            )}
-          >
-            Kasir POS ({cashierCount})
-          </button>
+        {/* Right Actions: Search & Invite Dialog */}
+        <div className="flex items-center gap-2.5">
+          <div className="relative w-full sm:w-56">
+            <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+            <Input 
+              placeholder="Cari anggota tim..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 h-9 text-xs rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus-visible:ring-blue-600"
+            />
+          </div>
+
+          <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
+            <DialogTrigger asChild>
+              <Button 
+                className="inline-flex items-center gap-1.5 bg-[#2563EB] hover:bg-[#1D4ED8] active:translate-y-0 text-white h-9 px-3.5 rounded-xl text-xs font-medium transition-all duration-150 ease-out hover:-translate-y-px shadow-xs shrink-0 cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Undang Anggota</span>
+              </Button>
+            </DialogTrigger>
+
+            {/* Dynamic Flexible Invite Modal */}
+            <DialogContent className="w-[calc(100vw-2rem)] max-w-lg p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl">
+              <DialogHeader className="space-y-1 text-left">
+                <DialogTitle className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                  Undang Anggota Tim
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground break-words">
+                  Kirim email undangan untuk menambahkan staf atau kasir ke outlet ini.
+                </DialogDescription>
+              </DialogHeader>
+
+              <form onSubmit={onInviteSubmit} className="space-y-4 pt-2">
+                <div className="space-y-1.5 text-left">
+                  <Label htmlFor="email" className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                    Alamat Email <span className="text-blue-600">*</span>
+                  </Label>
+                  <Input 
+                    id="email" 
+                    name="email" 
+                    type="email" 
+                    required 
+                    placeholder="nama@email.com"
+                    className="h-9 text-xs rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus-visible:ring-1 focus-visible:ring-[#2563EB]"
+                  />
+                </div>
+                
+                <div className="space-y-2 text-left">
+                  <Label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                    Peran / Hak Akses <span className="text-blue-600">*</span>
+                  </Label>
+                  <RadioGroup name="role" defaultValue="CASHIER" className="flex flex-col space-y-2">
+                    <label htmlFor="r-cashier" className="flex items-start space-x-3 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-blue-50/40 dark:hover:bg-blue-950/20 cursor-pointer transition-colors">
+                      <RadioGroupItem value="CASHIER" id="r-cashier" className="mt-0.5 text-[#2563EB]" />
+                      <div className="flex flex-col text-xs min-w-0">
+                        <span className="font-medium text-slate-900 dark:text-slate-200">Kasir (POS Only)</span>
+                        <span className="text-[11px] text-muted-foreground mt-0.5 break-words">
+                          Dapat login ke perangkat POS untuk menerima pesanan dan pembayaran.
+                        </span>
+                      </div>
+                    </label>
+
+                    <label htmlFor="r-manager" className="flex items-start space-x-3 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-blue-50/40 dark:hover:bg-blue-950/20 cursor-pointer transition-colors">
+                      <RadioGroupItem value="MANAGER" id="r-manager" className="mt-0.5 text-[#2563EB]" />
+                      <div className="flex flex-col text-xs min-w-0">
+                        <span className="font-medium text-slate-900 dark:text-slate-200">Manager</span>
+                        <span className="text-[11px] text-muted-foreground mt-0.5 break-words">
+                          Akses dashboard, kelola tim, menu katalog, dan lihat laporan omzet.
+                        </span>
+                      </div>
+                    </label>
+
+                    <label htmlFor="r-staff" className="flex items-start space-x-3 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-blue-50/40 dark:hover:bg-blue-950/20 cursor-pointer transition-colors">
+                      <RadioGroupItem value="STAFF" id="r-staff" className="mt-0.5 text-[#2563EB]" />
+                      <div className="flex flex-col text-xs min-w-0">
+                        <span className="font-medium text-slate-900 dark:text-slate-200">Staff Dapur / Waiter</span>
+                        <span className="text-[11px] text-muted-foreground mt-0.5 break-words">
+                          Akses display layar dapur (Kitchen Display) dan status tiket pesanan.
+                        </span>
+                      </div>
+                    </label>
+                  </RadioGroup>
+                </div>
+                
+                <div className="flex items-center justify-end gap-2 pt-2">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setIsInviteOpen(false)}
+                    disabled={isSubmittingInvite}
+                    className="h-9 px-3.5 text-xs rounded-xl border-slate-200 dark:border-slate-700 cursor-pointer"
+                  >
+                    Batal
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    disabled={isSubmittingInvite}
+                    className="h-9 px-4 text-xs font-medium rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white transition-colors cursor-pointer"
+                  >
+                    {isSubmittingInvite ? (
+                      <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Mengirim...</>
+                    ) : (
+                      'Kirim Undangan'
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
-      {/* Main Table with Doodle Avatars, Unified Blue Badges, and Clean Hierarchy */}
+      {/* Main Table */}
       {hasRows ? (
-        <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-card overflow-hidden shadow-xs">
-          <Table className="min-w-[760px]">
-            {/* Header */}
-            <TableHeader>
-              <TableRow className="border-none bg-transparent hover:bg-transparent">
-                <TableHead className="px-5 w-[260px]">User</TableHead>
-                <TableHead className="px-4">Email Address</TableHead>
-                <TableHead className="px-4">Role</TableHead>
-                <TableHead className="px-4">POS PIN</TableHead>
-                <TableHead className="px-4">Date Added</TableHead>
-                <TableHead className="px-4">Status</TableHead>
-                <TableHead className="px-4 text-right w-[60px]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-                {/* Active Members */}
-                {filteredMembers.map((member) => (
-                  <TableRow 
-                    key={member.id} 
-                    className="h-16 hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-colors group"
-                  >
-                    {/* User (Doodle Avatar + Name) */}
-                    <TableCell className="px-5">
-                      <div className="flex items-center gap-3">
-                        <DoodleAvatar name={member.name} email={member.email} />
-                        <div className="flex flex-col min-w-0">
-                          <span className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">
-                            {member.name || member.email.split('@')[0]}
-                          </span>
-                        </div>
-                      </div>
-                    </TableCell>
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-950 overflow-hidden shadow-xs">
+          <div className="relative w-full overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="bg-slate-50/70 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-200/80 dark:border-slate-800">
+                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-slate-500 dark:text-slate-400 tracking-tight w-[240px]">
+                    User
+                  </th>
+                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-slate-500 dark:text-slate-400 tracking-tight">
+                    Email Address
+                  </th>
+                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-slate-500 dark:text-slate-400 tracking-tight">
+                    Role
+                  </th>
+                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-slate-500 dark:text-slate-400 tracking-tight">
+                    POS PIN
+                  </th>
+                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-slate-500 dark:text-slate-400 tracking-tight">
+                    Date Added
+                  </th>
+                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-slate-500 dark:text-slate-400 tracking-tight">
+                    Status
+                  </th>
+                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-right text-slate-500 dark:text-slate-400 tracking-tight w-[60px]">
+                    Aksi
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                {paginatedRows.map((row) => {
+                  if (row.kind === 'MEMBER') {
+                    const member = row.data;
+                    return (
+                      <TableRow 
+                        key={`member-${member.id}`} 
+                        className="h-16 hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-colors group"
+                      >
+                        {/* User (Doodle Avatar + Name) */}
+                        <TableCell className="px-5">
+                          <div className="flex items-center gap-3">
+                            <DoodleAvatar name={member.name} email={member.email} />
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">
+                                {member.name || member.email.split('@')[0]}
+                              </span>
+                            </div>
+                          </div>
+                        </TableCell>
 
-                    {/* Email Address with Copy Button */}
-                    <TableCell className="px-4">
-                      <div className="flex items-center gap-1.5 group/email">
-                        <span className="text-sm text-slate-600 dark:text-slate-400 font-inter font-normal truncate max-w-[220px]">
-                          {member.email}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleCopyEmail(member.email)}
-                          className="opacity-0 group-hover/email:opacity-100 p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-muted-foreground hover:text-foreground transition-opacity cursor-pointer"
-                          title="Salin email"
-                        >
-                          <Copy className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </TableCell>
-
-                    {/* Role Pill Badge */}
-                    <TableCell className="px-4">
-                      <RoleBadge role={member.role} />
-                    </TableCell>
-
-                    {/* POS PIN (Interactive Button / Badge) */}
-                    <TableCell className="px-4">
-                      {member.pinHash ? (
-                        <button
-                          type="button"
-                          onClick={() => openPinModal(member)}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-normal text-blue-700 dark:text-blue-300 bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60 hover:bg-blue-100/70 transition-colors cursor-pointer group/pin"
-                          title="Klik untuk ubah POS PIN"
-                        >
-                          <Key className="w-3.5 h-3.5 text-blue-500" />
-                          <span>PIN Aktif</span>
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => openPinModal(member)}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-normal text-muted-foreground border border-dashed border-slate-300 dark:border-slate-700 hover:border-blue-400 hover:text-blue-600 transition-colors cursor-pointer"
-                          title="Klik untuk atur POS PIN"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                          <span>Atur PIN</span>
-                        </button>
-                      )}
-                    </TableCell>
-
-                    {/* Date Added */}
-                    <TableCell className="px-4">
-                      <span className="text-sm font-inter font-normal text-slate-600 dark:text-slate-400">
-                        {formatDateAdded(member.createdAt)}
-                      </span>
-                    </TableCell>
-
-                    {/* Status Pill Badge */}
-                    <TableCell className="px-4">
-                      <StatusBadge status="ACTIVE" />
-                    </TableCell>
-
-                    {/* Action Menu (⋮) */}
-                    <TableCell className="px-4 text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 p-0 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
-                          >
-                            <span className="sr-only">Aksi</span>
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-[180px] p-1 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs">
-                          {member.pinHash && (
-                            <DropdownMenuItem 
-                              onClick={() => openViewPinModal(member)}
-                              className="py-1.5 px-2.5 rounded-lg cursor-pointer font-medium"
+                        {/* Email Address with Copy Button */}
+                        <TableCell className="px-4">
+                          <div className="flex items-center gap-1.5 group/email">
+                            <span className="text-sm text-slate-600 dark:text-slate-400 font-inter font-normal truncate max-w-[220px]">
+                              {member.email}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleCopyEmail(member.email)}
+                              className="opacity-0 group-hover/email:opacity-100 p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-muted-foreground hover:text-foreground transition-opacity cursor-pointer"
+                              title="Salin email"
                             >
-                              <Eye className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
-                              Lihat POS PIN
-                            </DropdownMenuItem>
+                              <Copy className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </TableCell>
+
+                        {/* Role Pill Badge */}
+                        <TableCell className="px-4">
+                          <RoleBadge role={member.role} />
+                        </TableCell>
+
+                        {/* POS PIN (Interactive Button / Badge) */}
+                        <TableCell className="px-4">
+                          {member.pinHash ? (
+                            <button
+                              type="button"
+                              onClick={() => openPinModal(member)}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-normal text-blue-700 dark:text-blue-300 bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60 hover:bg-blue-100/70 transition-colors cursor-pointer group/pin"
+                              title="Klik untuk ubah POS PIN"
+                            >
+                              <Key className="w-3.5 h-3.5 text-blue-500" />
+                              <span>PIN Aktif</span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => openPinModal(member)}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-normal text-muted-foreground border border-dashed border-slate-300 dark:border-slate-700 hover:border-blue-400 hover:text-blue-600 transition-colors cursor-pointer"
+                              title="Klik untuk atur POS PIN"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                              <span>Atur PIN</span>
+                            </button>
                           )}
-                          
-                          <DropdownMenuItem 
-                            onClick={() => openPinModal(member)}
-                            className="py-1.5 px-2.5 rounded-lg cursor-pointer font-medium"
-                          >
-                            <Key className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
-                            {member.pinHash ? 'Ubah POS PIN' : 'Atur POS PIN'}
-                          </DropdownMenuItem>
-                          
-                          {member.role !== 'OWNER' && (
-                            <>
+                        </TableCell>
+
+                        {/* Date Added */}
+                        <TableCell className="px-4">
+                          <span className="text-sm font-inter font-normal text-slate-600 dark:text-slate-400">
+                            {formatDateAdded(member.createdAt)}
+                          </span>
+                        </TableCell>
+
+                        {/* Status Pill Badge */}
+                        <TableCell className="px-4">
+                          <StatusBadge status="ACTIVE" />
+                        </TableCell>
+
+                        {/* Action Menu (⋮) */}
+                        <TableCell className="px-4 text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8 p-0 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                              >
+                                <span className="sr-only">Aksi</span>
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-[180px] p-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs">
+                              {member.pinHash && (
+                                <DropdownMenuItem 
+                                  onClick={() => openViewPinModal(member)}
+                                  className="py-1.5 px-2.5 rounded-lg cursor-pointer font-medium"
+                                >
+                                  <Eye className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+                                  Lihat POS PIN
+                                </DropdownMenuItem>
+                              )}
+                              
                               <DropdownMenuItem 
-                                onClick={() => openRoleModal(member)}
+                                onClick={() => openPinModal(member)}
                                 className="py-1.5 px-2.5 rounded-lg cursor-pointer font-medium"
                               >
-                                <Shield className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
-                                Ubah Role
+                                <Key className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+                                {member.pinHash ? 'Ubah POS PIN' : 'Atur POS PIN'}
                               </DropdownMenuItem>
                               
-                              <DropdownMenuSeparator className="my-1 border-slate-100 dark:border-slate-800" />
-                              
-                              <DropdownMenuItem 
-                                onClick={() => openDeleteModal(member)} 
-                                className="py-1.5 px-2.5 rounded-lg cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/40 font-medium"
-                              >
-                                <Trash2 className="mr-2 h-3.5 w-3.5 text-red-600" />
-                                Hapus Anggota
-                              </DropdownMenuItem>
-                            </>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                              {!['OWNER', 'SYSTEM_ADMIN', 'SUPERADMIN', 'VERIFICATION_ADMIN'].includes(member.role) && (
+                                <>
+                                  <DropdownMenuItem 
+                                    onClick={() => openRoleModal(member)}
+                                    className="py-1.5 px-2.5 rounded-lg cursor-pointer font-medium"
+                                  >
+                                    <Shield className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+                                    Ubah Role
+                                  </DropdownMenuItem>
+                                  
+                                  <DropdownMenuSeparator className="my-1 border-slate-100 dark:border-slate-800" />
+                                  
+                                  <DropdownMenuItem 
+                                    onClick={() => openDeleteModal(member)} 
+                                    className="py-1.5 px-2.5 rounded-lg cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/40 font-medium"
+                                  >
+                                    <Trash2 className="mr-2 h-3.5 w-3.5 text-red-600" />
+                                    Hapus Anggota
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  }
 
-                {/* Pending Invites */}
-                {filteredPending.map((invite) => (
-                  <TableRow 
-                    key={invite.id} 
-                    className="h-16 hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-colors bg-blue-50/20 dark:bg-blue-950/10 group"
-                  >
-                    {/* User (Doodle Avatar + Email Prefix) */}
-                    <TableCell className="px-5">
-                      <div className="flex items-center gap-3">
-                        <DoodleAvatar email={invite.email} />
-                        <div className="flex flex-col min-w-0">
-                          <span className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">
-                            {invite.email.split('@')[0]}
-                          </span>
-                          <span className="text-[11px] text-muted-foreground font-normal">
-                            Menunggu konfirmasi
-                          </span>
+                  const invite = row.data;
+                  return (
+                    <TableRow 
+                      key={`invite-${invite.id}`} 
+                      className="h-16 hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-colors bg-blue-50/20 dark:bg-blue-950/10 group"
+                    >
+                      {/* User (Doodle Avatar + Email Prefix) */}
+                      <TableCell className="px-5">
+                        <div className="flex items-center gap-3">
+                          <DoodleAvatar email={invite.email} />
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">
+                              {invite.email.split('@')[0]}
+                            </span>
+                            <span className="text-[11px] text-muted-foreground font-normal">
+                              Menunggu konfirmasi
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    </TableCell>
+                      </TableCell>
 
-                    {/* Email */}
-                    <TableCell className="px-4">
-                      <div className="flex items-center gap-1.5 group/email">
-                        <span className="text-sm text-slate-600 dark:text-slate-400 font-inter font-normal truncate max-w-[220px]">
-                          {invite.email}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleCopyEmail(invite.email)}
-                          className="opacity-0 group-hover/email:opacity-100 p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-muted-foreground hover:text-foreground transition-opacity cursor-pointer"
-                          title="Salin email"
-                        >
-                          <Copy className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </TableCell>
-
-                    {/* Role */}
-                    <TableCell className="px-4">
-                      <RoleBadge role={invite.role} />
-                    </TableCell>
-
-                    {/* POS PIN */}
-                    <TableCell className="px-4">
-                      <span className="text-xs text-muted-foreground italic">-</span>
-                    </TableCell>
-
-                    {/* Date Added */}
-                    <TableCell className="px-4">
-                      <span className="text-sm font-inter font-normal text-slate-600 dark:text-slate-400">
-                        {formatDateAdded(invite.createdAt)}
-                      </span>
-                    </TableCell>
-
-                    {/* Status */}
-                    <TableCell className="px-4">
-                      <StatusBadge status="PENDING" />
-                    </TableCell>
-
-                    {/* Action Menu (⋮) */}
-                    <TableCell className="px-4 text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 p-0 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
-                          >
-                            <span className="sr-only">Aksi</span>
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-[180px] p-1 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs">
-                          <DropdownMenuItem 
-                            onClick={() => handleResendInvite(invite)}
-                            disabled={isResendingInvite === invite.id}
-                            className="py-1.5 px-2.5 rounded-lg cursor-pointer font-medium"
-                          >
-                            {isResendingInvite === invite.id ? (
-                              <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              <RotateCw className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
-                            )}
-                            Kirim Ulang Email
-                          </DropdownMenuItem>
-                          
-                          <DropdownMenuItem 
+                      {/* Email */}
+                      <TableCell className="px-4">
+                        <div className="flex items-center gap-1.5 group/email">
+                          <span className="text-sm text-slate-600 dark:text-slate-400 font-inter font-normal truncate max-w-[220px]">
+                            {invite.email}
+                          </span>
+                          <button
+                            type="button"
                             onClick={() => handleCopyEmail(invite.email)}
-                            className="py-1.5 px-2.5 rounded-lg cursor-pointer font-medium"
+                            className="opacity-0 group-hover/email:opacity-100 p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-muted-foreground hover:text-foreground transition-opacity cursor-pointer"
+                            title="Salin email"
                           >
-                            <Copy className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
-                            Salin Email
-                          </DropdownMenuItem>
+                            <Copy className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </TableCell>
 
-                          <DropdownMenuSeparator className="my-1 border-slate-100 dark:border-slate-800" />
-                          
-                          <DropdownMenuItem 
-                            onClick={() => openCancelInviteModal(invite)}
-                            className="py-1.5 px-2.5 rounded-lg cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/40 font-medium"
-                          >
-                            <XCircle className="mr-2 h-3.5 w-3.5 text-red-600" />
-                            Batalkan Undangan
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                      {/* Role */}
+                      <TableCell className="px-4">
+                        <RoleBadge role={invite.role} />
+                      </TableCell>
+
+                      {/* POS PIN */}
+                      <TableCell className="px-4">
+                        <span className="text-xs text-muted-foreground italic">-</span>
+                      </TableCell>
+
+                      {/* Date Added */}
+                      <TableCell className="px-4">
+                        <span className="text-sm font-inter font-normal text-slate-600 dark:text-slate-400">
+                          {formatDateAdded(invite.createdAt)}
+                        </span>
+                      </TableCell>
+
+                      {/* Status */}
+                      <TableCell className="px-4">
+                        <StatusBadge status="PENDING" />
+                      </TableCell>
+
+                      {/* Action Menu (⋮) */}
+                      <TableCell className="px-4 text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 p-0 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                            >
+                              <span className="sr-only">Aksi</span>
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-[180px] p-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs">
+                            <DropdownMenuItem 
+                              onClick={() => handleResendInvite(invite)}
+                              disabled={isResendingInvite === invite.id}
+                              className="py-1.5 px-2.5 rounded-lg cursor-pointer font-medium"
+                            >
+                              {isResendingInvite === invite.id ? (
+                                <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <RotateCw className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+                              )}
+                              Kirim Ulang Email
+                            </DropdownMenuItem>
+                            
+                            <DropdownMenuItem 
+                              onClick={() => handleCopyEmail(invite.email)}
+                              className="py-1.5 px-2.5 rounded-lg cursor-pointer font-medium"
+                            >
+                              <Copy className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+                              Salin Email
+                            </DropdownMenuItem>
+
+                            <DropdownMenuSeparator className="my-1 border-slate-100 dark:border-slate-800" />
+                            
+                            <DropdownMenuItem 
+                              onClick={() => openCancelInviteModal(invite)}
+                              className="py-1.5 px-2.5 rounded-lg cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/40 font-medium"
+                            >
+                              <XCircle className="mr-2 h-3.5 w-3.5 text-red-600" />
+                              Batalkan Undangan
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
-      ) : (
+
+        {/* Zone 3: Footer Pagination Bar */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-1">
+          {/* Left: Items Per Page Selector */}
+          <div className="flex items-center gap-3 text-xs text-slate-500">
+            <div className="flex items-center gap-2">
+              <span>Items Per Page</span>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-3 rounded-xl border-slate-200 dark:border-slate-800 text-xs font-medium gap-1.5 cursor-pointer"
+                  >
+                    <span>{itemsPerPage}</span>
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-24 p-1 rounded-xl border-slate-200 dark:border-slate-800">
+                  {[10, 20, 50, 100].map((size) => (
+                    <DropdownMenuItem
+                      key={size}
+                      onClick={() => {
+                        setItemsPerPage(size);
+                        setCurrentPage(1);
+                      }}
+                      className={cn("text-xs py-1.5 px-3 rounded-lg cursor-pointer", itemsPerPage === size && "font-semibold text-blue-600")}
+                    >
+                      {size}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            <span className="hidden sm:inline text-slate-300 dark:text-slate-700">&bull;</span>
+            <span className="hidden sm:inline">
+              Menampilkan {allFilteredRows.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} - {Math.min(currentPage * itemsPerPage, allFilteredRows.length)} dari {allFilteredRows.length} anggota
+            </span>
+          </div>
+
+          {/* Right: Page Navigation */}
+          {totalPages > 1 && (
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="icon"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                className="h-8 w-8 rounded-lg border-slate-200 dark:border-slate-800 text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:text-blue-400 disabled:opacity-40 cursor-pointer"
+                aria-label="Halaman sebelumnya"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+
+              {getPaginationNumbers().map((pageItem, index) => {
+                if (pageItem === '...') {
+                  return (
+                    <span key={`ellipsis-${index}`} className="px-1.5 text-xs text-slate-400">
+                      ...
+                    </span>
+                  );
+                }
+                const pageNum = pageItem as number;
+                const isCurrent = pageNum === currentPage;
+                return (
+                  <button
+                    key={`page-${pageNum}`}
+                    type="button"
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={cn(
+                      "w-8 h-8 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center justify-center",
+                      isCurrent
+                        ? "bg-[#0e59f9] text-white shadow-xs"
+                        : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
+                    )}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+
+              <Button
+                variant="outline"
+                size="icon"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                className="h-8 w-8 rounded-lg border-slate-200 dark:border-slate-800 text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:text-blue-400 disabled:opacity-40 cursor-pointer"
+                aria-label="Halaman berikutnya"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    ) : (
         /* Empty State */
-        <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-card p-12 text-center space-y-3">
+        <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-950 p-12 text-center space-y-3">
           <div className="w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center mx-auto text-blue-600 dark:text-blue-400">
             <Users className="w-6 h-6" />
           </div>
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
             {searchQuery ? 'Tidak ada anggota ditemukan' : 'Belum ada anggota tim'}
           </h3>
           <p className="text-xs text-muted-foreground max-w-sm mx-auto">

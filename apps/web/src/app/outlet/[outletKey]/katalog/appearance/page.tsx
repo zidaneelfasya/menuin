@@ -28,6 +28,13 @@ async function AppearanceDataWrapper() {
           storeLogoUrl: settings.storeLogoUrl,
           storeBannerUrl: settings.storeBannerUrl,
           primaryColor: settings.primaryColor,
+          openHours: settings.openHours,
+          address: settings.address,
+          city: settings.city,
+          mapsUrl: settings.mapsUrl,
+          cuisineType: settings.cuisineType,
+          wifiSsid: settings.wifiSsid,
+          wifiPassword: settings.wifiPassword,
         }} 
       />
     </div>

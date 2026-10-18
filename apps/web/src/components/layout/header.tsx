@@ -88,7 +88,7 @@ export function Header({
               <BreadcrumbItem>
                 <BreadcrumbPage className="flex items-center">
                   <img 
-                    src={currentLogoUrl || `https://api.dicebear.com/10.x/waves/svg?seed=${encodeURIComponent(user.restaurantName || 'Menuin')}&radius=10`} 
+                    src={currentLogoUrl || `https://api.dicebear.com/10.x/shapes/svg?seed=${encodeURIComponent(user.restaurantName || 'Menuin')}&radius=10`} 
                     alt={user.restaurantName || 'Outlet Logo'} 
                     className="h-6 w-6 rounded-md object-cover border border-border/50 bg-muted/30" 
                   />
@@ -108,7 +108,7 @@ export function Header({
                       <DropdownMenuItem key={t.outletKey} asChild>
                         <a href={`/outlet/${t.outletKey}/dashboard`} className="cursor-pointer flex items-center gap-2">
                           <img 
-                            src={t.storeLogoUrl || `https://api.dicebear.com/10.x/waves/svg?seed=${encodeURIComponent(t.name || 'Menuin')}&radius=10`} 
+                            src={t.storeLogoUrl || `https://api.dicebear.com/10.x/shapes/svg?seed=${encodeURIComponent(t.name || 'Menuin')}&radius=10`} 
                             alt={t.name} 
                             className="h-4 w-4 rounded-sm object-cover border border-border/50 bg-muted/30" 
                           />

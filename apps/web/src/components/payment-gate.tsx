@@ -1,46 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import { Check, Lock, LogOut, ShieldCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import type { UserProfile } from "@/lib/actions/auth";
-
-const plans = [
-  {
-    id: "starter",
-    name: "Starter",
-    price: "Rp 99.000",
-    period: "/ bulan",
-    desc: "Untuk bisnis kecil yang baru mulai digital.",
-    features: [
-      "Digital Menu & QR Code",
-      "Custom Catalog Link",
-      "Online Ordering",
-      "Basic Analytics Dashboard",
-      "1 User Kasir",
-    ],
-    highlighted: false,
-  },
-  {
-    id: "business",
-    name: "Business",
-    price: "Rp 199.000",
-    period: "/ bulan",
-    desc: "Untuk operasional F&B yang lebih lengkap.",
-    features: [
-      "Semua fitur Starter",
-      "Sistem Kasir / POS Utama",
-      "Payment Gateway Integration",
-      "Real-time Order Management",
-      "Advanced Analytics & Charts",
-      "Multi-User Staf",
-    ],
-    highlighted: true,
-  },
-];
+import { DISPLAY_PLAN_GROUPS, type BillingCycle } from "@/lib/billing/plans";
+import { formatCurrency } from "@/lib/utils/format";
 
 export function PaymentGate({ user }: { user: UserProfile }) {
   const router = useRouter();
+  const [cycle, setCycle] = useState<BillingCycle>("monthly");
 
   const handleLogout = async () => {
     const supabase = createClient();
@@ -49,93 +19,167 @@ export function PaymentGate({ user }: { user: UserProfile }) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50/30 relative overflow-hidden font-sans">
-      <div className="absolute top-0 left-0 right-0 h-1 bg-[#2563EB]" />
-      <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-50 rounded-full blur-3xl opacity-60 pointer-events-none" />
-      <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-indigo-50 rounded-full blur-3xl opacity-60 pointer-events-none" />
+    <div className="min-h-screen bg-slate-50/50 relative overflow-hidden font-sans">
+      <div className="absolute top-0 left-0 right-0 h-1 bg-[#0E59F9]" />
 
-      <div className="relative z-10 mx-auto max-w-4xl px-4 py-12 md:py-20 space-y-10">
+      <div className="relative z-10 mx-auto max-w-6xl px-4 py-10 md:py-16 space-y-8">
         {/* Locked header */}
-        <div className="text-center space-y-4">
-          <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-white border border-slate-100 shadow-lg shadow-slate-100/50">
-            <Lock className="h-7 w-7 text-[#2563EB]" />
+        <div className="text-center space-y-3">
+          <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+            <Lock className="h-6 w-6 text-[#0E59F9]" />
           </div>
-          <div className="space-y-2">
-            <span className="text-xs font-bold text-[#2563EB] uppercase tracking-wider block">
+          <div className="space-y-1.5">
+            <span className="text-xs font-semibold text-[#0E59F9] uppercase tracking-wider block">
               {user.restaurantName ?? "Bisnis Anda"}
             </span>
-            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
               Dashboard Terkunci
             </h1>
             <p className="text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
-              Hai {user.name}, akun Anda sudah dibuat tetapi belum aktif. Selesaikan pembayaran untuk membuka akses penuh ke dashboard MENUIN.
+              Hai {user.name}, akun Anda sudah dibuat tetapi belum aktif. Pilih paket langganan untuk membuka akses penuh ke dashboard MENUIN.
             </p>
+          </div>
+
+          {/* Billing Cycle Toggle */}
+          <div className="pt-2 flex justify-center">
+            <div
+              role="radiogroup"
+              aria-label="Siklus tagihan"
+              className="inline-flex items-center rounded-full bg-white p-1 ring-1 ring-slate-200 shadow-sm"
+            >
+              <button
+                type="button"
+                role="radio"
+                aria-checked={cycle === "monthly"}
+                onClick={() => setCycle("monthly")}
+                className={`h-9 px-4 rounded-full text-xs font-semibold transition-all ${
+                  cycle === "monthly"
+                    ? "bg-[#0E59F9] text-white shadow-sm"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Bulanan
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={cycle === "annual"}
+                onClick={() => setCycle("annual")}
+                className={`h-9 px-4 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                  cycle === "annual"
+                    ? "bg-[#0E59F9] text-white shadow-sm"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <span>Tahunan</span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                    cycle === "annual"
+                      ? "bg-white/20 text-white"
+                      : "bg-emerald-50 text-emerald-600"
+                  }`}
+                >
+                  Hemat 2 Bulan
+                </span>
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Pricing Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto items-stretch">
-          {plans.map((plan) => (
-            <div
-              key={plan.id}
-              className={`bg-white p-8 rounded-xl flex flex-col justify-between shadow-sm transition-all duration-300 ${
-                plan.highlighted
-                  ? "border-2 border-[#2563EB] shadow-lg relative"
-                  : "border border-slate-200 hover:border-[#2563EB]/30"
-              }`}
-            >
-              {plan.highlighted && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#2563EB] text-white text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
-                  Paling Populer
-                </span>
-              )}
-              <div>
-                <h4
-                  className={`text-sm font-bold uppercase tracking-wider mb-2 ${plan.highlighted ? "text-[#2563EB]" : "text-slate-500"}`}
-                >
-                  {plan.name}
-                </h4>
-                <div className="flex items-baseline gap-1.5 mb-2">
-                  <span className="text-3xl font-extrabold text-slate-900">{plan.price}</span>
-                  <span className="text-xs text-slate-400">{plan.period}</span>
-                </div>
-                <p className="text-xs text-slate-500 mb-4">{plan.desc}</p>
-                <div className="h-px bg-slate-100 my-4" />
-                <ul className="space-y-3 text-xs text-slate-600 mb-8">
-                  {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-[#2563EB] shrink-0" />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+        {/* Pricing Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-5xl mx-auto items-stretch">
+          {DISPLAY_PLAN_GROUPS.map((group) => {
+            const plan = group[cycle];
+            const isHighlighted = group.highlighted;
 
-              <a
-                href={`/checkout?email=${encodeURIComponent(user.email)}&plan=${plan.id}`}
-                className={`block text-center py-3 rounded-lg text-xs font-bold transition-colors ${
-                  plan.highlighted
-                    ? "bg-[#2563EB] text-white hover:bg-[#1D4ED8]"
-                    : "border border-slate-200 text-slate-900 hover:bg-slate-50"
+            return (
+              <div
+                key={group.id}
+                className={`bg-white rounded-2xl p-6 flex flex-col justify-between transition-all relative ${
+                  isHighlighted
+                    ? "ring-2 ring-[#0E59F9] shadow-md shadow-blue-500/5"
+                    : "ring-1 ring-slate-200 hover:ring-slate-300 shadow-sm"
                 }`}
               >
-                Pilih {plan.name}
-              </a>
-            </div>
-          ))}
+                {isHighlighted && (
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#0E59F9] text-white text-[11px] font-semibold px-3 py-0.5 rounded-full uppercase tracking-wider">
+                    Paling Lengkap
+                  </span>
+                )}
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <h3
+                      className={`text-base font-bold ${
+                        isHighlighted ? "text-[#0E59F9]" : "text-slate-900"
+                      }`}
+                    >
+                      {group.name}
+                    </h3>
+                  </div>
+                  <p className="text-xs text-slate-500 mb-4 min-h-[32px]">
+                    {group.tagline}
+                  </p>
+
+                  <div className="mb-4">
+                    {plan.originalAmount && (
+                      <span className="text-xs text-slate-400 line-through block">
+                        {formatCurrency(plan.originalAmount)}
+                      </span>
+                    )}
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-2xl font-bold text-slate-900">
+                        {formatCurrency(plan.amount)}
+                      </span>
+                      <span className="text-xs text-slate-400">
+                        /{cycle === "annual" ? "tahun" : "30 hari"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="h-px bg-slate-100 my-4" />
+
+                  <div className="space-y-2 mb-6">
+                    <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+                      Fitur Termasuk:
+                    </span>
+                    <ul className="space-y-2.5 text-xs text-slate-600">
+                      {group.features.map((feature) => (
+                        <li key={feature} className="flex items-start gap-2">
+                          <Check className="h-4 w-4 text-[#0E59F9] shrink-0 mt-0.5" />
+                          <span className="leading-snug">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                <a
+                  href={`/checkout?plan=${plan.code}`}
+                  className={`block text-center py-2.5 px-4 rounded-xl text-xs font-semibold transition-all ${
+                    isHighlighted
+                      ? "bg-[#0E59F9] text-white hover:bg-[#0c4ad4] shadow-sm"
+                      : "border border-slate-200 text-slate-800 hover:bg-slate-50"
+                  }`}
+                >
+                  Pilih {group.name}
+                </a>
+              </div>
+            );
+          })}
         </div>
 
-        {/* Secure note + logout */}
-        <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 bg-white border border-slate-100 rounded-xl p-5 shadow-sm">
+        {/* Secure note + logout footer */}
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm">
           <div className="flex items-center gap-3">
-            <ShieldCheck className="h-5 w-5 text-[#2563EB] shrink-0" />
-            <p className="text-xs text-slate-500">
-              Pembayaran diproses aman melalui payment gateway resmi (Midtrans).
+            <ShieldCheck className="h-5 w-5 text-[#0E59F9] shrink-0" />
+            <p className="text-xs text-slate-600">
+              Pembayaran diproses aman melalui <strong>DOKU</strong>, payment gateway berizin Bank Indonesia.
             </p>
           </div>
           <button
             onClick={handleLogout}
-            className="inline-flex items-center gap-2 h-9 px-4 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors shrink-0"
+            className="inline-flex items-center gap-2 h-9 px-4 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors shrink-0"
           >
             <LogOut className="h-3.5 w-3.5" />
             Keluar

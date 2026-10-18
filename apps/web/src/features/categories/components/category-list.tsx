@@ -50,6 +50,7 @@ import { CategoryDto } from '@menuin/types';
 import { categorySchema } from '@menuin/validation';
 import { getCategoryIcon } from '../lib/category-icons';
 import { CategoryIconPicker } from './category-icon-picker';
+import { cn } from '@/lib/utils';
 
 export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
   const [categories, setCategories] = React.useState<CategoryDto[]>(initialData);
@@ -196,28 +197,28 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
             form.reset({ name: '', icon: 'Utensils' });
             setIsAddOpen(true);
           }}
-          className="rounded-xl px-4 h-9.5 text-xs font-semibold flex items-center bg-blue-600 hover:bg-blue-700 text-white shadow-xs cursor-pointer shrink-0"
+          className="inline-flex items-center gap-1.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white h-9 px-4 rounded-xl text-xs font-medium transition-all duration-150 ease-out hover:-translate-y-px shadow-xs cursor-pointer shrink-0"
         >
-          <Plus className="mr-1.5 h-4 w-4" />
-          Tambah Kategori
+          <Plus className="h-4 w-4" />
+          <span>Tambah Kategori</span>
         </Button>
       </div>
 
       {/* Search & Meta Counts Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
         <div className="relative flex-1 max-w-full sm:max-w-xs md:max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/70" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/70" />
           <Input
             placeholder="Cari kategori atau slug..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 h-9 text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg shadow-xs"
+            className="pl-9 h-9 text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl shadow-xs focus-visible:ring-blue-600"
           />
         </div>
 
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span>
-            Total: <strong className="text-foreground">{categories.length}</strong> Kategori
+            Total: <span className="font-semibold text-foreground">{categories.length}</span> Kategori
           </span>
           {searchQuery && (
             <span className="text-blue-600 dark:text-blue-400">
@@ -323,9 +324,9 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
 
                 {/* Card Bottom: Product Count & Created At Date */}
                 <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs mt-3.5">
-                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
-                    <Package className="w-3 h-3 text-slate-500" />
-                    <strong className="text-foreground">{category.productCount ?? 0}</strong> Menu
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md border-none">
+                    <Package className="w-3 h-3 text-slate-400" />
+                    <span className="font-semibold text-foreground">{category.productCount ?? 0}</span> Menu
                   </span>
 
                   <span className="text-[11px] text-muted-foreground flex items-center gap-1 font-normal">
@@ -347,7 +348,7 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
 
       {/* Modal Tambah Kategori */}
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-        <DialogContent className="sm:max-w-md bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+        <DialogContent className="sm:max-w-md bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold">Tambah Kategori Baru</DialogTitle>
             <DialogDescription className="text-xs">
@@ -357,14 +358,14 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
 
           <form onSubmit={form.handleSubmit(onSubmitAdd)} className="space-y-4 pt-1">
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-xs font-semibold">
-                Nama Kategori <span className="text-red-500">*</span>
+              <Label htmlFor="name" className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                Nama Kategori <span className="text-blue-600">*</span>
               </Label>
               <Input
                 id="name"
                 {...form.register('name')}
                 placeholder="Contoh: Kopi, Makanan Berat, Dessert"
-                className="h-9 text-xs rounded-lg"
+                className="h-9 text-xs rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus-visible:ring-1 focus-visible:ring-[#2563EB]"
               />
               {form.formState.errors.name && (
                 <p className="text-[11px] text-destructive">{form.formState.errors.name.message}</p>
@@ -403,7 +404,7 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
                 variant="outline"
                 size="sm"
                 onClick={() => setIsAddOpen(false)}
-                className="text-xs cursor-pointer rounded-lg"
+                className="text-xs cursor-pointer rounded-xl h-9 px-3.5"
               >
                 Batal
               </Button>
@@ -411,7 +412,7 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
                 type="submit"
                 size="sm"
                 disabled={isLoading}
-                className="text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold cursor-pointer rounded-lg shadow-xs"
+                className="text-xs bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-medium cursor-pointer rounded-xl h-9 px-4 shadow-xs"
               >
                 {isLoading ? 'Menyimpan...' : 'Simpan Kategori'}
               </Button>
@@ -422,7 +423,7 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
 
       {/* Modal Edit Kategori */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="sm:max-w-md bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+        <DialogContent className="sm:max-w-md bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold">Edit Kategori</DialogTitle>
             <DialogDescription className="text-xs">
@@ -432,13 +433,13 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
 
           <form onSubmit={form.handleSubmit(onSubmitEdit)} className="space-y-4 pt-1">
             <div className="space-y-2">
-              <Label htmlFor="edit-name" className="text-xs font-semibold">
-                Nama Kategori <span className="text-red-500">*</span>
+              <Label htmlFor="edit-name" className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                Nama Kategori <span className="text-blue-600">*</span>
               </Label>
               <Input
                 id="edit-name"
                 {...form.register('name')}
-                className="h-9 text-xs rounded-lg"
+                className="h-9 text-xs rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus-visible:ring-1 focus-visible:ring-[#2563EB]"
               />
               {form.formState.errors.name && (
                 <p className="text-[11px] text-destructive">{form.formState.errors.name.message}</p>
@@ -477,7 +478,7 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
                 variant="outline"
                 size="sm"
                 onClick={() => setIsEditOpen(false)}
-                className="text-xs cursor-pointer rounded-lg"
+                className="text-xs cursor-pointer rounded-xl h-9 px-3.5"
               >
                 Batal
               </Button>
@@ -485,7 +486,7 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
                 type="submit"
                 size="sm"
                 disabled={isLoading}
-                className="text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold cursor-pointer rounded-lg shadow-xs"
+                className="text-xs bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-medium cursor-pointer rounded-xl h-9 px-4 shadow-xs"
               >
                 {isLoading ? 'Menyimpan...' : 'Simpan Perubahan'}
               </Button>
@@ -496,17 +497,17 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
 
       {/* Modal Hapus Kategori */}
       <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-        <DialogContent className="sm:max-w-md bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+        <DialogContent className="sm:max-w-md bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold text-red-600 dark:text-red-400 flex items-center gap-2">
               <Trash2 className="w-4 h-4" />
               Hapus Kategori
             </DialogTitle>
             <DialogDescription className="text-xs pt-1">
-              Apakah Anda yakin ingin menghapus kategori <strong>{selectedCategory?.name}</strong>?
+              Apakah Anda yakin ingin menghapus kategori <span className="font-semibold text-slate-900 dark:text-slate-100">{selectedCategory?.name}</span>?
               {selectedCategory?.productCount && selectedCategory.productCount > 0 ? (
-                <span className="block mt-2 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 p-2 rounded-lg border border-amber-200 dark:border-amber-800">
-                  Peringatan: Kategori ini memiliki <strong>{selectedCategory.productCount} menu</strong>. Pastikan untuk memindahkan produk ke kategori lain terlebih dahulu.
+                <span className="block mt-2 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 p-2.5 rounded-xl border-none">
+                  Peringatan: Kategori ini memiliki <span className="font-semibold">{selectedCategory.productCount} menu</span>. Pastikan untuk memindahkan produk ke kategori lain terlebih dahulu.
                 </span>
               ) : (
                 <span className="block mt-1 text-slate-500">Tindakan ini tidak dapat dibatalkan.</span>
@@ -520,7 +521,7 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
               variant="outline"
               size="sm"
               onClick={() => setIsDeleteOpen(false)}
-              className="text-xs cursor-pointer rounded-lg"
+              className="text-xs cursor-pointer rounded-xl h-9 px-3.5"
             >
               Batal
             </Button>
@@ -530,7 +531,7 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
               size="sm"
               onClick={onConfirmDelete}
               disabled={isLoading}
-              className="text-xs font-semibold cursor-pointer rounded-lg"
+              className="text-xs font-medium cursor-pointer rounded-xl h-9 px-4"
             >
               {isLoading ? 'Menghapus...' : 'Ya, Hapus Kategori'}
             </Button>
@@ -576,9 +577,9 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
                 </div>
 
                 <div className="text-right shrink-0">
-                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/70 border border-blue-200/60 dark:border-blue-800/60 px-2.5 py-1 rounded-full">
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/70 border-none px-2.5 py-1 rounded-md">
                     <Package className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                    {selectedCategory.productCount ?? 0} Menu
+                    <span>{selectedCategory.productCount ?? 0} Menu</span>
                   </span>
                 </div>
               </div>
@@ -670,7 +671,7 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
                                   {p.name}
                                 </p>
                                 {p.isFeatured && (
-                                  <span className="text-[9px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 border border-amber-200/70 px-1 py-0.2 rounded shrink-0">
+                                  <span className="text-[10px] font-medium text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 border-none px-1.5 py-0.5 rounded-md shrink-0">
                                     Best Seller
                                   </span>
                                 )}
@@ -681,13 +682,14 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
                                 </span>
                                 <span className="text-slate-300 dark:text-slate-700">•</span>
                                 <span
-                                  className={`text-[10px] font-medium ${
+                                  className={cn(
+                                    "text-[10px] font-medium px-1.5 py-0.5 rounded-md border-none",
                                     !p.isActive
-                                      ? 'text-rose-600 dark:text-rose-400'
+                                      ? "text-rose-700 bg-rose-50 dark:bg-rose-950/50 dark:text-rose-300"
                                       : isOutOfStock
-                                      ? 'text-amber-600 dark:text-amber-400'
-                                      : 'text-emerald-600 dark:text-emerald-400'
-                                  }`}
+                                      ? "text-amber-700 bg-amber-50 dark:bg-amber-950/50 dark:text-amber-300"
+                                      : "text-emerald-700 bg-emerald-50 dark:bg-emerald-950/50 dark:text-emerald-300"
+                                  )}
                                 >
                                   {!p.isActive
                                     ? 'Nonaktif'
@@ -721,7 +723,7 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
               variant="ghost"
               size="sm"
               onClick={handleDetailToDelete}
-              className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40 cursor-pointer rounded-lg h-9 px-3"
+              className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40 cursor-pointer rounded-xl h-9 px-3.5"
             >
               <Trash2 className="mr-1.5 h-3.5 w-3.5" />
               Hapus
@@ -733,7 +735,7 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
                 variant="outline"
                 size="sm"
                 onClick={() => setIsDetailOpen(false)}
-                className="text-xs cursor-pointer rounded-lg h-9 px-3"
+                className="text-xs cursor-pointer rounded-xl h-9 px-3.5"
               >
                 Tutup
               </Button>
@@ -741,9 +743,9 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
                 type="button"
                 size="sm"
                 onClick={handleDetailToEdit}
-                className="text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white cursor-pointer rounded-lg h-9 px-4 flex items-center"
+                className="text-xs font-medium bg-[#2563EB] hover:bg-[#1D4ED8] text-white cursor-pointer rounded-xl h-9 px-4 flex items-center shadow-xs"
               >
-                <Pencil className="mr-2 h-4 w-4" />
+                <Pencil className="mr-2 h-3.5 w-3.5" />
                 Edit Kategori
               </Button>
             </div>

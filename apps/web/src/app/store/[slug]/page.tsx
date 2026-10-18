@@ -129,13 +129,6 @@ export default async function StorePage({
 
   return (
     <div className="space-y-4">
-      {tableNumber && (
-        <div className="bg-catalog-primary/5 border border-catalog-primary/20 text-catalog-primary px-3.5 py-2 rounded-xl flex items-center justify-between text-xs sm:text-sm font-medium shadow-2xs">
-          <span>Pesanan untuk meja:</span>
-          <span className="text-sm sm:text-base font-semibold">{tableNumber}</span>
-        </div>
-      )}
-
       <CatalogProductList 
         productsByCategory={productsByCategory} 
         categories={cats} 

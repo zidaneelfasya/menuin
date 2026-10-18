@@ -520,8 +520,9 @@ export async function getDashboardDataForTenant(
       DEBIT: 'Kartu Debit',
       CREDIT: 'Kartu Kredit',
       TRANSFER: 'Transfer Bank',
-      ONLINE: 'Online (Midtrans Gateway)',
-      MIDTRANS: 'Online (Midtrans Gateway)',
+      ONLINE: 'Online (Payment Gateway)',
+      MIDTRANS: 'Online (Payment Gateway)',
+      DOKU: 'Online (Payment Gateway)',
     };
     const paymentMix: PaymentMethodStat[] = paymentMixRes.map(p => {
       const amt = Number(p.totalAmount || 0);

@@ -79,7 +79,7 @@ export function ProductDetailModal({
             {/* Top Badges */}
             <div className="absolute top-3 left-3 flex items-center gap-1.5 z-10">
               {product.isFeatured && (
-                <div className="bg-slate-900/90 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-md flex items-center gap-1 backdrop-blur-md tracking-wider uppercase">
+                <div className="bg-slate-900/90 text-white text-[10px] font-medium px-2.5 py-1 rounded-full shadow-md flex items-center gap-1 backdrop-blur-md tracking-wider uppercase">
                   <Star className="w-3 h-3 fill-current text-amber-400" />
                   <span>Best Seller</span>
                 </div>
@@ -105,11 +105,11 @@ export function ProductDetailModal({
           {/* Details Body */}
           <div className="p-5 sm:p-6 space-y-4">
             <div>
-              <h3 className="font-bold text-lg sm:text-xl text-gray-900 leading-snug">
+              <h3 className="font-semibold text-lg sm:text-xl text-gray-900 leading-snug">
                 {product.name}
               </h3>
               <div
-                className="font-black text-lg sm:text-xl mt-1"
+                className="font-semibold text-lg sm:text-xl mt-1"
                 style={{ color: "var(--outlet-primary, #0E59F9)" }}
               >
                 {formattedPrice}
@@ -118,7 +118,7 @@ export function ProductDetailModal({
 
             {/* Description Section */}
             <div className="space-y-1.5 pt-1 border-t border-gray-100">
-              <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+              <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 Deskripsi Menu
               </h4>
               {product.description && product.description.trim() !== '' ? (
@@ -147,19 +147,19 @@ export function ProductDetailModal({
           <button
             type="button"
             onClick={handlePrimaryAction}
-            className="w-full h-auto min-h-[3.25rem] py-3 px-4 rounded-xl font-bold text-white shadow-xs transition-all flex items-center justify-between gap-3 hover:opacity-95 active:scale-[0.99] cursor-pointer"
+            className="w-full h-auto min-h-[3.25rem] py-3 px-4 rounded-xl font-semibold text-white shadow-xs transition-all flex items-center justify-between gap-3 hover:opacity-95 active:scale-[0.99] cursor-pointer"
             style={{ backgroundColor: "var(--outlet-primary, #0E59F9)" }}
           >
             {hasModifiers ? (
               <>
                 <div className="flex items-center gap-2 min-w-0 text-left">
                   <SlidersHorizontal className="w-4 h-4 stroke-[2.5] shrink-0 opacity-90" />
-                  <span className="text-xs sm:text-sm font-bold tracking-tight truncate">
+                  <span className="text-xs sm:text-sm font-semibold tracking-tight truncate">
                     Pilih Varian
                   </span>
                 </div>
                 <div className="shrink-0 pl-2.5 border-l border-white/25 flex items-center">
-                  <span className="text-xs sm:text-sm font-extrabold tracking-tight whitespace-nowrap">
+                  <span className="text-xs sm:text-sm font-semibold tracking-tight whitespace-nowrap">
                     {formattedPrice}
                   </span>
                 </div>
@@ -168,12 +168,12 @@ export function ProductDetailModal({
               <>
                 <div className="flex items-center gap-2 min-w-0 text-left">
                   <Plus className="w-4 h-4 stroke-[2.5] shrink-0 opacity-90" />
-                  <span className="text-xs sm:text-sm font-bold tracking-tight truncate">
+                  <span className="text-xs sm:text-sm font-semibold tracking-tight truncate">
                     Tambah Pesanan
                   </span>
                 </div>
                 <div className="shrink-0 pl-2.5 border-l border-white/25 flex items-center">
-                  <span className="text-xs sm:text-sm font-extrabold tracking-tight whitespace-nowrap">
+                  <span className="text-xs sm:text-sm font-semibold tracking-tight whitespace-nowrap">
                     {formattedPrice}
                   </span>
                 </div>

@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { db } from '@/lib/db';
-import { memberships, tenants, accounts } from '@/lib/db/schema';
+import { memberships, tenants, accounts, subscriptions } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { getCurrentContext } from './auth-context';
 import { v4 as uuidv4 } from 'uuid';
@@ -29,6 +29,7 @@ export type UserProfile = {
   email: string;
   name: string;
   role: UserRole;
+  systemRole?: string | null;
   tenantId: string | null;
   outletKey: string | null;
   restaurantName: string | null;
@@ -88,6 +89,7 @@ export async function getCurrentUser(): Promise<UserProfile | null> {
     email: context.account.email,
     name: context.account.name,
     role: context.membership.role,
+    systemRole: context.account.systemRole || null,
     tenantId: context.tenant.id,
     outletKey: context.tenant.outletKey,
     restaurantName: context.tenant.name,
@@ -166,92 +168,21 @@ export async function signUpAction(formData: FormData) {
       status: 'ACTIVE',
     });
 
+    // 5. Automatically activate 14-day Free Trial (Lengkap / PRO tier)
+    const now = new Date();
+    const trialEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+    await db.insert(subscriptions).values({
+      tenantId: newTenant.id,
+      plan: 'PRO',
+      status: 'TRIALING',
+      currentPeriodStart: now,
+      currentPeriodEnd: trialEnd,
+    });
+
     return { success: true };
   } catch (dbError: any) {
     console.error('Database error during sign up:', dbError);
     return { error: 'Failed to create membership and tenant' };
-  }
-}
-
-export async function getTenantDetailsByEmail(email: string) {
-  try {
-    const result = await db
-      .select({
-        account: accounts,
-        member: memberships,
-        tenant: tenants,
-      })
-      .from(memberships)
-      .innerJoin(tenants, eq(memberships.tenantId, tenants.id))
-      .innerJoin(accounts, eq(memberships.accountId, accounts.id))
-      .where(eq(accounts.email, email))
-      .limit(1);
-
-    if (result.length === 0) {
-      return null;
-    }
-
-    return {
-      email: result[0].account.email,
-      name: result[0].member.displayName,
-      restaurantName: result[0].tenant.name,
-      subscriptionTier: result[0].tenant.subscriptionTier,
-      tenantId: result[0].tenant.id,
-    };
-  } catch (error) {
-    console.error('Failed to get tenant details:', error);
-    return null;
-  }
-}
-
-export async function markTenantAsPaidAction(email: string) {
-  try {
-    const userProfile = await db
-      .select({ member: memberships })
-      .from(memberships)
-      .innerJoin(accounts, eq(memberships.accountId, accounts.id))
-      .where(eq(accounts.email, email))
-      .limit(1);
-      
-    if (userProfile.length === 0) {
-      return { error: 'Membership not found' };
-    }
-    const tenantId = userProfile[0].member.tenantId;
-
-    const { subscriptions } = await import('@/lib/db/schema');
-    const { and } = await import('drizzle-orm');
-    const { v4: uuidv4 } = await import('uuid');
-
-    const now = new Date();
-    const currentPeriodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-
-    await db.transaction(async (tx) => {
-      // Mark existing ACTIVE subscriptions as EXPIRED
-      await tx.update(subscriptions)
-        .set({ status: 'EXPIRED' })
-        .where(
-          and(
-            eq(subscriptions.tenantId, tenantId),
-            eq(subscriptions.status, 'ACTIVE')
-          )
-        );
-
-      // Insert new ACTIVE subscription
-      const newSubId = uuidv4();
-      await tx.insert(subscriptions).values({
-        id: newSubId,
-        tenantId,
-        plan: 'PRO',
-        status: 'ACTIVE',
-        currentPeriodStart: now,
-        currentPeriodEnd,
-      });
-    });
-
-    return { success: true };
-  } catch (error: any) {
-    console.error('Failed to update subscription:', error);
-    return { error: error.message || 'Database error' };
   }
 }
 

@@ -22,17 +22,10 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { formatCurrency } from "@/lib/utils/format";
-import Script from "next/script";
 import { OrderStatusCard, resolveOrderStatus } from "@/components/store/order-status/order-status-card";
 import { OrderStatusDemoSwitcher } from "@/components/store/order-status/order-status-demo-switcher";
 import { OrderStatusType } from "@/components/store/order-status/order-status-visual";
 import { OrderQrModal } from "@/components/store/order-status/order-qr-modal";
-
-declare global {
-  interface Window {
-    snap: any;
-  }
-}
 
 function StatusItemThumbnail({
   src,
@@ -104,15 +97,9 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
     const formattedOrderNum = orderNum.trim().toUpperCase();
 
     try {
-      // Auto-verify with Midtrans if coming back from payment or status code in URL
-      const hasPaymentParams = searchParams.get("transaction_status") || searchParams.get("status_code");
-      if (hasPaymentParams) {
-        await verifyOnlinePaymentStatus(formattedOrderNum, unwrappedParams.slug);
-      }
-
       const data = await getPublicOrderByNumber(formattedOrderNum, unwrappedParams.slug);
       if (data) {
-        // If order is ONLINE & still PENDING, double check Midtrans status
+        // Status final datang dari webhook DOKU; ini hanya fallback (dibatasi di server).
         if (data.paymentMethod === "ONLINE" && data.paymentStatus === "PENDING") {
           const verifyRes = await verifyOnlinePaymentStatus(formattedOrderNum, unwrappedParams.slug);
           if (verifyRes.success && verifyRes.paymentStatus === "PAID") {
@@ -130,7 +117,7 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
     } finally {
       setIsLoading(false);
     }
-  }, [unwrappedParams.slug, searchParams]);
+  }, [unwrappedParams.slug]);
 
   useEffect(() => {
     if (initialOrderNumber) {
@@ -189,10 +176,6 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
     }
   };
 
-  const snapScriptUrl = order?.tenantSettings?.midtransEnvironment === "production"
-    ? "https://app.midtrans.com/snap/snap.js"
-    : "https://app.sandbox.midtrans.com/snap/snap.js";
-
   const outletPrimaryColor = order?.tenantSettings?.primaryColor || "#0E59F9";
 
   const totalItemsCount = order?.items?.reduce((sum: number, item: any) => sum + (Number(item.quantity) || 1), 0) || 0;
@@ -205,9 +188,6 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
 
   return (
     <>
-      {order?.tenantSettings?.midtransClientKey && (
-        <Script src={snapScriptUrl} data-client-key={order.tenantSettings.midtransClientKey} strategy="afterInteractive" />
-      )}
 
       {/* 1. FIXED TOP NAVIGATION HEADER (Edge-to-edge with shadow) */}
       <header className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.08)] pt-[env(safe-area-inset-top)]">

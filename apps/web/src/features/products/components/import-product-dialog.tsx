@@ -188,7 +188,7 @@ export function ImportProductDialog() {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[560px] p-0 overflow-hidden rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl">
         <DialogHeader className="p-6 pb-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50">
-          <DialogTitle className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
+          <DialogTitle className="text-xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
               <FileSpreadsheet className="w-4 h-4" />
             </div>
@@ -258,7 +258,7 @@ export function ImportProductDialog() {
                 <div className="w-12 h-12 rounded-xl bg-primary/15 text-primary flex items-center justify-center mb-1">
                   <FileSpreadsheet className="w-6 h-6" />
                 </div>
-                <span className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate max-w-[340px]">
+                <span className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate max-w-[340px]">
                   {selectedFile.name}
                 </span>
                 <span className="text-xs text-muted-foreground font-medium">

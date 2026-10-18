@@ -190,7 +190,11 @@ export function ProductDetailSheet({
         const currentQty = currentGroup[modifier.id] || 0;
 
         if (currentQty > 0) {
-          // Deselect / toggle off and clear the group
+          // Radio button yang wajib dipilih tidak bisa di-unselect menjadi kosong
+          if (group.isRequired) {
+            return prev;
+          }
+          // Pilihan opsional bisa di-toggle off
           return { ...prev, [group.id]: {} };
         }
         return { ...prev, [group.id]: { [modifier.id]: 1 } };
@@ -313,43 +317,48 @@ export function ProductDetailSheet({
               )}
             </div>
 
-            {/* 2. Title, Price, and Description */}
-            <div className="p-5 sm:p-6 space-y-5">
-              <div className="border-b border-gray-150 pb-5">
-                <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 tracking-tight leading-tight uppercase">
-                  {product.name}
-                </h2>
-                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                  {potongan > 0 ? (
-                    <>
-                      <span className="text-xl sm:text-2xl font-semibold text-rose-600">
+            {/* 2. Title, Price, and Description (Tiru Layout Bersih ala Gojek) */}
+            <div className="p-4 sm:p-5 space-y-4">
+              <div className="border-b border-slate-150 pb-4">
+                <div className="flex items-start justify-between gap-3">
+                  <h2 className="text-lg sm:text-xl font-semibold text-slate-900 tracking-tight leading-snug flex-1">
+                    {product.name}
+                  </h2>
+                  <div className="text-right shrink-0">
+                    {potongan > 0 ? (
+                      <div className="flex flex-col items-end">
+                        <span className="text-base sm:text-lg font-semibold text-rose-600 font-numeric">
+                          {formatCurrency(basePrice)}
+                        </span>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="text-xs text-slate-400 line-through font-numeric">
+                            {formatCurrency(rawPrice)}
+                          </span>
+                          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-600 border border-rose-200">
+                            Hemat {formatCurrency(potongan)}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-base sm:text-lg font-semibold text-slate-900 font-numeric">
                         {formatCurrency(basePrice)}
                       </span>
-                      <span className="text-sm sm:text-base text-gray-400 line-through">
-                        {formatCurrency(rawPrice)}
-                      </span>
-                      <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-600 border border-rose-200 uppercase tracking-wide">
-                        Hemat {formatCurrency(potongan)}
-                      </span>
-                    </>
-                  ) : (
-                    <div className="text-lg sm:text-xl font-semibold text-gray-900">
-                      {formatCurrency(basePrice)}
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
+
                 {product.description && product.description.trim() !== '' && (
-                  <p className="text-sm sm:text-[15px] text-gray-500 mt-2 leading-relaxed whitespace-pre-line">
+                  <p className="text-xs sm:text-sm text-slate-500 mt-2 leading-relaxed whitespace-pre-line">
                     {product.description}
                   </p>
                 )}
               </div>
 
-              {/* 3. Modifier Groups Section (Flat list, NO borders around options, all use animated checkboxes) */}
+              {/* 3. Modifier Groups Section (Layout & Kontrol ala Gojek: Bulat untuk Wajib Single-Select, Kotak Checkbox untuk Opsional/Multi-Select) */}
               {productGroups.length > 0 && (
-                <div className="space-y-6 pt-1">
+                <div className="space-y-5 pt-1">
                   {productGroups.map(group => {
-                    const isSingleSelect = group.maxSelections === 1;
+                    const isRadio = group.isRequired && group.maxSelections === 1;
                     const groupSelections = selectedMap[group.id] || {};
                     const currentGroupTotalQty = Object.values(groupSelections).reduce((a, b) => a + b, 0);
                     const isGroupSatisfied = group.isRequired
@@ -357,33 +366,48 @@ export function ProductDetailSheet({
                       : true;
 
                     return (
-                      <div key={group.id} className="space-y-3 pb-5 border-b border-gray-150 last:border-b-0">
+                      <div key={group.id} className="pb-4 border-b border-slate-100 last:border-b-0 space-y-1.5">
                         {/* Group Header */}
                         <div>
-                          <h3 className="font-semibold text-base sm:text-lg text-gray-900 uppercase tracking-tight">
+                          <h3 className="font-semibold text-sm sm:text-base text-slate-900 tracking-tight leading-snug">
                             {group.name}
                           </h3>
-                          <p
-                            className={`text-xs sm:text-sm mt-0.5 font-medium transition-colors ${
-                              group.isRequired
-                                ? isGroupSatisfied
-                                  ? 'text-gray-500'
-                                  : 'text-orange-500'
-                                : 'text-gray-500'
-                            }`}
-                          >
-                            {group.isRequired
-                              ? group.maxSelections === 1
-                                ? 'Must be selected max. 1'
-                                : `Must be selected min. ${group.minSelections || 1}, max. ${group.maxSelections}`
-                              : group.maxSelections === 1
-                              ? 'Opsional (Pilih maks. 1)'
-                              : `Opsional (Pilih maks. ${group.maxSelections})`}
-                          </p>
+                          <div className="flex items-center gap-1.5 mt-0.5 text-xs sm:text-[13px]">
+                            {group.isRequired ? (
+                              <>
+                                <span
+                                  className="font-medium text-catalog-primary"
+                                  style={{ color: 'var(--catalog-primary, #059669)' }}
+                                >
+                                  Harus dipilih
+                                </span>
+                                <span className="text-slate-300">•</span>
+                                <span className="text-slate-500">
+                                  {group.maxSelections === 1
+                                    ? 'Pilih 1'
+                                    : group.minSelections && group.minSelections > 1
+                                    ? `Pilih ${group.minSelections} - ${group.maxSelections}`
+                                    : `Pilih maks. ${group.maxSelections}`}
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <span className="text-slate-500 font-normal">Opsional</span>
+                                <span className="text-slate-300">•</span>
+                                <span className="text-slate-500">
+                                  {group.maxSelections === 1
+                                    ? 'Pilih maks. 1'
+                                    : group.maxSelections
+                                    ? `Pilih maks. ${group.maxSelections}`
+                                    : 'Bebas pilih'}
+                                </span>
+                              </>
+                            )}
+                          </div>
                         </div>
 
-                        {/* Flat Modifier Options List (No Card Border) */}
-                        <div className="space-y-1 pt-1" role="group" aria-label={group.name}>
+                        {/* Flat Modifier Options List (Nama di Kiri, Harga & Kontrol di Kanan) */}
+                        <div className="pt-0.5" role={isRadio ? "radiogroup" : "group"} aria-label={group.name}>
                           {group.modifiers?.map(mod => {
                             const isAvailable = mod.isAvailable !== false;
                             const groupSelections = selectedMap[group.id] || {};
@@ -395,68 +419,97 @@ export function ProductDetailSheet({
                               <div
                                 key={mod.id}
                                 onClick={() => isAvailable && handleToggleModifier(group, mod)}
-                                role="checkbox"
+                                role={isRadio ? "radio" : "checkbox"}
                                 aria-checked={isSelected}
                                 aria-disabled={!isAvailable}
                                 tabIndex={isAvailable ? 0 : -1}
-                                className={`flex items-center justify-between py-2.5 sm:py-3 cursor-pointer select-none group transition-opacity ${
-                                  !isAvailable ? 'opacity-40 cursor-not-allowed' : ''
+                                className={`flex items-center justify-between py-3 border-b border-slate-100 last:border-b-0 cursor-pointer select-none group transition-colors ${
+                                  !isAvailable ? 'opacity-40 cursor-not-allowed' : 'active:bg-slate-50/60'
                                 }`}
                               >
-                                {/* Left: Option Name & Extra Price */}
+                                {/* Kiri: Nama Modifier (Konsisten font-normal & warna teks hitam ala Gojek) */}
                                 <div className="flex-1 min-w-0 pr-3">
                                   <span
-                                    className={`text-base sm:text-[17px] block leading-snug uppercase ${
+                                    className={`text-sm sm:text-[15px] block leading-snug font-normal ${
                                       !isAvailable
-                                        ? 'line-through text-gray-400 font-medium'
-                                        : isSelected
-                                        ? 'font-semibold text-gray-900'
-                                        : 'font-medium text-gray-800 group-hover:text-gray-900'
+                                        ? 'line-through text-slate-400'
+                                        : 'text-slate-900'
                                     }`}
                                   >
                                     <span>{mod.name}</span>
-                                    {modPrice > 0 && isAvailable && (
-                                      <span className="font-semibold text-gray-900 ml-1.5">
-                                        (+ {formatCurrency(modPrice)})
-                                      </span>
-                                    )}
                                     {!isAvailable && (
-                                      <span className="text-sm text-red-500 font-semibold ml-1.5">
+                                      <span className="text-xs text-rose-500 font-medium ml-2">
                                         (Habis)
                                       </span>
                                     )}
                                   </span>
                                 </div>
 
-                                {/* Right: Modern Animated Checkbox */}
-                                <motion.div
-                                  initial={false}
-                                  animate={isSelected ? { scale: [0.9, 1.15, 1] } : { scale: 1 }}
-                                  transition={{ duration: 0.22, ease: 'easeOut' }}
-                                  className={`w-7 h-7 rounded-sm border-2 flex items-center justify-center shrink-0 transition-colors ${
-                                    isSelected
-                                      ? 'border-catalog-primary bg-catalog-primary text-white shadow-2xs'
-                                      : 'border-gray-300 bg-white group-hover:border-gray-400'
-                                  }`}
-                                  style={
-                                    isSelected
-                                      ? {
-                                          borderColor: 'var(--catalog-primary, #f43f5e)',
-                                          backgroundColor: 'var(--catalog-primary, #f43f5e)',
-                                        }
-                                      : undefined
-                                  }
-                                >
-                                  {isSelected && (
-                                    <motion.div
-                                      initial={{ scale: 0, opacity: 0 }}
-                                      animate={{ scale: 1, opacity: 1 }}
-                                      transition={{ type: 'spring', stiffness: 500, damping: 28 }}
+                                {/* Kanan: Harga & Kontrol Selector (Bulat Radio vs Kotak Checkbox) */}
+                                <div className="flex items-center gap-3 shrink-0">
+                                  {isAvailable && (
+                                    <span
+                                      className={`text-xs sm:text-sm ${
+                                        modPrice > 0 ? 'font-medium text-slate-800' : 'text-slate-400 font-normal'
+                                      }`}
                                     >
-                                      <Check className="w-4.5 h-4.5 stroke-[3.2]" />
-                                    </motion.div>
+                                      {modPrice > 0 ? `+${formatCurrency(modPrice)}` : 'Gratis'}
+                                    </span>
                                   )}
-                                </motion.div>
+
+                                  {isRadio ? (
+                                    /* Bulat (Radio) untuk Pilihan Wajib & Single-Select */
+                                    <div
+                                      className={`w-[22px] h-[22px] rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
+                                        isSelected
+                                          ? 'border-catalog-primary bg-white'
+                                          : 'border-slate-300 bg-white group-hover:border-slate-400'
+                                      }`}
+                                      style={
+                                        isSelected
+                                          ? { borderColor: 'var(--catalog-primary, #059669)' }
+                                          : undefined
+                                      }
+                                    >
+                                      {isSelected && (
+                                        <motion.div
+                                          initial={{ scale: 0 }}
+                                          animate={{ scale: 1 }}
+                                          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                                          className="w-2.5 h-2.5 rounded-full bg-catalog-primary"
+                                          style={{ backgroundColor: 'var(--catalog-primary, #059669)' }}
+                                        />
+                                      )}
+                                    </div>
+                                  ) : (
+                                    /* Checkbox (Kotak Persegi) untuk Opsional / Multi-Select */
+                                    <div
+                                      className={`w-[22px] h-[22px] rounded-sm border-2 flex items-center justify-center shrink-0 transition-all ${
+                                        isSelected
+                                          ? 'border-catalog-primary bg-catalog-primary text-white shadow-2xs'
+                                          : 'border-slate-300 bg-white group-hover:border-slate-400'
+                                      }`}
+                                      style={
+                                        isSelected
+                                          ? {
+                                              borderColor: 'var(--catalog-primary, #059669)',
+                                              backgroundColor: 'var(--catalog-primary, #059669)',
+                                            }
+                                          : undefined
+                                      }
+                                    >
+                                      {isSelected && (
+                                        <motion.div
+                                          initial={{ scale: 0 }}
+                                          animate={{ scale: 1 }}
+                                          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                                        >
+                                          <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                        </motion.div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             );
                           })}
@@ -467,49 +520,54 @@ export function ProductDetailSheet({
                 </div>
               )}
 
-              {/* 4. Notes Section */}
-              <div className="space-y-2 pt-2 pb-6">
+              {/* 4. Notes Section (Catatan Pesanan) */}
+              <div className="space-y-2 pt-1 pb-4">
                 <div className="flex items-center justify-between">
-                  <label htmlFor="sheet-notes" className="text-base font-semibold text-gray-900 uppercase tracking-tight">
-                    Notes
+                  <label htmlFor="sheet-notes" className="text-sm sm:text-base font-semibold text-slate-900 tracking-tight">
+                    Catatan Pesanan
                   </label>
-                  <span className="text-xs sm:text-sm text-gray-400 font-medium">Optional</span>
+                  <span className="text-xs text-slate-400 font-normal">Opsional</span>
                 </div>
                 <Textarea
                   id="sheet-notes"
-                  placeholder="Example: Make my dish delicious!"
+                  placeholder="Contoh: Jangan terlalu manis, es dipisah, ekstra sedotan..."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="min-h-[85px] rounded-xl border-gray-200 text-sm sm:text-base focus-visible:ring-catalog-primary placeholder:text-gray-400 resize-none p-3.5"
+                  className="min-h-[78px] rounded-xl border-slate-200 text-xs sm:text-sm focus-visible:ring-catalog-primary placeholder:text-slate-400 resize-none p-3"
+                  maxLength={200}
                 />
               </div>
             </div>
           </div>
 
-          {/* 5. Sticky Bottom Bar: Total Order Stepper & Add Orders CTA Button */}
-          <div className="bg-white border-t border-gray-150 p-4 sm:p-5 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-lg flex flex-col gap-3.5 shrink-0 z-20">
-            {/* Stepper Row: "Total Order" + [-] [qty] [+] */}
+          {/* 5. Sticky Bottom Bar: Stepper & CTA Button (Pill Rounded ala Gojek) */}
+          <div className="bg-white border-t border-slate-150 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-lg flex flex-col gap-3 shrink-0 z-20">
+            {/* Stepper Row: "Jumlah pembelian" + [-] [qty] [+] */}
             <div className="flex items-center justify-between">
-              <span className="text-base sm:text-lg font-medium text-gray-900 tracking-tight">
-                Total Order
+              <span className="text-sm sm:text-base font-medium text-slate-900 tracking-tight">
+                Jumlah pembelian
               </span>
               <div className="flex items-center gap-3">
                 <button
                   type="button"
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
                   disabled={quantity <= 1}
-                  className="w-8 h-8 rounded-full border border-gray-900 flex items-center justify-center text-gray-900 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed active:scale-90 transition-all cursor-pointer"
+                  className="w-8 h-8 rounded-full border border-slate-300 flex items-center justify-center text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:border-slate-200 disabled:cursor-not-allowed active:scale-95 transition-all cursor-pointer"
                   aria-label="Kurangi jumlah pesanan"
                 >
-                  <Minus className="w-4 h-4 stroke-[2.5]" />
+                  <Minus className="w-4 h-4 stroke-[2]" />
                 </button>
-                <span className="min-w-[24px] text-center font-semibold text-base sm:text-lg text-gray-900 font-mono">
+                <span className="min-w-[24px] text-center font-semibold text-base text-slate-900 font-numeric">
                   {quantity}
                 </span>
                 <button
                   type="button"
                   onClick={() => setQuantity(quantity + 1)}
-                  className="w-8 h-8 rounded-full border border-gray-900 flex items-center justify-center text-gray-900 hover:bg-gray-100 active:scale-90 transition-all cursor-pointer"
+                  className="w-8 h-8 rounded-full border border-catalog-primary text-catalog-primary flex items-center justify-center hover:bg-slate-50 active:scale-95 transition-all cursor-pointer"
+                  style={{
+                    borderColor: 'var(--catalog-primary, #059669)',
+                    color: 'var(--catalog-primary, #059669)',
+                  }}
                   aria-label="Tambah jumlah pesanan"
                 >
                   <Plus className="w-4 h-4 stroke-[2.5]" />
@@ -519,25 +577,31 @@ export function ProductDetailSheet({
 
             {/* Validation Message if required modifier is missing */}
             {!isValid && missingRequiredGroup && (
-              <p className="text-xs sm:text-sm font-semibold text-orange-500">
+              <p className="text-xs font-medium text-rose-500">
                 Pilih {missingRequiredGroup.name} terlebih dahulu
               </p>
             )}
 
-            {/* Primary Action Button */}
+            {/* Primary Action Button (Rounded Pill ala Gojek) */}
             <button
               type="button"
               disabled={!isValid}
               onClick={handleAddAction}
-              className="w-full h-12 sm:h-13 rounded-xl sm:rounded-2xl font-semibold text-sm sm:text-base text-white shadow-sm flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-95 active:scale-[0.99] cursor-pointer"
-              style={{
-                backgroundColor: isValid
-                  ? 'var(--catalog-primary, #f43f5e)'
-                  : '#9ca3af',
-              }}
+              className={`w-full h-12 rounded-full font-semibold text-sm sm:text-base flex items-center justify-center transition-all cursor-pointer active:scale-[0.99] shadow-xs ${
+                isValid
+                  ? 'bg-catalog-primary text-white hover:opacity-95'
+                  : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
+              }`}
+              style={
+                isValid
+                  ? {
+                      backgroundColor: 'var(--catalog-primary, #059669)',
+                    }
+                  : undefined
+              }
             >
               <span>
-                {editingCartItemId ? 'Simpan Perubahan' : 'Add Orders'} - {formatCurrency(grandTotal)}
+                {editingCartItemId ? 'Simpan Perubahan' : 'Tambah Pesanan'} - {formatCurrency(grandTotal)}
               </span>
             </button>
           </div>

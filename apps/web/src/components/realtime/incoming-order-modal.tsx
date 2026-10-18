@@ -64,13 +64,13 @@ export function IncomingOrderModal({ activeOrders }: { activeOrders: any[] }) {
                   <ChefHat className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-800 text-sm leading-none tracking-tight">Pesanan Baru</h3>
+                  <h3 className="font-semibold text-slate-800 text-sm leading-none tracking-tight">Pesanan Baru</h3>
                   <span className="text-[10px] font-semibold text-blue-600 uppercase tracking-wider">{currentOrder.orderType.replace('_', ' ')}</span>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 {activeOrders.length > 1 && (
-                  <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
                     1 of {activeOrders.length}
                   </span>
                 )}
@@ -90,17 +90,17 @@ export function IncomingOrderModal({ activeOrders }: { activeOrders: any[] }) {
                   {currentOrder.tableNumber ? <Hash className="w-4 h-4" /> : <User className="w-4 h-4" />}
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                  <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
                     {currentOrder.tableNumber ? 'Meja' : 'Pelanggan'}
                   </span>
-                  <span className="font-extrabold text-slate-900 text-sm">
+                  <span className="font-semibold text-slate-900 text-sm">
                     {currentOrder.tableNumber || currentOrder.customerName || 'Tamu'}
                   </span>
                 </div>
               </div>
               <div className="text-right flex flex-col">
-                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Total</span>
-                <span className="font-black text-blue-600 text-sm">{formatCurrency(Number(currentOrder.grandTotal))}</span>
+                <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Total</span>
+                <span className="font-semibold text-blue-600 text-sm">{formatCurrency(Number(currentOrder.grandTotal))}</span>
               </div>
             </div>
 
@@ -109,7 +109,7 @@ export function IncomingOrderModal({ activeOrders }: { activeOrders: any[] }) {
               {currentOrder.items.map((item: any, idx: number) => (
                 <div key={idx} className="flex justify-between items-start">
                   <div className="flex gap-2">
-                    <span className="font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded text-[10px] min-w-[24px] text-center">{item.quantity}x</span> 
+                    <span className="font-medium text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded text-[10px] min-w-[24px] text-center">{item.quantity}x</span> 
                     <span className="font-semibold text-slate-700">{item.productName}</span>
                   </div>
                   <span className="text-slate-500 font-medium whitespace-nowrap ml-2">{formatCurrency(Number(item.subtotal))}</span>
@@ -121,14 +121,14 @@ export function IncomingOrderModal({ activeOrders }: { activeOrders: any[] }) {
             <div className="flex gap-2 pt-1">
               <button 
                 onClick={() => dismissPopup(currentOrder.id)} 
-                className="flex-1 py-2.5 text-xs font-bold text-slate-600 bg-white border-2 border-slate-200 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center justify-center gap-1.5"
+                className="flex-1 py-2.5 text-xs font-semibold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center justify-center gap-1.5"
               >
                 <Clock className="w-3.5 h-3.5" /> Nanti Saja
               </button>
               <button 
                 onClick={handleAccept} 
                 disabled={isLoading}
-                className="flex-1 py-2.5 text-xs font-bold text-white bg-blue-600 border-2 border-blue-600 rounded-xl hover:bg-blue-700 hover:border-blue-700 shadow-md shadow-blue-500/20 transition-all flex items-center justify-center gap-1.5 disabled:opacity-70 disabled:cursor-not-allowed"
+                className="flex-1 py-2.5 text-xs font-semibold text-white bg-blue-600 border border-blue-600 rounded-xl hover:bg-blue-700 hover:border-blue-700 shadow-sm transition-all flex items-center justify-center gap-1.5 disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
