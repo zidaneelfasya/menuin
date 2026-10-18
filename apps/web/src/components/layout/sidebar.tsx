@@ -157,12 +157,13 @@ function SidebarContent({
 		(item) => !item.roles || item.roles.includes(user.role as any),
 	);
 
-	// Determine if the current page has a sub-sidebar (e.g. Katalog Menu, Shift Kasir, Settings, or Reports)
+	// Determine if the current page has a sub-sidebar (e.g. Katalog Menu, Shift Kasir, Settings, Reports, or Verification)
 	const hasSubSidebar =
 		pathname.includes("/katalog") ||
 		pathname.includes("/shifts") ||
 		pathname.includes("/settings") ||
-		pathname.includes("/reports");
+		pathname.includes("/reports") ||
+		pathname.includes("/verification");
 	const curvedTabBg = hasSubSidebar ? "#ffffff" : "#F9FBFF";
 
 	const userAvatarUri = React.useMemo(() => {
@@ -182,21 +183,39 @@ function SidebarContent({
 	return (
 		<>
 			{/* Logo Area */}
-			<div className="h-16 flex items-center justify-center px-4  relative flex-shrink-0">
-				<div
-					className={cn(
-						"relative flex items-center transition-all",
-						collapsed ? "w-8 h-8 mx-auto" : "w-28 h-9",
-					)}
-				>
-					<Image
-						src="/menuin-putih.png"
-						alt="Logo Menuin"
-						fill
-						className="object-contain"
-						priority
-					/>
-				</div>
+			<div className="h-16 flex items-center justify-center px-4 relative flex-shrink-0">
+				{collapsed ? (
+					<button
+						type="button"
+						onClick={() => setCollapsed?.(false)}
+						className="w-8 h-8 mx-auto relative flex items-center justify-center cursor-pointer transition-transform hover:scale-105 active:scale-95 focus:outline-none"
+						title="Buka Sidebar"
+						aria-label="Buka Sidebar"
+					>
+						<Image
+							src="/menuin-putih.png"
+							alt="Logo Menuin"
+							fill
+							className="object-contain"
+							priority
+						/>
+					</button>
+				) : (
+					<Link
+						href="/"
+						className="w-28 h-9 relative flex items-center cursor-pointer transition-transform hover:opacity-90 active:scale-95 focus:outline-none"
+						title="Ke Halaman Utama"
+						aria-label="Ke Halaman Utama"
+					>
+						<Image
+							src="/menuin-putih.png"
+							alt="Logo Menuin"
+							fill
+							className="object-contain"
+							priority
+						/>
+					</Link>
+				)}
 
 				{setCollapsed && (
 					<button
@@ -240,7 +259,7 @@ function SidebarContent({
 									/* Collapsed Nav Item */
 									<div
 										className={cn(
-											"w-10 h-10 rounded-xl flex items-center justify-center mx-auto transition-all duration-150 group relative cursor-pointer my-1",
+											"w-10 h-10 rounded-full flex items-center justify-center mx-auto transition-all duration-150 group relative cursor-pointer my-1",
 											isActive
 												? "bg-white text-[#0e59f9] shadow-sm"
 												: "text-white/80 hover:text-white hover:bg-white/10",
@@ -269,7 +288,7 @@ function SidebarContent({
 											"flex items-center px-3.5 py-2.5 transition-all duration-150 group relative cursor-pointer my-0.5",
 											isActive
 												? "curved-tab-active font-semibold z-20"
-												: "mr-3 rounded-xl text-white/80 hover:text-white hover:bg-white/10 font-medium",
+												: "mr-3 rounded-full text-white/80 hover:text-white hover:bg-white/10 font-medium",
 										)}
 										style={
 											isActive

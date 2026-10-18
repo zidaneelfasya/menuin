@@ -10,11 +10,28 @@ import { RealtimeOrderProvider } from '../providers/realtime-order-provider';
 import { usePathname } from 'next/navigation';
 
 export function MainLayout({ children, user, availableTenants }: { children: React.ReactNode, user: UserProfile, availableTenants: any[] }) {
-  const [collapsed, setCollapsed] = React.useState(false);
-  const [mobileOpen, setMobileOpen] = React.useState(false);
   const pathname = usePathname();
 
-  const hasSubSidebar = pathname.includes('/katalog') || pathname.includes('/shifts') || pathname.includes('/settings') || pathname.includes('/reports') || pathname.includes('/verification');
+  const subSidebarSections = ['katalog', 'shifts', 'settings', 'reports', 'verification'];
+  const getSection = (path: string) => {
+    const match = path.match(/\/outlet\/[^\/]+\/([^\/\?#]+)/);
+    return match ? match[1] : '';
+  };
+
+  const currentSection = getSection(pathname);
+  const hasSubSidebar = subSidebarSections.includes(currentSection);
+
+  const [collapsed, setCollapsed] = React.useState(hasSubSidebar);
+  const [mobileOpen, setMobileOpen] = React.useState(false);
+
+  const prevSectionRef = React.useRef(currentSection);
+
+  React.useEffect(() => {
+    if (prevSectionRef.current !== currentSection) {
+      prevSectionRef.current = currentSection;
+      setCollapsed(hasSubSidebar);
+    }
+  }, [currentSection, hasSubSidebar]);
 
   return (
     <RealtimeOrderProvider tenantId={user.tenantId || ''}>

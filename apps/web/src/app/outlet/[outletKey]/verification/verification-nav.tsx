@@ -94,16 +94,16 @@ export function VerificationNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-xs md:text-sm transition-all duration-150 whitespace-nowrap cursor-pointer',
+                'flex items-center gap-2.5 rounded-full px-3.5 py-2.5 text-xs md:text-sm transition-all duration-150 whitespace-nowrap cursor-pointer',
                 isActive
-                  ? 'bg-[#0e59f9]/10 text-[#0e59f9] font-semibold shadow-xs'
+                  ? 'bg-[#0e59f9] text-white font-semibold shadow-sm'
                   : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 font-medium'
               )}
             >
               <item.icon
                 className={cn(
                   'h-4 w-4 flex-shrink-0',
-                  isActive ? 'text-[#0e59f9]' : 'text-slate-500'
+                  isActive ? 'text-white' : 'text-slate-500'
                 )}
               />
               <span className="truncate">{item.label}</span>
