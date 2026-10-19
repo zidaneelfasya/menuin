@@ -36,4 +36,16 @@ describe('getEntitlements', () => {
     const sub = { status: 'ACTIVE', plan: 'BASIC', currentPeriodEnd: new Date(now.getTime() - day).toISOString() };
     expect(getEntitlements(sub, now).isLocked).toBe(true);
   });
+
+  it('unlocks a TRIALING subscription within trial period', () => {
+    const sub = { status: 'TRIALING', plan: 'PRO', currentPeriodEnd: new Date(now.getTime() + 14 * day) };
+    const ent = getEntitlements(sub, now);
+    expect(ent.isLocked).toBe(false);
+    expect(ent.features).toContain('REPORTS');
+  });
+
+  it('locks a TRIALING subscription when trial period expired', () => {
+    const sub = { status: 'TRIALING', plan: 'PRO', currentPeriodEnd: new Date(now.getTime() - 1000) };
+    expect(getEntitlements(sub, now).isLocked).toBe(true);
+  });
 });

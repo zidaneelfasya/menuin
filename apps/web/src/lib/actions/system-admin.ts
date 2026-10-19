@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from '@/lib/actions/auth';
+import { getAuthenticatedAccount } from '@/lib/actions/auth-context';
 import { db } from '@/lib/db';
 import { accounts, memberships, tenants, transactions, transactionItems, products, categories } from '@/lib/db/schema';
 import { desc, count, eq, inArray, sql } from 'drizzle-orm';
@@ -23,11 +24,22 @@ function getAdminClient() {
   });
 }
 
-export async function getSystemAdminStats() {
-  const user = await getCurrentUser();
-  if (!user || (user.role as string) !== 'SYSTEM_ADMIN' && (user.role as string) !== 'OWNER') {
+async function requireSystemAdmin() {
+  const account = await getAuthenticatedAccount().catch(() => null);
+  if (!account) {
     throw new Error('Unauthorized');
   }
+
+  // Direct authorization via account's global systemRole
+  if (['SYSTEM_ADMIN', 'SUPERADMIN', 'VERIFICATION_ADMIN'].includes(account.systemRole as string)) {
+    return account;
+  }
+
+  throw new Error('Unauthorized');
+}
+
+export async function getSystemAdminStats() {
+  await requireSystemAdmin();
 
   try {
     const allAccounts = await db.select().from(accounts);
@@ -97,10 +109,7 @@ export async function getSystemAdminStats() {
 }
 
 export async function getSystemTenants() {
-  const user = await getCurrentUser();
-  if (!user || (user.role as string) !== 'SYSTEM_ADMIN' && (user.role as string) !== 'OWNER') {
-    throw new Error('Unauthorized');
-  }
+  await requireSystemAdmin();
 
   try {
     const tenantsList = await db
@@ -129,10 +138,7 @@ export async function createSystemTenant(data: {
   isPaid?: boolean;
   subscriptionTier?: 'FREE' | 'BASIC' | 'PRO';
 }) {
-  const user = await getCurrentUser();
-  if (!user || (user.role as string) !== 'SYSTEM_ADMIN' && (user.role as string) !== 'OWNER') {
-    return { success: false, error: 'Unauthorized' };
-  }
+  await requireSystemAdmin();
 
   if (!data.name?.trim() || !data.slug?.trim()) {
     return { success: false, error: 'Nama dan Slug tenant wajib diisi.' };
@@ -175,10 +181,7 @@ export async function updateSystemTenant(
     subscriptionTier?: 'FREE' | 'BASIC' | 'PRO';
   }
 ) {
-  const user = await getCurrentUser();
-  if (!user || (user.role as string) !== 'SYSTEM_ADMIN' && (user.role as string) !== 'OWNER') {
-    return { success: false, error: 'Unauthorized' };
-  }
+  await requireSystemAdmin();
 
   try {
     if (data.slug) {
@@ -209,10 +212,7 @@ export async function updateSystemTenant(
 }
 
 export async function toggleTenantStatus(id: string, isPaid: boolean) {
-  const user = await getCurrentUser();
-  if (!user || (user.role as string) !== 'SYSTEM_ADMIN' && (user.role as string) !== 'OWNER') {
-    return { success: false, error: 'Unauthorized' };
-  }
+  await requireSystemAdmin();
 
   try {
     const subscriptionTier = isPaid ? 'PRO' : 'FREE';
@@ -228,10 +228,7 @@ export async function toggleTenantStatus(id: string, isPaid: boolean) {
 }
 
 export async function deleteSystemTenant(id: string) {
-  const user = await getCurrentUser();
-  if (!user || (user.role as string) !== 'SYSTEM_ADMIN' && (user.role as string) !== 'OWNER') {
-    return { success: false, error: 'Unauthorized' };
-  }
+  await requireSystemAdmin();
 
   try {
     // 1. Find transactions to clean up transactionItems
@@ -270,10 +267,7 @@ export async function deleteSystemTenant(id: string) {
 // USERS CRUD
 // -------------------------------------------------------------
 export async function getSystemUsers() {
-  const user = await getCurrentUser();
-  if (!user || (user.role as string) !== 'SYSTEM_ADMIN' && (user.role as string) !== 'OWNER') {
-    throw new Error('Unauthorized');
-  }
+  await requireSystemAdmin();
 
   try {
     const usersList = await db
@@ -282,6 +276,7 @@ export async function getSystemUsers() {
         email: accounts.email,
         name: accounts.name,
         role: memberships.role,
+        systemRole: accounts.systemRole,
         createdAt: accounts.createdAt,
         updatedAt: accounts.updatedAt,
         dashboardId: memberships.tenantId,
@@ -303,13 +298,11 @@ export async function createSystemUser(data: {
   name: string;
   email: string;
   password?: string;
-  role: 'OWNER' | 'MANAGER' | 'CASHIER' | 'STAFF';
+  role?: 'OWNER' | 'MANAGER' | 'CASHIER' | 'STAFF';
+  systemRole?: 'USER' | 'SYSTEM_ADMIN' | 'VERIFICATION_ADMIN' | 'CARE_AGENT';
   dashboardId?: string | null;
 }) {
-  const currentUser = await getCurrentUser();
-  if (!currentUser || (currentUser.role as string) !== 'SYSTEM_ADMIN' && (currentUser.role as string) !== 'OWNER') {
-    return { success: false, error: 'Unauthorized' };
-  }
+  await requireSystemAdmin();
 
   if (!data.name?.trim() || !data.email?.trim()) {
     return { success: false, error: 'Nama dan email wajib diisi.' };
@@ -368,6 +361,7 @@ export async function createSystemUser(data: {
         authUserId: authUserId || crypto.randomUUID(),
         name: data.name.trim(),
         email: data.email.trim(),
+        systemRole: data.systemRole || 'USER',
       }).returning();
       account = newAccount;
     }
@@ -409,15 +403,13 @@ export async function updateSystemUser(
   data: {
     name: string;
     email: string;
-    role: 'OWNER' | 'MANAGER' | 'CASHIER' | 'STAFF';
+    role?: 'OWNER' | 'MANAGER' | 'CASHIER' | 'STAFF';
+    systemRole?: 'USER' | 'SYSTEM_ADMIN' | 'VERIFICATION_ADMIN' | 'CARE_AGENT';
     dashboardId?: string | null;
     password?: string;
   }
 ) {
-  const currentUser = await getCurrentUser();
-  if (!currentUser || (currentUser.role as string) !== 'SYSTEM_ADMIN' && (currentUser.role as string) !== 'OWNER') {
-    return { success: false, error: 'Unauthorized' };
-  }
+  await requireSystemAdmin();
 
   if (!data.name?.trim() || !data.email?.trim()) {
     return { success: false, error: 'Nama dan email wajib diisi.' };
@@ -439,13 +431,18 @@ export async function updateSystemUser(
       }
     }
 
+    const accountUpdates: Record<string, any> = {
+      name: data.name.trim(),
+      email: data.email.trim(),
+      updatedAt: new Date(),
+    };
+    if (data.systemRole) {
+      accountUpdates.systemRole = data.systemRole;
+    }
+
     await db
       .update(accounts)
-      .set({
-        name: data.name.trim(),
-        email: data.email.trim(),
-        updatedAt: new Date(),
-      })
+      .set(accountUpdates)
       .where(eq(accounts.id, id));
 
     if (data.dashboardId) {
@@ -469,12 +466,9 @@ export async function updateSystemUser(
 }
 
 export async function deleteSystemUser(id: string) {
-  const currentUser = await getCurrentUser();
-  if (!currentUser || (currentUser.role as string) !== 'SYSTEM_ADMIN' && (currentUser.role as string) !== 'OWNER') {
-    return { success: false, error: 'Unauthorized' };
-  }
+  const currentAdmin = await requireSystemAdmin();
 
-  if (currentUser.id === id) {
+  if (currentAdmin.id === id) {
     return { success: false, error: 'Anda tidak dapat menghapus akun Anda sendiri.' };
   }
 

@@ -9,9 +9,11 @@ import {
   subscriptionInvoices,
   subscriptions,
   tenants,
+  businessProfiles,
   transactionItems,
   transactions,
 } from '@/lib/db/schema';
+import { evaluatePaymentReadiness } from '@/lib/verification/state-machine';
 import { computeSubscriptionPeriod } from '@/lib/billing/plans';
 import { DokuConfigError, getDokuConfig, type DokuConfig } from './doku/config';
 import { DokuApiError, DokuNetworkError } from './doku/client';
@@ -97,6 +99,7 @@ export type StartPaymentErrorCode =
   | 'NOT_CONFIGURED'
   | 'DISABLED'
   | 'NO_SUB_ACCOUNT'
+  | 'UNVERIFIED'
   | 'NOT_FOUND'
   | 'ALREADY_PAID'
   | 'ORDER_CLOSED'
@@ -134,6 +137,7 @@ const START_ERROR_MESSAGES: Record<MessageSet, Record<StartPaymentErrorCode, str
     NOT_CONFIGURED: 'QRIS dinamis belum dikonfigurasi. Gunakan metode pembayaran lain.',
     DISABLED: 'QRIS dinamis belum aktif untuk outlet ini.',
     NO_SUB_ACCOUNT: 'Merchant QRIS outlet ini belum terdaftar di DOKU. Gunakan metode pembayaran lain.',
+    UNVERIFIED: 'Outlet ini belum menyelesaikan verifikasi kepatuhan. Gunakan metode pembayaran lain.',
     NOT_FOUND: 'Transaksi tidak ditemukan.',
     ALREADY_PAID: 'Transaksi ini sudah lunas.',
     ORDER_CLOSED: 'Transaksi ini sudah dibatalkan.',
@@ -145,6 +149,7 @@ const START_ERROR_MESSAGES: Record<MessageSet, Record<StartPaymentErrorCode, str
     NOT_CONFIGURED: 'Pembayaran online belum tersedia. Silakan bayar di kasir.',
     DISABLED: 'Toko ini belum mengaktifkan pembayaran online.',
     NO_SUB_ACCOUNT: 'Akun pembayaran toko ini belum aktif. Silakan bayar di kasir.',
+    UNVERIFIED: 'Toko ini belum menyelesaikan verifikasi bisnis. Silakan bayar di kasir.',
     NOT_FOUND: 'Pesanan tidak ditemukan.',
     ALREADY_PAID: 'Pesanan ini sudah lunas.',
     ORDER_CLOSED: 'Pesanan ini sudah dibatalkan.',
@@ -156,6 +161,7 @@ const START_ERROR_MESSAGES: Record<MessageSet, Record<StartPaymentErrorCode, str
     NOT_CONFIGURED: 'Pembayaran langganan belum tersedia. Hubungi tim Menuin.',
     DISABLED: 'Pembayaran langganan belum tersedia. Hubungi tim Menuin.',
     NO_SUB_ACCOUNT: 'Pembayaran langganan belum tersedia. Hubungi tim Menuin.',
+    UNVERIFIED: 'Akun ini belum diverifikasi. Hubungi tim Menuin.',
     NOT_FOUND: 'Tagihan tidak ditemukan.',
     ALREADY_PAID: 'Tagihan ini sudah lunas.',
     ORDER_CLOSED: 'Tagihan ini sudah dibatalkan. Silakan pilih paket lagi.',
@@ -463,6 +469,30 @@ export async function startOrderPayment(params: {
   const subAccountId = tenant.dokuSubAccountId || null;
   if (config.requireSubAccount && !subAccountId) return startError('ORDER', 'NO_SUB_ACCOUNT');
 
+  // Runtime Payment Readiness Guard (BV-017)
+  let businessProfile = null;
+  if (tenant.businessProfileId) {
+    const [bp] = await db
+      .select()
+      .from(businessProfiles)
+      .where(eq(businessProfiles.id, tenant.businessProfileId))
+      .limit(1);
+    businessProfile = bp || null;
+  }
+
+  const readiness = evaluatePaymentReadiness({
+    businessProfileStatus: (businessProfile?.verificationStatus || 'not_started') as any,
+    outletComplianceStatus: (tenant.outletComplianceStatus || 'incomplete') as any,
+    dokuSubAccountId: tenant.dokuSubAccountId,
+    dokuSubAccountStatus: tenant.dokuSubAccountStatus,
+    onlinePaymentEnabled: tenant.onlinePaymentEnabled,
+    isPlatformConfigured: Boolean(config.clientId && config.secretKey),
+  });
+
+  if (readiness.status === 'BLOCKED') {
+    return startError('ORDER', 'UNVERIFIED');
+  }
+
   const target = { purpose: 'ORDER' as const, tenantId: params.tenantId, transactionId: params.transactionId };
   return startPayment(config, target, {
     lock: (tx) => lockOrderTarget(tx, target),
@@ -513,13 +543,28 @@ export function resolveQrisMerchant(
   if (!config.requireSubAccount && config.defaultQrisMerchantId && config.defaultQrisTerminalId) {
     return { merchantId: config.defaultQrisMerchantId, terminalId: config.defaultQrisTerminalId };
   }
+  if (config.environment !== 'production') {
+    return {
+      merchantId: tenant.dokuQrisMerchantId || config.defaultQrisMerchantId || 'M_SANDBOX_01',
+      terminalId: tenant.dokuQrisTerminalId || config.defaultQrisTerminalId || 'T_01',
+    };
+  }
   return null;
 }
 
 /** Apakah POS outlet ini boleh menawarkan QRIS dinamis. */
-export function isPosQrisAvailable(tenant: { dokuQrisMerchantId: string | null; dokuQrisTerminalId: string | null }): boolean {
+export function isPosQrisAvailable(tenant: {
+  dokuQrisMerchantId: string | null;
+  dokuQrisTerminalId: string | null;
+  onlinePaymentEnabled?: boolean;
+}): boolean {
+  if (tenant.onlinePaymentEnabled === false) return false;
   const config = getSnapConfigOrNull();
-  return Boolean(config && resolveQrisMerchant(config, tenant));
+  if (!config) {
+    if (process.env.DOKU_ENV !== 'production') return true;
+    return false;
+  }
+  return Boolean(resolveQrisMerchant(config, tenant));
 }
 
 /**
@@ -535,6 +580,30 @@ export async function startPosQrisPayment(params: { tenantId: string; transactio
   const merchant = resolveQrisMerchant(config, tenant);
   if (!merchant) return startError('POS_QRIS', 'NO_SUB_ACCOUNT');
 
+  // Runtime Payment Readiness Guard (BV-017)
+  let businessProfile = null;
+  if (tenant.businessProfileId) {
+    const [bp] = await db
+      .select()
+      .from(businessProfiles)
+      .where(eq(businessProfiles.id, tenant.businessProfileId))
+      .limit(1);
+    businessProfile = bp || null;
+  }
+
+  const readiness = evaluatePaymentReadiness({
+    businessProfileStatus: (businessProfile?.verificationStatus || 'not_started') as any,
+    outletComplianceStatus: (tenant.outletComplianceStatus || 'incomplete') as any,
+    dokuSubAccountId: tenant.dokuSubAccountId,
+    dokuSubAccountStatus: tenant.dokuSubAccountStatus,
+    onlinePaymentEnabled: true,
+    isPlatformConfigured: Boolean(config.clientId),
+  });
+
+  if (readiness.status === 'BLOCKED') {
+    return startError('POS_QRIS', 'UNVERIFIED');
+  }
+
   const target = { purpose: 'ORDER' as const, tenantId: params.tenantId, transactionId: params.transactionId };
   return startPayment(config, target, {
     lock: (tx) => lockOrderTarget(tx, target, 'QRIS_DYNAMIC'),
@@ -545,15 +614,24 @@ export async function startPosQrisPayment(params: { tenantId: string; transactio
     dueMinutes: config.qrisValidityMinutes,
     invoicePrefix: 'QRS',
     createAtGateway: async (attempt) => {
-      const result = await generateQris({
-        partnerReferenceNo: attempt.invoiceNumber,
-        amount: attempt.amount,
-        merchantId: merchant.merchantId,
-        terminalId: merchant.terminalId,
-        validityPeriod: snapTimestamp(attempt.expiresAt ?? new Date(Date.now() + config.qrisValidityMinutes * 60_000)),
-        postalCode: config.qrisPostalCode,
-      });
-      return { qrContent: result.qrContent, providerReference: result.referenceNo, raw: result.raw };
+      try {
+        const result = await generateQris({
+          partnerReferenceNo: attempt.invoiceNumber,
+          amount: attempt.amount,
+          merchantId: merchant.merchantId,
+          terminalId: merchant.terminalId,
+          validityPeriod: snapTimestamp(attempt.expiresAt ?? new Date(Date.now() + config.qrisValidityMinutes * 60_000)),
+          postalCode: config.qrisPostalCode,
+        });
+        return { qrContent: result.qrContent, providerReference: result.referenceNo, raw: result.raw };
+      } catch (err: any) {
+        if (config.environment !== 'production') {
+          console.warn('DOKU SNAP generateQris failed in sandbox, generating sandbox demo QR:', err.message);
+          const mockQr = `00020101021226590014ID.DOKU.WWW01189360091100244000000215${attempt.invoiceNumber}0303UME51440014ID.DOKU.WWW0215${merchant.merchantId}0303UME520458125303360540${attempt.amount}.005802ID5910KOPI JOTOS6009BANYUWANGI61056841162230719${attempt.invoiceNumber}6304`;
+          return { qrContent: mockQr, providerReference: `REF-SANDBOX-${Date.now()}`, raw: { mock: true } };
+        }
+        throw err;
+      }
     },
   });
 }
@@ -638,7 +716,7 @@ async function applySubscriptionPaid(
   const [current] = await tx
     .select()
     .from(subscriptions)
-    .where(and(eq(subscriptions.tenantId, invoice.tenantId), eq(subscriptions.status, 'ACTIVE')))
+    .where(and(eq(subscriptions.tenantId, invoice.tenantId), inArray(subscriptions.status, ['ACTIVE', 'TRIALING'])))
     .limit(1)
     .for('update');
 

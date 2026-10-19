@@ -65,11 +65,20 @@ import { cn } from '@/lib/utils';
 import { createAvatar } from '@dicebear/core';
 import { openPeeps } from '@dicebear/collection';
 
+export type TeamRole = 
+  | 'OWNER' 
+  | 'MANAGER' 
+  | 'CASHIER' 
+  | 'STAFF' 
+  | 'SYSTEM_ADMIN' 
+  | 'VERIFICATION_ADMIN' 
+  | 'SUPERADMIN';
+
 interface TeamMember {
   id: string;
   name: string | null;
   email: string;
-  role: 'OWNER' | 'MANAGER' | 'CASHIER' | 'STAFF';
+  role: TeamRole;
   pinHash?: string | null;
   createdAt?: string | Date;
 }
@@ -77,7 +86,7 @@ interface TeamMember {
 interface PendingInvite {
   id: string;
   email: string;
-  role: 'OWNER' | 'MANAGER' | 'CASHIER' | 'STAFF';
+  role: TeamRole;
   createdAt?: string | Date;
   status?: string;
 }
@@ -127,6 +136,13 @@ function DoodleAvatar({ name, email }: { name?: string | null; email: string }) 
 
 // Role badge pill with clean borderless pastel theme
 function RoleBadge({ role }: { role: string }) {
+  if (role === 'SYSTEM_ADMIN' || role === 'SUPERADMIN' || role === 'VERIFICATION_ADMIN') {
+    return (
+      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-purple-100/80 text-purple-800 dark:bg-purple-950/60 dark:text-purple-200 border-none">
+        System Admin
+      </span>
+    );
+  }
   if (role === 'OWNER') {
     return (
       <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-blue-100/80 text-blue-800 dark:bg-blue-950/60 dark:text-blue-200 border-none">
@@ -458,7 +474,11 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
 
   function openRoleModal(member: TeamMember) {
     setSelectedMember(member);
-    setNewRole(member.role === 'OWNER' ? 'MANAGER' : member.role);
+    setNewRole(
+      ['OWNER', 'SYSTEM_ADMIN', 'SUPERADMIN', 'VERIFICATION_ADMIN'].includes(member.role)
+        ? 'MANAGER'
+        : (member.role as 'MANAGER' | 'CASHIER' | 'STAFF')
+    );
     setRoleModalOpen(true);
   }
 
@@ -839,7 +859,7 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
                                 {member.pinHash ? 'Ubah POS PIN' : 'Atur POS PIN'}
                               </DropdownMenuItem>
                               
-                              {member.role !== 'OWNER' && (
+                              {!['OWNER', 'SYSTEM_ADMIN', 'SUPERADMIN', 'VERIFICATION_ADMIN'].includes(member.role) && (
                                 <>
                                   <DropdownMenuItem 
                                     onClick={() => openRoleModal(member)}

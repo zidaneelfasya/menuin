@@ -92,7 +92,6 @@
   .font-numeric {
     font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-feature-settings: "tnum", "cv02", "cv03", "cv04", "cv11";
-    font-variant-numeric: tabular-nums;
   }
 
   /* Dashboard Active Nav Tab Curved Scoop Styles */
@@ -100,10 +99,11 @@
     position: relative;
     background-color: var(--curved-tab-bg, #ffffff);
     color: #0e59f9;
-    border-top-left-radius: 1rem;
-    border-bottom-left-radius: 1rem;
+    border-top-left-radius: 9999px;
+    border-bottom-left-radius: 9999px;
     border-top-right-radius: 0px;
     border-bottom-right-radius: 0px;
+    box-shadow: -3px 0 10px rgba(0, 0, 0, 0.06);
   }
   .curved-tab-active::before {
     content: '';

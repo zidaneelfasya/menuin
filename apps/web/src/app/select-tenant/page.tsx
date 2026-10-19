@@ -14,10 +14,15 @@ export default async function SelectTenantPage() {
   if (!account) redirect('/auth/login');
   const tenants = await getAvailableTenants();
 
+  const isAdmin = ['SYSTEM_ADMIN', 'SUPERADMIN', 'VERIFICATION_ADMIN'].includes(
+    account.systemRole as string
+  );
+
   return (
     <SelectTenantClient 
       account={account ? { id: account.id, email: account.email, name: account.name } : null}
       tenants={tenants}
+      isAdmin={isAdmin}
     />
   );
 }
