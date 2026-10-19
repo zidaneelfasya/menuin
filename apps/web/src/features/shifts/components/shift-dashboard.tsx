@@ -1071,7 +1071,7 @@ export function ShiftDashboard({
                   size="icon"
                   disabled={historyPage === 1}
                   onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
-                  className="h-8 w-8 rounded-lg border-slate-200 dark:border-slate-800 text-slate-500 hover:text-blue-600 disabled:opacity-40 cursor-pointer"
+                  className="h-8 w-8 rounded-full border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-blue-600 disabled:opacity-30 cursor-pointer flex items-center justify-center transition-all aspect-square"
                   aria-label="Halaman sebelumnya"
                 >
                   <ChevronLeft className="w-4 h-4" />
@@ -1079,7 +1079,7 @@ export function ShiftDashboard({
 
                 {getHistoryPaginationNumbers().map((pageItem, index) => {
                   if (pageItem === '...') {
-                    return <span key={`h-ellipsis-${index}`} className="px-1.5 text-xs text-slate-400">...</span>;
+                    return <span key={`h-ellipsis-${index}`} className="w-6 text-center text-xs text-slate-400 select-none">...</span>;
                   }
                   const pageNum = pageItem as number;
                   const isCurrent = pageNum === historyPage;
@@ -1089,10 +1089,10 @@ export function ShiftDashboard({
                       type="button"
                       onClick={() => setHistoryPage(pageNum)}
                       className={cn(
-                        "w-8 h-8 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center justify-center",
+                        "w-8 h-8 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center justify-center aspect-square",
                         isCurrent
-                          ? "bg-[#0e59f9] text-white shadow-xs"
-                          : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
+                          ? "bg-[#0e59f9] text-white shadow-xs hover:bg-[#0e59f9]/90"
+                          : "hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
                       )}
                     >
                       {pageNum}
@@ -1105,7 +1105,7 @@ export function ShiftDashboard({
                   size="icon"
                   disabled={historyPage === totalHistoryPages}
                   onClick={() => setHistoryPage((p) => Math.min(totalHistoryPages, p + 1))}
-                  className="h-8 w-8 rounded-lg border-slate-200 dark:border-slate-800 text-slate-500 hover:text-blue-600 disabled:opacity-40 cursor-pointer"
+                  className="h-8 w-8 rounded-full border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-blue-600 disabled:opacity-30 cursor-pointer flex items-center justify-center transition-all aspect-square"
                   aria-label="Halaman selanjutnya"
                 >
                   <ChevronRight className="w-4 h-4" />

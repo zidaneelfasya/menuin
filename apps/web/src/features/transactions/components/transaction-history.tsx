@@ -66,7 +66,8 @@ import {
 } from '@/components/ui/table';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { voidTransaction, getTransactionDetails } from '@/lib/actions/transactions';
+import { Skeleton } from '@/components/ui/skeleton';
+import { voidTransaction, getTransactionDetails, getTransactions, type GetTransactionsParams } from '@/lib/actions/transactions';
 import { updateOrderStatus, syncOrderPaymentStatus } from '@/lib/actions/orders';
 import { ReceiptPrinter, ReceiptData, TenantReceiptSettings } from '@/features/pos/components/receipt-printer';
 import { toast } from 'sonner';
@@ -534,14 +535,47 @@ function formatKpiCurrency(val: number): string {
   return formatCurrency(val);
 }
 
-export function TransactionHistory({ initialData }: { initialData: Transaction[] }) {
+export interface TransactionHistoryProps {
+  initialData: Transaction[];
+  initialSummary?: {
+    totalRevenue: number;
+    totalOrders: number;
+    aov: number;
+  };
+  initialStatusCounts?: {
+    all: number;
+    completed: number;
+    onProcess: number;
+    pendingPayment: number;
+    cancelled: number;
+  };
+  initialPagination?: {
+    page: number;
+    limit: number;
+    totalItems: number;
+    totalPages: number;
+  };
+}
+
+export function TransactionHistory({
+  initialData,
+  initialSummary,
+  initialStatusCounts,
+  initialPagination,
+}: TransactionHistoryProps) {
   const params = useParams();
   const outletKey = (params?.outletKey as string) || '';
 
   const [data, setData] = React.useState<Transaction[]>(initialData);
+  const [serverSummary, setServerSummary] = React.useState(initialSummary);
+  const [serverStatusCounts, setServerStatusCounts] = React.useState(initialStatusCounts);
+  const [serverPagination, setServerPagination] = React.useState(initialPagination);
+  const [isServerLoading, setIsServerLoading] = React.useState(false);
+
   const [searchQuery, setSearchQuery] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState<StatusFilter>('all');
-  const [timeRangeFilter, setTimeRangeFilter] = React.useState<TimeFilter>('all');
+  const [timeRangeFilter, setTimeRangeFilter] = React.useState<TimeFilter>('this_month');
+  const [periodTransactions, setPeriodTransactions] = React.useState<Transaction[]>(initialData);
   const [customDateRange, setCustomDateRange] = React.useState<DateRange | undefined>(undefined);
   const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
   const [isFilterPopoverOpen, setIsFilterPopoverOpen] = React.useState(false);
@@ -549,9 +583,9 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
   const [sourceFilter, setSourceFilter] = React.useState<SourceFilter>('all');
   const [sortBy, setSortBy] = React.useState<SortOption>('newest');
 
-  // Pagination state
+  // Pagination state (default: 25 items per page)
   const [currentPage, setCurrentPage] = React.useState(1);
-  const [itemsPerPage, setItemsPerPage] = React.useState(10);
+  const [itemsPerPage, setItemsPerPage] = React.useState(25);
 
   // Void modal state
   const [selectedTxForVoid, setSelectedTxForVoid] = React.useState<Transaction | null>(null);
@@ -574,14 +608,91 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
   const [loadingPrintId, setLoadingPrintId] = React.useState<string | null>(null);
   const [copiedId, setCopiedId] = React.useState<string | null>(null);
 
+  // Debounced search query (300ms) for global historical search
+  const [debouncedSearch, setDebouncedSearch] = React.useState(searchQuery);
+  React.useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  // Active loading state when server query is in-flight or search query is being debounced
+  const isTableLoading = isServerLoading || searchQuery !== debouncedSearch;
+
   React.useEffect(() => {
     setData(initialData);
-  }, [initialData]);
+    if (initialSummary) setServerSummary(initialSummary);
+    if (initialStatusCounts) setServerStatusCounts(initialStatusCounts);
+    if (initialPagination) setServerPagination(initialPagination);
+  }, [initialData, initialSummary, initialStatusCounts, initialPagination]);
 
   // Reset to first page when search or filter criteria changes
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, statusFilter, timeRangeFilter, customDateRange, orderTypeFilter, sourceFilter, sortBy, itemsPerPage]);
+  }, [debouncedSearch, statusFilter, timeRangeFilter, customDateRange, orderTypeFilter, sourceFilter, sortBy, itemsPerPage]);
+
+  // Server-Side Query Execution across historical database
+  const isInitialMount = React.useRef(true);
+  React.useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    let active = true;
+    setIsServerLoading(true);
+    const startTime = Date.now();
+
+    const queryParams: GetTransactionsParams = {
+      search: debouncedSearch.trim() || undefined,
+      status: statusFilter,
+      timeRange: timeRangeFilter,
+      startDate: customDateRange?.from ? customDateRange.from.toISOString() : undefined,
+      endDate: customDateRange?.to ? customDateRange.to.toISOString() : undefined,
+      orderType: orderTypeFilter,
+      source: sourceFilter,
+      sortBy: sortBy,
+      page: currentPage,
+      limit: itemsPerPage,
+    };
+
+    getTransactions(queryParams)
+      .then((res) => {
+        if (!active) return;
+        if (res.success && res.data) {
+          setData(res.data as Transaction[]);
+          if (res.summary) setServerSummary(res.summary);
+          if (res.statusCounts) setServerStatusCounts(res.statusCounts);
+          if (res.pagination) setServerPagination(res.pagination);
+          // Keep period transactions synced when searching is empty or time filter changes
+          if (!debouncedSearch.trim() && statusFilter === 'all') {
+            setPeriodTransactions(res.data as Transaction[]);
+          }
+        }
+      })
+      .catch((err) => {
+        console.error('Error fetching filtered transactions:', err);
+      })
+      .finally(() => {
+        if (active) {
+          // Provide a smooth minimum visual feedback delay (200ms) so users clearly perceive skeleton response
+          const elapsed = Date.now() - startTime;
+          const remainingDelay = Math.max(0, 200 - elapsed);
+          if (remainingDelay > 0) {
+            setTimeout(() => {
+              if (active) setIsServerLoading(false);
+            }, remainingDelay);
+          } else {
+            setIsServerLoading(false);
+          }
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [debouncedSearch, statusFilter, timeRangeFilter, customDateRange, orderTypeFilter, sourceFilter, sortBy, currentPage, itemsPerPage]);
 
   // Handle escape key and body scroll lock for modals
   React.useEffect(() => {
@@ -810,8 +921,10 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
     }
   };
 
-  // Status breakdown counts across all records
+  // Status breakdown counts across all records (prioritizing unified server-side aggregation)
   const statusCounts = React.useMemo(() => {
+    if (serverStatusCounts) return serverStatusCounts;
+
     let completed = 0;
     let onProcess = 0;
     let pendingPayment = 0;
@@ -832,9 +945,9 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
       pendingPayment,
       cancelled,
     };
-  }, [data]);
+  }, [serverStatusCounts, data]);
 
-  // Filter & Sort calculation
+  // Filter & Sort calculation (fallback when not server paginated)
   const filteredData = React.useMemo(() => {
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -917,46 +1030,57 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
   }, [data, searchQuery, statusFilter, timeRangeFilter, customDateRange, orderTypeFilter, sourceFilter, sortBy]);
 
   // Paginated Data
-  const totalPages = Math.max(1, Math.ceil(filteredData.length / itemsPerPage));
+  const totalPages = React.useMemo(() => {
+    if (serverPagination?.totalPages !== undefined) return Math.max(1, serverPagination.totalPages);
+    return Math.max(1, Math.ceil(filteredData.length / itemsPerPage));
+  }, [serverPagination, filteredData.length, itemsPerPage]);
+
   const paginatedData = React.useMemo(() => {
+    if (serverPagination) {
+      return data;
+    }
     const start = (currentPage - 1) * itemsPerPage;
     return filteredData.slice(start, start + itemsPerPage);
-  }, [filteredData, currentPage, itemsPerPage]);
+  }, [serverPagination, data, filteredData, currentPage, itemsPerPage]);
 
   const totalRevenue = React.useMemo(() => {
-    return filteredData
-      .filter(tx => {
-        const info = getTransactionStatusDetails(tx.status, tx.paymentStatus);
-        const ps = (tx.paymentStatus || '').toUpperCase();
-        return info.key !== 'cancelled' && info.key !== 'failed' && (ps === 'PAID' || info.key === 'completed');
-      })
-      .reduce((acc, curr) => acc + parseFloat(curr.grandTotal || '0'), 0);
-  }, [filteredData]);
+    if (serverSummary?.totalRevenue !== undefined) return serverSummary.totalRevenue;
+    return initialSummary?.totalRevenue ?? 0;
+  }, [serverSummary, initialSummary]);
 
-  const totalOrders = filteredData.length;
+  const totalOrders = React.useMemo(() => {
+    if (serverSummary?.totalOrders !== undefined) return serverSummary.totalOrders;
+    return initialSummary?.totalOrders ?? 0;
+  }, [serverSummary, initialSummary]);
 
   const aov = React.useMemo(() => {
+    if (serverSummary?.aov !== undefined) return serverSummary.aov;
     return totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0;
-  }, [totalRevenue, totalOrders]);
+  }, [serverSummary, totalRevenue, totalOrders]);
 
   const totalItemsSold = React.useMemo(() => {
-    let count = 0;
-    filteredData.forEach((tx) => {
-      if ((tx as any).items && Array.isArray((tx as any).items)) {
-        (tx as any).items.forEach((item: any) => {
-          count += Number(item.quantity || item.qty || 1);
-        });
-      } else {
-        // Estimasi porsi pesanan berdasarkan order
-        count += 2;
-      }
-    });
-    return count;
-  }, [filteredData]);
+    if (totalOrders > 0) {
+      // Estimated or calculated portions from period
+      const list = periodTransactions.length > 0 ? periodTransactions : initialData;
+      let count = 0;
+      list.forEach((tx) => {
+        if ((tx as any).items && Array.isArray((tx as any).items)) {
+          (tx as any).items.forEach((item: any) => {
+            count += Number(item.quantity || item.qty || 1);
+          });
+        } else {
+          count += 2;
+        }
+      });
+      return Math.max(totalOrders * 2, count);
+    }
+    return 0;
+  }, [totalOrders, periodTransactions, initialData]);
 
-  // Real trend data computation from actual transactions (chronologically grouped)
+  // Real trend data computation from period transactions (chronologically grouped)
+  // Decoupled from table search/filter so sparkline stays consistent
   const { netSalesTrend, ordersTrend, aovTrend, itemsSoldTrend, growthStats, growthValues } = React.useMemo(() => {
-    const list = filteredData.length > 0 ? filteredData : data;
+    const list = periodTransactions.length > 0 ? periodTransactions : data;
     if (!list || list.length === 0) {
       return {
         netSalesTrend: undefined,
@@ -1095,7 +1219,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
     };
   }, [filteredData, data]);
 
-  const hasActiveExtraFilters = timeRangeFilter !== 'all' || orderTypeFilter !== 'all' || sourceFilter !== 'all';
+  const hasActiveExtraFilters = timeRangeFilter !== 'this_month' || orderTypeFilter !== 'all' || sourceFilter !== 'all' || customDateRange !== undefined;
 
   // Status Tab Definitions matching the screenshot
   const statusTabs: { key: StatusFilter; label: string; count: number }[] = [
@@ -1332,8 +1456,11 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                 key={tab.key}
                 type="button"
                 onClick={() => {
-                  setStatusFilter(tab.key);
-                  setCurrentPage(1);
+                  if (statusFilter !== tab.key) {
+                    setStatusFilter(tab.key);
+                    setCurrentPage(1);
+                    setIsServerLoading(true);
+                  }
                 }}
                 className={cn(
                   "relative pb-3 text-xs sm:text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer whitespace-nowrap",
@@ -1365,25 +1492,35 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
 
         {/* Right: Search, Filter Popover, and Sort Dropdown (Matching screenshot right tools) */}
         <div className="flex items-center gap-2 pb-2.5 lg:pb-3 flex-wrap">
-          {/* Search Input with Search Icon */}
+          {/* Search Input with Search Icon and Loading Spinner */}
           <div className="relative w-full sm:w-56">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input
               type="text"
               placeholder="Search..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-9 text-xs rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus-visible:ring-blue-600"
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setIsServerLoading(true);
+              }}
+              className="pl-9 pr-8 h-9 text-xs rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus-visible:ring-blue-600"
             />
-            {searchQuery && (
+            {isTableLoading ? (
+              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
+                <Loader2 className="w-3.5 h-3.5 text-blue-600 animate-spin" />
+              </div>
+            ) : searchQuery ? (
               <button
                 type="button"
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                onClick={() => {
+                  setSearchQuery('');
+                  setIsServerLoading(true);
+                }}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
-            )}
+            ) : null}
           </div>
 
           {/* Filter Popover (Funnel icon in screenshot) */}
@@ -1411,7 +1548,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                   <button
                     type="button"
                     onClick={() => {
-                      setTimeRangeFilter('all');
+                      setTimeRangeFilter('this_month');
                       setCustomDateRange(undefined);
                       setOrderTypeFilter('all');
                       setSourceFilter('all');
@@ -1438,8 +1575,11 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                       key={preset.key}
                       type="button"
                       onClick={() => {
-                        setTimeRangeFilter(preset.key as TimeFilter);
-                        setCustomDateRange(undefined);
+                        if (timeRangeFilter !== preset.key || customDateRange !== undefined) {
+                          setTimeRangeFilter(preset.key as TimeFilter);
+                          setCustomDateRange(undefined);
+                          setIsServerLoading(true);
+                        }
                       }}
                       className={cn(
                         "py-1.5 text-xs rounded-xl border text-center transition-colors cursor-pointer",
@@ -1625,7 +1765,69 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
             </thead>
 
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
-              {paginatedData.length > 0 ? (
+              {isTableLoading ? (
+                Array.from({ length: 6 }).map((_, index) => (
+                  <tr key={`skeleton-row-${index}`} className="animate-pulse">
+                    {/* 1. No. Transaksi */}
+                    <td className="py-4 px-4 whitespace-nowrap">
+                      <div className="flex items-center gap-1.5">
+                        <Skeleton className="h-4 w-28 rounded-md bg-slate-200/80 dark:bg-slate-800/80" />
+                        <Skeleton className="h-4 w-4 rounded-md bg-slate-200/60 dark:bg-slate-800/60" />
+                      </div>
+                    </td>
+
+                    {/* 2. Pelanggan */}
+                    <td className="py-4 px-4 w-[150px] max-w-[150px]">
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="w-7 h-7 rounded-full bg-slate-200/80 dark:bg-slate-800/80 shrink-0" />
+                        <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                          <Skeleton className="h-3.5 w-20 rounded-md bg-slate-200/80 dark:bg-slate-800/80" />
+                          <Skeleton className="h-2.5 w-12 rounded-md bg-slate-200/60 dark:bg-slate-800/60" />
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* 3. Pembayaran */}
+                    <td className="py-4 px-4">
+                      <div className="flex flex-col gap-1.5">
+                        <Skeleton className="h-3.5 w-16 rounded-md bg-slate-200/80 dark:bg-slate-800/80" />
+                        <Skeleton className="h-2.5 w-10 rounded-md bg-slate-200/60 dark:bg-slate-800/60" />
+                      </div>
+                    </td>
+
+                    {/* 4. Tanggal & Waktu */}
+                    <td className="py-4 px-4 whitespace-nowrap">
+                      <div className="flex flex-col gap-1.5">
+                        <Skeleton className="h-3.5 w-24 rounded-md bg-slate-200/80 dark:bg-slate-800/80" />
+                        <Skeleton className="h-2.5 w-14 rounded-md bg-slate-200/60 dark:bg-slate-800/60" />
+                      </div>
+                    </td>
+
+                    {/* 5. Total */}
+                    <td className="py-4 px-4 whitespace-nowrap">
+                      <Skeleton className="h-4 w-20 rounded-md bg-slate-200/80 dark:bg-slate-800/80" />
+                    </td>
+
+                    {/* 6. Status */}
+                    <td className="py-4 px-4 whitespace-nowrap">
+                      <Skeleton className="h-6 w-20 rounded-full bg-slate-200/80 dark:bg-slate-800/80" />
+                    </td>
+
+                    {/* 7. Tipe */}
+                    <td className="py-4 px-4 whitespace-nowrap">
+                      <div className="flex flex-col gap-1.5">
+                        <Skeleton className="h-3.5 w-16 rounded-md bg-slate-200/80 dark:bg-slate-800/80" />
+                        <Skeleton className="h-2.5 w-12 rounded-md bg-slate-200/60 dark:bg-slate-800/60" />
+                      </div>
+                    </td>
+
+                    {/* 8. Aksi */}
+                    <td className="py-4 px-4 text-right whitespace-nowrap">
+                      <Skeleton className="h-6 w-6 rounded-full ml-auto bg-slate-200/80 dark:bg-slate-800/80" />
+                    </td>
+                  </tr>
+                ))
+              ) : paginatedData.length > 0 ? (
                 paginatedData.map((trx) => {
                   const statusInfo = getTransactionStatusDetails(trx.status, trx.paymentStatus);
                   const orderNum = trx.orderNumber || `#${trx.id.slice(0, 8).toUpperCase()}`;
@@ -1880,7 +2082,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-24 p-1 rounded-xl shadow-lg border-slate-200 dark:border-slate-800">
-              {[10, 20, 50, 100].map((size) => (
+              {[10, 20, 25, 50, 100].map((size) => (
                 <DropdownMenuItem
                   key={size}
                   onClick={() => setItemsPerPage(size)}
@@ -1893,15 +2095,18 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
           </DropdownMenu>
         </div>
 
-        {/* Right: Page Numbers < 1 2 3 ... 8 9 10 > */}
+        {/* Right: Page Numbers < 1 2 3 ... 8 9 10 > (Circular Pagination Standard) */}
         {totalPages > 1 && (
-          <div className="flex items-center gap-1">
+          <div className={cn("flex items-center gap-1.5 sm:gap-2 transition-opacity", isTableLoading && "opacity-60 pointer-events-none")}>
             <Button
               variant="outline"
               size="icon"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              className="h-8 w-8 rounded-lg border-slate-200 dark:border-slate-800 text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:text-blue-400 dark:hover:border-blue-700 dark:hover:bg-blue-950/30 disabled:opacity-40 cursor-pointer"
+              disabled={currentPage === 1 || isTableLoading}
+              onClick={() => {
+                setCurrentPage((p) => Math.max(1, p - 1));
+                setIsServerLoading(true);
+              }}
+              className="h-8 w-8 rounded-full border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:text-blue-400 dark:hover:border-blue-700 dark:hover:bg-blue-950/30 disabled:opacity-30 cursor-pointer flex items-center justify-center transition-all aspect-square"
               aria-label="Halaman sebelumnya"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -1910,7 +2115,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
             {getPaginationNumbers().map((pageItem, index) => {
               if (pageItem === '...') {
                 return (
-                  <span key={`ellipsis-${index}`} className="px-1.5 text-xs text-slate-400">
+                  <span key={`ellipsis-${index}`} className="w-6 text-center text-xs text-slate-400 select-none">
                     ...
                   </span>
                 );
@@ -1921,12 +2126,18 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                 <button
                   key={pageNum}
                   type="button"
-                  onClick={() => setCurrentPage(pageNum)}
+                  disabled={isTableLoading}
+                  onClick={() => {
+                    if (currentPage !== pageNum) {
+                      setCurrentPage(pageNum);
+                      setIsServerLoading(true);
+                    }
+                  }}
                   className={cn(
-                    "h-8 min-w-[32px] px-2 text-xs rounded-lg font-medium transition-colors cursor-pointer",
+                    "h-8 w-8 text-xs rounded-full font-medium transition-all cursor-pointer flex items-center justify-center aspect-square",
                     isCurrent
-                      ? "bg-blue-600 text-white shadow-xs"
-                      : "text-slate-600 dark:text-slate-400 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/40 dark:hover:text-blue-400"
+                      ? "bg-[#0e59f9] text-white font-semibold shadow-xs hover:bg-[#0e59f9]/90"
+                      : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-white"
                   )}
                 >
                   {pageNum}
@@ -1937,9 +2148,12 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
             <Button
               variant="outline"
               size="icon"
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              className="h-8 w-8 rounded-lg border-slate-200 dark:border-slate-800 text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:text-blue-400 dark:hover:border-blue-700 dark:hover:bg-blue-950/30 disabled:opacity-40 cursor-pointer"
+              disabled={currentPage === totalPages || isTableLoading}
+              onClick={() => {
+                setCurrentPage((p) => Math.min(totalPages, p + 1));
+                setIsServerLoading(true);
+              }}
+              className="h-8 w-8 rounded-full border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:text-blue-400 dark:hover:border-blue-700 dark:hover:bg-blue-950/30 disabled:opacity-30 cursor-pointer flex items-center justify-center transition-all aspect-square"
               aria-label="Halaman berikutnya"
             >
               <ChevronRight className="w-4 h-4" />
