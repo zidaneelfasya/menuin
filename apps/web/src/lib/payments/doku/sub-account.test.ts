@@ -45,7 +45,7 @@ describe('createSubAccount (V2)', () => {
   it('registers under the platform profile and returns the profileId', async () => {
     const { createSubAccount } = await load();
     const res = await createSubAccount({ name: '  Kopi Jotos ', email: 'Owner@Example.com' });
-    expect(res).toMatchObject({ accountId: 'SAC-1234-1', status: null });
+    expect(res).toMatchObject({ accountId: 'SAC-1234-1', status: 'ACTIVE', providerStatus: null });
 
     const registerCall = calls[1];
     expect(registerCall.url).toBe('https://api-sandbox.doku.com/sub-account/v2.0/register');
@@ -56,6 +56,13 @@ describe('createSubAccount (V2)', () => {
       name: 'Kopi Jotos',
       parentProfileId: 'BRN-TEST-1',
     });
+  });
+
+  it('maps a non-active DOKU status instead of trusting it as ACTIVE', async () => {
+    registerResponse = { status: 200, body: { responseCode: '2000000', profileId: 'SAC-1234-2', status: 'pending' } };
+    const { createSubAccount } = await load();
+    const res = await createSubAccount({ name: 'X', email: 'a@b.c' });
+    expect(res).toMatchObject({ accountId: 'SAC-1234-2', status: 'PENDING_REVIEW', providerStatus: 'pending' });
   });
 
   it('throws DokuApiError with the DOKU body when registration is rejected', async () => {
@@ -72,5 +79,25 @@ describe('createSubAccount (V2)', () => {
     registerResponse = { status: 200, body: { responseCode: '2000000' } };
     const { createSubAccount } = await load();
     await expect(createSubAccount({ name: 'X', email: 'a@b.c' })).rejects.toThrow(/profileId/);
+  });
+});
+
+describe('mapDokuSubAccountStatus', () => {
+  it.each([
+    [undefined, 'ACTIVE'],
+    [null, 'ACTIVE'],
+    ['', 'ACTIVE'],
+    ['ACTIVE', 'ACTIVE'],
+    ['active', 'ACTIVE'],
+    ['SUCCESS', 'ACTIVE'],
+    ['INACTIVE', 'SUSPENDED'],
+    ['SUSPENDED', 'SUSPENDED'],
+    ['REJECTED', 'FAILED'],
+    ['FAILED', 'FAILED'],
+    ['PENDING', 'PENDING_REVIEW'],
+    ['SOMETHING_NEW', 'PENDING_REVIEW'],
+  ])('%s -> %s', async (input, expected) => {
+    const { mapDokuSubAccountStatus } = await load();
+    expect(mapDokuSubAccountStatus(input as string | null | undefined)).toBe(expected);
   });
 });

@@ -6,7 +6,8 @@ import {
   providerOnboardings,
   verificationAuditLogs,
 } from '@/lib/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, isNull, lt, ne, or } from 'drizzle-orm';
+import { DokuApiError } from './client';
 import { createSubAccount } from './sub-account';
 import type { ProviderOnboardingStatus } from '@menuin/types';
 
@@ -15,6 +16,20 @@ export interface ProvisionDokuSubAccountResult {
   subAccountId?: string;
   status?: ProviderOnboardingStatus;
   error?: string;
+}
+
+const SUB_ACCOUNT_PROVISIONING = 'PROVISIONING';
+const PROVISIONING_STALE_MS = 2 * 60_000;
+
+function existingSubAccountError(status: string | null): string {
+  switch (status) {
+    case 'PENDING_REVIEW':
+      return 'Sub Account DOKU outlet ini sudah terdaftar dan sedang menunggu aktivasi dari DOKU.';
+    case 'SUSPENDED':
+      return 'Sub Account DOKU outlet ini sedang dibekukan. Hubungi tim Menuin.';
+    default:
+      return `Sub Account DOKU outlet ini sudah terdaftar (status: ${status ?? 'tidak diketahui'}). Hubungi tim Menuin.`;
+  }
 }
 
 /**
@@ -40,12 +55,21 @@ export async function provisionDokuSubAccountForTenant(
     return { success: false, error: 'Outlet tidak ditemukan.' };
   }
 
-  // Already provisioned?
-  if (tenant.dokuSubAccountId && tenant.dokuSubAccountStatus === 'ACTIVE') {
+  // Already provisioned? Sub Account yang sudah punya ID tidak pernah didaftarkan
+  // ulang, karena itu akan membuat akun ganda di DOKU.
+  if (tenant.dokuSubAccountId) {
+    if (tenant.dokuSubAccountStatus === 'ACTIVE') {
+      return {
+        success: true,
+        subAccountId: tenant.dokuSubAccountId,
+        status: 'ACTIVE',
+      };
+    }
     return {
-      success: true,
+      success: false,
       subAccountId: tenant.dokuSubAccountId,
-      status: 'ACTIVE',
+      status: (tenant.dokuSubAccountStatus as ProviderOnboardingStatus | null) ?? undefined,
+      error: existingSubAccountError(tenant.dokuSubAccountStatus),
     };
   }
 
@@ -126,38 +150,62 @@ export async function provisionDokuSubAccountForTenant(
     };
   }
 
-  // 4. Call DOKU Sub Account V2 API
+  // 4. Klaim "lock" di DB: hanya satu request yang boleh membuat Sub Account.
+  const staleBefore = new Date(Date.now() - PROVISIONING_STALE_MS);
+  const claimed = await db
+    .update(tenants)
+    .set({ dokuSubAccountStatus: SUB_ACCOUNT_PROVISIONING, updatedAt: new Date() })
+    .where(
+      and(
+        eq(tenants.id, tenant.id),
+        isNull(tenants.dokuSubAccountId),
+        or(
+          isNull(tenants.dokuSubAccountStatus),
+          ne(tenants.dokuSubAccountStatus, SUB_ACCOUNT_PROVISIONING),
+          lt(tenants.updatedAt, staleBefore)
+        )
+      )
+    )
+    .returning({ id: tenants.id });
+
+  if (claimed.length === 0) {
+    return { success: false, error: 'Aktivasi sedang diproses. Muat ulang halaman dalam beberapa saat.' };
+  }
+
+  // 5. Call DOKU Sub Account V2 API. Tidak ada fallback ID buatan: bila gagal,
+  // status FAILED supaya kegagalan terlihat dan aktivasi bisa dicoba ulang.
+  let subAccountId: string;
+  let dokuStatus: ProviderOnboardingStatus;
+  let providerStatus: string | null;
   try {
-    let subAccountId: string;
-    let dokuStatus: ProviderOnboardingStatus = 'ACTIVE';
+    const subAccountResult = await createSubAccount({
+      name: tenant.name,
+      email: businessProfile.responsiblePersonContact.includes('@')
+        ? businessProfile.responsiblePersonContact
+        : `merchant-${tenant.outletKey}@menuin.id`,
+    });
+    subAccountId = subAccountResult.accountId;
+    dokuStatus = subAccountResult.status;
+    providerStatus = subAccountResult.providerStatus;
+  } catch (error) {
+    await db
+      .update(tenants)
+      .set({ dokuSubAccountStatus: 'FAILED', updatedAt: new Date() })
+      .where(eq(tenants.id, tenant.id));
 
-    if (process.env.DOKU_ENV !== 'production' && !process.env.DOKU_PRIVATE_KEY) {
-      // In sandbox/development, if DOKU SNAP RSA keys are not yet configured,
-      // gracefully provision a sandbox sub-account so local testing is never blocked
-      subAccountId = `SAC-SANDBOX-${tenant.outletKey.slice(0, 8).toUpperCase()}`;
-      dokuStatus = 'ACTIVE';
-    } else {
-      try {
-        const subAccountResult = await createSubAccount({
-          name: tenant.name,
-          email: businessProfile.responsiblePersonContact.includes('@')
-            ? businessProfile.responsiblePersonContact
-            : `merchant-${tenant.outletKey}@menuin.id`,
-        });
-        subAccountId = subAccountResult.accountId;
-        dokuStatus = (subAccountResult.status as ProviderOnboardingStatus) || 'ACTIVE';
-      } catch (subErr: any) {
-        if (process.env.DOKU_ENV !== 'production') {
-          console.warn('DOKU API sub-account call failed in sandbox, using fallback:', subErr.message);
-          subAccountId = `SAC-SANDBOX-${tenant.outletKey.slice(0, 8).toUpperCase()}`;
-          dokuStatus = 'ACTIVE';
-        } else {
-          throw subErr;
-        }
-      }
-    }
+    console.error(JSON.stringify({
+      scope: 'payments',
+      event: 'sub_account_create_failed',
+      tenantId: tenant.id,
+      status: error instanceof DokuApiError ? error.status : null,
+      response: error instanceof DokuApiError ? error.responseBody : null,
+      error: error instanceof Error ? error.message : String(error),
+    }));
+    return { success: false, status: 'FAILED', error: 'Gagal membuat akun pembayaran di DOKU. Silakan coba lagi.' };
+  }
 
-    // 5. Update DB atomically
+  try {
+    // 6. Update DB atomically
     await db.transaction(async (tx) => {
       // Upsert provider_onboardings
       const [existingOnboarding] = await tx
@@ -198,9 +246,7 @@ export async function provisionDokuSubAccountForTenant(
         .set({
           dokuSubAccountId: subAccountId,
           dokuSubAccountStatus: dokuStatus,
-          onlinePaymentEnabled: true,
-          dokuQrisMerchantId: tenant.dokuQrisMerchantId || 'M_SANDBOX_01',
-          dokuQrisTerminalId: tenant.dokuQrisTerminalId || 'T_01',
+          onlinePaymentEnabled: dokuStatus === 'ACTIVE' ? true : tenant.onlinePaymentEnabled,
           updatedAt: new Date(),
         })
         .where(eq(tenants.id, tenant.id));
@@ -217,6 +263,7 @@ export async function provisionDokuSubAccountForTenant(
         metadata: {
           subAccountId: subAccountId,
           provider: 'DOKU',
+          providerStatus,
           settlementAccountId: activeSettlementAccount?.id || null,
           bankName: activeSettlementAccount?.bankName || businessProfile.bankName,
           accountHolder: activeSettlementAccount?.bankAccountHolder || businessProfile.bankAccountHolder,
@@ -224,16 +271,39 @@ export async function provisionDokuSubAccountForTenant(
       });
     });
 
+    if (dokuStatus !== 'ACTIVE') {
+      return {
+        success: false,
+        subAccountId,
+        status: dokuStatus,
+        error: existingSubAccountError(dokuStatus),
+      };
+    }
     return {
       success: true,
       subAccountId: subAccountId,
       status: dokuStatus,
     };
-  } catch (error: any) {
-    console.error('provisionDokuSubAccountForTenant error:', error);
+  } catch (error) {
+    // Sub Account sudah terbit di DOKU tapi transaksi gagal: simpan minimal
+    // ID-nya di tenant (best-effort) dan catat di log, supaya tidak didaftarkan
+    // ulang saat lock PROVISIONING kedaluwarsa.
+    await db
+      .update(tenants)
+      .set({ dokuSubAccountId: subAccountId, dokuSubAccountStatus: dokuStatus, updatedAt: new Date() })
+      .where(eq(tenants.id, tenant.id))
+      .catch(() => undefined);
+    console.error(JSON.stringify({
+      scope: 'payments',
+      event: 'sub_account_persist_failed',
+      tenantId: tenant.id,
+      subAccountId,
+      providerStatus,
+      error: error instanceof Error ? error.message : String(error),
+    }));
     return {
       success: false,
-      error: error.message || 'Gagal mendaftarkan sub-account ke DOKU gateway.',
+      error: 'Akun DOKU sudah dibuat tetapi gagal disimpan. Hubungi tim Menuin.',
     };
   }
 }
