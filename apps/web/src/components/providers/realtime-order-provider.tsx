@@ -39,7 +39,7 @@ export function RealtimeOrderProvider({ children, tenantId }: { children: ReactN
     const supabase = createClient();
 
     const channel = supabase
-      .channel('global-incoming-orders')
+      .channel(`modal-orders-${tenantId}`)
       .on(
         'postgres_changes',
         {
@@ -105,7 +105,9 @@ export function RealtimeOrderProvider({ children, tenantId }: { children: ReactN
                 }
               }
               
-              if (pathname.includes('/pos') || pathname.includes('/transactions') || pathname.includes('/orders')) {
+              // Only trigger router.refresh on POS or transactions list. 
+              // The /orders Kanban board manages its own in-memory delta state to prevent SSR thundering herd.
+              if (pathname.includes('/pos') || pathname.includes('/transactions')) {
                 router.refresh();
               }
             }
@@ -137,7 +139,9 @@ export function RealtimeOrderProvider({ children, tenantId }: { children: ReactN
       newSet.delete(orderId);
       return newSet;
     });
-    router.refresh();
+    if (!pathname.includes('/orders')) {
+      router.refresh();
+    }
   };
 
   // Only hides the popup, leaves it in the badge
