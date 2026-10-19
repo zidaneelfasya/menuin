@@ -318,9 +318,12 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
           {orderType === 'DINE_IN' && (
             <div className="w-24 sm:w-28 shrink-0">
               <Input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 placeholder="No. Meja *"
                 value={tableNumber}
-                onChange={(e) => setTableNumber(e.target.value)}
+                onChange={(e) => setTableNumber(e.target.value.replace(/\D/g, ''))}
                 className="h-8 text-xs bg-white dark:bg-slate-900 rounded-sm px-2.5 font-medium border-border/80"
               />
             </div>

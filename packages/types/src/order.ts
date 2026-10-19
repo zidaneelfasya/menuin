@@ -20,6 +20,7 @@ export interface OrderDto {
   customerName: string | null;
   customerPhone: string | null;
   tableNumber: string | null;
+  queueNumber?: number | null;
   totalAmount: string;
   discount: string | null;
   tax: string | null;

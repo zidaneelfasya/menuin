@@ -641,10 +641,13 @@ export function CheckoutClient({
                 </Label>
                 <Input
                   id="table"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   className="h-12 bg-gray-50 border-gray-200 focus-visible:ring-catalog-primary rounded-xl font-semibold text-base px-3.5"
-                  placeholder="Contoh: Meja 12"
+                  placeholder="Contoh: 12"
                   value={formData.tableNumber}
-                  onChange={(e) => setFormData({ ...formData, tableNumber: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, tableNumber: e.target.value.replace(/\D/g, '') })}
                 />
               </div>
             )}
