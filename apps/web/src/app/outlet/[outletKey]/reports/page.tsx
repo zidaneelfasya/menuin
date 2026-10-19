@@ -1,20 +1,17 @@
 import { Metadata } from "next";
+import { Suspense } from "react";
 import { requireFeature } from "@/lib/actions/auth-context";
 import { getReportsOverview } from "@/lib/actions/reports";
 import { OverviewReportClient } from "@/components/reports/overview-report-client";
+import ReportsLoading from "./loading";
 
 export const metadata: Metadata = {
   title: "Ringkasan Eksekutif (Reports Overview) - MENUIN",
   description: "Sintesis performa 360° outlet: penjualan, operasional jam ramai, dan arus kas likuiditas.",
 };
 
-export default async function Page({
-  params,
-}: {
-  params: Promise<{ outletKey: string }>;
-}) {
+async function ReportsOverviewDataWrapper({ outletKey }: { outletKey: string }) {
   await requireFeature("REPORTS");
-  const { outletKey } = await params;
   const res = await getReportsOverview(outletKey, { period: "this_month" });
 
   if (!res.success || !res.data) {
@@ -26,4 +23,17 @@ export default async function Page({
   }
 
   return <OverviewReportClient initialData={res.data} outletKey={outletKey} />;
+}
+
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ outletKey: string }>;
+}) {
+  const { outletKey } = await params;
+  return (
+    <Suspense fallback={<ReportsLoading />}>
+      <ReportsOverviewDataWrapper outletKey={outletKey} />
+    </Suspense>
+  );
 }

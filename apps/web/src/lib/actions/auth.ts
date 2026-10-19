@@ -1,5 +1,6 @@
 'use server';
 
+import { cache } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { db } from '@/lib/db';
 import { memberships, tenants, accounts, subscriptions } from '@/lib/db/schema';
@@ -37,7 +38,7 @@ export type UserProfile = {
   storeLogoUrl?: string | null;
 };
 
-export async function getCurrentMembership(): Promise<MembershipProfile | null> {
+export const getCurrentMembership = cache(async (): Promise<MembershipProfile | null> => {
   const context = await getCurrentContext();
   if (!context) return null;
 
@@ -53,9 +54,9 @@ export async function getCurrentMembership(): Promise<MembershipProfile | null> 
     restaurantName: context.tenant.name,
     subscriptionTier: context.subscription?.plan || 'FREE',
   };
-}
+});
 
-export async function getAvailableTenants() {
+export const getAvailableTenants = cache(async () => {
   const { getAuthenticatedAccount } = await import('./auth-context');
   const account = await getAuthenticatedAccount(); // Throws AuthError if not logged in
   
@@ -78,9 +79,9 @@ export async function getAvailableTenants() {
     storeLogoUrl: row.tenant.storeLogoUrl,
     storeDescription: row.tenant.storeDescription,
   }));
-}
+});
 
-export async function getCurrentUser(): Promise<UserProfile | null> {
+export const getCurrentUser = cache(async (): Promise<UserProfile | null> => {
   const context = await getCurrentContext();
   if (!context) return null;
   
@@ -96,7 +97,7 @@ export async function getCurrentUser(): Promise<UserProfile | null> {
     isPaid: !context.entitlements.isLocked,
     storeLogoUrl: context.tenant.storeLogoUrl || null,
   };
-}
+});
 
 export async function signOutAction() {
   const supabase = await createClient();

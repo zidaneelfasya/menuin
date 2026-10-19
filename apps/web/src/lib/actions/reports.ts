@@ -192,56 +192,51 @@ export async function getSalesReport(outletKey: string, params?: DateFilterParam
 
     const { currentStart, currentEnd, prevStart, prevEnd, period } = resolveDateIntervals(params);
 
-    // Current period transactions
-    const trxList = await db
-      .select()
-      .from(transactions)
-      .where(
-        and(
-          eq(transactions.tenantId, tenant.id),
-          gte(transactions.createdAt, currentStart),
-          lte(transactions.createdAt, currentEnd)
+    // Fetch current transactions, previous transactions, products catalog, and transaction items in parallel
+    const [currentTrxResult, prevTrxResult, productsResult, currentItemsResult] = await Promise.allSettled([
+      db
+        .select()
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.tenantId, tenant.id),
+            gte(transactions.createdAt, currentStart),
+            lte(transactions.createdAt, currentEnd)
+          )
         )
-      )
-      .orderBy(desc(transactions.createdAt));
-
-    // Previous period transactions for comparative metrics (+4, -8%, etc.)
-    const prevTrxList = await db
-      .select()
-      .from(transactions)
-      .where(
-        and(
-          eq(transactions.tenantId, tenant.id),
-          gte(transactions.createdAt, prevStart),
-          lte(transactions.createdAt, prevEnd)
-        )
-      );
-
-    // Fetch all active products in tenant catalog to identify best sellers and deadstock/low-velocity items
-    const allTenantProducts = await db
-      .select({
-        id: products.id,
-        name: products.name,
-        price: products.price,
-        imageUrl: products.imageUrl,
-        costPrice: products.costPrice,
-        categoryId: products.categoryId,
-        categoryName: categories.name,
-      })
-      .from(products)
-      .leftJoin(categories, eq(products.categoryId, categories.id))
-      .where(eq(products.tenantId, tenant.id));
-
-    // 1. Calculate COGS / HPP, Top Products, Categories, and Items Sold for current period
-    const trxIds = trxList.map((t) => t.id);
-    let totalHpp = 0;
-    let totalItemsSold = 0;
-    const itemsSoldByTrxId: Record<string, number> = {};
-    const productSalesMap: Record<string, { id: string; name: string; categoryName: string; price: number; imageUrl?: string | null; totalQty: number; totalRevenue: number }> = {};
-    const categorySalesMap: Record<string, { name: string; totalQty: number; totalRevenue: number }> = {};
-
-    if (trxIds.length > 0) {
-      const allItems = await db
+        .orderBy(desc(transactions.createdAt)),
+      db
+        .select({
+          id: transactions.id,
+          grandTotal: transactions.grandTotal,
+          totalAmount: transactions.totalAmount,
+          discount: transactions.discount,
+          paymentStatus: transactions.paymentStatus,
+          status: transactions.status,
+          createdAt: transactions.createdAt,
+        })
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.tenantId, tenant.id),
+            gte(transactions.createdAt, prevStart),
+            lte(transactions.createdAt, prevEnd)
+          )
+        ),
+      db
+        .select({
+          id: products.id,
+          name: products.name,
+          price: products.price,
+          imageUrl: products.imageUrl,
+          costPrice: products.costPrice,
+          categoryId: products.categoryId,
+          categoryName: categories.name,
+        })
+        .from(products)
+        .leftJoin(categories, eq(products.categoryId, categories.id))
+        .where(eq(products.tenantId, tenant.id)),
+      db
         .select({
           transactionId: transactionItems.transactionId,
           productId: transactionItems.productId,
@@ -262,7 +257,23 @@ export async function getSalesReport(outletKey: string, params?: DateFilterParam
             gte(transactionItems.createdAt, currentStart),
             lte(transactionItems.createdAt, currentEnd)
           )
-        );
+        ),
+    ]);
+
+    const trxList = currentTrxResult.status === 'fulfilled' ? currentTrxResult.value : [];
+    const prevTrxList = prevTrxResult.status === 'fulfilled' ? prevTrxResult.value : [];
+    const allTenantProducts = productsResult.status === 'fulfilled' ? productsResult.value : [];
+    const allItems = currentItemsResult.status === 'fulfilled' ? currentItemsResult.value : [];
+
+    // 1. Calculate COGS / HPP, Top Products, Categories, and Items Sold for current period
+    const trxIds = trxList.map((t) => t.id);
+    let totalHpp = 0;
+    let totalItemsSold = 0;
+    const itemsSoldByTrxId: Record<string, number> = {};
+    const productSalesMap: Record<string, { id: string; name: string; categoryName: string; price: number; imageUrl?: string | null; totalQty: number; totalRevenue: number }> = {};
+    const categorySalesMap: Record<string, { name: string; totalQty: number; totalRevenue: number }> = {};
+
+    if (allItems.length > 0) {
 
       allItems.forEach((it) => {
         const qty = it.quantity || 1;
@@ -2151,29 +2162,41 @@ export async function getReportsOverview(outletKey: string, params?: DateFilterP
 
     const { currentStart, currentEnd, prevStart, prevEnd, period } = resolveDateIntervals(params);
 
-    // 1. Fetch Transactions (Current & Previous)
-    const trxList = await db
-      .select()
-      .from(transactions)
-      .where(
-        and(
-          eq(transactions.tenantId, tenant.id),
-          gte(transactions.createdAt, currentStart),
-          lte(transactions.createdAt, currentEnd)
+    // 1. Fetch Transactions (Current & Previous in parallel via Promise.allSettled)
+    const [currentTrxResult, prevTrxResult] = await Promise.allSettled([
+      db
+        .select()
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.tenantId, tenant.id),
+            gte(transactions.createdAt, currentStart),
+            lte(transactions.createdAt, currentEnd)
+          )
         )
-      )
-      .orderBy(desc(transactions.createdAt));
+        .orderBy(desc(transactions.createdAt)),
+      db
+        .select({
+          id: transactions.id,
+          grandTotal: transactions.grandTotal,
+          totalAmount: transactions.totalAmount,
+          discount: transactions.discount,
+          paymentStatus: transactions.paymentStatus,
+          status: transactions.status,
+          createdAt: transactions.createdAt,
+        })
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.tenantId, tenant.id),
+            gte(transactions.createdAt, prevStart),
+            lte(transactions.createdAt, prevEnd)
+          )
+        ),
+    ]);
 
-    const prevTrxList = await db
-      .select()
-      .from(transactions)
-      .where(
-        and(
-          eq(transactions.tenantId, tenant.id),
-          gte(transactions.createdAt, prevStart),
-          lte(transactions.createdAt, prevEnd)
-        )
-      );
+    const trxList = currentTrxResult.status === 'fulfilled' ? currentTrxResult.value : [];
+    const prevTrxList = prevTrxResult.status === 'fulfilled' ? prevTrxResult.value : [];
 
     // 2. Fetch Items for Theoretical COGS / HPP
     const trxIds = trxList.map((t) => t.id);

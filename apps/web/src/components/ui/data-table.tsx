@@ -362,7 +362,7 @@ export function DataTable<TData, TValue>({
                 size="icon"
                 disabled={!table.getCanPreviousPage()}
                 onClick={() => table.previousPage()}
-                className="h-8 w-8 rounded-lg border-slate-200 dark:border-slate-800 text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:text-blue-400 dark:hover:border-blue-700 dark:hover:bg-blue-950/30 disabled:opacity-40 cursor-pointer"
+                className="h-8 w-8 rounded-full border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:text-blue-400 dark:hover:border-blue-700 dark:hover:bg-blue-950/30 disabled:opacity-30 cursor-pointer flex items-center justify-center transition-all aspect-square"
                 aria-label="Halaman sebelumnya"
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -397,7 +397,7 @@ export function DataTable<TData, TValue>({
                 return rangeWithDots.map((pageNumber, index) => {
                   if (pageNumber === '...') {
                     return (
-                      <span key={`ellipsis-${index}`} className="px-1.5 text-xs text-slate-400">
+                      <span key={`ellipsis-${index}`} className="w-6 text-center text-xs text-slate-400 select-none">
                         ...
                       </span>
                     );
@@ -410,10 +410,10 @@ export function DataTable<TData, TValue>({
                       type="button"
                       onClick={() => table.setPageIndex(pageNum - 1)}
                       className={cn(
-                        "h-8 min-w-[32px] px-2 text-xs rounded-lg font-medium transition-colors cursor-pointer",
+                        "h-8 w-8 text-xs rounded-full font-medium transition-all cursor-pointer flex items-center justify-center aspect-square",
                         isCurrent
-                          ? "bg-blue-600 text-white shadow-xs"
-                          : "text-slate-600 dark:text-slate-400 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/40 dark:hover:text-blue-400"
+                          ? "bg-[#0e59f9] text-white font-semibold shadow-xs hover:bg-[#0e59f9]/90"
+                          : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-white"
                       )}
                     >
                       {pageNum}
@@ -427,7 +427,7 @@ export function DataTable<TData, TValue>({
                 size="icon"
                 disabled={!table.getCanNextPage()}
                 onClick={() => table.nextPage()}
-                className="h-8 w-8 rounded-lg border-slate-200 dark:border-slate-800 text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:text-blue-400 dark:hover:border-blue-700 dark:hover:bg-blue-950/30 disabled:opacity-40 cursor-pointer"
+                className="h-8 w-8 rounded-full border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:text-blue-400 dark:hover:border-blue-700 dark:hover:bg-blue-950/30 disabled:opacity-30 cursor-pointer flex items-center justify-center transition-all aspect-square"
                 aria-label="Halaman berikutnya"
               >
                 <ChevronRight className="w-4 h-4" />
