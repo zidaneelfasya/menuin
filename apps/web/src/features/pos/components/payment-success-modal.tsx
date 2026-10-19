@@ -46,9 +46,9 @@ export function PaymentSuccessModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[420px] p-6 bg-white border border-slate-200 shadow-xl rounded-2xl">
-        <DialogHeader className="space-y-2 text-center pb-2 border-b border-slate-100">
-          <div className="mx-auto w-11 h-11 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
+      <DialogContent className="sm:max-w-[420px] p-6 bg-white border border-[#EAEFF8] shadow-xl rounded-2xl">
+        <DialogHeader className="space-y-2 text-center pb-2 border-b border-[#EAEFF8]">
+          <div className="mx-auto w-11 h-11 rounded-full bg-[#0e59f9]/10 border border-[#0e59f9]/20 flex items-center justify-center text-[#0e59f9]">
             <Check className="w-5 h-5 stroke-[2.5]" />
           </div>
           <div>
@@ -62,7 +62,7 @@ export function PaymentSuccessModal({
         </DialogHeader>
 
         {/* DETAILS CARD */}
-        <div className="my-3 p-4 rounded-xl bg-slate-50/80 border border-slate-200/80 space-y-2.5 text-xs text-slate-600">
+        <div className="my-3 p-4 rounded-xl bg-slate-50/80 border border-[#EAEFF8] space-y-2.5 text-xs text-slate-600">
           <div className="flex justify-between items-center">
             <span>Metode Pembayaran</span>
             <span className="font-semibold text-slate-800">
@@ -72,15 +72,15 @@ export function PaymentSuccessModal({
 
           <div className="flex justify-between items-center">
             <span>Total Tagihan</span>
-            <span className="font-semibold text-sm text-slate-900">
+            <span className="font-semibold text-sm text-slate-900 font-financial tabular-nums">
               {formatCurrency(receiptData.totalAmount)}
             </span>
           </div>
 
           {receiptData.change > 0 && (
-            <div className="flex justify-between items-center pt-2 border-t border-slate-200 text-blue-700">
+            <div className="flex justify-between items-center pt-2 border-t border-[#EAEFF8] text-emerald-700">
               <span className="font-semibold">Uang Kembalian</span>
-              <span className="font-semibold text-sm">
+              <span className="font-semibold text-sm font-financial tabular-nums">
                 {formatCurrency(receiptData.change)}
               </span>
             </div>
@@ -93,7 +93,7 @@ export function PaymentSuccessModal({
             <Button
               type="button"
               onClick={() => onPrint('customer')}
-              className="h-11 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-xl shadow-sm flex items-center justify-center gap-2"
+              className="h-11 bg-[#0e59f9] hover:bg-[#0b4de0] text-white font-semibold text-xs rounded-xl shadow-xs flex items-center justify-center gap-2 cursor-pointer"
             >
               <ReceiptText className="w-4 h-4" />
               Cetak Struk
@@ -103,7 +103,7 @@ export function PaymentSuccessModal({
               type="button"
               variant="outline"
               onClick={() => onPrint('kitchen')}
-              className="h-11 border-slate-200 bg-white hover:bg-slate-50 text-slate-800 font-semibold text-xs rounded-xl flex items-center justify-center gap-2"
+              className="h-11 border-[#EAEFF8] bg-white hover:bg-slate-50 text-slate-800 font-semibold text-xs rounded-xl flex items-center justify-center gap-2 cursor-pointer"
             >
               <ChefHat className="w-4 h-4 text-slate-600" />
               Tiket Dapur
@@ -114,7 +114,7 @@ export function PaymentSuccessModal({
             type="button"
             variant="ghost"
             onClick={() => onPrint('all')}
-            className="w-full h-9 text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-xs font-medium flex items-center justify-center gap-1.5 rounded-lg"
+            className="w-full h-9 text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-xs font-medium flex items-center justify-center gap-1.5 rounded-lg cursor-pointer"
           >
             <Printer className="w-3.5 h-3.5" />
             Cetak Keduanya (Struk + Dapur)
@@ -122,12 +122,12 @@ export function PaymentSuccessModal({
         </div>
 
         {/* NEW ORDER */}
-        <div className="pt-3 border-t border-slate-100">
+        <div className="pt-3 border-t border-[#EAEFF8]">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
-            className="w-full h-11 border-slate-300 hover:bg-slate-900 hover:text-white hover:border-slate-900 text-slate-700 font-semibold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5"
+            className="w-full h-11 border-[#EAEFF8] hover:bg-slate-900 hover:text-white hover:border-slate-900 text-slate-700 font-semibold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             Transaksi Baru (Enter)
