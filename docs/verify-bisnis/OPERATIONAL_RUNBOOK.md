@@ -88,3 +88,25 @@ Dokumen ini adalah Standar Operasional Prosedur (SOP) resmi bagi Reviewer Kepatu
 3. **Penyimpanan Dokumen:**
    - Seluruh dokumen disimpan dalam private bucket Supabase (`verification-documents`).
    - Tidak ada tautan publik permanen. Setiap akses dokumen menggunakan Signed URL dengan masa berlaku maksimal **60 detik**.
+
+---
+
+## 6. Operasional Akun Pembayaran (DOKU Sub Account)
+
+Halaman: **`/system-admin/payments`** (menu **Akun Pembayaran**). Hanya `SYSTEM_ADMIN` dan `SUPERADMIN` (izin `payments:manage_provider`); `VERIFICATION_ADMIN` dan `CARE_AGENT` tidak bisa mengubah tujuan dana outlet.
+
+Setelah verifikasi disetujui, OWNER mengaktifkan akun pembayaran sendiri. Halaman ini dipakai bila aktivasi itu gagal atau butuh tindakan tim:
+
+| Kondisi di tabel | Tindakan |
+| :--- | :--- |
+| **Gagal** | Cek log `event: sub_account_create_failed` (berisi respons DOKU). Setelah penyebabnya beres, klik **Daftar Ulang**. Bila akun dibuat langsung di dashboard DOKU, gunakan **Tautkan**. |
+| **Sedang Didaftarkan** + label "macet > 2 menit" | Registrasi terhenti di tengah jalan. Cek dulu di dashboard DOKU apakah akun untuk outlet ini sudah terbentuk: kalau ada, **Tautkan** ID-nya; kalau belum, **Daftar Ulang**. |
+| **Menunggu DOKU** | Akun sudah terdaftar tapi belum aktif. Setelah DOKU mengaktifkan, **Ubah Status** ke Aktif. Pembayaran online outlet tertutup sampai saat itu. |
+| **Dibekukan** | Pembayaran online outlet berhenti. Aktifkan kembali hanya setelah ada konfirmasi dari DOKU / Compliance Lead. |
+
+Aturan:
+1. **Pastikan ID milik outlet yang benar** sebelum menautkan: nama akun dan rekening di dashboard DOKU harus sesuai profil badan usaha outlet. ID yang salah berarti dana pelanggan masuk ke merchant lain.
+2. Satu ID Sub Account hanya untuk satu outlet; sistem menolak ID yang sudah dipakai outlet lain.
+3. Mengganti ID yang sudah ada wajib mencentang **Timpa ID lama**. Pembayaran yang sudah terjadi tetap tercatat dengan ID lama.
+4. Setiap aksi wajib catatan (alasan, nomor tiket, atau referensi DOKU). Catatan dan pelaku tersimpan di `verification_audit_logs`.
+5. Menautkan ID tidak menyalakan toggle **Pembayaran Non-Tunai** outlet; itu tetap keputusan OWNER.

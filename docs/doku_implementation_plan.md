@@ -85,17 +85,33 @@ Acuan teknis lengkap: [`doku_payment_gateway_migration_source_of_truth.md`](./do
 
 ---
 
+## Sub Account outlet ✅ SELESAI (menunggu uji live di sandbox)
+
+- Registrasi memakai **Sub Account V2** (`POST /sub-account/v2.0/register`, SNAP). Butuh `DOKU_PRIVATE_KEY`/`DOKU_PUBLIC_KEY` juga.
+- Satu jalur registrasi: `provisionDokuSubAccountForTenant` (guard 3 pilar verifikasi, lock anti klik ganda, audit log). Dipanggil dari Pengaturan dan halaman Verifikasi.
+- **Perbaikan:**
+  - fallback ID buatan `SAC-SANDBOX-…` dihapus, sehingga kegagalan DOKU terlihat (`FAILED`) dan bisa dicoba ulang;
+  - pengisian QRIS dummy `M_SANDBOX_01`/`T_01` dihapus (sebelumnya terjadi juga di production);
+  - status DOKU dipetakan (`mapDokuSubAccountStatus`), status tidak dikenal tidak dianggap aktif;
+  - outlet yang sudah punya ID tidak didaftarkan ulang;
+  - storefront hanya menawarkan pembayaran online bila Sub Account `ACTIVE`.
+- **Halaman admin `/system-admin/payments`** (SYSTEM_ADMIN/SUPERADMIN): status Sub Account semua outlet, tautkan ID manual, ubah status, daftar ulang. SOP di `verify-bisnis/OPERATIONAL_RUNBOOK.md` §6.
+- **Pengujian:** 12 integration test adapter dan aksi admin (sukses, gagal + retry, pending, 4 request paralel, belum terverifikasi, ID ganda, timpa ID, lock provisioning), unit test pemetaan status dan ketersediaan pembayaran.
+- **Belum:** sinkronisasi status otomatis dari DOKU (status `PENDING_REVIEW` saat ini diperbarui manual oleh admin). Nilai `status` di respons V2 perlu dikonfirmasi saat uji live.
+
+---
+
 ## Go-live ⏳
 - Lengkapi legal dan kontrak platform dengan DOKU. Buat kredensial production **baru**, karena key sandbox sudah pernah ditempel di chat.
-- `DOKU_ENV=production` membuat Sub Account otomatis wajib. Daftarkan Notification URL production. Buat Sub Account production per outlet.
+- `DOKU_ENV=production` membuat Sub Account otomatis wajib. Daftarkan Notification URL production. Buat Sub Account production per outlet (ID sandbox tidak berlaku; tautkan lewat `/system-admin/payments`).
 
 ---
 
 ## Yang perlu disiapkan pemilik project
 - [ ] Env deployment: `DOKU_ENV`, `DOKU_CLIENT_ID`, `DOKU_SECRET_KEY`, `APP_BASE_URL`, `CRON_SECRET` (dan variabel QRIS di bawah).
 - [ ] Jalankan migrasi: `DATABASE_URL=… npm run db:migrate:doku --workspace=web`.
-- [ ] Dashboard DOKU sandbox: Notification URL `https://<domain>/api/webhook/doku`. Aktifkan Checkout dan Sub Account.
+- [ ] Dashboard DOKU sandbox: Notification URL `https://<domain>/api/webhook/doku`. Aktifkan Checkout dan Sub Account V2.
 - [ ] Scheduler cron 5 menit untuk `GET /api/cron/payment-reconcile` dengan header `Authorization: Bearer <CRON_SECRET>`.
-- [ ] QRIS: buat RSA key pair sendiri, unggah public key ke DOKU, isi `DOKU_PRIVATE_KEY`, `DOKU_PUBLIC_KEY` (milik DOKU), `DOKU_QRIS_MERCHANT_ID`, dan `DOKU_QRIS_TERMINAL_ID`. Daftarkan base URL SNAP `https://<domain>/api/snap`.
+- [ ] QRIS dan Sub Account: buat RSA key pair sendiri, unggah public key ke DOKU, isi `DOKU_PRIVATE_KEY`, `DOKU_PUBLIC_KEY` (milik DOKU), `DOKU_QRIS_MERCHANT_ID`, dan `DOKU_QRIS_TERMINAL_ID`. Daftarkan base URL SNAP `https://<domain>/api/snap`.
 - [ ] Supaya Claude bisa ikut tes live: tambahkan `api-sandbox.doku.com` dan `developers.doku.com` ke network allowlist environment, lalu isi env DOKU di pengaturan environment.
 - [ ] Putuskan harga final paket langganan (lihat "Keputusan produk yang masih terbuka" di Fase 2).

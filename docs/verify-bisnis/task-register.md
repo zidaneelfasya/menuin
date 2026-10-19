@@ -555,6 +555,11 @@
 - **Verification method:** Unit tests verifying adapter status mapping and successful mock sub-account registration.
 - **Responsible role:** DOKU Integration Reviewer / Backend Engineer
 - **Status:** ✅ `completed`
+- **Implementation notes (update):**
+  - Adapter berada di `apps/web/src/lib/payments/doku/doku-adapter.ts` (bukan `lib/verification/`).
+  - Pemetaan status ada di `mapDokuSubAccountStatus` (`sub-account.ts`) dengan nilai internal huruf besar (`ACTIVE`, `PENDING_REVIEW`, `SUSPENDED`, `FAILED`); status tidak dikenal → `PENDING_REVIEW`.
+  - Fallback ID buatan (`SAC-SANDBOX-…`) dan pengisian QRIS dummy dihapus: kegagalan DOKU → `FAILED`, bisa dicoba ulang.
+  - Diuji di `doku-adapter.integration.test.ts` (Postgres, API DOKU di-mock).
 
 ---
 
@@ -584,6 +589,11 @@
 - **Verification method:** Integration test asserting activation blocked before verification and permitted after approval.
 - **Responsible role:** Backend Engineer / Security Reviewer
 - **Status:** ✅ `completed`
+- **Implementation notes (update):**
+  - Lock `PROVISIONING` dipindah dari `activateDokuSubAccount` ke `provisionDokuSubAccountForTenant`, sehingga jalur Pengaturan dan Verifikasi sama-sama terlindungi dari registrasi ganda.
+  - Manual fallback `/system-admin/payments` baru diimplementasikan belakangan: `lib/payments/doku/sub-account-admin.ts`, `lib/actions/admin-payments.ts`, izin `payments:manage_provider` (SYSTEM_ADMIN/SUPERADMIN). Fitur: daftar status per outlet, tautkan ID manual, ubah status, daftar ulang; semua tercatat di audit log.
+  - SOP operasional: `OPERATIONAL_RUNBOOK.md` §6.
+  - Belum: sinkronisasi status otomatis dari DOKU.
 
 ---
 
