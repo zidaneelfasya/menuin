@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer, decimal, boolean, uuid, uniqueIndex, unique, foreignKey, pgEnum, jsonb, pgSchema, index, check } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, date, integer, decimal, boolean, uuid, uniqueIndex, unique, foreignKey, pgEnum, jsonb, pgSchema, index, check } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
 // Supabase Auth Schema Reference
 export const authSchema = pgSchema("auth");
@@ -447,9 +447,16 @@ export const transactions = pgTable('transactions', {
   voidReason: text('void_reason'),
   voidedAt: timestamp('voided_at', { withTimezone: true }),
   voidedByMembershipId: uuid('voided_by_membership_id'),
+  // Financial Idempotency Protection
+  idempotencyKey: text('idempotency_key'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => {
   return {
+    // Compound Indexes for fast pagination and status tabs:
+    tenantCreatedIdx: index('transactions_tenant_created_idx').on(table.tenantId, table.createdAt),
+    tenantStatusIdx: index('transactions_tenant_status_idx').on(table.tenantId, table.paymentStatus, table.createdAt),
+    // Financial Idempotency Unique Constraint per tenant:
+    tenantIdempotencyUnique: uniqueIndex('transactions_tenant_idempotency_unique').on(table.tenantId, table.idempotencyKey),
     posSessionFk: foreignKey({
       columns: [table.tenantId, table.posSessionId],
       foreignColumns: [posSessions.tenantId, posSessions.id]
@@ -481,6 +488,7 @@ export const transactionItems = pgTable('transaction_items', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => {
   return {
+    tenantTrxIdx: index('trx_items_tenant_trx_idx').on(table.tenantId, table.transactionId),
     transactionFk: foreignKey({
       columns: [table.tenantId, table.transactionId],
       foreignColumns: [transactions.tenantId, transactions.id]
@@ -489,6 +497,31 @@ export const transactionItems = pgTable('transaction_items', {
       columns: [table.tenantId, table.productId],
       foreignColumns: [products.tenantId, products.id]
     })
+  };
+});
+
+export const dailySalesSummaries = pgTable('daily_sales_summaries', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  date: date('date').notNull(), // Format: YYYY-MM-DD
+  totalOrders: integer('total_orders').default(0).notNull(),
+  grossSales: decimal('gross_sales', { precision: 12, scale: 2 }).default('0').notNull(),
+  discount: decimal('discount', { precision: 12, scale: 2 }).default('0').notNull(),
+  netSales: decimal('net_sales', { precision: 12, scale: 2 }).default('0').notNull(),
+  tax: decimal('tax', { precision: 12, scale: 2 }).default('0').notNull(),
+  serviceCharge: decimal('service_charge', { precision: 12, scale: 2 }).default('0').notNull(),
+  cogsHpp: decimal('cogs_hpp', { precision: 12, scale: 2 }).default('0').notNull(),
+  grossProfit: decimal('gross_profit', { precision: 12, scale: 2 }).default('0').notNull(),
+  cashSales: decimal('cash_sales', { precision: 12, scale: 2 }).default('0').notNull(),
+  nonCashSales: decimal('non_cash_sales', { precision: 12, scale: 2 }).default('0').notNull(),
+  posSales: decimal('pos_sales', { precision: 12, scale: 2 }).default('0').notNull(),
+  storefrontSales: decimal('storefront_sales', { precision: 12, scale: 2 }).default('0').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => {
+  return {
+    tenantDateUnique: unique('daily_summary_tenant_date_unique').on(table.tenantId, table.date),
+    tenantDateIdx: index('daily_summary_tenant_date_idx').on(table.tenantId, table.date),
   };
 });
 

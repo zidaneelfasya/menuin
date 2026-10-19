@@ -19,6 +19,7 @@ export type PosCheckoutPayload = {
   tableNumber?: string;
   orderType?: string;
   posKitchenSync?: boolean;
+  idempotencyKey?: string;
   items: Array<{
     productId: string;
     quantity: number;
@@ -45,6 +46,24 @@ export async function insertPosTransaction(params: {
   const { tenantId, payload, mode } = params;
 
   return db.transaction(async (tx) => {
+    // 1. Idempotency Check: Return existing transaction if duplicate request
+    if (payload.idempotencyKey) {
+      const [existingTx] = await tx
+        .select({ id: transactions.id, orderNumber: transactions.orderNumber })
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.tenantId, tenantId),
+            eq(transactions.idempotencyKey, payload.idempotencyKey)
+          )
+        )
+        .limit(1);
+
+      if (existingTx) {
+        return existingTx;
+      }
+    }
+
     const [currentTenant] = await tx
       .select({ name: tenants.name, orderPrefix: tenants.orderPrefix })
       .from(tenants)
@@ -88,6 +107,7 @@ export async function insertPosTransaction(params: {
       customerPhone: payload.customerPhone || null,
       tableNumber: payload.tableNumber || null,
       orderNumber,
+      idempotencyKey: payload.idempotencyKey || null,
     }).returning({ id: transactions.id, orderNumber: transactions.orderNumber });
 
     for (const item of payload.items) {
