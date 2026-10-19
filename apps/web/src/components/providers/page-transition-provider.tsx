@@ -17,50 +17,52 @@ export function PageTransitionProvider({ children }: { children: ReactNode }) {
   const [targetHref, setTargetHref] = useState<string | null>(null);
   const pathname = usePathname();
   const router = useRouter();
+  const navigationStartTimeRef = React.useRef<number>(0);
 
-  // Handle route change completion
+  // Handle route change completion:
+  // ONLY drop the curtain AFTER the new route has actually mounted in the DOM
+  // AND the elegant liquid animation has finished its full duration.
   useEffect(() => {
     if (isTransitioning && targetHref) {
       const normalizedTarget = targetHref.split('?')[0].split('#')[0];
       const normalizedPath = pathname.split('?')[0].split('#')[0];
 
-      // If we've reached the target pathname, end the transition
+      // If we've reached the target pathname, the destination page is mounted!
       if (normalizedPath === normalizedTarget || (normalizedTarget !== '/' && normalizedPath.startsWith(normalizedTarget))) {
-        // Small delay to ensure render is complete
+        const elapsed = Date.now() - navigationStartTimeRef.current;
+        const MIN_ANIMATION_MS = 750; // Elegant Menuin logo liquid fill duration
+        const delay = Math.max(0, MIN_ANIMATION_MS - elapsed) + 100;
+
         const timer = setTimeout(() => {
           setIsTransitioning(false);
           setTargetHref(null);
-        }, 150);
+        }, delay);
         return () => clearTimeout(timer);
       }
     }
   }, [pathname, isTransitioning, targetHref]);
 
-  // Safety fallback so transition never freezes permanently
+  // Safety fallback so transition never freezes permanently in case of total network disconnect
   useEffect(() => {
     if (isTransitioning) {
       const safetyTimer = setTimeout(() => {
         setIsTransitioning(false);
         setTargetHref(null);
-      }, 6000);
+      }, 8000);
       return () => clearTimeout(safetyTimer);
     }
   }, [isTransitioning]);
 
   const navigateWithTransition = (href: string) => {
     if (pathname === href) {
-      // User requested: dibiarkan saja (ignore if same page)
       return;
     }
     
+    navigationStartTimeRef.current = Date.now();
     setTargetHref(href);
     setIsTransitioning(true);
-  };
-
-  const handleFillComplete = () => {
-    if (targetHref) {
-      router.push(targetHref);
-    }
+    // Trigger router.push immediately in parallel so new route mounts under the curtain
+    router.push(href);
   };
 
   return (
@@ -74,8 +76,7 @@ export function PageTransitionProvider({ children }: { children: ReactNode }) {
             animate={{ y: "0%" }}
             exit={{ y: "-100%" }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            // Using primary color which corresponds to the brand's blue
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-primary " 
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-primary" 
           >
             {/* The Logo Container */}
             <div className="relative w-48 h-48 md:w-64 md:h-64">
@@ -85,7 +86,7 @@ export function PageTransitionProvider({ children }: { children: ReactNode }) {
                 alt="Loading..." 
                 fill 
                 sizes="(max-width: 768px) 192px, 256px"
-                className="object-contain opacity-20" 
+                className="object-contain opacity-25" 
                 priority
               />
               
@@ -94,11 +95,10 @@ export function PageTransitionProvider({ children }: { children: ReactNode }) {
                 initial={{ clipPath: "inset(100% 0 0 0)" }}
                 animate={{ clipPath: "inset(0% 0 0 0)" }}
                 transition={{ 
-                  duration: 0.8, 
+                  duration: 0.65, 
                   ease: [0.45, 0, 0.15, 1],
-                  delay: 0.2 // Wait for the overlay to slide up first
+                  delay: 0.08
                 }}
-                onAnimationComplete={handleFillComplete}
                 className="absolute inset-0"
               >
                 <Image 
