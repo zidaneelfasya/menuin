@@ -21,7 +21,10 @@ describe.skipIf(!TEST_DB)('provisionDokuSubAccountForTenant (integration)', asyn
   const { provisionDokuSubAccountForTenant } = await import('./doku-adapter');
   const { DokuApiError } = await import('./client');
 
+  const admin = await import('./sub-account-admin');
+
   const authUserIds: string[] = [];
+  let lastAccountId = '';
 
   async function setup(opts: { verified?: boolean } = {}) {
     const verified = opts.verified ?? true;
@@ -68,6 +71,7 @@ describe.skipIf(!TEST_DB)('provisionDokuSubAccountForTenant (integration)', asyn
         outletComplianceStatus: 'verified',
       })
       .returning();
+    lastAccountId = account.id;
     return tenant.id;
   }
 
@@ -169,5 +173,116 @@ describe.skipIf(!TEST_DB)('provisionDokuSubAccountForTenant (integration)', asyn
     expect(res.success).toBe(false);
     expect(createSubAccount).not.toHaveBeenCalled();
     expect(await tenantOf(tenantId)).toMatchObject({ dokuSubAccountId: null, dokuSubAccountStatus: null });
+  });
+
+  describe('manual admin operations', () => {
+    const actor = () => ({ accountId: lastAccountId, role: 'SYSTEM_ADMIN' });
+    const auditOf = (tenantId: string) =>
+      db.select().from(schema.verificationAuditLogs).where(eq(schema.verificationAuditLogs.tenantId, tenantId));
+
+    it('links a Sub Account manually with an audit entry and onboarding row', async () => {
+      const tenantId = await setup();
+      const res = await admin.linkSubAccountManually({
+        tenantId,
+        subAccountId: 'SAC-MANUAL-0001',
+        status: 'ACTIVE',
+        note: 'API timeout, dibuat di dashboard DOKU',
+        actor: actor(),
+      });
+
+      expect(res).toMatchObject({ success: true, subAccountId: 'SAC-MANUAL-0001', status: 'ACTIVE' });
+      expect(await tenantOf(tenantId)).toMatchObject({
+        dokuSubAccountId: 'SAC-MANUAL-0001',
+        dokuSubAccountStatus: 'ACTIVE',
+      });
+      const [onboarding] = await db
+        .select()
+        .from(schema.providerOnboardings)
+        .where(eq(schema.providerOnboardings.tenantId, tenantId));
+      expect(onboarding).toMatchObject({ providerReference: 'SAC-MANUAL-0001', providerStatus: 'ACTIVE' });
+      const [log] = await auditOf(tenantId);
+      expect(log).toMatchObject({
+        action: 'DOKU_SUB_ACCOUNT_LINKED_MANUALLY',
+        actorId: lastAccountId,
+        actorRole: 'SYSTEM_ADMIN',
+        newStatus: 'ACTIVE',
+        reason: 'API timeout, dibuat di dashboard DOKU',
+      });
+    });
+
+    it('rejects a bad id, a missing note, and an id already used by another outlet', async () => {
+      const first = await setup();
+      const second = await setup();
+      const base = { status: 'ACTIVE' as const, note: 'catatan ops', actor: actor() };
+
+      expect(await admin.linkSubAccountManually({ ...base, tenantId: first, subAccountId: 'bukan-sac' }))
+        .toMatchObject({ success: false, error: expect.stringMatching(/Format/) });
+      expect(await admin.linkSubAccountManually({ ...base, tenantId: first, subAccountId: 'SAC-DUP-0001', note: ' ' }))
+        .toMatchObject({ success: false, error: expect.stringMatching(/Catatan/) });
+
+      expect(await admin.linkSubAccountManually({ ...base, tenantId: first, subAccountId: 'SAC-DUP-0001' }))
+        .toMatchObject({ success: true });
+      expect(await admin.linkSubAccountManually({ ...base, tenantId: second, subAccountId: 'SAC-DUP-0001' }))
+        .toMatchObject({ success: false, error: expect.stringMatching(/dipakai outlet lain/) });
+      expect(await tenantOf(second)).toMatchObject({ dokuSubAccountId: null });
+    });
+
+    it('replacing an existing id requires allowOverwrite', async () => {
+      const tenantId = await setup();
+      const base = { tenantId, status: 'ACTIVE' as const, note: 'catatan ops', actor: actor() };
+      await admin.linkSubAccountManually({ ...base, subAccountId: 'SAC-OLD-0001' });
+
+      expect(await admin.linkSubAccountManually({ ...base, subAccountId: 'SAC-NEW-0001' }))
+        .toMatchObject({ success: false, error: expect.stringMatching(/Timpa ID lama/) });
+      expect(await tenantOf(tenantId)).toMatchObject({ dokuSubAccountId: 'SAC-OLD-0001' });
+
+      expect(await admin.linkSubAccountManually({ ...base, subAccountId: 'SAC-NEW-0001', allowOverwrite: true }))
+        .toMatchObject({ success: true });
+      expect(await tenantOf(tenantId)).toMatchObject({ dokuSubAccountId: 'SAC-NEW-0001' });
+    });
+
+    it('refuses to link while a fresh API provisioning is running', async () => {
+      const tenantId = await setup();
+      await db.update(schema.tenants).set({ dokuSubAccountStatus: 'PROVISIONING', updatedAt: new Date() }).where(eq(schema.tenants.id, tenantId));
+
+      expect(await admin.linkSubAccountManually({
+        tenantId, subAccountId: 'SAC-RACE-0001', status: 'ACTIVE', note: 'catatan ops', actor: actor(),
+      })).toMatchObject({ success: false, error: expect.stringMatching(/sedang berjalan/) });
+    });
+
+    it('promotes PENDING_REVIEW to ACTIVE, which then unblocks the adapter', async () => {
+      const tenantId = await setup();
+      createSubAccount.mockResolvedValueOnce({ accountId: 'SAC-IT-PROMOTE', status: 'PENDING_REVIEW', providerStatus: 'PENDING', raw: {} });
+      await provisionDokuSubAccountForTenant(tenantId);
+
+      const res = await admin.setSubAccountStatusManually({
+        tenantId, status: 'ACTIVE', note: 'DOKU sudah mengaktifkan akun', actor: actor(),
+      });
+      expect(res).toMatchObject({ success: true, status: 'ACTIVE' });
+      expect(await provisionDokuSubAccountForTenant(tenantId)).toMatchObject({ success: true, subAccountId: 'SAC-IT-PROMOTE' });
+      expect(createSubAccount).toHaveBeenCalledTimes(1);
+      expect((await auditOf(tenantId)).map((l) => l.action)).toContain('DOKU_SUB_ACCOUNT_STATUS_CHANGED');
+    });
+
+    it('cannot change status of an outlet without a Sub Account', async () => {
+      const tenantId = await setup();
+      expect(await admin.setSubAccountStatusManually({
+        tenantId, status: 'ACTIVE', note: 'catatan ops', actor: actor(),
+      })).toMatchObject({ success: false });
+    });
+
+    it('overview filters by status and flags stale provisioning', async () => {
+      const stuck = await setup();
+      await db
+        .update(schema.tenants)
+        .set({ dokuSubAccountStatus: 'PROVISIONING', updatedAt: new Date(Date.now() - 10 * 60_000) })
+        .where(eq(schema.tenants.id, stuck));
+
+      const { rows, counts } = await admin.listSubAccountOverview({ filter: 'PROVISIONING' });
+      const row = rows.find((r) => r.tenantId === stuck);
+      expect(row).toMatchObject({ provisioningStale: true, businessProfileStatus: 'verified' });
+      expect(rows.every((r) => r.dokuSubAccountStatus === 'PROVISIONING')).toBe(true);
+      expect(counts.provisioning).toBeGreaterThanOrEqual(1);
+    });
   });
 });

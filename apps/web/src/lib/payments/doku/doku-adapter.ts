@@ -18,8 +18,48 @@ export interface ProvisionDokuSubAccountResult {
   error?: string;
 }
 
-const SUB_ACCOUNT_PROVISIONING = 'PROVISIONING';
-const PROVISIONING_STALE_MS = 2 * 60_000;
+export const SUB_ACCOUNT_PROVISIONING = 'PROVISIONING';
+export const PROVISIONING_STALE_MS = 2 * 60_000;
+
+type DbOrTx = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/** Menyimpan referensi Sub Account DOKU outlet di provider_onboardings (satu baris per tenant). */
+export async function upsertDokuOnboarding(
+  tx: DbOrTx,
+  params: {
+    businessProfileId: string;
+    tenantId: string;
+    providerReference: string | null;
+    providerStatus: ProviderOnboardingStatus;
+  }
+) {
+  const [existing] = await tx
+    .select({ id: providerOnboardings.id })
+    .from(providerOnboardings)
+    .where(and(eq(providerOnboardings.provider, 'DOKU'), eq(providerOnboardings.tenantId, params.tenantId)))
+    .limit(1);
+
+  if (existing) {
+    await tx
+      .update(providerOnboardings)
+      .set({
+        providerReference: params.providerReference,
+        providerStatus: params.providerStatus,
+        lastSyncedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(providerOnboardings.id, existing.id));
+  } else {
+    await tx.insert(providerOnboardings).values({
+      businessProfileId: params.businessProfileId,
+      tenantId: params.tenantId,
+      provider: 'DOKU',
+      providerReference: params.providerReference,
+      providerStatus: params.providerStatus,
+      lastSyncedAt: new Date(),
+    });
+  }
+}
 
 function existingSubAccountError(status: string | null): string {
   switch (status) {
@@ -207,38 +247,12 @@ export async function provisionDokuSubAccountForTenant(
   try {
     // 6. Update DB atomically
     await db.transaction(async (tx) => {
-      // Upsert provider_onboardings
-      const [existingOnboarding] = await tx
-        .select()
-        .from(providerOnboardings)
-        .where(
-          and(
-            eq(providerOnboardings.provider, 'DOKU'),
-            eq(providerOnboardings.tenantId, tenant.id)
-          )
-        )
-        .limit(1);
-
-      if (existingOnboarding) {
-        await tx
-          .update(providerOnboardings)
-          .set({
-            providerReference: subAccountId,
-            providerStatus: dokuStatus,
-            lastSyncedAt: new Date(),
-            updatedAt: new Date(),
-          })
-          .where(eq(providerOnboardings.id, existingOnboarding.id));
-      } else {
-        await tx.insert(providerOnboardings).values({
-          businessProfileId: businessProfile.id,
-          tenantId: tenant.id,
-          provider: 'DOKU',
-          providerReference: subAccountId,
-          providerStatus: dokuStatus,
-          lastSyncedAt: new Date(),
-        });
-      }
+      await upsertDokuOnboarding(tx, {
+        businessProfileId: businessProfile.id,
+        tenantId: tenant.id,
+        providerReference: subAccountId,
+        providerStatus: dokuStatus,
+      });
 
       // Update Tenant
       await tx

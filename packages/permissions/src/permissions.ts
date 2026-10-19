@@ -13,6 +13,7 @@ export const VerificationPermissions = {
   MANAGE_LEGAL: 'verification:manage_legal',
   MANAGE_FINANCE: 'verification:manage_finance',
   SUBMIT_ONBOARDING: 'verification:submit_onboarding',
+  MANAGE_PAYMENT_PROVIDER: 'payments:manage_provider',
 } as const;
 
 export type VerificationPermission =
@@ -32,6 +33,7 @@ export const ROLE_PERMISSIONS: Record<string, ReadonlySet<VerificationPermission
     VerificationPermissions.MANAGE_LEGAL,
     VerificationPermissions.MANAGE_FINANCE,
     VerificationPermissions.SUBMIT_ONBOARDING,
+    VerificationPermissions.MANAGE_PAYMENT_PROVIDER,
   ]),
   [Role.SUPERADMIN]: new Set([
     VerificationPermissions.VIEW_QUEUE,
@@ -46,6 +48,7 @@ export const ROLE_PERMISSIONS: Record<string, ReadonlySet<VerificationPermission
     VerificationPermissions.MANAGE_LEGAL,
     VerificationPermissions.MANAGE_FINANCE,
     VerificationPermissions.SUBMIT_ONBOARDING,
+    VerificationPermissions.MANAGE_PAYMENT_PROVIDER,
   ]),
   [Role.VERIFICATION_ADMIN]: new Set([
     VerificationPermissions.VIEW_QUEUE,
