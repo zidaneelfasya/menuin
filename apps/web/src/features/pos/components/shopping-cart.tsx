@@ -239,19 +239,19 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
   const isOjolType = ['GRABFOOD', 'SHOPEEFOOD', 'GOFOOD', 'DELIVERY'].includes(orderType);
 
   return (
-    <div className="flex flex-col h-full bg-card border border-border/70 rounded-2xl shadow-xs overflow-hidden">
+    <div className="flex flex-col h-full bg-card border border-[#EAEFF8] rounded-2xl shadow-xs overflow-hidden">
       {/* 1. ORDER CONFIGURATION HEADER */}
-      <div className="p-3 sm:p-3.5 border-b border-border/70 bg-slate-50/50 dark:bg-slate-900/30 space-y-2.5">
+      <div className="p-3 sm:p-3.5 border-b border-[#EAEFF8] bg-slate-50/50 space-y-2.5">
         {/* Order Type Segmented Switcher */}
-        <div className="grid grid-cols-3 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl gap-1 text-xs">
+        <div className="grid grid-cols-3 p-1 bg-slate-100 rounded-xl gap-1 text-xs border border-[#EAEFF8]">
           <button
             type="button"
             onClick={() => setOrderType('DINE_IN')}
             className={cn(
               "py-1.5 px-2 rounded-lg font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer",
               orderType === 'DINE_IN'
-                ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-2xs"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-white text-[#0e59f9] shadow-xs"
+                : "text-slate-600 hover:text-slate-900"
             )}
           >
             <UtensilsCrossed className="w-3.5 h-3.5" />
@@ -263,8 +263,8 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
             className={cn(
               "py-1.5 px-2 rounded-lg font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer",
               orderType === 'TAKEAWAY'
-                ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-2xs"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-white text-[#0e59f9] shadow-xs"
+                : "text-slate-600 hover:text-slate-900"
             )}
           >
             <ShoppingBag className="w-3.5 h-3.5" />
@@ -278,8 +278,8 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
             className={cn(
               "py-1.5 px-2 rounded-lg font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer",
               isOjolType
-                ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-2xs"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-white text-[#0e59f9] shadow-xs"
+                : "text-slate-600 hover:text-slate-900"
             )}
           >
             <Bike className="w-3.5 h-3.5" />
@@ -303,8 +303,8 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
                 className={cn(
                   "px-2.5 py-1 rounded-md font-medium border transition-colors whitespace-nowrap",
                   orderType === sub.id
-                    ? "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800"
-                    : "bg-white dark:bg-slate-900 text-muted-foreground border-border hover:bg-slate-50"
+                    ? "bg-[#0e59f9]/10 text-[#0e59f9] border-[#0e59f9]/30 font-semibold"
+                    : "bg-white text-slate-600 border-[#EAEFF8] hover:bg-slate-50"
                 )}
               >
                 {sub.label}
@@ -321,7 +321,7 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
                 placeholder="No. Meja *"
                 value={tableNumber}
                 onChange={(e) => setTableNumber(e.target.value)}
-                className="h-8 text-xs bg-white dark:bg-slate-900 rounded-sm px-2.5 font-medium border-border/80"
+                className="h-8.5 text-xs bg-white rounded-lg px-2.5 font-medium border-[#EAEFF8] focus-visible:ring-1 focus-visible:ring-[#0e59f9]"
               />
             </div>
           )}
@@ -330,16 +330,16 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
               placeholder={posSettings?.customerNameRequired ? "Nama Pelanggan *" : "Nama Pelanggan (opsional)"}
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
-              className="h-8 text-xs bg-white dark:bg-slate-900 rounded-sm px-2.5 font-medium border-border/80"
+              className="h-8.5 text-xs bg-white rounded-lg px-2.5 font-medium border-[#EAEFF8] focus-visible:ring-1 focus-visible:ring-[#0e59f9]"
             />
           </div>
         </div>
 
         {/* Cart Item Header Bar & Clear Action */}
         <div className="flex items-center justify-between pt-1">
-          <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+          <span className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
             Daftar Item
-            <span className="px-1.5 py-0.2 rounded-full bg-slate-200/80 dark:bg-slate-800 text-[10px] text-muted-foreground font-semibold">
+            <span className="px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-600 border border-[#EAEFF8] text-[10px] font-semibold font-financial tabular-nums">
               {items.length}
             </span>
           </span>
@@ -385,15 +385,15 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
       <div className="flex-1 overflow-y-auto p-3 space-y-2.5 scrollbar-hide">
         {items.length === 0 ? (
           <div className="h-full min-h-[160px] flex flex-col items-center justify-center text-muted-foreground text-center p-4">
-            <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800/60 flex items-center justify-center mb-2.5 text-muted-foreground/60">
+            <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-2.5 text-muted-foreground/60 border border-[#EAEFF8]">
               <ShoppingBag size={22} />
             </div>
-            <p className="text-xs font-semibold text-foreground">Pesanan masih kosong</p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Pilih menu dari katalog untuk mulai mencatat</p>
+            <p className="text-xs font-semibold text-slate-800">Pesanan masih kosong</p>
+            <p className="text-[11px] text-slate-400 mt-0.5 font-normal">Pilih menu dari katalog untuk mulai mencatat</p>
           </div>
         ) : (
           items.map((item) => (
-            <div key={item.id} className="flex gap-2.5 bg-muted/20 p-2.5 rounded-xl border border-border/50">
+            <div key={item.id} className="flex gap-2.5 bg-slate-50/60 p-2.5 rounded-xl border border-[#EAEFF8]">
               <div className="h-11 w-11 rounded-xl shrink-0 overflow-hidden relative flex items-center justify-center">
                 <CartItemThumbnail 
                   src={item.imageUrl} 
@@ -405,7 +405,7 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-1">
-                  <h4 className="font-semibold text-xs truncate leading-snug">{item.name}</h4>
+                  <h4 className="font-semibold text-xs text-slate-800 truncate leading-snug">{item.name}</h4>
                   <button 
                     type="button"
                     onClick={() => removeItem(item.id)}
@@ -417,13 +417,13 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
                 </div>
 
                 {item.modifiers && item.modifiers.length > 0 && (
-                  <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">
+                  <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight font-normal">
                     {item.modifiers.map(m => m.name).join(', ')}
                   </p>
                 )}
 
                 {item.notes && (
-                  <p className="text-[10px] text-muted-foreground italic mt-0.5 line-clamp-1">
+                  <p className="text-[10px] text-muted-foreground italic mt-0.5 line-clamp-1 font-normal">
                     "{item.notes}"
                   </p>
                 )}
@@ -433,24 +433,24 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
                     <button 
                       type="button"
                       onClick={() => handleMinus(item.id, item.quantity)}
-                      className="w-6 h-6 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 transition-all flex items-center justify-center shadow-2xs active:scale-90 cursor-pointer"
+                      className="w-6 h-6 rounded-full bg-white border border-[#EAEFF8] text-slate-700 hover:bg-slate-50 transition-all flex items-center justify-center shadow-2xs active:scale-90 cursor-pointer"
                       aria-label="Kurangi kuantitas"
                     >
                       <Minus className="w-3 h-3 stroke-[2.5]" />
                     </button>
-                    <span className="text-xs font-semibold min-w-5 text-center text-foreground select-none">
+                    <span className="text-xs font-semibold min-w-5 text-center text-slate-900 select-none font-financial tabular-nums">
                       {item.quantity}
                     </span>
                     <button 
                       type="button"
                       onClick={() => handlePlus(item.id, item.quantity)}
-                      className="w-6 h-6 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition-all flex items-center justify-center active:scale-90 cursor-pointer"
+                      className="w-6 h-6 rounded-full bg-[#0e59f9] hover:bg-[#0b4de0] text-white shadow-xs transition-all flex items-center justify-center active:scale-90 cursor-pointer"
                       aria-label="Tambah kuantitas"
                     >
                       <Plus className="w-3 h-3 stroke-[2.5]" />
                     </button>
                   </div>
-                  <span className="font-semibold text-xs text-foreground">
+                  <span className="font-semibold text-xs text-slate-900 font-financial tabular-nums">
                     {formatCurrency(item.price * item.quantity)}
                   </span>
                 </div>
@@ -461,21 +461,21 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
       </div>
 
       {/* 3. PROMO & FINANCIAL SUMMARY FOOTER */}
-      <div className="p-3 border-t border-border/80 bg-slate-50/50 dark:bg-slate-900/30 space-y-2">
+      <div className="p-3 border-t border-[#EAEFF8] bg-slate-50/50 space-y-2">
         {/* Promo trigger in Cart */}
         {appliedPromo ? (
-          <div className="flex items-center justify-between text-xs py-1.5 px-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300">
+          <div className="flex items-center justify-between text-xs py-1.5 px-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800">
             <div className="flex items-center gap-1.5 min-w-0">
               <Tag size={13} className="shrink-0 text-emerald-600" />
               {appliedPromo.code && (
-                <span className="shrink-0 px-1.5 py-0.5 rounded-md bg-emerald-200/60 dark:bg-emerald-900/60 text-emerald-900 dark:text-emerald-200 font-mono text-[10px] font-semibold">
+                <span className="shrink-0 px-1.5 py-0.5 rounded-md bg-emerald-200/60 text-emerald-900 font-mono text-[10px] font-semibold">
                   {appliedPromo.code}
                 </span>
               )}
               <span className="font-semibold truncate">{appliedPromo.name}</span>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
-              <span className="font-semibold">-{formatCurrency(appliedPromo.discountAmount)}</span>
+              <span className="font-semibold font-financial tabular-nums">-{formatCurrency(appliedPromo.discountAmount)}</span>
               <button 
                 type="button"
                 onClick={handleRemovePromo}
@@ -490,54 +490,54 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
           <button
             type="button"
             onClick={handleOpenPromoModal}
-            className="w-full flex items-center justify-between text-xs py-2 px-3 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 text-muted-foreground hover:text-blue-600 transition-colors cursor-pointer"
+            className="w-full flex items-center justify-between text-xs py-2 px-3 rounded-lg border border-dashed border-[#EAEFF8] hover:border-[#0e59f9] hover:bg-[#0e59f9]/5 text-slate-600 hover:text-[#0e59f9] transition-colors cursor-pointer"
           >
             <span className="flex items-center gap-2 font-medium">
               <Tag size={13} />
               Pasang Promo / Diskon
             </span>
-            <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400">Pilih ➔</span>
+            <span className="text-[11px] font-semibold text-[#0e59f9]">Pilih ➔</span>
           </button>
         )}
 
         {/* Calculation summary lines */}
         <div className="space-y-1 text-xs pt-1">
-          <div className="flex justify-between text-muted-foreground">
+          <div className="flex justify-between text-slate-500 font-normal">
             <span>Subtotal Produk</span>
-            <span className="font-medium text-foreground">{formatCurrency(subtotal)}</span>
+            <span className="font-medium text-slate-900 font-financial tabular-nums">{formatCurrency(subtotal)}</span>
           </div>
 
           {discount > 0 && (
-            <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
+            <div className="flex justify-between text-emerald-600">
               <span>Potongan Promo</span>
-              <span className="font-medium">-{formatCurrency(discount)}</span>
+              <span className="font-medium font-financial tabular-nums">-{formatCurrency(discount)}</span>
             </div>
           )}
 
           {serviceRate > 0 && (
-            <div className="flex justify-between text-muted-foreground">
+            <div className="flex justify-between text-slate-500 font-normal">
               <span>{serviceName} ({serviceRate}%)</span>
-              <span className="font-medium text-foreground">+{formatCurrency(serviceChargeAmount)}</span>
+              <span className="font-medium text-slate-900 font-financial tabular-nums">+{formatCurrency(serviceChargeAmount)}</span>
             </div>
           )}
 
           {taxRate > 0 && (
-            <div className="flex justify-between text-muted-foreground">
+            <div className="flex justify-between text-slate-500 font-normal">
               <span>{taxName} ({taxRate}%):</span>
-              <span className="font-medium text-foreground">+{formatCurrency(taxAmount)}</span>
+              <span className="font-medium text-slate-900 font-financial tabular-nums">+{formatCurrency(taxAmount)}</span>
             </div>
           )}
 
           {roundingAmount > 0 && (
-            <div className="flex justify-between text-muted-foreground">
+            <div className="flex justify-between text-slate-500 font-normal">
               <span>Pembulatan (Rounding):</span>
-              <span className="font-medium text-foreground">+{formatCurrency(roundingAmount)}</span>
+              <span className="font-medium text-slate-900 font-financial tabular-nums">+{formatCurrency(roundingAmount)}</span>
             </div>
           )}
 
-          <div className="pt-2 border-t border-border/80 flex justify-between items-center">
-            <span className="font-semibold text-sm text-foreground">Total Tagihan</span>
-            <span className="font-semibold text-lg text-blue-600 dark:text-blue-400">
+          <div className="pt-2 border-t border-[#EAEFF8] flex justify-between items-center">
+            <span className="font-semibold text-sm text-slate-900">Total Tagihan</span>
+            <span className="font-semibold text-xl text-[#0e59f9] font-financial tabular-nums tracking-tight">
               {formatCurrency(total)}
             </span>
           </div>
@@ -549,20 +549,20 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
             type="button"
             onClick={onCheckout}
             disabled={items.length === 0 || isProcessing}
-            className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-xs shadow-xs hover:shadow-sm transition-all disabled:opacity-50 cursor-pointer flex items-center justify-between px-4 mt-2"
+            className="w-full h-11 bg-[#0e59f9] hover:bg-[#0b4de0] text-white rounded-xl font-semibold text-xs shadow-xs hover:shadow-sm transition-all disabled:opacity-50 cursor-pointer flex items-center justify-between px-4 mt-2"
           >
             <span>Bayar Sekarang</span>
-            <span className="font-semibold text-sm">{formatCurrency(total)}</span>
+            <span className="font-semibold text-sm font-financial tabular-nums">{formatCurrency(total)}</span>
           </button>
         )}
       </div>
 
       {/* 4. ACTIVE PROMO SELECTOR MODAL */}
       <Dialog open={isPromoModalOpen} onOpenChange={setIsPromoModalOpen}>
-        <DialogContent className="max-w-md p-0 overflow-hidden rounded-2xl bg-white dark:bg-slate-950">
-          <DialogHeader className="p-4 pb-3 border-b bg-slate-50/70 dark:bg-slate-900/50">
-            <DialogTitle className="text-base font-semibold flex items-center gap-2">
-              <Tag className="w-4 h-4 text-blue-600" />
+        <DialogContent className="max-w-md p-0 overflow-hidden rounded-2xl bg-white border border-[#EAEFF8] shadow-xl">
+          <DialogHeader className="p-4 pb-3 border-b border-[#EAEFF8] bg-slate-50/70">
+            <DialogTitle className="text-base font-semibold text-slate-900 flex items-center gap-2">
+              <Tag className="w-4 h-4 text-[#0e59f9]" />
               Kelola Diskon & Promo Transaksi
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
@@ -619,26 +619,26 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
                       className={cn(
                         "w-full text-left p-3 rounded-xl border transition-all flex flex-col justify-between cursor-pointer",
                         !isEligible
-                          ? "opacity-60 bg-muted/30 border-dashed border-border cursor-not-allowed"
-                          : "bg-card hover:bg-blue-50/50 dark:hover:bg-blue-950/20 hover:border-blue-300 border-border active:scale-[0.99]"
+                          ? "opacity-60 bg-muted/30 border-dashed border-[#EAEFF8] cursor-not-allowed"
+                          : "bg-white hover:bg-blue-50/40 hover:border-[#0e59f9]/40 border-[#EAEFF8] active:scale-[0.99]"
                       )}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-1.5 min-w-0">
                           {p.code && (
-                            <span className="shrink-0 px-1.5 py-0.5 rounded-md bg-blue-100/80 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300 font-mono text-[10px] font-semibold">
+                            <span className="shrink-0 px-1.5 py-0.5 rounded-md bg-[#0e59f9]/10 text-[#0e59f9] font-mono text-[10px] font-semibold">
                               {p.code}
                             </span>
                           )}
-                          <span className="text-xs font-semibold text-foreground truncate">{p.name}</span>
+                          <span className="text-xs font-semibold text-slate-800 truncate">{p.name}</span>
                         </div>
-                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-md border-none bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 shrink-0">
+                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-md border-none bg-[#0e59f9]/10 text-[#0e59f9] shrink-0 font-financial tabular-nums">
                           {discountTag}
                         </span>
                       </div>
                       <div className="text-[10px] text-muted-foreground mt-1.5 flex items-center justify-between">
-                        <span>{minOrder > 0 ? `Min. Belanja ${formatCurrency(minOrder)}` : 'Tanpa Minimum'}</span>
-                        <span className={cn("font-semibold", isEligible ? "text-blue-600" : "text-muted-foreground")}>
+                        <span className="font-financial tabular-nums">{minOrder > 0 ? `Min. Belanja ${formatCurrency(minOrder)}` : 'Tanpa Minimum'}</span>
+                        <span className={cn("font-semibold", isEligible ? "text-[#0e59f9]" : "text-muted-foreground")}>
                           {isEligible ? "Langsung Terapkan ➔" : "Belum Memenuhi"}
                         </span>
                       </div>
@@ -654,20 +654,20 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
           ) : (
             <div className="p-4 space-y-4">
               {/* Diskon Manual Kasir */}
-              <div className="space-y-3 p-3.5 rounded-xl border border-border bg-slate-50/50 dark:bg-slate-900/30">
-                <span className="text-xs font-semibold text-foreground block">
+              <div className="space-y-3 p-3.5 rounded-xl border border-[#EAEFF8] bg-slate-50/50">
+                <span className="text-xs font-semibold text-slate-800 block">
                   Potongan Diskon Manual Kasir
                 </span>
                 <div className="flex gap-2">
-                  <div className="flex bg-muted/60 p-0.5 rounded-lg shrink-0">
+                  <div className="flex bg-slate-200/60 p-0.5 rounded-lg shrink-0">
                     <button
                       type="button"
                       onClick={() => setManualDiscountType('FIXED')}
                       className={cn(
                         "px-2.5 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer",
                         manualDiscountType === 'FIXED'
-                          ? "bg-background text-foreground shadow-2xs"
-                          : "text-muted-foreground hover:text-foreground"
+                          ? "bg-white text-slate-900 shadow-2xs"
+                          : "text-slate-600 hover:text-slate-900"
                       )}
                     >
                       Rp
@@ -678,8 +678,8 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
                       className={cn(
                         "px-2.5 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer",
                         manualDiscountType === 'PERCENTAGE'
-                          ? "bg-background text-foreground shadow-2xs"
-                          : "text-muted-foreground hover:text-foreground"
+                          ? "bg-white text-slate-900 shadow-2xs"
+                          : "text-slate-600 hover:text-slate-900"
                       )}
                     >
                       %
@@ -691,14 +691,14 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
                     value={manualDiscountValue}
                     onChange={(e) => setManualDiscountValue(e.target.value)}
                     placeholder={manualDiscountType === 'FIXED' ? 'Misal: 10000' : 'Misal: 10'}
-                    className="h-9 text-xs bg-background"
+                    className="h-9 text-xs bg-white border-[#EAEFF8] font-financial tabular-nums"
                   />
                   <Button
                     type="button"
                     size="sm"
                     onClick={handleApplyManualDiscount}
                     disabled={!manualDiscountValue.trim()}
-                    className="h-9 px-3.5 text-xs bg-blue-600 hover:bg-blue-700 text-white shrink-0"
+                    className="h-9 px-3.5 text-xs bg-[#0e59f9] hover:bg-[#0b4de0] text-white shrink-0 font-semibold shadow-xs"
                   >
                     Terapkan
                   </Button>
@@ -706,8 +706,8 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
               </div>
 
               {/* Atau Pakai Kode Promo Khusus */}
-              <div className="space-y-2 pt-1 border-t border-border">
-                <span className="text-xs font-semibold text-foreground block">
+              <div className="space-y-2 pt-1 border-t border-[#EAEFF8]">
+                <span className="text-xs font-semibold text-slate-800 block">
                   Atau Input Kode Promo Khusus
                 </span>
                 <div className="flex gap-2">
@@ -721,14 +721,14 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
                       }
                     }}
                     placeholder="Masukkan kode promo (misal: HEMAT50)"
-                    className="h-9 text-xs font-mono uppercase bg-background"
+                    className="h-9 text-xs font-mono uppercase bg-white border-[#EAEFF8]"
                   />
                   <Button
                     type="button"
                     size="sm"
                     onClick={() => handleApplyPromoCode()}
                     disabled={isValidatingPromo || !promoCodeInput.trim()}
-                    className="h-9 px-3.5 text-xs bg-slate-800 hover:bg-slate-900 text-white shrink-0"
+                    className="h-9 px-3.5 text-xs bg-[#0e59f9] hover:bg-[#0b4de0] text-white shrink-0 font-semibold shadow-xs"
                   >
                     {isValidatingPromo ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Validasi'}
                   </Button>

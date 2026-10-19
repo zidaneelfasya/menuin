@@ -16,7 +16,7 @@ interface ShiftsSidebarProps {
   hasActiveShift?: boolean;
 }
 
-export function ShiftsSidebar({ outletKey, hasActiveShift }: ShiftsSidebarProps) {
+export function ShiftsSidebar({ outletKey }: ShiftsSidebarProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -28,7 +28,6 @@ export function ShiftsSidebar({ outletKey, hasActiveShift }: ShiftsSidebarProps)
       label: 'Shift Aktif',
       icon: IconClock,
       tab: 'active',
-      badge: hasActiveShift ? 'Aktif' : undefined,
     },
     {
       id: 'movements',
@@ -63,17 +62,11 @@ export function ShiftsSidebar({ outletKey, hasActiveShift }: ShiftsSidebarProps)
   return (
     <div className="flex flex-col h-full p-2 md:p-3">
       {/* Desktop Header */}
-      <div className="hidden md:flex items-center justify-between px-2 py-3 mb-2">
+      <div className="hidden md:flex items-center gap-2.5 px-2 py-3 mb-2">
         <div className="min-w-0">
-          <h2 className="text-lg font-semibold font-sans text-gray-900 truncate">Shift Kasir</h2>
+          <h2 className="text-lg font-semibold text-gray-900 truncate">Shift Kasir</h2>
           <p className="text-[10px] text-gray-500 truncate">Sesi Kasir & Arus Kas</p>
         </div>
-        {hasActiveShift && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-600 border border-emerald-200">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            Aktif
-          </span>
-        )}
       </div>
 
       {/* Nav Items */}
