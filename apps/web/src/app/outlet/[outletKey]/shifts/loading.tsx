@@ -13,18 +13,18 @@ export default function ShiftsLoading() {
       </div>
 
       {/* Active Shift Card Banner */}
-      <div className="rounded-2xl border border-blue-100 dark:border-blue-900/40 bg-blue-50/50 dark:bg-blue-950/20 p-5 md:p-6 space-y-4">
+      <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 md:p-6 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/60" />
+            <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800" />
             <div className="space-y-2">
-              <Skeleton className="h-5 w-36 rounded bg-blue-200 dark:bg-blue-800" />
-              <Skeleton className="h-3.5 w-52 rounded bg-blue-100 dark:bg-blue-900/40" />
+              <Skeleton className="h-5 w-36 rounded bg-slate-200/70 dark:bg-slate-800" />
+              <Skeleton className="h-3.5 w-52 rounded bg-slate-100 dark:bg-slate-800/60" />
             </div>
           </div>
           <div className="flex gap-2">
-            <Skeleton className="h-10 w-28 rounded-xl bg-blue-200 dark:bg-blue-800" />
-            <Skeleton className="h-10 w-32 rounded-xl bg-blue-300 dark:bg-blue-700" />
+            <Skeleton className="h-10 w-28 rounded-full bg-slate-200/70 dark:bg-slate-800" />
+            <Skeleton className="h-10 w-32 rounded-full bg-slate-100 dark:bg-slate-800/60" />
           </div>
         </div>
       </div>

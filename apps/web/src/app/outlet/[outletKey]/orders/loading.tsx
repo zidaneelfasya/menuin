@@ -2,52 +2,63 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function OrdersLoading() {
   return (
-    <div className="h-full flex-1 min-h-0 overflow-hidden flex flex-col space-y-3 animate-pulse">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 shrink-0">
+    <div className="h-full flex-1 min-h-0 overflow-hidden flex flex-col space-y-3.5 animate-pulse">
+      {/* Top Header & Toolbar Skeleton */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
         <div className="space-y-1.5">
-          <Skeleton className="h-7 w-48 rounded-lg bg-slate-200 dark:bg-slate-800" />
-          <Skeleton className="h-4 w-80 max-w-full rounded-md bg-slate-100 dark:bg-slate-800/60" />
+          <Skeleton className="h-6 w-44 rounded-lg bg-slate-200/70 dark:bg-slate-800/70" />
+          <Skeleton className="h-3.5 w-72 max-w-full rounded-md bg-slate-100 dark:bg-slate-800/40" />
         </div>
         <div className="flex items-center gap-2">
-          <Skeleton className="h-9 w-28 rounded-xl bg-slate-200 dark:bg-slate-800" />
+          <Skeleton className="h-9 w-52 rounded-full bg-slate-100/90 dark:bg-slate-850" />
+          <Skeleton className="h-9 w-9 rounded-full bg-slate-100/90 dark:bg-slate-850 shrink-0" />
+          <Skeleton className="h-9 w-9 rounded-full bg-slate-100/90 dark:bg-slate-850 shrink-0" />
         </div>
       </div>
 
-      {/* Kanban Columns Skeleton */}
-      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-3 gap-4">
-        {[1, 2, 3].map((col) => (
+      {/* Status Tabs Skeleton */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide shrink-0">
+        <Skeleton className="h-7 w-28 rounded-full bg-slate-200/60 dark:bg-slate-800/60" />
+        <Skeleton className="h-7 w-32 rounded-full bg-slate-100/80 dark:bg-slate-850" />
+        <Skeleton className="h-7 w-28 rounded-full bg-slate-100/80 dark:bg-slate-850" />
+        <Skeleton className="h-7 w-32 rounded-full bg-slate-100/80 dark:bg-slate-850" />
+        <Skeleton className="h-7 w-28 rounded-full bg-slate-100/80 dark:bg-slate-850" />
+      </div>
+
+      {/* 4 Kanban Columns Skeleton (Matching Actual Layout) */}
+      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5 overflow-hidden">
+        {[1, 2, 3, 4].map((col) => (
           <div
             key={col}
-            className="flex flex-col rounded-2xl bg-slate-100/70 dark:bg-slate-900/50 border border-slate-200/80 dark:border-slate-800 p-3 h-full space-y-3"
+            className="flex flex-col rounded-2xl bg-slate-50/70 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800/60 p-3 h-full space-y-3"
           >
             {/* Column Header */}
-            <div className="flex items-center justify-between px-2 py-1">
+            <div className="flex items-center justify-between px-1.5 py-1">
               <div className="flex items-center gap-2">
-                <Skeleton className="w-3 h-3 rounded-full bg-slate-300 dark:bg-slate-700" />
-                <Skeleton className="h-5 w-32 rounded bg-slate-300 dark:bg-slate-700" />
+                <Skeleton className="w-3.5 h-3.5 rounded-full bg-slate-200/80 dark:bg-slate-800/80" />
+                <Skeleton className="h-4 w-28 rounded-md bg-slate-200/80 dark:bg-slate-800/80" />
               </div>
-              <Skeleton className="h-5 w-6 rounded-full bg-slate-300 dark:bg-slate-700" />
+              <Skeleton className="h-4.5 w-5 rounded-full bg-slate-200/60 dark:bg-slate-800/60" />
             </div>
 
             {/* Order Cards */}
-            <div className="space-y-3 flex-1 overflow-y-auto">
-              {[1, 2, 3].map((card) => (
+            <div className="space-y-2.5 flex-1 overflow-y-auto scrollbar-hide pr-0.5">
+              {[1, 2].map((card) => (
                 <div
                   key={card}
-                  className="rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-4 space-y-3 shadow-xs"
+                  className="rounded-xl bg-white dark:bg-slate-900/90 border border-slate-200/70 dark:border-slate-800/70 p-3.5 space-y-2.5 shadow-2xs"
                 >
                   <div className="flex justify-between items-center">
-                    <Skeleton className="h-4 w-20 rounded bg-slate-200 dark:bg-slate-800" />
-                    <Skeleton className="h-4 w-16 rounded bg-slate-100 dark:bg-slate-800" />
+                    <Skeleton className="h-3.5 w-20 rounded bg-slate-200/70 dark:bg-slate-800/70" />
+                    <Skeleton className="h-3.5 w-14 rounded-full bg-slate-100 dark:bg-slate-800/50" />
                   </div>
                   <div className="space-y-1.5 pt-1">
-                    <Skeleton className="h-3 w-40 rounded bg-slate-200 dark:bg-slate-800" />
-                    <Skeleton className="h-3 w-32 rounded bg-slate-100 dark:bg-slate-800/60" />
+                    <Skeleton className="h-3 w-36 rounded bg-slate-100 dark:bg-slate-800/50" />
+                    <Skeleton className="h-3 w-28 rounded bg-slate-100/70 dark:bg-slate-800/30" />
                   </div>
-                  <div className="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-800">
-                    <Skeleton className="h-4 w-20 rounded bg-slate-200 dark:bg-slate-800" />
-                    <Skeleton className="h-7 w-24 rounded-lg bg-blue-100 dark:bg-blue-950/40" />
+                  <div className="flex justify-between items-center pt-2 border-t border-slate-100/80 dark:border-slate-800/60">
+                    <Skeleton className="h-3.5 w-16 rounded bg-slate-200/60 dark:bg-slate-800/60" />
+                    <Skeleton className="h-6.5 w-20 rounded-full bg-slate-200/70 dark:bg-slate-800/70" />
                   </div>
                 </div>
               ))}
