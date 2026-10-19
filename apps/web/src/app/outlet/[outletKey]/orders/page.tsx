@@ -29,7 +29,7 @@ async function OrdersDataWrapper() {
   const tenant = tenantRows[0] || {};
 
   return (
-    <div className="flex-1 min-h-0">
+    <div className="flex-1 flex flex-col min-h-0">
       <KanbanBoard 
         initialOrders={JSON.parse(JSON.stringify(initialOrders))} 
         tenantId={user.tenantId} 
@@ -43,7 +43,7 @@ async function OrdersDataWrapper() {
 export default function OrdersPage() {
   return (
     <Suspense fallback={<OrdersLoading />}>
-      <div className="h-[calc(100vh-80px)] p-4 md:p-6 overflow-hidden flex flex-col space-y-4">
+      <div className="flex-1 flex flex-col min-h-full">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 shrink-0">
           <div>
             <h1 className="text-xl md:text-2xl font-semibold font-sans tracking-tight text-foreground">Pesanan Masuk</h1>

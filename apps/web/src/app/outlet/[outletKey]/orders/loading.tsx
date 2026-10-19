@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function OrdersLoading() {
   return (
-    <div className="h-[calc(100vh-80px)] p-4 md:p-6 overflow-hidden flex flex-col space-y-4 animate-pulse">
+    <div className="h-full flex-1 min-h-0 overflow-hidden flex flex-col space-y-3 animate-pulse">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 shrink-0">
         <div className="space-y-1.5">

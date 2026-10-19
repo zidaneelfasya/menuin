@@ -1115,10 +1115,10 @@ export function SettingsClient({
                             <div className="flex items-center justify-between p-4 border border-primary/20 rounded-2xl bg-primary/5">
                               <div className="space-y-0.5">
                                 <Label className="font-semibold text-xs text-foreground">
-                                  Otomatis Cetak Tiket Dapur Saat Bayar
+                                  Otomatis Cetak Tiket Dapur Bersama Struk
                                 </Label>
                                 <p className="text-[11px] text-muted-foreground">
-                                  Cetak salinan slip pesanan khusus koki/barista setiap transaksi kasir selesai.
+                                  Jika aktif, setiap mencetak struk (di kasir atau modal pesanan) akan otomatis mencetak struk pelanggan dan tiket dapur sekaligus dalam sekali proses print.
                                 </p>
                               </div>
                               <Switch checked={kitchenPrintEnabled} onCheckedChange={setKitchenPrintEnabled} />

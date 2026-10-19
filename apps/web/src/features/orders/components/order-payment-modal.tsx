@@ -4,11 +4,10 @@ import * as React from 'react';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { formatCurrency, formatDate, formatPaymentMethodLabel } from '@/lib/utils/format';
+import { formatCurrency, formatPaymentMethodLabel } from '@/lib/utils/format';
 import {
   Banknote,
   QrCode,
@@ -21,14 +20,10 @@ import {
   Printer,
   ReceiptText,
   ChevronDown,
-  Clock,
   ChefHat,
   CheckCircle2,
   CheckCheck,
   RefreshCw,
-  UtensilsCrossed,
-  ShoppingBag,
-  Store,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -37,6 +32,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { formatTableDisplay, formatQueueNumber } from '@/lib/orders/queue-number';
 
 export type PaymentMethodOption = 'cash' | 'qris_static' | 'qris_dynamic' | 'card' | 'transfer';
 
@@ -60,27 +56,6 @@ export interface OrderPaymentModalProps {
   isProcessing?: boolean;
   updatingOrderId?: string | null;
   syncingOrderId?: string | null;
-}
-
-function getTableBadge(order: { tableNumber?: string | null; orderType?: string | null }) {
-  if (order.tableNumber) {
-    const raw = order.tableNumber.trim();
-    const cleaned = raw.replace(/^meja\s*/i, '').trim();
-    if (/^\d+$/.test(cleaned)) {
-      return {
-        label: cleaned.padStart(2, '0'),
-        isTable: true,
-      };
-    }
-    return {
-      label: cleaned.toUpperCase().substring(0, 3),
-      isTable: true,
-    };
-  }
-  const isTakeaway = order.orderType === 'TAKE_AWAY' || order.orderType === 'TAKEAWAY';
-  if (isTakeaway) return { label: 'TA', isTable: false };
-  if (order.orderType === 'ONLINE') return { label: 'ON', isTable: false };
-  return { label: 'POS', isTable: false };
 }
 
 function formatOrderDateTime(dateInput: Date | string): { dateStr: string; timeStr: string } {
@@ -210,7 +185,7 @@ export function OrderPaymentModal({
     setCashReceivedStr(amount.toString());
   };
 
-  // Smart suggested cash denominations (guarantee 3 items so presets have exactly 4 items)
+  // Smart suggested cash denominations
   const suggestedAmounts = React.useMemo(() => {
     const amounts = new Set<number>();
     const steps = [10000, 20000, 50000, 100000, 200000, 500000];
@@ -283,14 +258,9 @@ export function OrderPaymentModal({
 
   if (!order) return null;
 
-  const tableBadge = getTableBadge(order);
+  const queueLabel = formatQueueNumber(order.queueNumber, 3);
+  const tableDisplay = formatTableDisplay(order.tableNumber, order.orderType);
   const { dateStr, timeStr } = formatOrderDateTime(order.createdAt);
-
-  const displayTable = order.tableNumber
-    ? order.tableNumber.trim().toLowerCase().startsWith('meja')
-      ? order.tableNumber.trim()
-      : `Meja ${order.tableNumber.trim()}`
-    : 'Bawa Pulang';
 
   const orderTypeLabel =
     order.orderType === 'DINE_IN'
@@ -316,12 +286,12 @@ export function OrderPaymentModal({
     <Dialog open={isOpen} onOpenChange={(open) => !isProcessing && !open && onClose()}>
       <DialogContent
         showCloseButton={false}
-        className="max-w-[780px] sm:max-w-[800px] w-full p-6 sm:p-7 rounded-2xl bg-white dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 shadow-xl max-h-[92vh] overflow-y-auto"
+        className="max-w-[440px] sm:max-w-[460px] w-full p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 shadow-xl max-h-[92vh] overflow-y-auto scrollbar-hide flex flex-col gap-3"
       >
-        {/* Header (Payment / Detail Title + Close Button) */}
+        {/* Header (Title + Close Button) */}
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800/80">
-          <DialogTitle className="text-lg sm:text-xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-            {isPaid ? 'Detail Pesanan' : 'Payment'}
+          <DialogTitle className="text-base sm:text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+            {isPaid ? 'Detail Pesanan' : 'Pembayaran Kasir'}
           </DialogTitle>
 
           <button
@@ -336,514 +306,538 @@ export function OrderPaymentModal({
           </button>
         </div>
 
-        {/* 2-Column Split Layout */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start pt-3.5">
-          {/* LEFT COLUMN: Customer Info + Transaction Details Card */}
-          <div className="flex flex-col space-y-3">
-            {/* Customer Info Section */}
-            <div className="space-y-1.5">
-              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                Customer Info
-              </span>
-              <div className="flex items-center justify-between gap-2.5">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  {/* Clean Slate Table Badge */}
-                  <div className="w-9 h-9 rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-semibold text-xs flex items-center justify-center shrink-0 shadow-2xs">
-                    {tableBadge.label}
-                  </div>
+        {/* Customer & Order Header (Sama persis dengan kartu kanban) */}
+        <div className="space-y-1">
+          {/* Baris 1: Nama Pelanggan (kiri) sejajar dengan Nomor Antrean (kanan) */}
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate leading-snug">
+              {order.customerName || 'Tamu / Umum'}
+            </span>
+            <span className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-tight tabular-nums shrink-0">
+              {queueLabel}
+            </span>
+          </div>
 
-                  <div className="min-w-0">
-                    <div className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
-                      {order.customerName || 'Tamu / Umum'}
-                    </div>
-                    <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate">
-                      Order #{order.orderNumber || '-'} • {orderTypeLabel}
-                    </div>
-                  </div>
-                </div>
+          {/* Baris 2: Nomor Order (kiri) sejajar dengan Nomor Meja / Order Type (kanan) */}
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate">
+              #{order.orderNumber || '-'}
+            </span>
+            <span className="inline-flex items-center text-[11px] font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md tracking-tight shrink-0">
+              {tableDisplay}
+            </span>
+          </div>
 
-                <div className="text-right text-[11px] font-medium text-slate-500 dark:text-slate-400 shrink-0">
-                  <div>{dateStr}</div>
-                  <div className="text-slate-400">{timeStr}</div>
-                </div>
-              </div>
-            </div>
+          {/* Baris 3: Tanggal & Waktu */}
+          <div className="flex items-center justify-between text-xs text-slate-400 dark:text-slate-500 font-medium pt-1.5 pb-0.5">
+            <span>{dateStr}</span>
+            <span>{timeStr}</span>
+          </div>
+        </div>
 
-            {/* Transaction Details (Clean Card — No AI-slop Sawtooth) */}
-            <div className="bg-slate-50/70 dark:bg-slate-900/60 rounded-xl border border-slate-200/80 dark:border-slate-800 p-4 space-y-3">
-              {/* Header */}
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                  Transaction Details
-                </span>
-                <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                  {totalItemsCount} Menu
-                </span>
-              </div>
+        {/* Items List Table & Subtotal (Jarak Rapat & Kompak) */}
+        <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 space-y-2">
+          {/* Items Header */}
+          <div className="grid grid-cols-12 text-[10px] font-medium text-slate-400 dark:text-slate-500 pb-1 border-b border-slate-100 dark:border-slate-800/80 px-1">
+            <span className="col-span-7">Items</span>
+            <span className="col-span-2 text-center">Qty</span>
+            <span className="col-span-3 text-right">Price</span>
+          </div>
 
-              {/* Items List */}
-              <div className="space-y-2.5 max-h-[200px] overflow-y-auto pr-1 scrollbar-hide py-0.5">
-                {order.items?.map((item: any) => (
+          {/* Items Rows */}
+          <div className="space-y-0.5 max-h-44 overflow-y-auto overflow-x-hidden pr-0.5 scrollbar-hide">
+            {order.items?.map((item: any) => (
+              <div
+                key={item.id}
+                className={cn(
+                  'grid grid-cols-12 items-center text-xs py-1 px-1 rounded transition-colors',
+                  onToggleItem && 'group/item cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                )}
+                onClick={() => {
+                  if (onToggleItem) {
+                    onToggleItem(order.id, item.id, !item.isCompleted);
+                  }
+                }}
+                title={onToggleItem ? 'Klik untuk menandai menu selesai/belum' : undefined}
+              >
+                <div className="col-span-7 flex items-center gap-1.5 min-w-0 pr-1">
                   <div
-                    key={item.id}
-                    className="flex items-start justify-between text-sm"
+                    className={cn(
+                      'w-3.5 h-3.5 rounded-[4px] border flex items-center justify-center shrink-0 transition-colors',
+                      item.isCompleted
+                        ? 'bg-blue-600 border-blue-600 text-white'
+                        : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 opacity-70 group-hover/item:opacity-100'
+                    )}
                   >
-                    <div className="flex-1 pr-2 min-w-0">
-                      <div className="font-semibold text-sm text-slate-800 dark:text-slate-200 truncate">
-                        {item.productName}
-                      </div>
-                      <div className="text-sm text-slate-500 dark:text-slate-400 pt-0.5 tabular-nums">
-                        {formatCurrency(Number(item.price || (item.subtotal ? item.subtotal / item.quantity : 0)))}
-                      </div>
-                      {item.notes && (
-                        <div className="text-[10px] text-slate-400 italic pt-0.5">
-                          "{item.notes}"
-                        </div>
-                      )}
-                    </div>
-
-                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300 tabular-nums shrink-0 pt-0.5">
-                      {item.quantity}x
-                    </span>
+                    {item.isCompleted && <Check className="w-2.5 h-2.5 stroke-[2.5]" />}
                   </div>
-                ))}
+                  <div className="min-w-0">
+                    <span
+                      className={cn(
+                        'truncate text-xs block leading-tight',
+                        item.isCompleted
+                          ? 'line-through text-slate-400 dark:text-slate-500'
+                          : 'text-slate-800 dark:text-slate-200 font-normal'
+                      )}
+                    >
+                      {item.productName}
+                    </span>
+                    {item.notes && (
+                      <span className="text-[10px] text-slate-400 italic block truncate">
+                        "{item.notes}"
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <span className="col-span-2 text-center text-xs font-medium text-slate-600 dark:text-slate-400 tabular-nums">
+                  {item.quantity}
+                </span>
+                <span className="col-span-3 text-right text-xs font-medium text-slate-700 dark:text-slate-300 tabular-nums">
+                  {formatCurrency(Number(item.subtotal || item.price * item.quantity || 0))}
+                </span>
               </div>
+            ))}
+          </div>
 
-              {/* Subtotal & Fee Breakdown */}
-              <div className="pt-2.5 border-t border-slate-200/70 dark:border-slate-800 space-y-1.5 text-sm">
-                <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                  <span>Subtotal</span>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200 tabular-nums">
-                    {formatCurrency(subtotal)}
+          {/* Subtotal & Fee Breakdown (Jarak rapat ke items) */}
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 space-y-1 text-xs font-normal">
+            <div className="flex justify-between text-slate-600 dark:text-slate-400">
+              <span>Subtotal</span>
+              <span className="font-medium text-slate-800 dark:text-slate-200 tabular-nums">
+                {formatCurrency(subtotal)}
+              </span>
+            </div>
+
+            {discount > 0 && (
+              <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-medium">
+                <span>Diskon {order.promoCode ? `(${order.promoCode})` : ''}</span>
+                <span className="tabular-nums font-semibold">-{formatCurrency(discount)}</span>
+              </div>
+            )}
+
+            {tax > 0 && (
+              <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                <span>Pajak (PB1)</span>
+                <span className="font-medium text-slate-800 dark:text-slate-200 tabular-nums">
+                  +{formatCurrency(tax)}
+                </span>
+              </div>
+            )}
+
+            {serviceCharge > 0 && (
+              <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                <span>Biaya Layanan</span>
+                <span className="font-medium text-slate-800 dark:text-slate-200 tabular-nums">
+                  +{formatCurrency(serviceCharge)}
+                </span>
+              </div>
+            )}
+
+            {platformFee > 0 && (
+              <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                <span>Biaya Platform</span>
+                <span className="font-medium text-slate-800 dark:text-slate-200 tabular-nums">
+                  +{formatCurrency(platformFee)}
+                </span>
+              </div>
+            )}
+
+            {rounding > 0 && (
+              <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                <span>Pembulatan (Rounding)</span>
+                <span className="font-medium text-slate-800 dark:text-slate-200 tabular-nums">
+                  +{formatCurrency(rounding)}
+                </span>
+              </div>
+            )}
+
+            <div className="flex justify-between items-center pt-1.5 border-t border-slate-100 dark:border-slate-800/80">
+              <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">Total</span>
+              <span className="text-sm font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
+                {formatCurrency(grandTotal)}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Informasi Pembayaran & Status / Payment Processing */}
+        {isPaid ? (
+          /* Case 1: Order is Already Paid (Detail Pesanan) */
+          <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+            {/* Metadata Grid (Clean 2x2 Grid, Aligned Badges, No Borders, px-2) */}
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs">
+              <div className="space-y-1">
+                <span className="text-[11px] text-slate-400 font-medium block">Status Pembayaran</span>
+                <div className="flex items-center">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+                    <CheckCircle2 className="w-3 h-3" />
+                    Lunas
                   </span>
                 </div>
+              </div>
 
-                {discount > 0 && (
-                  <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-medium">
-                    <span>Diskon {order.promoCode ? `(${order.promoCode})` : ''}</span>
-                    <span className="tabular-nums font-semibold">-{formatCurrency(discount)}</span>
-                  </div>
-                )}
+              <div className="space-y-1 text-right flex flex-col items-end">
+                <span className="text-[11px] text-slate-400 font-medium block">Metode Bayar</span>
+                <div className="flex items-center justify-end">
+                  <span className="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                    {formatPaymentMethodLabel(order.paymentMethod)}
+                  </span>
+                </div>
+              </div>
 
-                {tax > 0 && (
-                  <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                    <span>Pajak (PB1)</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200 tabular-nums">
-                      +{formatCurrency(tax)}
-                    </span>
-                  </div>
-                )}
+              <div className="space-y-1">
+                <span className="text-[11px] text-slate-400 font-medium block">Tipe Pemesanan</span>
+                <div className="flex items-center">
+                  <span className="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                    {orderTypeLabel}
+                  </span>
+                </div>
+              </div>
 
-                {serviceCharge > 0 && (
-                  <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                    <span>Biaya Layanan</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200 tabular-nums">
-                      +{formatCurrency(serviceCharge)}
-                    </span>
-                  </div>
-                )}
-
-                {platformFee > 0 && (
-                  <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                    <span>Biaya Platform</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200 tabular-nums">
-                      +{formatCurrency(platformFee)}
-                    </span>
-                  </div>
-                )}
-
-                {rounding > 0 && (
-                  <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                    <span>Pembulatan (Rounding)</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200 tabular-nums">
-                      +{formatCurrency(rounding)}
-                    </span>
-                  </div>
-                )}
-
-                <div className="flex justify-between items-center pt-2 border-t border-slate-200/70 dark:border-slate-800 font-semibold text-sm">
-                  <span className="text-slate-900 dark:text-slate-100">Total</span>
-                  <span className="text-sm sm:text-sm font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
-                    {formatCurrency(grandTotal)}
+              <div className="space-y-1 text-right flex flex-col items-end">
+                <span className="text-[11px] text-slate-400 font-medium block">Kasir / Saluran</span>
+                <div className="flex items-center justify-end">
+                  <span className="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 truncate max-w-full">
+                    {order.source === 'POS' ? 'Kasir Utama' : 'Self Order (QR)'}
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* Quick Print Actions Underneath Left Card */}
-            {onPrintReceipt && (
-              <div className="grid grid-cols-2 gap-2 pt-0.5">
+            {/* Action Buttons: Tepat 2 Tombol (Struk Pelanggan & Tombol Proses Utama) */}
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              {/* Tombol 1: Struk Pelanggan */}
+              {onPrintReceipt && (
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => onPrintReceipt(order, 'customer')}
-                  className="h-8 text-xs font-medium rounded-lg border-slate-200/80 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-2xs gap-1.5 cursor-pointer"
+                  className={cn(
+                    "h-10 text-xs font-semibold rounded-full border-slate-200/90 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-2xs gap-1.5 cursor-pointer transition-colors",
+                    (!onStatusChange || !['NEW', 'PROCESSING', 'READY'].includes(order.status)) && "col-span-2"
+                  )}
+                  title={posSettings?.kitchenPrintEnabled ? "Cetak struk pelanggan & tiket dapur (otomatis aktif dari pengaturan)" : "Cetak struk pelanggan"}
                 >
-                  <Printer className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Struk Pelanggan</span>
+                  <Printer className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <span className="truncate">Struk Pelanggan</span>
                 </Button>
+              )}
+
+              {/* Tombol 2: Tombol Proses Utama */}
+              {onStatusChange && (
+                <>
+                  {order.status === 'NEW' && (
+                    <Button
+                      type="button"
+                      disabled={updatingOrderId === order.id}
+                      onClick={() => onStatusChange(order.id, 'PROCESSING')}
+                      className="h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-xs font-semibold shadow-xs transition-transform active:scale-98 gap-1.5 cursor-pointer"
+                    >
+                      {updatingOrderId === order.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
+                      ) : (
+                        <ChefHat className="w-3.5 h-3.5 shrink-0" />
+                      )}
+                      <span className="truncate">Mulai Siapkan</span>
+                    </Button>
+                  )}
+
+                  {order.status === 'PROCESSING' && (
+                    <Button
+                      type="button"
+                      disabled={updatingOrderId === order.id}
+                      onClick={() => onStatusChange(order.id, 'READY')}
+                      className="h-10 bg-amber-600 hover:bg-amber-700 text-white rounded-full text-xs font-semibold shadow-xs transition-transform active:scale-98 gap-1.5 cursor-pointer"
+                    >
+                      {updatingOrderId === order.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
+                      ) : (
+                        <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                      )}
+                      <span className="truncate">Tandai Siap</span>
+                    </Button>
+                  )}
+
+                  {order.status === 'READY' && (
+                    <Button
+                      type="button"
+                      disabled={updatingOrderId === order.id}
+                      onClick={() => onStatusChange(order.id, 'COMPLETED')}
+                      className="h-10 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full text-xs font-semibold shadow-xs transition-transform active:scale-98 gap-1.5 cursor-pointer"
+                    >
+                      {updatingOrderId === order.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
+                      ) : (
+                        <CheckCheck className="w-3.5 h-3.5 shrink-0" />
+                      )}
+                      <span className="truncate">Selesaikan</span>
+                    </Button>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Midtrans Online Check button if pending online */}
+            {order.status === 'PENDING' && (order.orderType === 'ONLINE' || order.paymentMethod === 'ONLINE') && onCheckMidtrans && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onCheckMidtrans(order)}
+                disabled={syncingOrderId === order.id}
+                className="w-full h-9 text-xs border-blue-200 text-blue-700 bg-blue-50/50 hover:bg-blue-100/60 font-semibold gap-1.5 disabled:opacity-50 rounded-full cursor-pointer"
+              >
+                {syncingOrderId === order.id ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-3.5 h-3.5" />
+                )}
+                Periksa Status Pembayaran Online
+              </Button>
+            )}
+          </div>
+        ) : (
+          /* Case 2: Unpaid Order (Cashier Payment View) */
+          <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+            {/* Payment Method Dropdown */}
+            <div className="space-y-1.5">
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400 block">
+                Metode Pembayaran
+              </span>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-full border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-700 transition-colors cursor-pointer shadow-2xs"
+                  >
+                    <div className="flex items-center gap-2">
+                      <CurrentMethodIcon className="w-4 h-4 text-blue-600" />
+                      <span className="truncate">{currentMethodItem.label}</span>
+                    </div>
+                    <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="start"
+                  className="w-[260px] p-1 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl"
+                >
+                  {paymentMethodDetails.map((method) => {
+                    const Icon = method.icon;
+                    return (
+                      <DropdownMenuItem
+                        key={method.id}
+                        onClick={() => setPaymentMethod(method.id as PaymentMethodOption)}
+                        className={cn(
+                          'text-xs py-2 px-2.5 rounded-lg flex items-center gap-2 font-medium cursor-pointer',
+                          paymentMethod === method.id
+                            ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-300 font-semibold'
+                            : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                        )}
+                      >
+                        <Icon className="w-4 h-4 shrink-0 text-slate-500" />
+                        <span>{method.label}</span>
+                      </DropdownMenuItem>
+                    );
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            {paymentMethod === 'cash' ? (
+              /* Cash Mode: Large Amount Display, Preset Chips, 3x4 Numpad */
+              <div className="space-y-2.5">
+                {/* Amount Display */}
+                <div className="py-1 flex flex-col items-center justify-center">
+                  <div className="text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 tabular-nums flex items-center justify-center">
+                    <span className="text-slate-400 font-normal mr-1 text-xl sm:text-2xl">Rp</span>
+                    <span>{cashReceived > 0 ? cashReceived.toLocaleString('id-ID') : '0'}</span>
+                    <span className="w-0.5 h-5 sm:h-6 bg-blue-600 animate-pulse ml-0.5 inline-block" />
+                  </div>
+
+                  {/* Kembalian / Kurang Status Badge */}
+                  {cashReceived > 0 && (
+                    <div
+                      className={cn(
+                        'mt-1.5 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold',
+                        change >= 0
+                          ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                          : 'bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
+                      )}
+                    >
+                      <span>
+                        {change >= 0
+                          ? `Kembalian: ${formatCurrency(change)}`
+                          : `Kurang: ${formatCurrency(Math.abs(change))}`}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Preset Chips (Rounded Full) */}
+                <div className="grid grid-cols-4 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => handlePresetAmount(grandTotal)}
+                    className="py-1.5 px-1 rounded-full bg-blue-50/80 hover:bg-blue-100/80 dark:bg-blue-950/50 text-blue-600 dark:text-blue-300 font-semibold text-xs text-center border border-blue-200/60 dark:border-blue-900/40 transition-colors cursor-pointer active:scale-95"
+                  >
+                    Uang Pas
+                  </button>
+                  {suggestedAmounts.map((amt) => (
+                    <button
+                      key={amt}
+                      type="button"
+                      onClick={() => handlePresetAmount(amt)}
+                      className="py-1.5 px-1 rounded-full bg-slate-100/80 hover:bg-slate-200/80 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium text-xs text-center border border-slate-200/60 dark:border-slate-700/60 transition-colors cursor-pointer active:scale-95 tabular-nums truncate"
+                    >
+                      {formatCurrency(amt)}
+                    </button>
+                  ))}
+                </div>
+
+                {/* 3x4 Touch Numpad */}
+                <div className="grid grid-cols-3 gap-1.5">
+                  {['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0', 'BACKSPACE'].map((btn) => (
+                    <button
+                      key={btn}
+                      type="button"
+                      onClick={() => handleNumpadInput(btn)}
+                      className={cn(
+                        'h-9 sm:h-10 rounded-xl text-base font-medium flex items-center justify-center transition-all active:scale-[0.96] cursor-pointer select-none border border-slate-200/70 dark:border-slate-800 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-2xs',
+                        btn === 'BACKSPACE' && 'text-slate-500 hover:text-slate-800'
+                      )}
+                    >
+                      {btn === 'BACKSPACE' ? <Delete className="w-4 h-4 stroke-[2]" /> : btn}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              /* Non-Cash Guidance */
+              <div className="space-y-2 py-1">
+                {paymentMethod === 'qris_static' && (
+                  <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/70 dark:border-slate-800 text-center space-y-1.5">
+                    <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 mx-auto flex items-center justify-center">
+                      <QrCode className="w-4 h-4" />
+                    </div>
+                    <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                      QRIS Statis Toko
+                    </p>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      Arahkan pelanggan memindai QRIS fisik toko nominal{' '}
+                      <span className="font-semibold text-foreground">{formatCurrency(grandTotal)}</span>.
+                    </p>
+                  </div>
+                )}
+
+                {paymentMethod === 'qris_dynamic' && (
+                  <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/70 dark:border-slate-800 text-center space-y-1.5">
+                    <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-600 mx-auto flex items-center justify-center">
+                      <QrCode className="w-4 h-4" />
+                    </div>
+                    <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                      QRIS Dinamis Menuin
+                    </p>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      Nominal otomatis terkunci sebesar{' '}
+                      <span className="font-semibold text-foreground">{formatCurrency(grandTotal)}</span>.
+                    </p>
+                  </div>
+                )}
+
+                {paymentMethod === 'card' && (
+                  <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/70 dark:border-slate-800 text-center space-y-1.5">
+                    <div className="w-8 h-8 rounded-full bg-amber-50 dark:bg-amber-950/50 text-amber-600 mx-auto flex items-center justify-center">
+                      <CreditCard className="w-4 h-4" />
+                    </div>
+                    <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                      Mesin EDC Toko
+                    </p>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      Gesek atau tap kartu pada EDC untuk nominal{' '}
+                      <span className="font-semibold text-foreground">{formatCurrency(grandTotal)}</span>.
+                    </p>
+                  </div>
+                )}
+
+                {paymentMethod === 'transfer' && (
+                  <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/70 dark:border-slate-800 text-center space-y-1.5">
+                    <div className="w-8 h-8 rounded-full bg-purple-50 dark:bg-purple-950/50 text-purple-600 mx-auto flex items-center justify-center">
+                      <ArrowRightLeft className="w-4 h-4" />
+                    </div>
+                    <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                      Transfer Bank Manual
+                    </p>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      Pastikan dana transfer pelanggan sudah masuk mutasi sebelum menyelesaikan.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Print Receipt Checkbox */}
+            <div className="pt-0.5 px-0.5 flex items-center justify-between text-xs">
+              <label
+                htmlFor="modal-print-receipt-check"
+                className="flex items-center gap-2 cursor-pointer text-slate-600 dark:text-slate-300 font-medium select-none"
+              >
+                <div
+                  className={cn(
+                    'w-4 h-4 rounded border flex items-center justify-center transition-all',
+                    shouldPrintReceipt
+                      ? 'bg-blue-600 border-blue-600 text-white'
+                      : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900'
+                  )}
+                  onClick={() => setShouldPrintReceipt(!shouldPrintReceipt)}
+                >
+                  {shouldPrintReceipt && <Check className="w-3 h-3 stroke-[2.5]" />}
+                </div>
+                <span className="flex items-center gap-1.5 text-xs font-medium">
+                  <Printer className="w-3.5 h-3.5 text-slate-400" />
+                  Cetak struk belanja transaksi
+                </span>
+              </label>
+              <span className="text-[11px] text-slate-400">
+                {shouldPrintReceipt ? 'Otomatis' : 'Lewati'}
+              </span>
+            </div>
+
+            {/* Bottom Action Buttons: Tepat 2 Tombol (Struk Pelanggan & Bayar Sekarang) */}
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              {onPrintReceipt && (
                 <Button
                   type="button"
                   variant="outline"
-                  size="sm"
-                  onClick={() => onPrintReceipt(order, 'kitchen')}
-                  className="h-8 text-xs font-medium rounded-lg border-slate-200/80 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-2xs gap-1.5 cursor-pointer"
+                  onClick={() => onPrintReceipt(order, 'customer')}
+                  className="h-10 text-xs font-semibold rounded-full border-slate-200/90 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-2xs gap-1.5 cursor-pointer"
+                  title={posSettings?.kitchenPrintEnabled ? "Cetak struk tagihan & tiket dapur" : "Cetak struk tagihan"}
                 >
-                  <ReceiptText className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Tiket Dapur</span>
+                  <Printer className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <span className="truncate">Struk Pelanggan</span>
                 </Button>
-              </div>
-            )}
-          </div>
-
-          {/* RIGHT COLUMN: Payment Processing OR Order Detail Status Progression */}
-          <div className="flex flex-col space-y-3">
-            {!isPaid ? (
-              /* Case 1: Unpaid Order (Cashier Payment View) */
-              <div className="space-y-3">
-                {/* Select a payment method */}
-                <div className="space-y-1.5">
-                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block">
-                    Select a payment method
-                  </span>
-
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        type="button"
-                        className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-700 transition-colors cursor-pointer shadow-2xs"
-                      >
-                        <div className="flex items-center gap-2">
-                          <CurrentMethodIcon className="w-4 h-4 text-[#0e59f9]" />
-                          <span className="truncate">{currentMethodItem.label}</span>
-                        </div>
-                        <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="start"
-                      className="w-[260px] p-1 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl"
-                    >
-                      {paymentMethodDetails.map((method) => {
-                        const Icon = method.icon;
-                        return (
-                          <DropdownMenuItem
-                            key={method.id}
-                            onClick={() => setPaymentMethod(method.id as PaymentMethodOption)}
-                            className={cn(
-                              'text-xs py-2 px-2.5 rounded-lg flex items-center gap-2 font-medium cursor-pointer',
-                              paymentMethod === method.id
-                                ? 'bg-blue-50 dark:bg-blue-950/60 text-[#0e59f9] dark:text-blue-300 font-semibold'
-                                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
-                            )}
-                          >
-                            <Icon className="w-4 h-4 shrink-0 text-slate-500" />
-                            <span>{method.label}</span>
-                          </DropdownMenuItem>
-                        );
-                      })}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-
-                {paymentMethod === 'cash' ? (
-                  /* Cash Mode: Large Amount Display, Preset Chips, 3x4 Numpad */
-                  <div className="space-y-2.5">
-                    {/* Amount Display */}
-                    <div className="py-1 flex flex-col items-center justify-center">
-                      <div className="text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 tabular-nums flex items-center justify-center">
-                        <span className="text-slate-400 font-normal mr-1 text-2xl sm:text-3xl">Rp</span>
-                        <span>{cashReceived > 0 ? cashReceived.toLocaleString('id-ID') : '0'}</span>
-                        <span className="w-0.5 h-6 sm:h-7 bg-[#0e59f9] animate-pulse ml-0.5 inline-block" />
-                      </div>
-
-                      {/* Kembalian / Kurang Status Badge */}
-                      {cashReceived > 0 && (
-                        <div
-                          className={cn(
-                            'mt-1.5 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold',
-                            change >= 0
-                              ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
-                              : 'bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
-                          )}
-                        >
-                          <span>
-                            {change >= 0
-                              ? `Kembalian: ${formatCurrency(change)}`
-                              : `Kurang: ${formatCurrency(Math.abs(change))}`}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Preset Chips (Menuin Slate & Blue Palette — No AI-slop Neon Green) */}
-                    <div className="grid grid-cols-4 gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => handlePresetAmount(grandTotal)}
-                        className="py-1.5 px-1 rounded-lg bg-blue-50/80 hover:bg-blue-100/80 dark:bg-blue-950/50 text-[#0e59f9] dark:text-blue-300 font-semibold text-xs text-center border border-blue-200/60 dark:border-blue-900/40 transition-colors cursor-pointer active:scale-95"
-                      >
-                        Uang Pas
-                      </button>
-                      {suggestedAmounts.map((amt) => (
-                        <button
-                          key={amt}
-                          type="button"
-                          onClick={() => handlePresetAmount(amt)}
-                          className="py-1.5 px-1 rounded-lg bg-slate-100/80 hover:bg-slate-200/80 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium text-xs text-center border border-slate-200/60 dark:border-slate-700/60 transition-colors cursor-pointer active:scale-95 tabular-nums truncate"
-                        >
-                          {formatCurrency(amt)}
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* 3x4 Touch Numpad (Clean, Structured) */}
-                    <div className="grid grid-cols-3 gap-1.5">
-                      {['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0', 'BACKSPACE'].map((btn) => (
-                        <button
-                          key={btn}
-                          type="button"
-                          onClick={() => handleNumpadInput(btn)}
-                          className={cn(
-                            'h-10 sm:h-11 rounded-lg text-base font-medium flex items-center justify-center transition-all active:scale-[0.96] cursor-pointer select-none border border-slate-200/70 dark:border-slate-800 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-2xs',
-                            btn === 'BACKSPACE' && 'text-slate-500 hover:text-slate-800'
-                          )}
-                        >
-                          {btn === 'BACKSPACE' ? <Delete className="w-4 h-4 stroke-[2]" /> : btn}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+              )}
+              <Button
+                type="button"
+                onClick={handleSubmitPayment}
+                disabled={!isCashSufficient || isProcessing}
+                className={cn(
+                  "h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-xs font-semibold shadow-xs transition-all active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-1.5",
+                  !onPrintReceipt && "col-span-2"
+                )}
+              >
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
+                    <span className="truncate">Memproses...</span>
+                  </>
                 ) : (
-                  /* Non-Cash Guidance (QRIS, EDC, Transfer) */
-                  <div className="space-y-3 py-1">
-                    {paymentMethod === 'qris_static' && (
-                      <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/70 dark:border-slate-800 text-center space-y-2">
-                        <div className="w-9 h-9 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 mx-auto flex items-center justify-center">
-                          <QrCode className="w-4 h-4" />
-                        </div>
-                        <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
-                          QRIS Statis Toko
-                        </p>
-                        <p className="text-[11px] text-muted-foreground leading-relaxed">
-                          Arahkan pelanggan memindai QRIS fisik toko nominal{' '}
-                          <span className="font-semibold text-foreground">{formatCurrency(grandTotal)}</span>.
-                        </p>
-                      </div>
-                    )}
-
-                    {paymentMethod === 'qris_dynamic' && (
-                      <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/70 dark:border-slate-800 text-center space-y-2">
-                        <div className="w-9 h-9 rounded-full bg-blue-50 dark:bg-blue-950/50 text-[#0e59f9] mx-auto flex items-center justify-center">
-                          <QrCode className="w-4 h-4" />
-                        </div>
-                        <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
-                          QRIS Dinamis Menuin
-                        </p>
-                        <p className="text-[11px] text-muted-foreground leading-relaxed">
-                          Nominal otomatis terkunci sebesar{' '}
-                          <span className="font-semibold text-foreground">{formatCurrency(grandTotal)}</span>.
-                        </p>
-                      </div>
-                    )}
-
-                    {paymentMethod === 'card' && (
-                      <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/70 dark:border-slate-800 text-center space-y-2">
-                        <div className="w-9 h-9 rounded-full bg-amber-50 dark:bg-amber-950/50 text-amber-600 mx-auto flex items-center justify-center">
-                          <CreditCard className="w-4 h-4" />
-                        </div>
-                        <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
-                          Mesin EDC Toko
-                        </p>
-                        <p className="text-[11px] text-muted-foreground leading-relaxed">
-                          Gesek atau tap kartu pada EDC untuk nominal{' '}
-                          <span className="font-semibold text-foreground">{formatCurrency(grandTotal)}</span>.
-                        </p>
-                      </div>
-                    )}
-
-                    {paymentMethod === 'transfer' && (
-                      <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/70 dark:border-slate-800 text-center space-y-2">
-                        <div className="w-9 h-9 rounded-full bg-purple-50 dark:bg-purple-950/50 text-purple-600 mx-auto flex items-center justify-center">
-                          <ArrowRightLeft className="w-4 h-4" />
-                        </div>
-                        <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
-                          Transfer Bank Manual
-                        </p>
-                        <p className="text-[11px] text-muted-foreground leading-relaxed">
-                          Pastikan dana transfer pelanggan sudah masuk mutasi sebelum menyelesaikan.
-                        </p>
-                      </div>
-                    )}
-                  </div>
+                  <span className="truncate">Bayar Sekarang</span>
                 )}
-
-                {/* Print Receipt Checkbox */}
-                <div className="pt-0.5 px-0.5 flex items-center justify-between text-xs">
-                  <label
-                    htmlFor="modal-print-receipt-check"
-                    className="flex items-center gap-2 cursor-pointer text-slate-600 dark:text-slate-300 font-medium select-none"
-                  >
-                    <div
-                      className={cn(
-                        'w-4 h-4 rounded border flex items-center justify-center transition-all',
-                        shouldPrintReceipt
-                          ? 'bg-[#0e59f9] border-[#0e59f9] text-white'
-                          : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900'
-                      )}
-                      onClick={() => setShouldPrintReceipt(!shouldPrintReceipt)}
-                    >
-                      {shouldPrintReceipt && <Check className="w-3 h-3 stroke-[2.5]" />}
-                    </div>
-                    <span className="flex items-center gap-1.5 text-xs font-medium">
-                      <Printer className="w-3.5 h-3.5 text-slate-400" />
-                      Cetak struk belanja transaksi
-                    </span>
-                  </label>
-                  <span className="text-[11px] text-slate-400">
-                    {shouldPrintReceipt ? 'Otomatis' : 'Lewati'}
-                  </span>
-                </div>
-
-                {/* Bottom Action Button (Pay Now) */}
-                <Button
-                  type="button"
-                  onClick={handleSubmitPayment}
-                  disabled={!isCashSufficient || isProcessing}
-                  className="w-full h-11 bg-[#0e59f9] hover:bg-blue-600 text-white rounded-xl text-xs sm:text-sm font-semibold shadow-xs transition-all active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
-                >
-                  {isProcessing ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Memproses Pembayaran...</span>
-                    </>
-                  ) : (
-                    <span>Pay Now (Enter)</span>
-                  )}
-                </Button>
-              </div>
-            ) : (
-              /* Case 2: Order is Already Paid (Detail Pesanan View) */
-              <div className="space-y-3.5 flex flex-col justify-between h-full">
-                <div className="space-y-3">
-                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block">
-                    Informasi Pembayaran & Status
-                  </span>
-
-                  {/* Payment Details Card */}
-                  <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 space-y-3">
-                    <div className="flex items-center justify-between pb-2.5 border-b border-slate-200/70 dark:border-slate-800">
-                      <span className="text-xs text-slate-500 font-medium">Status Pembayaran</span>
-                      <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-800">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        Lunas
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2.5 text-xs">
-                      <div>
-                        <span className="text-[11px] text-slate-400 block mb-0.5">Metode Bayar</span>
-                        <span className="font-semibold text-slate-800 dark:text-slate-200">
-                          {formatPaymentMethodLabel(order.paymentMethod)}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-[11px] text-slate-400 block mb-0.5">Tipe Pemesanan</span>
-                        <span className="font-semibold text-slate-800 dark:text-slate-200">
-                          {orderTypeLabel}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-[11px] text-slate-400 block mb-0.5">Meja / Lokasi</span>
-                        <span className="font-semibold text-slate-800 dark:text-slate-200">
-                          {displayTable}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-[11px] text-slate-400 block mb-0.5">Kasir / Saluran</span>
-                        <span className="font-semibold text-slate-800 dark:text-slate-200">
-                          {order.source === 'POS' ? 'Kasir Utama' : 'Self Order (QR)'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Midtrans Online Check button if pending online */}
-                  {order.status === 'PENDING' && (order.orderType === 'ONLINE' || order.paymentMethod === 'ONLINE') && onCheckMidtrans && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => onCheckMidtrans(order)}
-                      disabled={syncingOrderId === order.id}
-                      className="w-full h-9 text-xs border-blue-200 text-blue-700 bg-blue-50/50 hover:bg-blue-100/60 font-semibold gap-1.5 disabled:opacity-50 rounded-lg"
-                    >
-                      {syncingOrderId === order.id ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <RefreshCw className="w-3.5 h-3.5" />
-                      )}
-                      Periksa Status Pembayaran Online
-                    </Button>
-                  )}
-                </div>
-
-                {/* Status Progression Button at Bottom */}
-                {onStatusChange && (
-                  <div className="pt-2">
-                    {order.status === 'NEW' && (
-                      <Button
-                        type="button"
-                        disabled={updatingOrderId === order.id}
-                        onClick={() => onStatusChange(order.id, 'PROCESSING')}
-                        className="w-full h-11 bg-[#0e59f9] hover:bg-blue-700 text-white rounded-xl text-xs sm:text-sm font-semibold shadow-xs transition-all active:scale-[0.99] gap-2 cursor-pointer"
-                      >
-                        {updatingOrderId === order.id ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <ChefHat className="w-4 h-4" />
-                        )}
-                        <span>Mulai Siapkan Pesanan</span>
-                      </Button>
-                    )}
-
-                    {order.status === 'PROCESSING' && (
-                      <Button
-                        type="button"
-                        disabled={updatingOrderId === order.id}
-                        onClick={() => onStatusChange(order.id, 'READY')}
-                        className="w-full h-11 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs sm:text-sm font-semibold shadow-xs transition-all active:scale-[0.99] gap-2 cursor-pointer"
-                      >
-                        {updatingOrderId === order.id ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <CheckCircle2 className="w-4 h-4" />
-                        )}
-                        <span>Tandai Siap Disajikan</span>
-                      </Button>
-                    )}
-
-                    {order.status === 'READY' && (
-                      <Button
-                        type="button"
-                        disabled={updatingOrderId === order.id}
-                        onClick={() => onStatusChange(order.id, 'COMPLETED')}
-                        className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs sm:text-sm font-semibold shadow-xs transition-all active:scale-[0.99] gap-2 cursor-pointer"
-                      >
-                        {updatingOrderId === order.id ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <CheckCheck className="w-4 h-4" />
-                        )}
-                        <span>Selesaikan Pesanan</span>
-                      </Button>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </DialogContent>
     </Dialog>
   );
