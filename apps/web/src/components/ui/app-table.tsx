@@ -125,16 +125,16 @@ export function AppTable<T>({
     <div className={cn('space-y-4', className)}>
       {/* Top Bar: Title/Subtitle (Left) & Search Input + Toolbar (Right) */}
       {(title || subtitle || searchKey || toolbar) && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-2.5 sm:px-4 sm:py-3 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           {(title || subtitle) ? (
             <div className="min-w-0">
               {title && (
-                <div className="font-semibold text-sm text-slate-900 dark:text-white tracking-tight truncate">
+                <div className="font-semibold text-base text-slate-900 dark:text-white tracking-tight truncate">
                   {title}
                 </div>
               )}
               {subtitle && (
-                <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
                   {subtitle}
                 </div>
               )}
@@ -152,7 +152,7 @@ export function AppTable<T>({
                   placeholder={searchPlaceholder}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 pr-8 h-9 text-xs rounded-xl bg-slate-50/70 dark:bg-slate-800/60 border-slate-200/90 dark:border-slate-800 focus:bg-white dark:focus:bg-slate-900 focus-visible:ring-[#0e59f9] transition-all"
+                  className="pl-9 pr-8 h-9 text-xs rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus:bg-white dark:focus:bg-slate-900 focus-visible:ring-1 focus-visible:ring-[#0e59f9] shadow-2xs transition-all"
                 />
                 {searchQuery && (
                   <button

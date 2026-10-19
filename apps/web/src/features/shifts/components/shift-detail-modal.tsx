@@ -88,11 +88,11 @@ export function ShiftDetailModal({
                 Rekap Sesi Shift #{shift?.id?.slice(0, 8).toUpperCase() || '...'}
               </h2>
               {shift?.status === 'ACTIVE' ? (
-                <span className="inline-flex items-center text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800">
+                <span className="inline-flex items-center text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border-none dark:bg-emerald-950/40 dark:text-emerald-400">
                   Sedang Berjalan
                 </span>
               ) : (
-                <span className="inline-flex items-center text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200/80 dark:bg-slate-800 dark:text-slate-300">
+                <span className="inline-flex items-center text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border-none dark:bg-slate-800 dark:text-slate-300">
                   Shift Selesai
                 </span>
               )}
@@ -129,7 +129,7 @@ export function ShiftDetailModal({
         {loading ? (
           <div className="flex-1 flex flex-col items-center justify-center min-h-[380px] gap-3">
             <Loader2 className="w-8 h-8 animate-spin text-[#0e59f9]" />
-            <p className="text-xs text-slate-500 font-medium">Memuat rincian shift kasir...</p>
+            <p className="text-xs text-slate-500 font-medium">Mengambil data rekap shift...</p>
           </div>
         ) : data ? (
           <ScrollArea className="flex-1 px-6 py-5">
@@ -142,7 +142,7 @@ export function ShiftDetailModal({
                   <div>
                     <div className="flex items-center justify-between pb-3.5 border-b border-[#EAEFF8] mb-3.5">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl bg-[#0e59f9] text-white flex items-center justify-center shadow-xs flex-shrink-0">
+                        <div className="w-9 h-9 rounded-full bg-[#0e59f9] text-white flex items-center justify-center shadow-xs flex-shrink-0">
                           <ShoppingBag className="w-4 h-4 text-white" />
                         </div>
                         <div>
@@ -187,7 +187,7 @@ export function ShiftDetailModal({
                   <div>
                     <div className="flex items-center justify-between pb-3.5 border-b border-[#EAEFF8] mb-3.5">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl bg-[#0e59f9] text-white flex items-center justify-center shadow-xs flex-shrink-0">
+                        <div className="w-9 h-9 rounded-full bg-[#0e59f9] text-white flex items-center justify-center shadow-xs flex-shrink-0">
                           <CreditCard className="w-4 h-4 text-white" />
                         </div>
                         <div>
@@ -259,7 +259,7 @@ export function ShiftDetailModal({
                   <div>
                     <div className="flex items-center justify-between pb-3.5 border-b border-[#EAEFF8] mb-3.5">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl bg-[#0e59f9] text-white flex items-center justify-center shadow-xs flex-shrink-0">
+                        <div className="w-9 h-9 rounded-full bg-[#0e59f9] text-white flex items-center justify-center shadow-xs flex-shrink-0">
                           <Banknote className="w-4 h-4 text-white" />
                         </div>
                         <div>
@@ -480,12 +480,12 @@ export function ShiftDetailModal({
                               </TableCell>
                               <TableCell className="py-3 px-4">
                                 {move.type === 'IN' ? (
-                                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                                    <ArrowDownLeft className="w-3.5 h-3.5" /> Masuk
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border-none">
+                                    Kas Masuk
                                   </span>
                                 ) : (
-                                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-rose-600 dark:text-rose-400">
-                                    <ArrowUpRight className="w-3.5 h-3.5" /> Keluar
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 border-none">
+                                    Kas Keluar
                                   </span>
                                 )}
                               </TableCell>

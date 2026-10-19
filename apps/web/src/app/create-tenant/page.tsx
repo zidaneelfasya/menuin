@@ -1,20 +1,25 @@
-import { CreateTenantForm } from './create-tenant-form';
+import { Metadata } from 'next';
 import { getAuthenticatedAccount } from '@/lib/actions/auth-context';
 import { redirect } from 'next/navigation';
+import { CreateTenantClient } from './create-tenant-client';
+
+export const metadata: Metadata = {
+  title: 'Daftarkan Cabang Baru - MENUIN',
+  description: 'Daftarkan cabang atau restoran baru untuk masuk ke dashboard Menuin.',
+};
 
 export default async function CreateTenantPage() {
   const account = await getAuthenticatedAccount().catch(() => null);
   if (!account) redirect('/auth/login');
-  
+
+  const isAdmin = ['SYSTEM_ADMIN', 'SUPERADMIN', 'VERIFICATION_ADMIN'].includes(
+    account.systemRole as string
+  );
+
   return (
-    <div className="flex min-h-screen w-full flex-col bg-muted/40 items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-8">
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">Create a New Workspace</h1>
-          <p className="text-muted-foreground">Give your new restaurant a name to get started.</p>
-        </div>
-        <CreateTenantForm />
-      </div>
-    </div>
+    <CreateTenantClient
+      account={account ? { id: account.id, email: account.email, name: account.name } : null}
+      isAdmin={isAdmin}
+    />
   );
 }

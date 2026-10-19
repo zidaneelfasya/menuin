@@ -16,18 +16,27 @@ interface ShiftsSidebarProps {
   hasActiveShift?: boolean;
 }
 
-export function ShiftsSidebar({ outletKey }: ShiftsSidebarProps) {
+interface NavItem {
+  id: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  tab: string;
+  badge?: string;
+}
+
+export function ShiftsSidebar({ outletKey, hasActiveShift }: ShiftsSidebarProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
 
   const currentTab = searchParams.get('tab') || 'active';
 
-  const navItems = [
+  const navItems: NavItem[] = [
     {
       id: 'active',
       label: 'Shift Aktif',
       icon: IconClock,
       tab: 'active',
+      badge: hasActiveShift ? 'Aktif' : undefined,
     },
     {
       id: 'movements',
@@ -96,10 +105,10 @@ export function ShiftsSidebar({ outletKey }: ShiftsSidebarProps) {
               {item.badge && (
                 <span
                   className={cn(
-                    "text-[10px] px-1.5 py-0.5 rounded-full font-semibold border",
+                    "text-[10px] px-1.5 py-0.5 rounded-full font-semibold border-none",
                     isActive
-                      ? "bg-white/20 text-white border-white/30"
-                      : "bg-emerald-50 text-emerald-600 border-emerald-200"
+                      ? "bg-white/20 text-white"
+                      : "bg-emerald-50 text-emerald-700"
                   )}
                 >
                   {item.badge}
