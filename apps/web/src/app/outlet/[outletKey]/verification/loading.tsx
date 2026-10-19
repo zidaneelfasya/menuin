@@ -1,61 +1,48 @@
+import { Skeleton } from "@/components/ui/skeleton";
+
 export default function VerificationLoading() {
   return (
-    <div className="space-y-6 animate-pulse">
-      {/* Header Skeleton */}
-      <div className="space-y-2">
-        <div className="h-3 w-36 bg-slate-200 rounded-sm" />
-        <div className="h-7 w-64 bg-slate-200 rounded-md" />
-        <div className="h-4 w-96 max-w-full bg-slate-100 rounded-sm" />
+    <div className="p-4 md:p-6 space-y-6 max-w-4xl mx-auto animate-pulse">
+      {/* Header */}
+      <div className="space-y-1.5 pb-2 border-b border-slate-200/80 dark:border-slate-800">
+        <Skeleton className="h-7 w-56 rounded-lg bg-slate-200 dark:bg-slate-800" />
+        <Skeleton className="h-4 w-96 max-w-full rounded-md bg-slate-100 dark:bg-slate-800/60" />
       </div>
 
-      {/* Grid Skeleton */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* Left Hero Card Skeleton */}
-        <div className="lg:col-span-4 min-h-[220px] rounded-2xl bg-blue-100/60 border border-blue-200/50 p-6 flex flex-col justify-between">
-          <div className="flex justify-between items-center">
-            <div className="w-10 h-10 rounded-full bg-white/80" />
-            <div className="w-20 h-5 rounded-md bg-white/70" />
-          </div>
-          <div className="space-y-2 my-4">
-            <div className="h-3 w-28 bg-white/70 rounded-sm" />
-            <div className="h-6 w-48 bg-white/90 rounded-md" />
-            <div className="h-4 w-full bg-white/60 rounded-sm" />
-          </div>
-          <div className="h-9 w-32 bg-white rounded-xl" />
-        </div>
-
-        {/* Right Progress Card Skeleton */}
-        <div className="lg:col-span-8 rounded-2xl bg-white border border-[#EAEFF8] p-6 space-y-5">
-          <div className="flex justify-between items-center pb-3 border-b border-slate-100">
-            <div className="space-y-1">
-              <div className="h-3 w-24 bg-slate-200 rounded-sm" />
-              <div className="h-5 w-44 bg-slate-200 rounded-md" />
+      {/* Main Status Hero Banner */}
+      <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800" />
+            <div className="space-y-1.5">
+              <Skeleton className="h-5 w-40 rounded bg-slate-200 dark:bg-slate-800" />
+              <Skeleton className="h-3.5 w-60 rounded bg-slate-100 dark:bg-slate-800/60" />
             </div>
-            <div className="h-6 w-32 bg-blue-50 rounded-lg" />
           </div>
+          <Skeleton className="h-10 w-36 rounded-xl bg-slate-200 dark:bg-slate-800" />
+        </div>
+        <div className="pt-2">
+          <Skeleton className="h-2 w-full rounded-full bg-slate-100 dark:bg-slate-800" />
+        </div>
+      </div>
 
-          <div className="space-y-4 pt-2">
-            <div className="flex items-center gap-3">
-              <div className="w-6 h-6 rounded-full bg-slate-200" />
-              <div className="space-y-1">
-                <div className="h-4 w-40 bg-slate-200 rounded-sm" />
-                <div className="h-3 w-60 bg-slate-100 rounded-sm" />
+      {/* Checklist Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-3"
+          >
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2.5">
+                <Skeleton className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800" />
+                <Skeleton className="h-4 w-32 rounded bg-slate-200 dark:bg-slate-800" />
               </div>
+              <Skeleton className="h-5 w-16 rounded-full bg-slate-100 dark:bg-slate-800" />
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 pt-2">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="h-28 rounded-xl bg-slate-50 border border-slate-100 p-3 flex flex-col justify-between">
-                  <div className="w-8 h-8 rounded-lg bg-slate-200" />
-                  <div className="space-y-1">
-                    <div className="h-2.5 w-16 bg-slate-200 rounded-sm" />
-                    <div className="h-3.5 w-24 bg-slate-200 rounded-sm" />
-                  </div>
-                </div>
-              ))}
-            </div>
+            <Skeleton className="h-3 w-48 rounded bg-slate-100 dark:bg-slate-800/60" />
           </div>
-        </div>
+        ))}
       </div>
     </div>
   );

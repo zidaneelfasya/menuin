@@ -1,7 +1,9 @@
 import { getTenantCatalogSettings } from "@/lib/actions/catalog";
 import { CatalogSettingsForm } from "./catalog-settings-form";
+import { Suspense } from "react";
+import CatalogLoading from "./loading";
 
-export default async function CatalogOverviewPage() {
+async function CatalogDataWrapper() {
   const settings = await getTenantCatalogSettings();
   
   // The catalog URL based on the slug. For local development it uses .localhost:3000
@@ -21,5 +23,13 @@ export default async function CatalogOverviewPage() {
 
       <CatalogSettingsForm settings={settings} domain={domain} catalogUrl={catalogUrl} />
     </div>
+  );
+}
+
+export default function CatalogOverviewPage() {
+  return (
+    <Suspense fallback={<CatalogLoading />}>
+      <CatalogDataWrapper />
+    </Suspense>
   );
 }
