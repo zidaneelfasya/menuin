@@ -258,7 +258,46 @@ export function POSPage({
     <>
       <div className="flex flex-col h-full relative print:hidden w-full overflow-hidden">
         {/* Cashier Shift Status Banner */}
-        
+        {currentShift ? (
+          <div className="mb-3 px-3.5 py-2 rounded-xl bg-white border border-[#EAEFF8] flex items-center justify-between text-xs shadow-2xs shrink-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              <span className="font-semibold text-slate-800 shrink-0">Shift Aktif</span>
+              <span className="text-slate-300 shrink-0">•</span>
+              <span className="text-slate-600 truncate">{currentShift.cashierName || 'Kasir'}</span>
+              {currentShift.startTime && (
+                <>
+                  <span className="text-slate-300 shrink-0 hidden sm:inline">•</span>
+                  <span className="text-slate-500 font-financial tabular-nums shrink-0 hidden sm:inline">
+                    Mulai {new Date(currentShift.startTime).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsShiftSummaryOpen(true)}
+              className="text-[11px] font-semibold text-[#0e59f9] hover:text-[#0b4de0] transition-colors cursor-pointer shrink-0 ml-2"
+            >
+              Ringkasan & Tutup Shift ➔
+            </button>
+          </div>
+        ) : (
+          <div className="mb-3 px-3.5 py-2 rounded-xl bg-amber-50/80 border border-amber-200/80 flex items-center justify-between text-xs shadow-2xs shrink-0">
+            <div className="flex items-center gap-2 text-amber-900 min-w-0">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+              <span className="font-semibold shrink-0">Shift Belum Dibuka</span>
+              <span className="text-amber-700/90 truncate hidden md:inline">— Buka shift kasir untuk mencatat kas awal dan transaksi.</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsStartShiftModalOpen(true)}
+              className="text-[11px] font-semibold px-3 py-1 rounded-lg bg-[#0e59f9] hover:bg-[#0b4de0] text-white transition-colors cursor-pointer shadow-xs shrink-0 ml-2"
+            >
+              Mulai Shift Kasir
+            </button>
+          </div>
+        )}
 
         {/* Main Workspace (Catalog + Cart) */}
         <div className="flex-1 min-w-0 flex overflow-hidden">
@@ -277,22 +316,22 @@ export function POSPage({
         </div>
 
         {/* Mobile Cart Floating Bottom Bar */}
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 p-3 bg-background/95 backdrop-blur-sm border-t border-border/80 z-20 shadow-xs">
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 p-3 bg-background/95 backdrop-blur-sm border-t border-[#EAEFF8] z-20 shadow-xs">
           <Drawer open={isMobileCartOpen} onOpenChange={setIsMobileCartOpen}>
             <DrawerTrigger asChild>
-              <button className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-xl flex items-center justify-between px-4 font-semibold shadow-xs active:scale-[0.98] transition-transform cursor-pointer">
+              <button className="w-full h-12 bg-[#0e59f9] hover:bg-[#0b4de0] text-white rounded-xl flex items-center justify-between px-4 font-semibold shadow-xs active:scale-[0.98] transition-transform cursor-pointer">
                 <div className="flex items-center">
                   <div className="relative">
                     <ShoppingBag size={18} />
                     {totalItems > 0 && (
-                      <span className="absolute -top-1.5 -right-2 bg-rose-600 text-white text-[10px] h-4 min-w-[16px] px-1 rounded-full flex items-center justify-center font-semibold">
+                      <span className="absolute -top-1.5 -right-2 bg-rose-600 text-white text-[10px] h-4 min-w-[16px] px-1 rounded-full flex items-center justify-center font-semibold font-financial tabular-nums">
                         {totalItems}
                       </span>
                     )}
                   </div>
                   <span className="ml-2.5 text-xs">Lihat Pesanan</span>
                 </div>
-                <span className="text-sm font-semibold">{formatCurrency(cartGrandTotal)}</span>
+                <span className="text-sm font-semibold font-financial tabular-nums">{formatCurrency(cartGrandTotal)}</span>
               </button>
             </DrawerTrigger>
             <DrawerContent className="h-[88vh] p-0 flex flex-col">

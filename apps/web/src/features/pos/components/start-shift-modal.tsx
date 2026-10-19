@@ -94,43 +94,43 @@ export function StartShiftModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto p-0 rounded-2xl bg-white border border-[#EAEFF8] shadow-xl">
         <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Banknote className="w-5 h-5 text-primary" />
+          <DialogHeader className="p-4 pb-3 border-b border-[#EAEFF8] bg-slate-50/70">
+            <DialogTitle className="text-base font-semibold text-slate-900 flex items-center gap-2">
+              <Banknote className="w-5 h-5 text-[#0e59f9]" />
               Mulai Shift Kasir
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-xs text-slate-500">
               Tentukan modal kas awal (uang kembalian) di laci kasir untuk mulai transaksi.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 p-4">
             {/* Mode Switcher */}
-            <div className="flex items-center justify-between p-1 bg-muted rounded-lg text-xs">
+            <div className="flex items-center justify-between p-1 bg-slate-100 border border-[#EAEFF8] rounded-xl text-xs gap-1">
               <button
                 type="button"
-                className={`flex-1 py-1.5 px-3 rounded-md font-medium transition-all ${!useCalculator ? 'bg-background shadow-xs text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`flex-1 py-1.5 px-3 rounded-lg font-semibold transition-all cursor-pointer ${!useCalculator ? 'bg-white shadow-xs text-slate-900' : 'text-slate-600 hover:text-slate-900'}`}
                 onClick={() => setUseCalculator(false)}
               >
-                🔢 Input Cepat
+                Input Cepat
               </button>
               <button
                 type="button"
-                className={`flex-1 py-1.5 px-3 rounded-md font-medium transition-all ${useCalculator ? 'bg-background shadow-xs text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`flex-1 py-1.5 px-3 rounded-lg font-semibold transition-all cursor-pointer ${useCalculator ? 'bg-white shadow-xs text-slate-900' : 'text-slate-600 hover:text-slate-900'}`}
                 onClick={() => setUseCalculator(true)}
               >
-                💵 Hitung Lembaran Uang
+                Hitung Pecahan Uang
               </button>
             </div>
 
             {!useCalculator ? (
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="posStartingCash">Modal Awal Kas (Rp)</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="posStartingCash" className="text-xs font-semibold text-slate-700">Modal Awal Kas (Rp)</Label>
                   <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-semibold text-muted-foreground text-sm">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-semibold text-slate-400 text-sm">
                       Rp
                     </span>
                     <Input
@@ -141,14 +141,14 @@ export function StartShiftModal({
                       value={formattedDisplayAmount}
                       onChange={handleAmountChange}
                       autoFocus
-                      className="pl-11 font-mono text-lg font-semibold h-11"
+                      className="pl-11 font-financial tabular-nums text-lg font-semibold h-11 bg-white border-[#EAEFF8] focus-visible:ring-1 focus-visible:ring-[#0e59f9] rounded-xl text-slate-900"
                     />
                   </div>
                 </div>
 
                 {/* Quick Presets */}
                 <div className="space-y-1.5">
-                  <span className="text-[11px] text-muted-foreground font-medium">Pilihan Cepat:</span>
+                  <span className="text-[11px] text-slate-500 font-medium">Pilihan Cepat:</span>
                   <div className="flex flex-wrap gap-1.5">
                     {QUICK_DENOMINATIONS.map((denom) => (
                       <Button
@@ -156,7 +156,7 @@ export function StartShiftModal({
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="text-xs h-7 px-2.5 font-financial tabular-nums"
+                        className="text-xs h-7 px-2.5 font-financial tabular-nums border-[#EAEFF8] bg-white hover:bg-slate-50 text-slate-700 rounded-lg cursor-pointer"
                         onClick={() => setAmountValue(denom)}
                       >
                         {denom === 0 ? 'Rp 0 (Tanpa Modal)' : formatCurrency(denom)}
@@ -169,9 +169,9 @@ export function StartShiftModal({
               <div className="space-y-3 font-financial tabular-nums">
                 <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
                   {BILL_VALUES.map((bill) => (
-                    <div key={bill.value} className="flex items-center justify-between gap-3 text-xs bg-muted/40 p-2 rounded-lg border">
-                      <span className="font-semibold w-24">{bill.label}</span>
-                      <span className="text-muted-foreground font-sans">×</span>
+                    <div key={bill.value} className="flex items-center justify-between gap-3 text-xs bg-slate-50/80 p-2.5 rounded-xl border border-[#EAEFF8]">
+                      <span className="font-semibold w-24 text-slate-800">{bill.label}</span>
+                      <span className="text-slate-400 font-sans">×</span>
                       <Input
                         type="number"
                         min="0"
@@ -181,33 +181,33 @@ export function StartShiftModal({
                           const qty = parseInt(e.target.value, 10) || 0;
                           setBillCounts(prev => ({ ...prev, [bill.value]: qty }));
                         }}
-                        className="w-20 h-7 text-right font-semibold text-xs"
+                        className="w-20 h-7 text-right font-semibold text-xs bg-white border-[#EAEFF8]"
                       />
-                      <span className="text-muted-foreground w-24 text-right font-medium">
+                      <span className="text-slate-700 w-24 text-right font-medium font-financial tabular-nums">
                         {formatCurrency((billCounts[bill.value] || 0) * bill.value)}
                       </span>
                     </div>
                   ))}
 
                   {/* Coins input */}
-                  <div className="flex items-center justify-between gap-3 text-xs bg-muted/40 p-2 rounded-lg border">
-                    <span className="font-semibold w-24 flex items-center gap-1 font-sans">
+                  <div className="flex items-center justify-between gap-3 text-xs bg-slate-50/80 p-2.5 rounded-xl border border-[#EAEFF8]">
+                    <span className="font-semibold w-24 flex items-center gap-1 font-sans text-slate-800">
                       <Coins className="w-3.5 h-3.5 text-amber-600" /> Koin / Lainnya
                     </span>
-                    <span className="text-muted-foreground font-sans">Rp</span>
+                    <span className="text-slate-400 font-sans">Rp</span>
                     <Input
                       type="text"
                       placeholder="0"
                       value={coinAmount}
                       onChange={(e) => setCoinAmount(e.target.value.replace(/\D/g, ''))}
-                      className="w-36 h-7 text-right font-semibold text-xs"
+                      className="w-36 h-7 text-right font-semibold text-xs bg-white border-[#EAEFF8]"
                     />
                   </div>
                 </div>
 
-                <div className="bg-primary/10 border border-primary/20 p-3 rounded-xl flex justify-between items-center">
-                  <span className="text-xs font-semibold text-foreground">Total Modal Dihitung:</span>
-                  <span className="text-base font-semibold font-mono text-primary">
+                <div className="bg-[#0e59f9]/10 border border-[#0e59f9]/20 p-3 rounded-xl flex justify-between items-center">
+                  <span className="text-xs font-semibold text-slate-800">Total Modal Dihitung:</span>
+                  <span className="text-base font-semibold text-[#0e59f9] font-financial tabular-nums">
                     {formatCurrency(calculatorTotal)}
                   </span>
                 </div>
@@ -215,11 +215,11 @@ export function StartShiftModal({
             )}
           </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+          <DialogFooter className="p-4 pt-3 border-t border-[#EAEFF8] bg-slate-50/70 flex gap-2">
+            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting} className="border-[#EAEFF8] hover:bg-slate-50 text-slate-700 rounded-xl text-xs h-10 font-medium cursor-pointer">
               Batal
             </Button>
-            <Button type="submit" disabled={isSubmitting} className="font-semibold">
+            <Button type="submit" disabled={isSubmitting} className="bg-[#0e59f9] hover:bg-[#0b4de0] text-white rounded-xl text-xs font-semibold h-10 shadow-xs cursor-pointer">
               {isSubmitting ? 'Memulai...' : 'Buka Shift Kasir'}
             </Button>
           </DialogFooter>

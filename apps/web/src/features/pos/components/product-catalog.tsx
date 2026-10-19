@@ -304,7 +304,7 @@ export function ProductCatalog({
           <Input
             ref={searchInputRef}
             placeholder="Cari produk atau scan barcode..."
-            className="pl-9 pr-9 bg-card border-border rounded-xl h-11 text-sm"
+            className="pl-9 pr-9 bg-white border-[#EAEFF8] focus-visible:ring-1 focus-visible:ring-[#0e59f9] rounded-xl h-11 text-sm shadow-xs"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={handleSearchKeyDown}
@@ -325,19 +325,19 @@ export function ProductCatalog({
         </div>
 
         {/* Display Mode Switcher: Foto vs Kotak Warna */}
-        <div className="flex items-center bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 shrink-0 h-11 gap-0.5">
+        <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-[#EAEFF8] shrink-0 h-11 gap-0.5">
           <button
             type="button"
             onClick={() => handleSetDisplayMode('image')}
             className={cn(
               "flex items-center gap-1.5 h-9 px-2.5 sm:px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer",
               displayMode === 'image'
-                ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-2xs"
-                : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
+                ? "bg-white text-slate-900 shadow-2xs"
+                : "text-slate-600 hover:text-slate-900"
             )}
             title="Tampilan Gambar (Foto Menu)"
           >
-            <ImageIcon className="w-3.5 h-3.5 text-slate-600 dark:text-slate-300" />
+            <ImageIcon className="w-3.5 h-3.5 text-slate-600" />
             <span className="hidden md:inline">Gambar</span>
           </button>
           <button
@@ -346,12 +346,12 @@ export function ProductCatalog({
             className={cn(
               "flex items-center gap-1.5 h-9 px-2.5 sm:px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer",
               displayMode === 'color'
-                ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-2xs"
-                : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
+                ? "bg-white text-slate-900 shadow-2xs"
+                : "text-slate-600 hover:text-slate-900"
             )}
             title="Tampilan Warna (POS Cepat Tanpa Gambar)"
           >
-            <Palette className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+            <Palette className="w-3.5 h-3.5 text-[#0e59f9]" />
             <span className="hidden md:inline">Warna</span>
           </button>
         </div>
@@ -360,7 +360,7 @@ export function ProductCatalog({
           variant="outline"
           size="sm"
           onClick={() => setIsAvailabilityModalOpen(true)}
-          className="h-11 px-3.5 rounded-xl border-slate-200 dark:border-slate-800 text-xs font-semibold gap-1.5 shrink-0 bg-white dark:bg-slate-900 shadow-2xs hover:bg-slate-50 transition-colors"
+          className="h-11 px-3.5 rounded-xl border-[#EAEFF8] text-xs font-semibold gap-1.5 shrink-0 bg-white text-slate-800 shadow-2xs hover:bg-slate-50 transition-colors"
           title="Kelola ketersediaan menu secara cepat"
         >
           <Power className="w-3.5 h-3.5 text-emerald-600" />
@@ -374,10 +374,10 @@ export function ProductCatalog({
           <button
             onClick={() => setActiveCategory('Semua')}
             className={cn(
-              "px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors border",
+              "px-4 py-2 rounded-xl text-sm whitespace-nowrap transition-colors border",
               activeCategory === 'Semua'
-                ? "bg-primary text-primary-foreground border-primary shadow-xs font-semibold"
-                : "bg-card text-muted-foreground border-border hover:bg-muted"
+                ? "bg-[#0e59f9] text-white border-[#0e59f9] shadow-xs font-semibold"
+                : "bg-white text-slate-600 border-[#EAEFF8] hover:bg-slate-50 font-medium"
             )}
           >
             Semua
@@ -387,13 +387,12 @@ export function ProductCatalog({
             <button
               onClick={() => setActiveCategory('Best Seller')}
               className={cn(
-                "px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-colors border flex items-center gap-1.5",
+                "px-4 py-2 rounded-xl text-sm whitespace-nowrap transition-colors border flex items-center gap-1.5",
                 activeCategory === 'Best Seller'
-                  ? "bg-primary text-primary-foreground border-primary shadow-xs"
-                  : "bg-card text-muted-foreground border-border hover:bg-muted"
+                  ? "bg-[#0e59f9] text-white border-[#0e59f9] shadow-xs font-semibold"
+                  : "bg-white text-slate-600 border-[#EAEFF8] hover:bg-slate-50 font-medium"
               )}
             >
-
               <span>Rekomendasi</span>
             </button>
           )}
@@ -405,10 +404,10 @@ export function ProductCatalog({
                 key={category.id}
                 onClick={() => setActiveCategory(category.name)}
                 className={cn(
-                  "px-3.5 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors border flex items-center gap-1.5",
+                  "px-3.5 py-2 rounded-xl text-sm whitespace-nowrap transition-colors border flex items-center gap-1.5",
                   activeCategory === category.name
-                    ? "bg-primary text-primary-foreground border-primary shadow-xs font-semibold"
-                    : "bg-card text-muted-foreground border-border hover:bg-muted"
+                    ? "bg-[#0e59f9] text-white border-[#0e59f9] shadow-xs font-semibold"
+                    : "bg-white text-slate-600 border-[#EAEFF8] hover:bg-slate-50 font-medium"
                 )}
               >
                 {CategoryIcon && <CategoryIcon className="w-4 h-4 shrink-0" />}
@@ -526,7 +525,7 @@ export function ProductCatalog({
                   >
                     <span
                       style={{ color: isAvailable ? palette.textPrimaryHex : undefined }}
-                      className="font-semibold text-sm sm:text-base tracking-tight"
+                      className="font-semibold text-sm sm:text-base tracking-tight font-financial tabular-nums"
                     >
                       {formatCurrency(parseFloat(product.price))}
                     </span>
@@ -537,7 +536,7 @@ export function ProductCatalog({
                           backgroundColor: palette.activeRingHex,
                           color: '#FFFFFF'
                         }}
-                        className="flex items-center justify-center min-w-[26px] h-[26px] px-2 rounded-full text-xs font-semibold shadow-xs select-none animate-in zoom-in-50 duration-150"
+                        className="flex items-center justify-center min-w-[26px] h-[26px] px-2 rounded-full text-xs font-semibold shadow-xs select-none animate-in zoom-in-50 duration-150 font-financial tabular-nums"
                       >
                         {cartQuantity}
                       </span>
@@ -585,8 +584,8 @@ export function ProductCatalog({
                     "bg-card border rounded-2xl overflow-hidden transition-all flex flex-col relative select-none",
                     isAvailable
                       ? isInCart
-                        ? "cursor-pointer group border-blue-600 dark:border-blue-500 dark:ring-blue-500/20 shadow-xs active:scale-[0.98]"
-                        : "cursor-pointer group hover:shadow-md hover:border-primary/50 active:scale-[0.98]"
+                        ? "cursor-pointer group border-[#0e59f9] shadow-xs ring-1 ring-[#0e59f9]/30 active:scale-[0.98]"
+                        : "cursor-pointer group hover:shadow-md hover:border-[#0e59f9]/40 active:scale-[0.98]"
                       : "opacity-40 grayscale-[30%] bg-slate-100 dark:bg-slate-900/60 border-dashed border-slate-300 dark:border-slate-800 cursor-not-allowed pointer-events-none"
                   )}
                   onClick={() => {
@@ -617,9 +616,8 @@ export function ProductCatalog({
                   ) : null}
 
                   {product.isFeatured && (
-                    <div className="absolute top-2 left-2 z-10 bg-blue-600 text-white text-[10px] font-semibold px-2 py-2 rounded-full shadow-md flex items-center gap-1 backdrop-blur-sm">
+                    <div className="absolute top-2 left-2 z-10 bg-[#0e59f9] text-white text-[10px] font-semibold px-2 py-2 rounded-full shadow-md flex items-center gap-1 backdrop-blur-sm">
                       <ThumbsUp className="w-4 h-4" />
-                      
                     </div>
                   )}
 
@@ -651,9 +649,9 @@ export function ProductCatalog({
                     <h3 className="font-semibold text-sm line-clamp-2 leading-tight mb-1">{product.name}</h3>
 
                     <div className="mt-auto flex items-center justify-between gap-1 pt-0.5">
-                      <span className="text-primary font-semibold text-sm">{formatCurrency(parseFloat(product.price))}</span>
+                      <span className="text-[#0e59f9] font-semibold text-sm font-financial tabular-nums">{formatCurrency(parseFloat(product.price))}</span>
                       {isInCart && (
-                        <span className="flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full bg-blue-600 text-white text-[11px] font-semibold shadow-xs select-none">
+                        <span className="flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full bg-[#0e59f9] text-white text-[11px] font-semibold font-financial tabular-nums shadow-xs select-none">
                           {cartQuantity}
                         </span>
                       )}
