@@ -1,0 +1,299 @@
+<title>Simulasi Volume DOKU</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: two-column workbench, asumsi di kiri, angka siap-isi form DOKU di kanan; satu kolom di HP */
+:root {
+  --bg: #f4f6fb; --surface: #ffffff; --fg: #0f1a33; --muted: #5a6787;
+  --line: #dde3f0; --accent: #1a4dff; --accent-soft: #e8eeff; --ok: #0e7a4f;
+  --display: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
+  --body: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0b1020; --surface: #131a2e; --fg: #e8edf8; --muted: #93a0bf;
+  --line: #243050; --accent: #7d97ff; --accent-soft: #1b2650; --ok: #4fd39a; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0b1020; --surface: #131a2e; --fg: #e8edf8; --muted: #93a0bf;
+  --line: #243050; --accent: #7d97ff; --accent-soft: #1b2650; --ok: #4fd39a; color-scheme: dark }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 48px; }
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 22px; }
+header { display: grid; gap: 6px; }
+.eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--display); font-weight: 800; font-size: clamp(26px, 4vw, 34px); line-height: 1.15; margin: 0; text-wrap: balance; }
+header p { margin: 0; color: var(--muted); max-width: 68ch; }
+h2 { font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0; }
+
+.grid { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: 22px; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: grid; gap: 18px; min-width: 0; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+.presets button { font: inherit; font-size: 13px; font-weight: 600; padding: 7px 12px; border-radius: 999px;
+  border: 1px solid var(--line); background: transparent; color: var(--fg); cursor: pointer; }
+.presets button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.presets button:focus-visible, input:focus-visible, .copy:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.group { display: grid; gap: 12px; }
+.field { display: grid; gap: 4px; }
+.field label { font-size: 13px; font-weight: 600; }
+.field small { color: var(--muted); font-size: 12px; }
+.input { display: flex; align-items: center; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+.input span { padding: 0 10px; color: var(--muted); font-size: 13px; white-space: nowrap; }
+.input input { flex: 1; min-width: 0; font: 500 15px var(--mono); color: var(--fg); background: transparent; border: 0; padding: 9px 10px; font-variant-numeric: tabular-nums; }
+.input input:focus { outline: none; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+.rangehead { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.rangehead output { font: 500 14px var(--mono); color: var(--accent); }
+
+.results { display: grid; gap: 18px; min-width: 0; }
+.periods { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 560px) { .periods { grid-template-columns: minmax(0, 1fr); } }
+.period { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 10px; }
+.period.hero { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.period h3 { margin: 0; font-size: 13px; font-weight: 700; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+.metric { display: grid; gap: 2px; }
+.metric .k { font-size: 12px; color: var(--muted); }
+.metric .v { font: 700 22px var(--display); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.metric .sub { font: 500 12px var(--mono); color: var(--muted); overflow-wrap: anywhere; }
+
+.tablewrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 520px; }
+th, td { text-align: right; padding: 9px 10px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+th:first-child, td:first-child { text-align: left; }
+th { font-size: 12px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+td { font-family: var(--mono); font-size: 13px; }
+td:first-child { font-family: var(--body); font-size: 14px; }
+tr.total td { font-weight: 700; color: var(--accent); border-bottom: 0; }
+
+.formbox { display: grid; gap: 12px; }
+.formhead { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.copy { font: inherit; font-size: 13px; font-weight: 700; padding: 8px 14px; border-radius: 8px; border: 0; background: var(--accent); color: var(--surface); cursor: pointer; }
+pre#formtext { margin: 0; background: var(--accent-soft); border-radius: 8px; padding: 14px; font: 500 13px/1.65 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; user-select: all; }
+.note { font-size: 13px; color: var(--muted); margin: 0; }
+.note b { color: var(--fg); }
+.status { font-size: 13px; color: var(--ok); font-weight: 600; min-height: 1.2em; }
+@media (prefers-reduced-motion: no-preference) { .metric .v { transition: color .2s; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Menuin × DOKU · Form Sub Account</div>
+    <h1>Simulasi volume transaksi</h1>
+    <p>Isi asumsi di kiri. Angka di kanan langsung jadi jawaban form DOKU no. 5 (volume per tahun, bulan, hari) dan no. 6 (transaksi tertinggi dan terendah). Angka awal hanya contoh, ganti dengan data outlet kalian.</p>
+  </header>
+
+  <div class="grid">
+    <form class="panel" id="form" autocomplete="off">
+      <div class="group">
+        <h2>Skenario cepat</h2>
+        <div class="presets" id="presets">
+          <button type="button" data-p="awal">Awal rilis</button>
+          <button type="button" data-p="moderat" aria-pressed="true">Moderat</button>
+          <button type="button" data-p="agresif">Agresif</button>
+        </div>
+      </div>
+
+      <div class="group">
+        <h2>Outlet &amp; pesanan</h2>
+        <div class="field">
+          <label for="outlets">Jumlah outlet aktif</label>
+          <div class="input"><input id="outlets" type="number" min="1" step="1" inputmode="numeric"><span>outlet</span></div>
+        </div>
+        <div class="field">
+          <label for="trx">Transaksi per outlet per hari</label>
+          <div class="input"><input id="trx" type="number" min="0" step="1" inputmode="numeric"><span>trx/hari</span></div>
+          <small>Semua transaksi, termasuk tunai.</small>
+        </div>
+        <div class="field">
+          <label for="avg">Rata-rata nilai per transaksi</label>
+          <div class="input"><span>Rp</span><input id="avg" type="number" min="0" step="1000" inputmode="numeric"></div>
+        </div>
+        <div class="field">
+          <div class="rangehead"><label for="online">Porsi lewat DOKU (QRIS, VA, e-wallet, kartu)</label><output id="onlineOut" for="online"></output></div>
+          <input id="online" type="range" min="10" max="100" step="5">
+          <small>Pembayaran tunai tidak lewat DOKU, jadi tidak dihitung.</small>
+        </div>
+        <div class="field">
+          <label for="days">Hari operasional per bulan</label>
+          <div class="input"><input id="days" type="number" min="1" max="31" step="1" inputmode="numeric"><span>hari</span></div>
+        </div>
+      </div>
+
+      <div class="group">
+        <h2>Nominal ekstrem</h2>
+        <div class="row2">
+          <div class="field">
+            <label for="min">Terendah</label>
+            <div class="input"><span>Rp</span><input id="min" type="number" min="0" step="500" inputmode="numeric"></div>
+          </div>
+          <div class="field">
+            <label for="max">Tertinggi</label>
+            <div class="input"><span>Rp</span><input id="max" type="number" min="0" step="50000" inputmode="numeric"></div>
+          </div>
+        </div>
+        <small style="color:var(--muted);font-size:12px">Terendah: misal satu es teh. Tertinggi: misal pesanan rombongan atau katering.</small>
+      </div>
+
+      <div class="group">
+        <h2>Langganan Menuin</h2>
+        <div class="field">
+          <div class="rangehead"><label for="pro">Outlet di paket Business (Rp199.000)</label><output id="proOut" for="pro"></output></div>
+          <input id="pro" type="range" min="0" max="100" step="5">
+          <small>Sisanya di paket Starter (Rp99.000). Satu tagihan per outlet per bulan.</small>
+        </div>
+      </div>
+
+      <div class="group">
+        <h2>Cadangan limit</h2>
+        <div class="field">
+          <div class="rangehead"><label for="buffer">Tambahan di atas estimasi</label><output id="bufferOut" for="buffer"></output></div>
+          <input id="buffer" type="range" min="0" max="200" step="10">
+          <small>Angka yang dilaporkan dinaikkan supaya limit akun tidak cepat mentok saat outlet bertambah.</small>
+        </div>
+      </div>
+    </form>
+
+    <div class="results">
+      <div class="periods" id="periods"></div>
+
+      <div class="panel">
+        <h2>Rincian estimasi (sebelum cadangan)</h2>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Sumber</th><th>Trx / hari</th><th>Trx / bulan</th><th>Nilai / bulan</th><th>Nilai / tahun</th></tr></thead>
+            <tbody id="breakdown"></tbody>
+          </table>
+        </div>
+        <p class="note">Pesanan masuk ke <b>Sub Account outlet</b>. Langganan masuk ke <b>akun utama Menuin</b>. DOKU biasanya menanyakan total volume yang lewat akun Menuin, jadi keduanya dijumlah.</p>
+      </div>
+
+      <div class="panel formbox">
+        <div class="formhead">
+          <h2>Teks siap tempel ke form</h2>
+          <button type="button" class="copy" id="copy">Salin teks</button>
+        </div>
+        <pre id="formtext"></pre>
+        <div class="status" id="status" role="status"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const PRESETS = {
+  awal:    { outlets: 10, trx: 30, avg: 35000, online: 50, days: 30, min: 5000, max: 1000000, pro: 20, buffer: 100 },
+  moderat: { outlets: 25, trx: 50, avg: 40000, online: 60, days: 30, min: 5000, max: 1500000, pro: 30, buffer: 50 },
+  agresif: { outlets: 75, trx: 80, avg: 45000, online: 70, days: 30, min: 5000, max: 3000000, pro: 40, buffer: 50 },
+};
+const PRICE_STARTER = 99000, PRICE_BUSINESS = 199000;
+const ids = ["outlets", "trx", "avg", "online", "days", "min", "max", "pro", "buffer"];
+const $ = (id) => document.getElementById(id);
+
+const nf = new Intl.NumberFormat("id-ID");
+const rp = (n) => "Rp" + nf.format(Math.round(n));
+function rpShort(n) {
+  const units = [[1e12, "triliun"], [1e9, "miliar"], [1e6, "juta"], [1e3, "ribu"]];
+  for (const [v, w] of units) if (n >= v) return "Rp" + new Intl.NumberFormat("id-ID", { maximumFractionDigits: 1 }).format(n / v) + " " + w;
+  return rp(n);
+}
+// Bulatkan ke atas ke 2 angka penting supaya angka yang dilaporkan rapi (mis. 41.300 -> 42.000).
+function ceilNice(n) {
+  if (n <= 0) return 0;
+  const step = Math.pow(10, Math.max(0, Math.floor(Math.log10(n)) - 1));
+  return Math.ceil(n / step) * step;
+}
+
+function read() {
+  const v = {};
+  for (const id of ids) { const x = Number($(id).value); v[id] = Number.isFinite(x) && x >= 0 ? x : 0; }
+  v.days = Math.min(31, Math.max(1, v.days || 1));
+  return v;
+}
+
+function compute(v) {
+  const orderDay = v.outlets * v.trx * (v.online / 100);
+  const orderMonth = orderDay * v.days;
+  const orderValMonth = orderMonth * v.avg;
+  const subsMonth = v.outlets;
+  const subsValMonth = v.outlets * ((v.pro / 100) * PRICE_BUSINESS + (1 - v.pro / 100) * PRICE_STARTER);
+  const est = {
+    day:   { trx: orderDay + subsMonth / 30, val: orderDay * v.avg + subsValMonth / 30 },
+    month: { trx: orderMonth + subsMonth,    val: orderValMonth + subsValMonth },
+    year:  { trx: (orderMonth + subsMonth) * 12, val: (orderValMonth + subsValMonth) * 12 },
+  };
+  const k = 1 + v.buffer / 100;
+  const rep = {};
+  for (const p in est) rep[p] = { trx: ceilNice(est[p].trx * k), val: ceilNice(est[p].val * k) };
+  const lowest = Math.min(v.min || PRICE_STARTER, PRICE_STARTER);
+  const highest = Math.max(v.max, PRICE_BUSINESS);
+  return { orderDay, orderMonth, orderValMonth, subsMonth, subsValMonth, est, rep, lowest, highest };
+}
+
+function render() {
+  const v = read();
+  const r = compute(v);
+  $("onlineOut").textContent = v.online + "%";
+  $("proOut").textContent = v.pro + "%";
+  $("bufferOut").textContent = "+" + v.buffer + "%";
+
+  const labels = { day: "Per hari", month: "Per bulan", year: "Per tahun" };
+  $("periods").innerHTML = ["year", "month", "day"].map((p) => `
+    <section class="period${p === "year" ? " hero" : ""}">
+      <h3>${labels[p]}</h3>
+      <div class="metric"><span class="k">Jumlah transaksi</span><span class="v">${nf.format(r.rep[p].trx)}</span>
+        <span class="sub">estimasi ${nf.format(Math.round(r.est[p].trx))}</span></div>
+      <div class="metric"><span class="k">Nilai transaksi</span><span class="v">${rpShort(r.rep[p].val)}</span>
+        <span class="sub">${rp(r.rep[p].val)}</span></div>
+    </section>`).join("");
+
+  const rows = [
+    ["Pesanan pelanggan → Sub Account outlet", r.orderDay, r.orderMonth, r.orderValMonth],
+    ["Langganan → akun utama Menuin", r.subsMonth / 30, r.subsMonth, r.subsValMonth],
+  ];
+  $("breakdown").innerHTML = rows.map(([n, d, m, val]) =>
+    `<tr><td>${n}</td><td>${nf.format(Math.round(d))}</td><td>${nf.format(Math.round(m))}</td><td>${rp(val)}</td><td>${rp(val * 12)}</td></tr>`).join("") +
+    `<tr class="total"><td>Total</td><td>${nf.format(Math.round(r.est.day.trx))}</td><td>${nf.format(Math.round(r.est.month.trx))}</td><td>${rp(r.est.month.val)}</td><td>${rp(r.est.year.val)}</td></tr>`;
+
+  $("formtext").textContent =
+`5. Volume transaksi (estimasi)
+   - Per tahun : ±${nf.format(r.rep.year.trx)} transaksi, total ±${rp(r.rep.year.val)}
+   - Per bulan : ±${nf.format(r.rep.month.trx)} transaksi, total ±${rp(r.rep.month.val)}
+   - Per hari  : ±${nf.format(r.rep.day.trx)} transaksi, total ±${rp(r.rep.day.val)}
+   (asumsi ${nf.format(v.outlets)} outlet, rata-rata ${rp(v.avg)} per transaksi)
+
+6. Nominal transaksi
+   - Tertinggi : ${rp(r.highest)}
+   - Terendah  : ${rp(r.lowest)}`;
+}
+
+function applyPreset(name) {
+  const p = PRESETS[name];
+  for (const id of ids) $(id).value = p[id];
+  document.querySelectorAll("#presets button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.p === name)));
+  render();
+}
+
+$("presets").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) applyPreset(b.dataset.p); });
+$("form").addEventListener("input", () => {
+  document.querySelectorAll("#presets button").forEach((b) => b.setAttribute("aria-pressed", "false"));
+  render();
+});
+$("form").addEventListener("submit", (e) => e.preventDefault());
+$("copy").addEventListener("click", async () => {
+  const text = $("formtext").textContent;
+  try { await navigator.clipboard.writeText(text); $("status").textContent = "Teks disalin."; }
+  catch {
+    const sel = window.getSelection(), range = document.createRange();
+    range.selectNodeContents($("formtext")); sel.removeAllRanges(); sel.addRange(range);
+    $("status").textContent = "Teks sudah diblok, tekan Ctrl+C untuk menyalin.";
+  }
+});
+
+applyPreset("moderat");
+</script>
