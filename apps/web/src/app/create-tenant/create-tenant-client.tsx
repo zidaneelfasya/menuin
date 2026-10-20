@@ -1,36 +1,25 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Image from 'next/image';
 import {
-  IconBuildingStore,
   IconArrowLeft,
   IconLoader2,
   IconAlertCircle,
-  IconChevronDown,
-  IconShieldCheck,
-  IconLogout,
+  IconInfoCircle,
+  IconX,
+  IconPhoto,
+  IconTrash,
+  IconBuildingStore,
   IconReceipt2,
-  IconUsers,
-  IconDeviceDesktopAnalytics,
-  IconCheck,
-  IconHelpCircle,
+  IconCamera,
 } from '@tabler/icons-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Check } from 'lucide-react';
 import { Label } from '@/components/ui/label';
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from '@/components/ui/dropdown-menu';
-import { signOutAction } from '@/lib/actions/auth';
 import { createTenantAction } from '@/lib/actions/tenant';
 import { usePageTransition } from '@/components/providers/page-transition-provider';
 import { OrderPrefixPicker } from '@/components/shared/order-prefix-picker';
-import { createAvatar } from '@dicebear/core';
-import { openPeeps } from '@dicebear/collection';
+import { cn } from '@/lib/utils';
 
 export interface AccountInfo {
   id: string;
@@ -43,11 +32,11 @@ interface CreateTenantClientProps {
   isAdmin?: boolean;
 }
 
-// Ambient Blurry Menuin 'M' Emblem Watermark for Cards
+// Ambient Blurry Menuin 'M' Emblem Watermark
 function MenuinMWatermark({ className }: { className?: string }) {
   return (
     <div
-      className={`pointer-events-none absolute select-none overflow-hidden transition-all duration-500 ${className || ''}`}
+      className={cn('pointer-events-none absolute select-none overflow-hidden transition-all duration-500', className)}
       aria-hidden="true"
     >
       <svg
@@ -63,70 +52,146 @@ function MenuinMWatermark({ className }: { className?: string }) {
   );
 }
 
-export function CreateTenantClient({ account, isAdmin }: CreateTenantClientProps) {
-  const { navigateWithTransition } = usePageTransition();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+export function CreateTenantClient({ account: _account, isAdmin: _isAdmin }: CreateTenantClientProps) {
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
   const [restaurantName, setRestaurantName] = useState('');
-  const [orderPrefix, setOrderPrefix] = useState('');
+  const [orderPrefix, setOrderPrefix] = useState('KSR');
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [isTipsOpen, setIsTipsOpen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
-  // User avatar identical to select-tenant
-  const userAvatarUri = useMemo(() => {
-    try {
-      const seed = (account?.email || account?.name || 'user').trim().toLowerCase();
-      const avatar = createAvatar(openPeeps, {
-        seed,
-        backgroundColor: ['dbeafe', 'eff6ff', 'e0f2fe', 'fef3c7', 'fce7f3', 'dcfce7'],
-        scale: 90,
-      });
-      return avatar.toDataUri();
-    } catch {
-      return null;
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { navigateWithTransition } = usePageTransition();
+
+  const handleNextFromStep1 = () => {
+    if (!restaurantName.trim()) {
+      setError('Silakan masukkan nama cabang restoran Anda.');
+      return;
     }
-  }, [account?.email, account?.name]);
+    setError('');
+    setCurrentStep(2);
+  };
 
-  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  const handleNextFromStep2 = () => {
+    setError('');
+    setCurrentStep(3);
+  };
+
+  const handleProcessFile = (file: File) => {
+    if (file.size > 12 * 1024 * 1024) {
+      setError('Ukuran file melebihi batas 12 MB.');
+      return;
+    }
+
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setError('Format file tidak didukung. Gunakan format .jpeg atau .png.');
+      return;
+    }
+
+    setError('');
+    setPhotoFile(file);
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPhotoPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    handleProcessFile(file);
+  };
+
+  const handleRemovePhoto = () => {
+    setPhotoFile(null);
+    setPhotoPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (currentStep === 1) {
+      handleNextFromStep1();
+      return;
+    }
+
+    if (currentStep === 2) {
+      handleNextFromStep2();
+      return;
+    }
+
+    if (!restaurantName.trim()) {
+      setError('Silakan masukkan nama cabang restoran Anda.');
+      setCurrentStep(1);
+      return;
+    }
+
     setLoading(true);
     setError('');
 
-    const formData = new FormData(event.currentTarget);
+    const formData = new FormData();
+    formData.append('restaurantName', restaurantName);
     formData.append('orderPrefix', orderPrefix);
+    if (photoPreview) {
+      formData.append('storefrontPhotoUrl', photoPreview);
+    }
 
     try {
       const result = await createTenantAction(formData);
-
-      if (result?.error) {
-        setError(result.error);
-        setLoading(false);
+      if (result.success && result.tenantSlug) {
+        navigateWithTransition(`/outlet/${result.tenantSlug}`);
       } else {
-        navigateWithTransition('/select-tenant');
+        setError(result.error || 'Terjadi kesalahan sistem saat membuat cabang.');
+        setLoading(false);
       }
     } catch (err: any) {
-      setError('Terjadi kendala saat mendaftarkan cabang. Silakan coba kembali.');
+      setError(err?.message || 'Terjadi kesalahan tak terduga.');
       setLoading(false);
     }
-  }
+  };
+
+  // Steps definition matching F&B terms and reference image
+  const steps = [
+    {
+      number: 1,
+      title: 'Identitas Cabang',
+      subtitle: 'Nama gerai & brand resto',
+      icon: IconBuildingStore,
+    },
+    {
+      number: 2,
+      title: 'Kode Nota Kasir',
+      subtitle: 'Singkatan outlet di struk & antrean',
+      icon: IconReceipt2,
+    },
+    {
+      number: 3,
+      title: 'Logo Usaha',
+      subtitle: 'Identitas brand resto (opsional)',
+      icon: IconPhoto,
+    },
+  ];
 
   return (
-    <div className="min-h-screen w-full bg-slate-50/60 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col justify-between relative overflow-hidden">
-      {/* Subtle Ambient Background Gradient */}
-      <div
-        className="absolute inset-0 pointer-events-none -z-10"
-        style={{
-          backgroundImage: `
-            radial-gradient(circle at 50% -10%, rgba(37, 99, 235, 0.08) 0%, rgba(99, 102, 241, 0.04) 35%, transparent 70%),
-            radial-gradient(circle at 10% 90%, rgba(59, 130, 246, 0.03) 0%, transparent 50%),
-            radial-gradient(circle at 90% 80%, rgba(147, 51, 234, 0.03) 0%, transparent 50%)
-          `,
-        }}
-      />
+    <div className="min-h-screen w-full flex flex-col md:flex-row bg-white text-slate-900 font-sans relative overflow-x-hidden">
+      {/* LEFT SIDEBAR: Deep Blue Brand Panel with Stepper (Mirrors Reference Image) */}
+      <aside className="w-full md:w-[380px] lg:w-[420px] flex-shrink-0 bg-[#0055D6] text-white p-6 sm:p-8 md:p-10 flex flex-col justify-between relative overflow-hidden select-none">
+        {/* Ambient Blurry Menuin 'M' Emblem Watermark in the corner */}
+        <MenuinMWatermark
+          className="-bottom-16 -left-14 w-80 h-64 text-white opacity-15 blur-[5px] scale-110"
+        />
 
-      {/* Top Navbar */}
-      <header className="w-full border-b border-slate-200/80 dark:border-slate-800/80 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          {/* Brand Logo */}
-          <div className="flex items-center gap-3">
+        {/* Top: Logo & Exit Link */}
+        <div className="relative z-10 space-y-6">
+          <div className="flex items-center justify-between">
             <button
               type="button"
               onClick={() => navigateWithTransition('/select-tenant')}
@@ -134,283 +199,552 @@ export function CreateTenantClient({ account, isAdmin }: CreateTenantClientProps
               aria-label="Menuin, kembali ke pilih outlet"
             >
               <Image
-                src="/menuin.png"
-                alt="Menuin"
-                width={220}
-                height={60}
-                className="h-7 w-auto md:h-8 transition-transform group-hover:scale-[1.01] dark:hidden"
-                priority
-              />
-              <Image
                 src="/menuin-putih.png"
                 alt="Menuin"
-                width={220}
-                height={60}
-                className="h-7 w-auto md:h-8 transition-transform group-hover:scale-[1.01] hidden dark:block"
+                width={200}
+                height={55}
+                className="h-7 w-auto transition-transform group-hover:scale-[1.02]"
                 priority
               />
             </button>
-          </div>
 
-          {/* Right Header Navigation & Profile */}
-          <div className="flex items-center gap-2.5">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  className="flex items-center gap-2 p-1 pl-2.5 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-colors cursor-pointer select-none shadow-2xs"
-                >
-                  <span className="text-xs font-medium text-slate-700 dark:text-slate-300 max-w-[150px] truncate hidden sm:inline">
-                    {account?.name || account?.email}
-                  </span>
-                  {userAvatarUri ? (
-                    <img
-                      src={userAvatarUri}
-                      alt={account?.name || 'User'}
-                      className="w-7 h-7 rounded-lg object-cover bg-blue-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 shadow-2xs"
-                    />
-                  ) : (
-                    <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-semibold text-xs flex items-center justify-center border border-blue-100 dark:border-blue-900/40">
-                      {account?.name?.charAt(0).toUpperCase() || account?.email?.charAt(0).toUpperCase() || 'U'}
-                    </div>
-                  )}
-                  <IconChevronDown className="w-3.5 h-3.5 text-slate-400 mr-1" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-60 p-1.5 rounded-xl shadow-lg border-slate-200 dark:border-slate-800 text-xs">
-                <div className="px-2.5 py-2 border-b border-slate-100 dark:border-slate-800">
-                  <p className="font-semibold text-slate-900 dark:text-slate-100 truncate">
-                    {account?.name || 'Pengguna Menuin'}
-                  </p>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate mt-0.5">
-                    {account?.email}
-                  </p>
-                </div>
-
-                {isAdmin && (
-                  <DropdownMenuItem
-                    onClick={() => navigateWithTransition('/system-admin')}
-                    className="flex items-center gap-2 cursor-pointer py-2 px-2.5 rounded-lg text-slate-700 dark:text-slate-300 mt-1"
-                  >
-                    <IconShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                    <span>Konsol System Admin</span>
-                  </DropdownMenuItem>
-                )}
-
-                <form action={signOutAction} className="w-full mt-1">
-                  <button
-                    type="submit"
-                    className="w-full flex items-center gap-2 cursor-pointer py-2 px-2.5 rounded-lg text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors text-left"
-                  >
-                    <IconLogout className="w-4 h-4" />
-                    <span>Keluar dari Akun</span>
-                  </button>
-                </form>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
-        <div className="space-y-6">
-          {/* Back Button & Breadcrumbs */}
-          <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => navigateWithTransition('/select-tenant')}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-2xs cursor-pointer"
+              className="inline-flex md:hidden items-center gap-1.5 text-xs text-white/80 hover:text-white"
             >
               <IconArrowLeft className="w-3.5 h-3.5" />
-              <span>Kembali ke Daftar Outlet</span>
+              <span>Keluar</span>
             </button>
-
-            <span className="text-slate-300 dark:text-slate-700">/</span>
-
-            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-              Buat Cabang Baru
-            </span>
           </div>
+        </div>
 
-          {/* Page Title & Subtitle */}
-          <div className="space-y-1">
-            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
-              Daftarkan Cabang Restoran Baru
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-              Buat cabang atau gerai baru untuk mulai mengatur kasir, menu digital, dan operasional bisnis Anda.
-            </p>
-          </div>
+        {/* Center: Vertical Stepper Timeline (Persis Sesuai Desain Awal) */}
+        <div className="my-8 md:my-auto relative z-10">
+          <div className="space-y-6 sm:space-y-8">
+            {steps.map((step, idx) => {
+              const isCurrent = currentStep === step.number;
+              const isComplete =
+                step.number < currentStep ||
+                (step.number === 3 && Boolean(photoPreview));
+              const isLast = idx === steps.length - 1;
+              const IconComponent = step.icon;
 
-          {/* Form & Info Grid Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start pt-2">
-            {/* Left Column: Form Card */}
-            <div className="lg:col-span-8">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xs relative overflow-hidden">
-                <MenuinMWatermark className="w-48 h-48 -right-8 -bottom-8 text-blue-500/5 dark:text-blue-400/5" />
+              return (
+                <div key={step.number} className="relative flex items-start gap-4">
+                  {/* Connecting Line Column */}
+                  <div className="flex flex-col items-center flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (step.number === 1) setCurrentStep(1);
+                        else if (step.number === 2) {
+                          if (restaurantName.trim()) setCurrentStep(2);
+                          else setError('Silakan masukkan nama cabang restoran Anda.');
+                        } else if (step.number === 3) {
+                          if (restaurantName.trim()) setCurrentStep(3);
+                          else setError('Silakan masukkan nama cabang restoran Anda.');
+                        }
+                      }}
+                      className={cn(
+                        'w-10 h-10 rounded-full flex items-center justify-center transition-all cursor-pointer',
+                        isCurrent
+                          ? 'bg-white text-[#0055D6]'
+                          : isComplete
+                          ? 'bg-white/25 text-white border border-white/40 hover:bg-white/35'
+                          : 'bg-white/10 text-white/70 border border-white/20 hover:bg-white/20'
+                      )}
+                      aria-label={step.title}
+                    >
+                      {isComplete ? (
+                        <Check className="w-5 h-5 stroke-[2.2]" />
+                      ) : (
+                        <IconComponent className="w-5 h-5 stroke-[1.8]" />
+                      )}
+                    </button>
 
-                <div className="flex items-center gap-3 pb-6 border-b border-slate-100 dark:border-slate-800/80 mb-6">
-                  <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-[#0e59f9] flex items-center justify-center shadow-2xs shrink-0">
-                    <IconBuildingStore className="w-5 h-5 stroke-[2.2]" />
+                    {!isLast && (
+                      <div
+                        className={cn(
+                          'w-[2px] my-2 transition-colors',
+                          isComplete ? 'bg-white/60 h-10 sm:h-12' : 'bg-white/20 h-10 sm:h-12'
+                        )}
+                      />
+                    )}
                   </div>
-                  <div>
-                    <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
-                      Informasi Cabang
-                    </h2>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                      Nama outlet akan digunakan pada struk belanja, pesanan QR, dan laporan shift kasir.
-                    </p>
+
+                  {/* Step Title & Subtitle */}
+                  <div className="pt-1.5 min-w-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (step.number === 1) setCurrentStep(1);
+                        else if (step.number === 2) {
+                          if (restaurantName.trim()) setCurrentStep(2);
+                          else setError('Silakan masukkan nama cabang restoran Anda.');
+                        } else if (step.number === 3) {
+                          if (restaurantName.trim()) setCurrentStep(3);
+                          else setError('Silakan masukkan nama cabang restoran Anda.');
+                        }
+                      }}
+                      className="text-left cursor-pointer group focus:outline-none"
+                    >
+                      <p
+                        className={cn(
+                          'text-sm font-semibold tracking-wide transition-colors',
+                          isCurrent ? 'text-white' : 'text-white/85 group-hover:text-white'
+                        )}
+                      >
+                        {step.title}
+                      </p>
+                      <p className="text-xs text-white/65 mt-0.5 leading-relaxed">
+                        {step.subtitle}
+                      </p>
+                    </button>
                   </div>
                 </div>
+              );
+            })}
+          </div>
+        </div>
 
-                <form onSubmit={onSubmit} className="space-y-6">
-                  {error && (
-                    <div className="bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200/70 dark:border-rose-900/60 flex items-center gap-2.5 p-3.5 rounded-xl text-xs font-medium">
-                      <IconAlertCircle className="h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" />
-                      <p>{error}</p>
+        {/* Bottom Link: Kembali ke Daftar Outlet (Desktop dengan Arrow) */}
+        <div className="relative z-10 hidden md:block pt-4 border-t border-white/15">
+          <button
+            type="button"
+            onClick={() => navigateWithTransition('/select-tenant')}
+            className="inline-flex items-center gap-2 text-xs font-medium text-white/80 hover:text-white transition-colors cursor-pointer"
+          >
+            <IconArrowLeft className="w-4 h-4" />
+            <span>Kembali ke Daftar Outlet</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* RIGHT MAIN WORKSPACE: Clean Form Canvas (Lebih Besar & Generous Padding to Eliminate Empty Whitespace) */}
+      <main className="flex-1 min-w-0 flex flex-col bg-white relative overflow-y-auto">
+        {/* Subtle blurry Menuin 'M' watermark on right edge */}
+        <MenuinMWatermark
+          className="hidden lg:block -top-10 -right-12 w-96 h-80 text-blue-600/10 blur-[8px] pointer-events-none"
+        />
+
+        {/* Form Container (Lebih Besar max-w-3xl, Padding Nyaman & Proporsional) */}
+        <div className="w-full max-w-3xl mx-auto px-6 sm:px-12 md:px-16 py-10 md:py-16 flex-1 flex flex-col justify-center relative z-10">
+          {/* Step Eyebrow (Step 1/3) */}
+          <span className="text-xs font-semibold text-slate-400 block mb-1.5">
+            Step {currentStep}/3
+          </span>
+
+          {/* Step Main Title (Font Maksimal Semi Bold) */}
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900 leading-tight">
+            {currentStep === 1
+              ? 'Basic Info'
+              : currentStep === 2
+              ? 'Kode Nota Kasir & Antrean'
+              : 'Logo Usaha (Opsional)'}
+          </h1>
+
+          {/* Step Subtitle / Description (Bahasa Ramah F&B) */}
+          <p className="text-xs sm:text-sm text-slate-500 mt-2 mb-7 leading-relaxed">
+            {currentStep === 1
+              ? 'Masukkan nama cabang restoran Anda untuk memulai operasional akun POS dan sistem kasir.'
+              : 'Tentukan singkatan nama outlet untuk dicetak di awal nomor struk kasir dan tiket pesanan dapur pelanggan.'}
+            {currentStep === 3 &&
+              'Unggah logo usaha restoran atau gerai Anda. Langkah ini opsional dan dapat dilewati sekarang.'}
+          </p>
+
+          <form onSubmit={onSubmit} className="space-y-6">
+            {error && (
+              <div className="bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-2.5 p-3.5 rounded-[4px] text-xs font-medium">
+                <IconAlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
+                <p>{error}</p>
+              </div>
+            )}
+
+            {/* STEP 1: RESTAURANT NAME */}
+            {currentStep === 1 && (
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="restaurantName" className="text-xs font-semibold text-slate-800">
+                      Nama Restoran / Brand Cabang
+                    </Label>
+                    <span className="text-[11px] text-slate-400">Wajib diisi</span>
+                  </div>
+                  <input
+                    id="restaurantName"
+                    name="restaurantName"
+                    value={restaurantName}
+                    onChange={(e) => {
+                      setRestaurantName(e.target.value);
+                      if (error) setError('');
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleNextFromStep1();
+                      }
+                    }}
+                    placeholder="Contoh: Kopi Kenangan - Senopati"
+                    required
+                    autoFocus
+                    disabled={loading}
+                    className="w-full h-11 rounded-[4px] border border-slate-300 bg-white px-3.5 text-sm font-normal text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#0055D6] focus:ring-1 focus:ring-[#0055D6] disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed transition-all"
+                  />
+                  <p className="text-[11px] text-slate-400 pt-0.5">
+                    Gunakan nama yang mudah dikenali pelanggan dan staf kasir.
+                  </p>
+                </div>
+
+                {/* Primary Action Buttons (Di Pinggir, Diperlebar Sedang) */}
+                <div className="pt-3 flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleNextFromStep1()}
+                    disabled={loading || !restaurantName.trim()}
+                    className="min-w-[130px] px-8 h-9 rounded-full text-xs sm:text-sm font-semibold bg-[#0055D6] hover:bg-blue-700 text-white inline-flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
+                  >
+                    Next
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => navigateWithTransition('/select-tenant')}
+                    className="min-w-[110px] px-7 h-9 rounded-full text-xs sm:text-sm font-semibold border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 inline-flex items-center justify-center transition-colors cursor-pointer"
+                  >
+                    Batal
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 2: ORDER PREFIX PICKER (F&B FRIENDLY) */}
+            {currentStep === 2 && (
+              <div className="space-y-6">
+                <OrderPrefixPicker
+                  value={orderPrefix}
+                  onChange={setOrderPrefix}
+                  outletName={restaurantName}
+                  disabled={loading}
+                />
+
+                {/* Action Buttons (Di Pinggir, Diperlebar Sedang) */}
+                <div className="pt-3 flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleNextFromStep2()}
+                    disabled={loading}
+                    className="min-w-[130px] px-8 h-9 rounded-full text-xs sm:text-sm font-semibold bg-[#0055D6] hover:bg-blue-700 text-white inline-flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50 shadow-xs"
+                  >
+                    Next
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep(1)}
+                    disabled={loading}
+                    className="min-w-[110px] px-7 h-9 rounded-full text-xs sm:text-sm font-semibold border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 inline-flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    Back
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 3: LOGO USAHA (OPSIONAL) */}
+            {currentStep === 3 && (
+              <div className="space-y-6">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleFileChange}
+                  className="hidden"
+                  id="storefrontPhotoInput"
+                />
+
+                {/* Single Clean Dropzone Area */}
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setIsDragging(true);
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    setIsDragging(false);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDragging(false);
+                    const file = e.dataTransfer.files?.[0];
+                    if (file) handleProcessFile(file);
+                  }}
+                  className={cn(
+                    'w-full bg-[#F8F9FA] hover:bg-slate-100/70 rounded-2xl p-8 sm:p-12 flex flex-col items-center justify-center text-center transition-all border border-slate-200/80',
+                    isDragging ? 'ring-2 ring-[#0055D6] bg-blue-50/40 border-[#0055D6]' : ''
+                  )}
+                >
+                  {!photoPreview ? (
+                    <>
+                      {/* Custom White Photo Card with Menuin Blue Up-Arrow Circle Badge */}
+                      <div className="relative inline-block select-none mb-4">
+                        <div className="w-24 h-20 bg-white rounded-2xl shadow-sm border border-slate-100/90 flex items-center justify-center">
+                          <svg viewBox="0 0 48 40" className="w-12 h-10">
+                            <circle cx="16" cy="12" r="3" fill="#E2E8F0" />
+                            <path
+                              d="M8 32 L22 16 L32 27 L38 21 L44 32 Z"
+                              fill="#CBD5E1"
+                              opacity="0.8"
+                            />
+                          </svg>
+                        </div>
+                        {/* Blue Upward Arrow Badge */}
+                        <div className="absolute -bottom-1.5 -right-1.5 w-7 h-7 bg-[#0055D6] rounded-full flex items-center justify-center shadow-md ring-2 ring-white">
+                          <svg
+                            className="w-3.5 h-3.5 stroke-white stroke-[2.5]"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <line x1="12" y1="19" x2="12" y2="5" />
+                            <polyline points="5 12 12 5 19 12" />
+                          </svg>
+                        </div>
+                      </div>
+
+                      {/* Dropzone Instructional Text */}
+                      <p className="text-sm text-slate-800 font-normal">
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="underline underline-offset-2 font-medium text-slate-900 hover:text-[#0055D6] transition-colors cursor-pointer"
+                        >
+                          Click to upload
+                        </button>{' '}
+                        or Drag &amp; Drop
+                      </p>
+                      <p className="text-xs text-slate-400 mt-2 font-normal">
+                        Supported formats: .jpeg, .png
+                      </p>
+                      <p className="text-xs text-slate-400 mt-0.5 font-normal">
+                        Maximum file size of 12MB.
+                      </p>
+                    </>
+                  ) : (
+                    /* Selected/Preview Logo State */
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-24 h-24 rounded-2xl overflow-hidden bg-white shadow-sm border border-slate-200/80 p-1 flex items-center justify-center">
+                        <img
+                          src={photoPreview}
+                          alt="Preview Logo Usaha"
+                          className="max-w-full max-h-full object-contain rounded-xl"
+                        />
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-slate-900 max-w-[240px] truncate">
+                          {photoFile?.name || 'logo-usaha.png'}
+                        </p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                          {photoFile
+                            ? `${(photoFile.size / (1024 * 1024)).toFixed(2)} MB`
+                            : 'Logo Terpilih'}{' '}
+                          &bull; Siap digunakan
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="text-xs font-medium text-[#0055D6] hover:underline cursor-pointer"
+                        >
+                          Ganti Logo
+                        </button>
+                        <span className="text-slate-300">&bull;</span>
+                        <button
+                          type="button"
+                          onClick={handleRemovePhoto}
+                          className="text-xs font-medium text-rose-600 hover:underline cursor-pointer"
+                        >
+                          Hapus
+                        </button>
+                      </div>
                     </div>
                   )}
-
-                  {/* Restaurant Name Input */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="restaurantName" className="text-xs font-semibold text-slate-900 dark:text-slate-200">
-                        Nama Restoran / Brand Cabang
-                      </Label>
-                      <span className="text-[11px] text-slate-400">Wajib diisi</span>
-                    </div>
-                    <div className="relative">
-                      <Input
-                        id="restaurantName"
-                        name="restaurantName"
-                        value={restaurantName}
-                        onChange={(e) => setRestaurantName(e.target.value)}
-                        placeholder="Contoh: Kopi Kenangan - Cabang Senopati"
-                        required
-                        disabled={loading}
-                        className="h-11 text-xs sm:text-sm bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl focus:ring-blue-500 focus:border-blue-500 shadow-2xs"
-                      />
-                    </div>
-                    <p className="text-[11px] text-slate-400 dark:text-slate-500">
-                      Gunakan nama yang mudah dikenali oleh pelanggan dan staf Anda.
-                    </p>
-                  </div>
-
-                  {/* Order Prefix Picker */}
-                  <div className="pt-2">
-                    <OrderPrefixPicker
-                      value={orderPrefix}
-                      onChange={setOrderPrefix}
-                      outletName={restaurantName}
-                      disabled={loading}
-                    />
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row items-center gap-3">
-                    <Button
-                      type="submit"
-                      disabled={loading || !restaurantName.trim()}
-                      className="w-full sm:w-auto h-11 px-6 rounded-xl text-xs sm:text-sm font-semibold bg-[#0e59f9] hover:bg-blue-600 text-white shadow-xs cursor-pointer transition-colors"
-                    >
-                      {loading ? (
-                        <>
-                          <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Mendaftarkan Cabang...
-                        </>
-                      ) : (
-                        'Daftarkan Cabang Restoran'
-                      )}
-                    </Button>
-
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => navigateWithTransition('/select-tenant')}
-                      disabled={loading}
-                      className="w-full sm:w-auto h-11 px-5 rounded-xl text-xs sm:text-sm font-medium border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer shadow-2xs"
-                    >
-                      Batal
-                    </Button>
-                  </div>
-                </form>
-              </div>
-            </div>
-
-            {/* Right Column: Benefits & Guidance Cards */}
-            <div className="lg:col-span-4 space-y-5">
-              {/* Card 1: Fitur yang Otomatis Siap */}
-              <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xs space-y-4">
-                <div className="flex items-center gap-2 pb-3 border-b border-slate-100 dark:border-slate-800/80">
-                  <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-                    <IconDeviceDesktopAnalytics className="w-4 h-4" />
-                  </div>
-                  <h3 className="text-xs font-semibold text-slate-900 dark:text-slate-100">
-                    Fitur Otomatis di Cabang Baru
-                  </h3>
                 </div>
 
-                <div className="space-y-3.5 text-xs">
-                  <div className="flex items-start gap-2.5">
-                    <div className="w-5 h-5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
-                      <IconCheck className="w-3 h-3 stroke-[2.5]" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-slate-900 dark:text-slate-100">Sistem Kasir & POS Terintegrasi</p>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                        Siap mencatat pesanan dine-in, takeaway, dan cetak struk kasir thermal.
-                      </p>
-                    </div>
-                  </div>
+                {/* Action Buttons (Di Pinggir, Diperlebar Sedang) */}
+                <div className="pt-3 flex items-center gap-3">
+                  <button
+                    type="submit"
+                    disabled={loading || !restaurantName.trim()}
+                    className="min-w-[150px] px-8 h-9 rounded-full text-xs sm:text-sm font-semibold bg-[#0055D6] hover:bg-blue-700 text-white inline-flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
+                  >
+                    {loading ? (
+                      <>
+                        <IconLoader2 className="mr-1.5 h-4 w-4 animate-spin text-white" />
+                        Mendaftarkan...
+                      </>
+                    ) : photoPreview ? (
+                      'Simpan & Selesai'
+                    ) : (
+                      'Lewati & Selesai'
+                    )}
+                  </button>
 
-                  <div className="flex items-start gap-2.5">
-                    <div className="w-5 h-5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
-                      <IconCheck className="w-3 h-3 stroke-[2.5]" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-slate-900 dark:text-slate-100">Format Order Number Unik</p>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                        Prefix kode pesanan eksklusif mencegah tertukarnya nomor antrean antar cabang.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-2.5">
-                    <div className="w-5 h-5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
-                      <IconCheck className="w-3 h-3 stroke-[2.5]" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-slate-900 dark:text-slate-100">Audit Shift & Kas Laci</p>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                        Rekonsiliasi otomatis selisih kas fisik per sesi kasir.
-                      </p>
-                    </div>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep(2)}
+                    disabled={loading}
+                    className="min-w-[110px] px-7 h-9 rounded-full text-xs sm:text-sm font-semibold border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 inline-flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    Back
+                  </button>
                 </div>
               </div>
-
-              {/* Card 2: Panduan Naming */}
-              <div className="bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200/70 dark:border-blue-900/40 rounded-3xl p-5 shadow-2xs space-y-2.5">
-                <div className="flex items-center gap-2">
-                  <IconHelpCircle className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                  <h4 className="text-xs font-semibold text-blue-950 dark:text-blue-200">
-                    Tips Penamaan Cabang
-                  </h4>
-                </div>
-                <p className="text-[11px] text-blue-900/80 dark:text-blue-300 leading-relaxed">
-                  Jika Anda memiliki lebih dari satu cabang, sertakan nama area atau lokasi cabang (misal: <em>Kopi Kenangan - Senopati</em>) agar tim dan kasir tidak keliru saat login sesi kerja.
-                </p>
-              </div>
-            </div>
-          </div>
+            )}
+          </form>
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="w-full py-4 text-center text-xs text-slate-400 dark:text-slate-600 border-t border-slate-200/60 dark:border-slate-900">
-        &copy; {new Date().getFullYear()} MENUIN
-      </footer>
+      {/* Floating Tips Button & Panel (Rounded Full Button) */}
+      <aside aria-label="Tips pengisian cabang">
+        {/* Floating Toggle Button: "Tips" (Rounded Full) */}
+        <button
+          type="button"
+          onClick={() => setIsTipsOpen(!isTipsOpen)}
+          className={cn(
+            'fixed bottom-6 right-6 z-40 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full border transition-all text-xs font-semibold cursor-pointer shadow-md',
+            isTipsOpen
+              ? 'bg-[#0055D6] text-white border-[#0055D6]'
+              : 'bg-white text-slate-700 hover:text-slate-900 border-slate-200 hover:border-slate-300 shadow-slate-200/60'
+          )}
+        >
+          <IconInfoCircle className={cn('w-4 h-4', isTipsOpen ? 'text-white' : 'text-[#0055D6]')} />
+          <span>Tips</span>
+        </button>
+
+        {/* Floating Guideline Panel (Distinct Tips per Step, F&B Friendly Terms) */}
+        {isTipsOpen && (
+          <div className="fixed bottom-20 right-4 sm:right-6 z-50 w-[350px] max-w-[calc(100vw-2rem)] bg-white rounded-2xl border border-slate-200 p-5 shadow-2xl flex flex-col space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-150 font-sans">
+            {/* Eyebrow & Close Header */}
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <span className="text-[11px] font-semibold text-slate-400 block">
+                Tips Langkah {currentStep} dari 3
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsTipsOpen(false)}
+                className="w-5 h-5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
+                aria-label="Tutup panduan"
+              >
+                <IconX className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Title & Description per Step */}
+            <div>
+              <h3 className="text-base font-semibold text-slate-900">
+                {currentStep === 1
+                  ? 'Tips Nama Cabang'
+                  : currentStep === 2
+                  ? 'Tips Kode Nota Kasir'
+                  : 'Tips Logo Usaha'}
+              </h3>
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                {currentStep === 1
+                  ? 'Nama cabang yang tepat mempermudah pencarian outlet dan koordinasi operasional tim.'
+                  : currentStep === 2
+                  ? 'Singkatan kode nota memudahkan kasir dan dapur melacak nomor pesanan pelanggan.'
+                  : 'Logo usaha yang menarik membantu pelanggan mengenali brand dan outlet Anda.'}
+              </p>
+            </div>
+
+            {/* Numbered Points Checklist per Step */}
+            <div className="space-y-2 pt-1">
+              <span className="text-[11px] font-semibold text-slate-700 block">
+                Ketentuan &amp; Tips:
+              </span>
+              <ul className="space-y-2 text-xs text-slate-600 leading-relaxed">
+                {currentStep === 1 ? (
+                  <>
+                    <li className="flex items-start gap-2">
+                      <span className="w-4 h-4 rounded-full bg-blue-50 text-[#0055D6] text-[10px] font-semibold flex items-center justify-center flex-shrink-0 mt-0.5">
+                        1
+                      </span>
+                      <span>Sertakan nama area atau lokasi cabang jika berencana membuka banyak outlet (contoh: <em>Senopati</em>).</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="w-4 h-4 rounded-full bg-blue-50 text-[#0055D6] text-[10px] font-semibold flex items-center justify-center flex-shrink-0 mt-0.5">
+                        2
+                      </span>
+                      <span>Gunakan nama yang mudah diingat pelanggan pada struk pembayaran dan menu QR digital.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="w-4 h-4 rounded-full bg-blue-50 text-[#0055D6] text-[10px] font-semibold flex items-center justify-center flex-shrink-0 mt-0.5">
+                        3
+                      </span>
+                      <span>Nama cabang dapat diubah sewaktu-waktu melalui menu Pengaturan Outlet.</span>
+                    </li>
+                  </>
+                ) : currentStep === 2 ? (
+                  <>
+                    <li className="flex items-start gap-2">
+                      <span className="w-4 h-4 rounded-full bg-blue-50 text-[#0055D6] text-[10px] font-semibold flex items-center justify-center flex-shrink-0 mt-0.5">
+                        1
+                      </span>
+                      <span>Gunakan 2 hingga 4 huruf singkatan nama outlet Anda (contoh: <em>KSR</em>, <em>OTL</em>, atau <em>CBG</em>).</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="w-4 h-4 rounded-full bg-blue-50 text-[#0055D6] text-[10px] font-semibold flex items-center justify-center flex-shrink-0 mt-0.5">
+                        2
+                      </span>
+                      <span>Kode ini akan dicetak otomatis di bagian atas nomor struk kasir dan tiket pesanan dapur (#KSR-001).</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="w-4 h-4 rounded-full bg-blue-50 text-[#0055D6] text-[10px] font-semibold flex items-center justify-center flex-shrink-0 mt-0.5">
+                        3
+                      </span>
+                      <span>Nomor antrean pesanan harian akan di-reset otomatis setiap pergantian sesi kasir.</span>
+                    </li>
+                  </>
+                ) : (
+                  <>
+                    <li className="flex items-start gap-2">
+                      <span className="w-4 h-4 rounded-full bg-blue-50 text-[#0055D6] text-[10px] font-semibold flex items-center justify-center flex-shrink-0 mt-0.5">
+                        1
+                      </span>
+                      <span>Langkah ini opsional. Anda bisa langsung klik tombol &quot;Lewati &amp; Selesai&quot; jika belum menyiapkan logo usaha.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="w-4 h-4 rounded-full bg-blue-50 text-[#0055D6] text-[10px] font-semibold flex items-center justify-center flex-shrink-0 mt-0.5">
+                        2
+                      </span>
+                      <span>Gunakan logo berformat PNG atau JPG berlatar transparan atau terang agar terlihat jelas di struk kasir dan dashboard.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="w-4 h-4 rounded-full bg-blue-50 text-[#0055D6] text-[10px] font-semibold flex items-center justify-center flex-shrink-0 mt-0.5">
+                        3
+                      </span>
+                      <span>Logo usaha dapat diunggah, diganti, atau dihapus kapan saja melalui Pengaturan Outlet.</span>
+                    </li>
+                  </>
+                )}
+              </ul>
+            </div>
+
+            {/* Note box per Step */}
+            <div className="p-3 rounded-[4px] bg-slate-50 border border-slate-100 text-[11px] text-slate-500">
+              <span className="font-semibold text-slate-700 block mb-0.5">Catatan:</span>
+              {currentStep === 1
+                ? 'Nama tidak boleh mengandung simbol khusus agar tautan menu tetap rapi.'
+                : currentStep === 2
+                ? 'Kode nota hanya berlaku khusus untuk gerai ini dan dapat disesuaikan kembali nanti.'
+                : 'Ukuran file maksimal 12 MB dengan format gambar JPG, PNG, atau WebP.'}
+            </div>
+          </div>
+        )}
+      </aside>
     </div>
   );
 }

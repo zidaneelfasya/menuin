@@ -117,7 +117,7 @@ export function ShiftDetailView({ outletKey, data }: ShiftDetailViewProps) {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+              <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 tracking-tight">
                 Rekap Sesi Shift #{shift?.id?.slice(0, 8).toUpperCase() || '...'}
               </h1>
               {shift?.status === 'ACTIVE' ? (
@@ -135,7 +135,7 @@ export function ShiftDetailView({ outletKey, data }: ShiftDetailViewProps) {
               <span className="inline-flex items-center gap-1.5">
                 <User className="w-4 h-4 text-slate-400" />
                 <span>Kasir:</span>
-                <strong className="font-semibold text-slate-900">{shift?.cashierName || 'Kasir'}</strong>
+                <span className="font-semibold text-slate-900">{shift?.cashierName || 'Kasir'}</span>
               </span>
 
               <span className="text-slate-300">•</span>
@@ -161,13 +161,11 @@ export function ShiftDetailView({ outletKey, data }: ShiftDetailViewProps) {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 pt-3 md:pt-0 border-t md:border-t-0 border-[#EAEFF8]">
-            <div className="bg-slate-50 border border-[#EAEFF8] rounded-xl px-4 py-2 text-left md:text-right">
-              <span className="text-[11px] font-medium text-slate-500 block">Total Omzet Shift</span>
-              <span className="text-lg sm:text-xl font-bold text-slate-900 font-financial tabular-nums">
-                {formatCurrency(metrics?.totalSales || 0)}
-              </span>
-            </div>
+          <div className="pt-3 md:pt-0 border-t md:border-t-0 border-[#EAEFF8] text-left md:text-right">
+            <span className="text-xs font-medium text-slate-500 block">Total Omzet Shift</span>
+            <span className="text-xl sm:text-2xl font-semibold text-slate-900 font-financial tabular-nums">
+              {formatCurrency(metrics?.totalSales || 0)}
+            </span>
           </div>
         </div>
       </div>
@@ -399,15 +397,15 @@ export function ShiftDetailView({ outletKey, data }: ShiftDetailViewProps) {
 
         {/* TAB 1: TRANSAKSI */}
         {activeTab === 'transactions' && (
-          <div className="border border-[#EAEFF8] rounded-xl overflow-hidden shadow-xs">
+          <div className="overflow-x-auto">
             <Table>
               <TableHeader className="bg-slate-50/80">
                 <TableRow className="border-b border-[#EAEFF8]">
-                  <TableHead className="w-[90px] text-xs font-semibold text-slate-600 py-3.5 px-4">Jam</TableHead>
                   <TableHead className="w-[140px] text-xs font-semibold text-slate-600 py-3.5 px-4">No. Order</TableHead>
                   <TableHead className="w-[110px] text-xs font-semibold text-slate-600 py-3.5 px-4">Channel</TableHead>
                   <TableHead className="w-[130px] text-xs font-semibold text-slate-600 py-3.5 px-4">Tipe Pesanan</TableHead>
                   <TableHead className="text-xs font-semibold text-slate-600 py-3.5 px-4">Metode Bayar</TableHead>
+                  <TableHead className="w-[95px] text-xs font-semibold text-slate-600 py-3.5 px-4">Jam</TableHead>
                   <TableHead className="text-right w-[150px] text-xs font-semibold text-slate-600 py-3.5 px-4">Total Belanja</TableHead>
                 </TableRow>
               </TableHeader>
@@ -421,9 +419,6 @@ export function ShiftDetailView({ outletKey, data }: ShiftDetailViewProps) {
                 ) : (
                   transactions?.map((tx: any) => (
                     <TableRow key={tx.id} className="text-xs hover:bg-slate-50/70 transition-colors">
-                      <TableCell className="py-3 px-4 text-slate-500 font-financial tabular-nums">
-                        {tx.createdAt ? format(new Date(tx.createdAt), 'HH:mm:ss') : '-'}
-                      </TableCell>
                       <TableCell className="py-3 px-4 font-mono font-semibold text-slate-900">
                         {tx.orderNumber ? `#${tx.orderNumber}` : tx.id.slice(0, 8)}
                       </TableCell>
@@ -435,6 +430,9 @@ export function ShiftDetailView({ outletKey, data }: ShiftDetailViewProps) {
                       </TableCell>
                       <TableCell className="py-3 px-4 font-semibold text-slate-800">
                         {formatPaymentMethodLabel(tx.paymentMethod)}
+                      </TableCell>
+                      <TableCell className="py-3 px-4 text-slate-500 font-financial tabular-nums">
+                        {tx.createdAt ? format(new Date(tx.createdAt), 'HH:mm:ss') : '-'}
                       </TableCell>
                       <TableCell className="py-3 px-4 text-right font-financial font-semibold text-slate-900 tabular-nums">
                         {formatCurrency(Number(tx.grandTotal))}
@@ -449,7 +447,7 @@ export function ShiftDetailView({ outletKey, data }: ShiftDetailViewProps) {
 
         {/* TAB 2: PRODUK TERJUAL */}
         {activeTab === 'products' && (
-          <div className="border border-[#EAEFF8] rounded-xl overflow-hidden shadow-xs">
+          <div className="overflow-x-auto">
             <Table>
               <TableHeader className="bg-slate-50/80">
                 <TableRow className="border-b border-[#EAEFF8]">
@@ -491,7 +489,7 @@ export function ShiftDetailView({ outletKey, data }: ShiftDetailViewProps) {
 
         {/* TAB 3: ARUS KAS LACI */}
         {activeTab === 'cash' && (
-          <div className="border border-[#EAEFF8] rounded-xl overflow-hidden shadow-xs">
+          <div className="overflow-x-auto">
             <Table>
               <TableHeader className="bg-slate-50/80">
                 <TableRow className="border-b border-[#EAEFF8]">
