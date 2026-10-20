@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Menuin — Payment Flow DOKU Sub Account</title>
+<style>
+  @page { size: A4; margin: 16mm 14mm 16mm 14mm; }
+  :root { --blue:#0050ff; --ink:#0f172a; --muted:#475569; --line:#e2e8f0; --soft:#f1f5ff; }
+  * { box-sizing: border-box; }
+  body { font-family: "Inter","Segoe UI",Roboto,Arial,sans-serif; color: var(--ink); font-size: 10.5pt; line-height: 1.5; margin: 0; }
+  h1 { font-size: 22pt; margin: 0 0 4px; letter-spacing: -0.02em; }
+  h2 { font-size: 14pt; margin: 22px 0 6px; color: var(--blue); border-bottom: 2px solid var(--soft); padding-bottom: 4px; }
+  h3 { font-size: 11pt; margin: 14px 0 4px; }
+  p { margin: 4px 0 8px; }
+  .muted { color: var(--muted); }
+  .cover { display: flex; gap: 18px; align-items: center; border-bottom: 3px solid var(--blue); padding-bottom: 14px; margin-bottom: 10px; }
+  .cover img { width: 76px; height: 76px; border-radius: 14px; }
+  .pill { display: inline-block; background: var(--soft); color: var(--blue); font-weight: 600; font-size: 9pt; padding: 2px 10px; border-radius: 999px; margin-right: 6px; }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 10px; font-size: 9.5pt; }
+  th, td { text-align: left; vertical-align: top; padding: 6px 8px; border: 1px solid var(--line); }
+  th { background: var(--soft); width: 30%; font-weight: 600; }
+  table.grid th { width: auto; }
+  .diagram { border: 1px solid var(--line); border-radius: 10px; padding: 10px; margin: 8px 0 12px; text-align: center; page-break-inside: avoid; break-inside: avoid; }
+  .diagram svg { max-width: 100%; height: auto; }
+  .caption { font-size: 8.5pt; color: var(--muted); margin-top: 4px; }
+  ol, ul { margin: 4px 0 8px 18px; padding: 0; }
+  li { margin: 2px 0; }
+  .note { background: #fff8e6; border-left: 3px solid #f59e0b; padding: 6px 10px; font-size: 9.5pt; margin: 8px 0; }
+  .page-break { page-break-before: always; break-before: page; }
+  footer { margin-top: 18px; font-size: 8.5pt; color: var(--muted); border-top: 1px solid var(--line); padding-top: 6px; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <img src="logo.png" alt="Menuin">
+  <div>
+    <h1>Payment Flow — Menuin</h1>
+    <div class="muted">Pengajuan metode pembayaran <b>DOKU Sub Account</b> (Collect and Route / Deposit System / Fund Oversight)</div>
+    <div style="margin-top:6px">
+      <span class="pill">DOKU Checkout</span><span class="pill">QRIS MPM (SNAP)</span><span class="pill">Sub Account V2</span>
+    </div>
+  </div>
+</div>
+
+<table>
+  <tr><th>Nama brand</th><td>Menuin</td></tr>
+  <tr><th>Client ID / BRN</th><td>{{CLIENT_ID}}</td></tr>
+  <tr><th>Model bisnis</th><td>Platform SaaS kasir (POS) &amp; pemesanan mandiri via QR menu untuk usaha F&amp;B (kafe, restoran, multi-outlet).</td></tr>
+  <tr><th>Peran Menuin</th><td>Platform/aggregator. Menuin memiliki akun utama DOKU; <b>setiap outlet merchant dibuatkan satu Sub Account</b> di bawah akun Menuin.</td></tr>
+  <tr><th>Sumber pendapatan Menuin</th><td>Biaya langganan bulanan dari outlet. Menuin <b>tidak memotong</b> dana transaksi pelanggan milik outlet.</td></tr>
+  <tr><th>Metode bayar pelanggan</th><td>QRIS, Virtual Account, e-wallet, dan kartu (melalui DOKU Checkout); QRIS dinamis di kasir (QRIS MPM).</td></tr>
+</table>
+
+<h2>1. Gambaran Alur Dana (Collect and Route)</h2>
+<p>Pembayaran pelanggan dikumpulkan oleh DOKU dan <b>langsung dirutekan ke Sub Account outlet yang bersangkutan</b> (parameter <code>additional_info.account.id</code>). Saldo tiap outlet terpisah dan dapat dipantau (fund oversight), lalu disalurkan ke rekening bank outlet yang sudah diverifikasi. Pembayaran langganan Menuin masuk ke akun utama Menuin.</p>
+<div class="diagram"><pre class="mermaid">
+flowchart TB
+  P["Pelanggan outlet"]
+  subgraph APP["Aplikasi Menuin"]
+    QR["QR Menu / Pesan Online"]
+    POS["Kasir (POS)"]
+  end
+  subgraph DOKU["DOKU"]
+    CO["DOKU Checkout<br/>QRIS · VA · e-wallet · kartu"]
+    QM["QRIS MPM (SNAP)"]
+    SA["Sub Account Outlet<br/>(saldo terpisah per outlet)"]
+    MAIN["Akun Utama Menuin"]
+  end
+  BANK["Rekening Bank Outlet<br/>(terverifikasi)"]
+  OWN["Pemilik Outlet"]
+
+  P -- "pesan & bayar" --> QR --> CO
+  P -- "scan QR di kasir" --> POS --> QM
+  CO -- "dirutekan ke Sub Account" --> SA
+  QM -- "dirutekan ke Sub Account" --> SA
+  SA -- "settlement / payout" --> BANK
+  OWN -- "bayar langganan Menuin" --> CO
+  CO -. "dana langganan" .-> MAIN
+</pre><div class="caption">Gambar 1 — Dana transaksi outlet selalu masuk ke Sub Account outlet; hanya dana langganan yang masuk ke akun utama Menuin.</div></div>
+
+<h2>2. Onboarding Merchant &amp; Pembuatan Sub Account</h2>
+<p>Sub Account hanya dibuat setelah outlet lolos verifikasi 3 pilar di Menuin. Pembayaran online di outlet baru dapat diaktifkan setelah Sub Account aktif.</p>
+<div class="diagram"><pre class="mermaid">
+sequenceDiagram
+  autonumber
+  actor O as Pemilik Outlet
+  participant M as Menuin
+  participant A as Tim Verifikasi Menuin
+  participant D as DOKU (Sub Account V2)
+  O->>M: Daftar & lengkapi data verifikasi
+  Note over O,M: Pilar 1: profil & legalitas badan usaha<br/>Pilar 2: rekening settlement (bank)<br/>Pilar 3: data & foto lokasi outlet
+  M->>A: Ajukan dokumen untuk ditinjau
+  A-->>M: Setujui / minta perbaikan per pilar
+  alt Ketiga pilar terverifikasi
+    M->>D: POST /sub-account/v2.0/register<br/>(parentProfileId = Client ID Menuin)
+    D-->>M: profileId Sub Account (SAC-…)
+    Note over M: Simpan Sub Account & aktifkan pembayaran online outlet
+    M-->>O: Pembayaran online aktif
+  else Ada pilar belum lolos
+    M-->>O: Pembayaran online belum dapat diaktifkan
+  end
+</pre><div class="caption">Gambar 2 — Onboarding merchant (KYC) sebelum Sub Account dibuat.</div></div>
+
+<div class="page-break"></div>
+<h2>3. Alur A — Pesanan Online via QR Menu (DOKU Checkout)</h2>
+<div class="diagram"><pre class="mermaid">
+sequenceDiagram
+  autonumber
+  actor C as Pelanggan
+  participant W as Menuin (QR Menu)
+  participant S as Menuin Server
+  participant D as DOKU Checkout
+  participant SA as Sub Account Outlet
+  C->>W: Scan QR meja, pilih menu, checkout
+  W->>S: Buat pesanan (status: menunggu pembayaran)
+  Note over S: Hitung total dari data server<br/>(bukan dari browser)
+  S->>D: POST /checkout/v1/payment<br/>invoice unik + amount + additional_info.account.id (Sub Account)
+  D-->>S: payment.url
+  S-->>C: Arahkan ke halaman pembayaran DOKU
+  C->>D: Bayar (QRIS / VA / e-wallet / kartu)
+  D->>SA: Dana dirutekan ke Sub Account outlet
+  D->>S: HTTP Notification (signature HMAC-SHA256)
+  Note over S: Verifikasi signature, cek nominal & invoice,<br/>cegah proses ganda (idempoten)
+  S-->>D: 200 OK
+  S->>W: Pesanan LUNAS → masuk antrean dapur
+  D-->>C: Kembali ke halaman status pesanan Menuin
+  opt Notifikasi terlambat/tidak diterima
+    S->>D: GET /orders/v1/status/{invoice} (rekonsiliasi berkala)
+  end
+</pre><div class="caption">Gambar 3 — Pembayaran pesanan online. Status lunas hanya ditetapkan dari notifikasi/Check Status DOKU yang terverifikasi.</div></div>
+
+<h2>4. Alur B — QRIS Dinamis di Kasir (QRIS MPM)</h2>
+<div class="diagram"><pre class="mermaid">
+sequenceDiagram
+  autonumber
+  actor K as Kasir
+  actor C as Pelanggan
+  participant S as Menuin Server
+  participant D as DOKU (SNAP QRIS)
+  participant SA as Sub Account Outlet
+  K->>S: Pilih metode "QRIS Dinamis"
+  Note over S: Simpan transaksi (menunggu pembayaran)
+  S->>D: Token B2B + POST qr-mpm-generate<br/>(nominal terkunci, masa berlaku QR)
+  D-->>S: qrContent
+  S-->>K: Tampilkan QR di layar kasir
+  C->>D: Scan & bayar dari aplikasi bank / e-wallet
+  D->>SA: Dana dirutekan ke Sub Account outlet
+  D->>S: Notifikasi QRIS (token SNAP terverifikasi)
+  S->>D: qr-mpm-query (konfirmasi status resmi)
+  D-->>S: Status lunas
+  S-->>K: Pembayaran diterima → struk & pesanan ke dapur
+  opt Kasir membatalkan / QR kedaluwarsa
+    S->>D: Cek status dulu sebelum membatalkan
+    Note over S: Batalkan transaksi bila belum dibayar
+  end
+</pre><div class="caption">Gambar 4 — QRIS dinamis di kasir; kasir tidak dapat menandai lunas secara manual.</div></div>
+
+<div class="page-break"></div>
+<h2>5. Alur C — Pembayaran Langganan Menuin</h2>
+<div class="diagram"><pre class="mermaid">
+sequenceDiagram
+  autonumber
+  actor O as Pemilik Outlet
+  participant S as Menuin Server
+  participant D as DOKU Checkout
+  participant MA as Akun Utama Menuin
+  O->>S: Pilih paket langganan
+  Note over S: Buat tagihan (harga dari katalog server)
+  S->>D: POST /checkout/v1/payment (tanpa Sub Account)
+  D-->>O: Halaman pembayaran DOKU
+  O->>D: Bayar
+  D->>MA: Dana masuk akun utama Menuin
+  D->>S: HTTP Notification (terverifikasi)
+  Note over S: Aktifkan / perpanjang langganan outlet
+</pre><div class="caption">Gambar 5 — Pendapatan Menuin berasal dari langganan, terpisah dari dana transaksi outlet.</div></div>
+
+<h2>6. Settlement, Refund &amp; Rekonsiliasi</h2>
+<table class="grid">
+  <tr><th style="width:24%">Proses</th><th>Penanganan</th></tr>
+  <tr><td><b>Settlement</b></td><td>Dana transaksi outlet terkumpul di Sub Account outlet dan disalurkan ke rekening bank outlet yang terverifikasi sesuai jadwal settlement DOKU. Menuin tidak menampung dana outlet di rekening Menuin.</td></tr>
+  <tr><td><b>Fund oversight</b></td><td>Saldo dan riwayat per outlet terpisah per Sub Account. Pemilik outlet melihat ringkasan transaksi online di dashboard Menuin.</td></tr>
+  <tr><td><b>Refund</b></td><td>Refund diproses melalui DOKU, lalu dicatat di Menuin (nominal &amp; nomor referensi) agar status pesanan dan laporan keuangan outlet tetap akurat. Satu pembayaran hanya dapat direfund satu kali.</td></tr>
+  <tr><td><b>Pembayaran perlu ditinjau</b></td><td>Pembayaran ganda, pembayaran setelah sesi kedaluwarsa, pesanan yang sudah dibatalkan, atau nominal tidak cocok otomatis masuk antrean tinjauan pemilik outlet (tidak ada dana yang hilang tanpa jejak).</td></tr>
+  <tr><td><b>Rekonsiliasi</b></td><td>Pengecekan status berkala ke DOKU untuk transaksi yang belum terkonfirmasi, dan impor laporan settlement DOKU untuk mencatat biaya (MDR) riil per transaksi.</td></tr>
+</table>
+
+<h2>7. Kontrol Keamanan</h2>
+<ul>
+  <li>Kredensial DOKU (Client ID, Secret Key, private key SNAP) hanya disimpan di server Menuin, tidak pernah dikirim ke browser atau aplikasi.</li>
+  <li>Setiap notifikasi DOKU diverifikasi signature-nya; notifikasi tidak valid ditolak.</li>
+  <li>Nominal selalu dihitung server dan dicocokkan dengan nominal yang dilaporkan DOKU sebelum pesanan ditandai lunas.</li>
+  <li>Proses idempoten: notifikasi berulang tidak menyebabkan pencatatan atau aktivasi ganda.</li>
+  <li>Akses pengaturan pembayaran dibatasi peran (Owner/Manager); kasir tidak dapat menandai pembayaran online sebagai lunas.</li>
+</ul>
+
+<footer>Menuin · Dokumen payment flow untuk pengajuan DOKU Sub Account · {{DATE}}</footer>
+
+<script src="mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: 'base',
+    securityLevel: 'strict',
+    themeVariables: {
+      fontFamily: 'Inter, Segoe UI, Roboto, Arial, sans-serif',
+      fontSize: '13px',
+      primaryColor: '#eef3ff', primaryBorderColor: '#0050ff', primaryTextColor: '#0f172a',
+      lineColor: '#334155', secondaryColor: '#f8fafc', tertiaryColor: '#ffffff',
+      actorBkg: '#eef3ff', actorBorder: '#0050ff', noteBkgColor: '#fff8e6', noteBorderColor: '#f59e0b'
+    },
+    flowchart: { htmlLabels: true, curve: 'basis' },
+    sequence: { mirrorActors: false, useMaxWidth: true, wrap: true }
+  });
+  mermaid.run({ querySelector: '.mermaid' }).then(() => { window.__mermaidDone = true; })
+    .catch((e) => { window.__mermaidError = String(e); });
+</script>
+</body>
+</html>
