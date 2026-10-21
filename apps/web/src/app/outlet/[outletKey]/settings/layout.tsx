@@ -22,7 +22,7 @@ export default async function SettingsLayout({
       style={{ fontFamily: 'var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' }}
     >
       {/* Sub-sidebar docked directly flush with primary rail */}
-      <aside className="w-full md:w-60 flex-shrink-0 bg-white border-r border-[#EAEFF8] flex flex-col h-auto md:h-full relative z-20 shadow-[4px_0_16px_rgba(0,0,0,0.04),1px_0_4px_rgba(0,0,0,0.02)]">
+      <aside className="w-full md:w-60 flex-shrink-0 bg-white border-r border-slate-100 flex flex-col h-auto md:h-full relative z-20 shadow-[4px_0_16px_rgba(0,0,0,0.03)]">
         <SettingsSidebar outletKey={outletKey} userRole={user?.role} />
       </aside>
 

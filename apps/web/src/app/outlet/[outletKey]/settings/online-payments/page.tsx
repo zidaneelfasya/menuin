@@ -18,7 +18,7 @@ export default async function OnlinePaymentsPage({ searchParams }: Props) {
 
   if (!result.success) {
     return (
-      <div className="bg-card border border-border/70 rounded-2xl p-6 text-sm text-muted-foreground">
+      <div className="bg-white border-none shadow-sm-md rounded-2xl p-6 text-sm text-slate-500">
         {result.error}
       </div>
     );
