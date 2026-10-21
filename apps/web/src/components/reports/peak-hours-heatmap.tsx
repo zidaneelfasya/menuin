@@ -91,7 +91,7 @@ export function PeakHoursHeatmap({
     <div
       ref={containerRef}
       className={cn(
-        "bg-white rounded-2xl border border-[#EAEFF8] p-5 sm:p-6 shadow-sm space-y-4 transition-opacity duration-700",
+        "bg-white rounded-2xl border-none p-5 sm:p-6 shadow-sm-md hover:shadow-md transition-all duration-700 space-y-4",
         isInView ? "opacity-100" : "opacity-0"
       )}
     >

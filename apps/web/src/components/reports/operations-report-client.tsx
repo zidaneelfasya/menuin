@@ -679,9 +679,9 @@ export function OperationsReportClient({ initialData, outletKey }: OperationsRep
               <button
                 type="button"
                 className={cn(
-                  "h-9 px-3 rounded-xl bg-white border border-[#EAEFF8] text-xs font-medium text-slate-700 hover:bg-slate-50 shadow-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer",
+                  "h-9 px-3.5 rounded-full bg-white border-none text-xs font-medium text-slate-700 hover:bg-slate-100 shadow-sm-md inline-flex items-center gap-1.5 transition-colors cursor-pointer",
                   hasCustomDate &&
-                    "border-blue-300 bg-blue-50/40 text-[#0e59f9] font-semibold"
+                    "bg-blue-50/80 text-[#0e59f9] font-semibold"
                 )}
               >
                 <CalendarIcon className="w-3.5 h-3.5 text-slate-400" />
@@ -695,7 +695,7 @@ export function OperationsReportClient({ initialData, outletKey }: OperationsRep
             </PopoverTrigger>
             <PopoverContent
               align="end"
-              className="w-auto p-0 rounded-2xl shadow-xl border border-[#EAEFF8]"
+              className="w-auto p-0 rounded-2xl shadow-2xl border-none bg-white"
             >
               <div className="p-3 border-b border-slate-100 flex items-center justify-between gap-3">
                 <div className="text-xs font-semibold text-slate-900">
@@ -718,7 +718,7 @@ export function OperationsReportClient({ initialData, outletKey }: OperationsRep
                   type="button"
                   onClick={handleSelectToday}
                   className={cn(
-                    "px-2.5 py-1 text-xs rounded-lg text-center font-medium transition-colors cursor-pointer",
+                    "px-2.5 py-1 text-xs rounded-full text-center font-medium transition-colors cursor-pointer",
                     currentTab === "harian" && !hasCustomDate
                       ? "bg-[#0e59f9] text-white font-semibold"
                       : "bg-slate-50 hover:bg-slate-100 text-slate-700"
@@ -730,7 +730,7 @@ export function OperationsReportClient({ initialData, outletKey }: OperationsRep
                   type="button"
                   onClick={handleSelectThisMonth}
                   className={cn(
-                    "px-2.5 py-1 text-xs rounded-lg text-center font-medium transition-colors cursor-pointer",
+                    "px-2.5 py-1 text-xs rounded-full text-center font-medium transition-colors cursor-pointer",
                     currentTab === "bulanan" &&
                       monthParam === format(now, "yyyy-MM") &&
                       !hasCustomDate
@@ -744,7 +744,7 @@ export function OperationsReportClient({ initialData, outletKey }: OperationsRep
                   type="button"
                   onClick={handleSelectLastMonth}
                   className={cn(
-                    "px-2.5 py-1 text-xs rounded-lg text-center font-medium transition-colors cursor-pointer",
+                    "px-2.5 py-1 text-xs rounded-full text-center font-medium transition-colors cursor-pointer",
                     currentTab === "bulanan" &&
                       monthParam === format(subMonths(now, 1), "yyyy-MM") &&
                       !hasCustomDate
@@ -758,7 +758,7 @@ export function OperationsReportClient({ initialData, outletKey }: OperationsRep
                   type="button"
                   onClick={handleSelectThisYear}
                   className={cn(
-                    "px-2.5 py-1 text-xs rounded-lg text-center font-medium transition-colors cursor-pointer",
+                    "px-2.5 py-1 text-xs rounded-full text-center font-medium transition-colors cursor-pointer",
                     currentTab === "tahunan" &&
                       yearParam === String(now.getFullYear()) &&
                       !hasCustomDate
@@ -802,7 +802,7 @@ export function OperationsReportClient({ initialData, outletKey }: OperationsRep
                     variant="ghost"
                     size="sm"
                     onClick={() => setIsCalendarOpen(false)}
-                    className="h-8 text-xs font-medium text-slate-500 hover:text-slate-800"
+                    className="h-8 text-xs font-medium text-slate-500 hover:text-slate-800 rounded-full"
                   >
                     Batal
                   </Button>
@@ -811,7 +811,7 @@ export function OperationsReportClient({ initialData, outletKey }: OperationsRep
                     size="sm"
                     onClick={handleApplyRange}
                     disabled={!tempRange?.from}
-                    className="h-8 text-xs font-semibold bg-[#0e59f9] text-white hover:bg-blue-700 rounded-xl px-3"
+                    className="h-8 text-xs font-semibold bg-[#0e59f9] text-white hover:bg-blue-700 rounded-full px-3.5 shadow-md"
                   >
                     Terapkan
                   </Button>
@@ -825,7 +825,7 @@ export function OperationsReportClient({ initialData, outletKey }: OperationsRep
             <PopoverTrigger asChild>
               <button
                 type="button"
-                className="h-9 px-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="h-9 px-4 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-md inline-flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <Download className="w-3.5 h-3.5 text-white/80" />
                 <span>Export</span>
@@ -834,12 +834,12 @@ export function OperationsReportClient({ initialData, outletKey }: OperationsRep
             </PopoverTrigger>
             <PopoverContent
               align="end"
-              className="w-48 p-1.5 bg-white rounded-xl border border-[#EAEFF8] shadow-lg text-slate-800"
+              className="w-48 p-1.5 bg-white rounded-2xl border-none shadow-2xl text-slate-800"
             >
               <button
                 type="button"
                 onClick={handleExportExcel}
-                className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg text-left hover:bg-slate-50 transition-colors text-slate-700 cursor-pointer"
+                className="w-full flex items-center gap-2 px-3 py-2 text-xs rounded-xl text-left hover:bg-slate-100 transition-colors text-slate-700 cursor-pointer"
               >
                 <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
                 <span>Unduh Excel (.xlsx)</span>
@@ -847,7 +847,7 @@ export function OperationsReportClient({ initialData, outletKey }: OperationsRep
               <button
                 type="button"
                 onClick={handlePrint}
-                className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg text-left hover:bg-slate-50 transition-colors text-slate-700 cursor-pointer"
+                className="w-full flex items-center gap-2 px-3 py-2 text-xs rounded-xl text-left hover:bg-slate-100 transition-colors text-slate-700 cursor-pointer"
               >
                 <Printer className="w-3.5 h-3.5 text-slate-500" />
                 <span>Cetak Laporan</span>
@@ -860,7 +860,7 @@ export function OperationsReportClient({ initialData, outletKey }: OperationsRep
             type="button"
             onClick={handleRefresh}
             disabled={isLoading}
-            className="w-9 h-9 rounded-xl border border-[#EAEFF8] bg-white hover:bg-slate-50 text-slate-600 shadow-xs flex items-center justify-center transition-colors cursor-pointer"
+            className="w-9 h-9 rounded-full border-none bg-white hover:bg-slate-100 text-slate-600 shadow-sm-md flex items-center justify-center transition-colors cursor-pointer"
             title="Segarkan Data"
           >
             <RefreshCw
@@ -886,7 +886,7 @@ export function OperationsReportClient({ initialData, outletKey }: OperationsRep
       {/* ==================================================== */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* KPI 1: Jam Tersibuk (Peak Hour) - Hero Blue Card */}
-        <Card className="border border-[#0e59f9] shadow-md shadow-blue-500/20 rounded-2xl bg-[#0e59f9] text-white hover:shadow-blue-500/30 transition-all flex flex-col justify-between overflow-hidden min-h-[190px]">
+        <Card className="border-none shadow-md rounded-2xl bg-[#0e59f9] text-white hover:shadow-lg transition-all flex flex-col justify-between overflow-hidden min-h-[190px]">
           <CardContent className="p-5 sm:p-6 flex flex-col justify-between flex-1 h-full">
             {/* Top row: Title on left, Icon on right */}
             <div className="flex items-start justify-between gap-2">
@@ -920,7 +920,7 @@ export function OperationsReportClient({ initialData, outletKey }: OperationsRep
         </Card>
 
         {/* KPI 2: Hari Tersibuk (Busiest Day) */}
-        <Card className="border border-[#EAEFF8] shadow-sm rounded-2xl bg-white hover:border-[#d7e2f5] transition-all flex flex-col justify-between overflow-hidden min-h-[190px]">
+        <Card className="border-none shadow-sm-md rounded-2xl bg-white hover:shadow-md transition-all flex flex-col justify-between overflow-hidden min-h-[190px]">
           <CardContent className="p-5 sm:p-6 flex flex-col justify-between flex-1 h-full">
             {/* Top row: Title on left, Icon on right */}
             <div className="flex items-start justify-between gap-2">
@@ -955,7 +955,7 @@ export function OperationsReportClient({ initialData, outletKey }: OperationsRep
         </Card>
 
         {/* KPI 3: Rata-Rata Order / Jam (Hourly Velocity) */}
-        <Card className="border border-[#EAEFF8] shadow-sm rounded-2xl bg-white hover:border-[#d7e2f5] transition-all flex flex-col justify-between overflow-hidden min-h-[190px]">
+        <Card className="border-none shadow-sm-md rounded-2xl bg-white hover:shadow-md transition-all flex flex-col justify-between overflow-hidden min-h-[190px]">
           <CardContent className="p-5 sm:p-6 flex flex-col justify-between flex-1 h-full">
             {/* Top row: Title on left, Icon on right */}
             <div className="flex items-start justify-between gap-2">
@@ -991,7 +991,7 @@ export function OperationsReportClient({ initialData, outletKey }: OperationsRep
         </Card>
 
         {/* KPI 4: Total Volume Transaksi */}
-        <Card className="border border-[#EAEFF8] shadow-sm rounded-2xl bg-white hover:border-[#d7e2f5] transition-all flex flex-col justify-between overflow-hidden min-h-[190px]">
+        <Card className="border-none shadow-sm-md rounded-2xl bg-white hover:shadow-md transition-all flex flex-col justify-between overflow-hidden min-h-[190px]">
           <CardContent className="p-5 sm:p-6 flex flex-col justify-between flex-1 h-full">
             {/* Top row: Title on left, Icon on right */}
             <div className="flex items-start justify-between gap-2">
@@ -1046,7 +1046,7 @@ export function OperationsReportClient({ initialData, outletKey }: OperationsRep
         {/* Left Column (7 Cols): Distribusi Pesanan 24 Jam (Rounded Capsule Bar Chart) */}
         <div
           ref={hourlyChartRef}
-          className="lg:col-span-7 bg-white rounded-2xl border border-[#EAEFF8] p-5 sm:p-6 shadow-sm flex flex-col justify-between space-y-4"
+          className="lg:col-span-7 bg-white rounded-2xl border-none p-5 sm:p-6 shadow-sm-md hover:shadow-md transition-all flex flex-col justify-between space-y-4"
         >
           <div>
             {/* Header */}
@@ -1251,7 +1251,7 @@ export function OperationsReportClient({ initialData, outletKey }: OperationsRep
         {/* Right Column (5 Cols): Omset per Hari (Senin — Minggu) */}
         <div
           ref={dayChartRef}
-          className="lg:col-span-5 bg-white rounded-2xl border border-[#EAEFF8] p-5 sm:p-6 shadow-sm flex flex-col justify-between space-y-4"
+          className="lg:col-span-5 bg-white rounded-2xl border-none p-5 sm:p-6 shadow-sm-md hover:shadow-md transition-all flex flex-col justify-between space-y-4"
         >
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
