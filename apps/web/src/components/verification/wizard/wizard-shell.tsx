@@ -816,9 +816,9 @@ export function WizardShell({ outletKey, initialData }: WizardShellProps) {
     <GuidelineProvider defaultStepKey={defaultStepKey}>
       <div className="fixed inset-0 z-[60] bg-[#F9FBFF] flex flex-col overflow-hidden text-slate-900">
         {/* Top Header Bar */}
-        <header className="h-16 flex-shrink-0 bg-white border-b border-[#EAEFF8] px-4 md:px-6 flex items-center justify-between select-none">
+        <header className="h-16 flex-shrink-0 bg-white border-b border-slate-100 px-4 md:px-6 flex items-center justify-between select-none">
           <div className="flex items-center gap-3 min-w-0">
-            <span className="text-xl font-semibold tracking-tight text-[#0e59f9] font-sans">
+            <span className="text-xl font-bold tracking-tight text-[#0e59f9] font-sans">
               menuin.
             </span>
             <div className="h-4 w-px bg-slate-200 hidden sm:block" />
@@ -836,7 +836,7 @@ export function WizardShell({ outletKey, initialData }: WizardShellProps) {
             <button
               type="button"
               disabled
-              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-[6px] border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-400 cursor-not-allowed opacity-60"
+              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full border-none bg-slate-100 text-xs font-medium text-slate-400 cursor-not-allowed opacity-60"
             >
               <span>Simpan &amp; Keluar</span>
               <X className="w-3.5 h-3.5 text-slate-300" />
@@ -844,7 +844,7 @@ export function WizardShell({ outletKey, initialData }: WizardShellProps) {
           ) : (
             <Link
               href={`/outlet/${outletKey}/verification`}
-              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-[6px] border border-slate-300 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full border-none bg-white shadow-sm-md hover:bg-slate-100 text-xs font-medium text-slate-700 transition-colors cursor-pointer"
             >
               <span>Simpan &amp; Keluar</span>
               <X className="w-3.5 h-3.5 text-slate-400" />
@@ -1116,13 +1116,13 @@ export function WizardShell({ outletKey, initialData }: WizardShellProps) {
             </div>
 
             {/* Docked Action Footer Bar */}
-            <footer className="h-16 flex-shrink-0 bg-white border-t border-[#EAEFF8] px-6 md:px-10 flex items-center justify-between select-none">
+            <footer className="h-16 flex-shrink-0 bg-white border-t border-slate-100 px-6 md:px-10 flex items-center justify-between select-none">
               <div className="w-full max-w-2xl mx-auto flex items-center justify-between">
                 <button
                   type="button"
                   onClick={() => setCurrentStep((prev) => Math.max(1, prev - 1))}
                   disabled={currentStep === 1 || isSubmitting || isUploading}
-                  className="h-9 px-4 rounded-[6px] border border-slate-300 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 inline-flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="h-9 px-4 rounded-full border-none bg-white shadow-sm-md hover:bg-slate-100 text-xs font-semibold text-slate-700 inline-flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
                   <span>Kembali</span>
@@ -1134,10 +1134,10 @@ export function WizardShell({ outletKey, initialData }: WizardShellProps) {
                     onClick={() => !isUploading && setCurrentStep(firstIncompleteStep)}
                     disabled={isUploading || isSubmitting}
                     className={cn(
-                      'h-9 px-4 rounded-[6px] text-white text-xs font-semibold shadow-xs inline-flex items-center gap-1.5 transition-colors',
+                      'h-9 px-5 rounded-full text-white text-xs font-semibold shadow-md inline-flex items-center gap-1.5 transition-colors',
                       isUploading || isSubmitting
                         ? 'bg-[#0e59f9]/50 cursor-not-allowed'
-                        : 'bg-[#0e59f9] hover:bg-blue-700 cursor-pointer'
+                        : 'bg-[#0e59f9] hover:bg-[#0b4de0] cursor-pointer'
                     )}
                   >
                     <span>Lengkapi Langkah {firstIncompleteStep}</span>
@@ -1148,7 +1148,7 @@ export function WizardShell({ outletKey, initialData }: WizardShellProps) {
                     type="button"
                     onClick={handleNextStep}
                     disabled={isSubmitting || isUploading || (currentStep === 5 && !isAgreed)}
-                    className="h-9 px-5 rounded-[6px] bg-[#0e59f9] hover:bg-blue-700 text-white text-xs font-semibold shadow-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="h-9 px-5 rounded-full bg-[#0e59f9] hover:bg-[#0b4de0] text-white text-xs font-semibold shadow-md inline-flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isSubmitting ? (
                       <>
