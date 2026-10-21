@@ -197,10 +197,10 @@ export function DevicesClient({
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
             Perangkat Kasir
           </h1>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
             Kelola tablet, smartphone, dan mesin POS kasir yang terhubung ke outlet ini.
           </p>
         </div>
@@ -209,7 +209,7 @@ export function DevicesClient({
           <Button 
             onClick={handleGenerateCode} 
             disabled={isGenerating}
-            className="inline-flex items-center gap-2 bg-[#2563EB] hover:bg-[#1D4ED8] active:translate-y-0 text-white h-9 px-4 rounded-xl text-xs font-medium transition-all duration-150 ease-out hover:-translate-y-px shadow-xs shrink-0 cursor-pointer"
+            className="inline-flex items-center gap-2 bg-[#0e59f9] hover:bg-[#0b4de0] active:translate-y-0 text-white h-9 px-4 rounded-full text-xs font-semibold transition-all duration-150 ease-out hover:-translate-y-px shadow-md shrink-0 cursor-pointer"
           >
             {isGenerating ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -223,33 +223,33 @@ export function DevicesClient({
 
       {/* Stats Summary Strip */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-        {/* Card 1: Total Perangkat */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs">
-          <p className="text-xs font-medium text-muted-foreground">Total Perangkat</p>
-          <p className="text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 mt-1.5 sm:mt-2">
+        {/* Card 1: Total Perangkat (Hero Blue) */}
+        <div className="rounded-2xl border-none shadow-md bg-[#0e59f9] text-white p-5 hover:shadow-lg transition-all">
+          <p className="text-xs font-medium text-blue-100/90">Total Perangkat</p>
+          <p className="text-2xl sm:text-3xl font-bold tracking-tight text-white mt-1.5 sm:mt-2">
             {totalCount}
           </p>
         </div>
 
         {/* Card 2: Perangkat Aktif */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs">
-          <p className="text-xs font-medium text-muted-foreground">Perangkat Aktif</p>
-          <p className="text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 mt-1.5 sm:mt-2">
+        <div className="bg-white border-none rounded-2xl p-5 shadow-sm-md hover:shadow-md transition-all">
+          <p className="text-xs font-medium text-slate-500">Perangkat Aktif</p>
+          <p className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 mt-1.5 sm:mt-2">
             {activeCount}
           </p>
         </div>
 
         {/* Card 3: Status Sinkronisasi */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs">
-          <p className="text-xs font-medium text-muted-foreground">Status Sinkronisasi</p>
-          <p className="text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 mt-1.5 sm:mt-2">
+        <div className="bg-white border-none rounded-2xl p-5 shadow-sm-md hover:shadow-md transition-all">
+          <p className="text-xs font-medium text-slate-500">Status Sinkronisasi</p>
+          <p className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 mt-1.5 sm:mt-2">
             {activeCount > 0 ? 'Realtime Sync' : 'Siaga'}
           </p>
         </div>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 pb-2">
         {/* Status Filter Tabs (Underline style with live counters) */}
         <div className="flex items-center gap-6 overflow-x-auto pb-1 sm:pb-0">
           {[
@@ -266,23 +266,23 @@ export function DevicesClient({
                 className={cn(
                   "relative pb-2.5 text-xs font-medium transition-colors flex items-center gap-2 cursor-pointer whitespace-nowrap",
                   isActive
-                    ? "text-blue-600 dark:text-blue-400 font-semibold"
-                    : "text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
+                    ? "text-[#0e59f9] font-bold"
+                    : "text-slate-500 hover:text-[#0e59f9]"
                 )}
               >
                 <span>{tab.label}</span>
                 <span className={cn(
-                  "text-xs px-2 py-0.5 rounded-lg font-medium transition-colors",
+                  "text-xs px-2 py-0.5 rounded-full font-semibold transition-colors",
                   isActive
-                    ? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300"
-                    : "text-slate-400 dark:text-slate-500"
+                    ? "bg-blue-50 text-[#0e59f9]"
+                    : "text-slate-400"
                 )}>
                   {tab.count}
                 </span>
                 {isActive && (
                   <motion.div
                     layoutId="activeDeviceTabUnderline"
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-500 rounded-full"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#0e59f9] rounded-full"
                     transition={{ type: "spring", stiffness: 450, damping: 35 }}
                   />
                 )}
@@ -293,26 +293,26 @@ export function DevicesClient({
 
         {/* Search Input */}
         <div className="relative w-full sm:w-72">
-          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Cari nama atau ID perangkat..."
-            className="pl-9 h-9 text-xs rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus-visible:ring-blue-600"
+            className="pl-9 h-9 text-xs rounded-full bg-white border-none shadow-sm-md text-slate-800 placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-[#0e59f9]/20"
           />
         </div>
       </div>
 
       {/* Devices Data Table */}
-      <div className="bg-white dark:bg-slate-950 border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden">
+      <div className="bg-white border-none rounded-2xl shadow-sm-md overflow-hidden">
         {filteredDevices.length === 0 ? (
           <div className="py-16 px-4 text-center">
             <div className="flex flex-col items-center justify-center space-y-2">
-              <PackageSearch className="w-9 h-9 text-slate-300 dark:text-slate-600" />
-              <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+              <PackageSearch className="w-10 h-10 text-slate-300" />
+              <p className="text-sm font-bold text-slate-800">
                 {searchQuery ? 'Tidak ada perangkat ditemukan' : 'Belum ada perangkat kasir'}
               </p>
-              <p className="text-xs text-muted-foreground max-w-sm">
+              <p className="text-xs text-slate-500 max-w-sm">
                 {searchQuery 
                   ? 'Coba gunakan kata kunci pencarian lain atau ubah filter status.' 
                   : 'Tautkan tablet atau smartphone kasir untuk mulai menjalankan aplikasi POS.'}
@@ -321,7 +321,7 @@ export function DevicesClient({
             {canManage && !searchQuery && (
               <Button 
                 onClick={handleGenerateCode} 
-                className="mt-4 gap-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white h-9 px-4 rounded-xl text-xs font-medium cursor-pointer"
+                className="mt-4 gap-2 bg-[#0e59f9] hover:bg-[#0b4de0] text-white h-9 px-4 rounded-full text-xs font-semibold shadow-md cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 <span>Tautkan Perangkat Pertama</span>
@@ -332,59 +332,59 @@ export function DevicesClient({
           <div className="relative w-full overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="bg-slate-50/70 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-200/80 dark:border-slate-800">
-                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-slate-500 dark:text-slate-400 tracking-tight">
+                <tr className="bg-slate-50/70 text-slate-500 font-semibold border-b border-slate-100">
+                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-slate-500 tracking-tight">
                     Perangkat
                   </th>
-                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-slate-500 dark:text-slate-400 tracking-tight">
+                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-slate-500 tracking-tight">
                     Status
                   </th>
-                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-slate-500 dark:text-slate-400 tracking-tight">
+                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-slate-500 tracking-tight">
                     Terakhir Aktif
                   </th>
-                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-slate-500 dark:text-slate-400 tracking-tight">
+                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-slate-500 tracking-tight">
                     Terdaftar Pada
                   </th>
                   {canManage && (
-                    <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-right text-slate-500 dark:text-slate-400 tracking-tight">
+                    <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-right text-slate-500 tracking-tight">
                       Aksi
                     </th>
                   )}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+              <tbody className="divide-y divide-slate-100">
                 {filteredDevices.map((device) => {
                   const isActive = device.status === 'ACTIVE';
 
                   return (
                     <tr 
                       key={device.id} 
-                      className="transition-colors hover:bg-blue-50/50 dark:hover:bg-blue-950/25"
+                      className="transition-colors hover:bg-slate-100/60"
                     >
                       {/* Device info */}
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-3">
                           <div className={cn(
-                            "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+                            "w-9 h-9 rounded-xl flex items-center justify-center shrink-0",
                             isActive 
-                              ? "bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400" 
-                              : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                              ? "bg-blue-50 text-[#0e59f9]" 
+                              : "bg-slate-100 text-slate-500"
                           )}>
                             <Tablet className="w-4 h-4" />
                           </div>
                           <div className="min-w-0">
-                            <p className="font-semibold text-slate-900 dark:text-slate-100 text-xs tracking-tight truncate">
+                            <p className="font-semibold text-slate-900 text-xs tracking-tight truncate">
                               {device.name}
                             </p>
                             <div className="flex items-center gap-1.5 mt-0.5">
-                              <span className="text-[10px] text-muted-foreground font-mono truncate max-w-[180px]">
+                              <span className="text-[10px] text-slate-400 font-mono truncate max-w-[180px]">
                                 ID: {device.deviceIdentifier}
                               </span>
-                              <span className="text-slate-300 dark:text-slate-700 text-[10px]">•</span>
+                              <span className="text-slate-300 text-[10px]">•</span>
                               <button
                                 type="button"
                                 onClick={() => copyDeviceId(device.deviceIdentifier)}
-                                className="inline-flex items-center gap-1 text-[10px] text-blue-600 hover:text-blue-700 dark:text-blue-400 font-medium cursor-pointer hover:underline"
+                                className="inline-flex items-center gap-1 text-[10px] text-[#0e59f9] hover:text-[#0b4de0] font-medium cursor-pointer hover:underline"
                                 title="Salin ID Perangkat"
                               >
                                 {copiedId === device.deviceIdentifier ? (
@@ -404,33 +404,31 @@ export function DevicesClient({
                         </div>
                       </td>
 
-                      {/* Status */}
+                      {/* Status - Zero Dot Policy */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         {isActive ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200/60">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700">
                             Aktif
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600">
                             Dicabut
                           </span>
                         )}
                       </td>
 
                       {/* Last Seen */}
-                      <td className="py-3.5 px-4 whitespace-nowrap text-slate-600 dark:text-slate-300">
+                      <td className="py-3.5 px-4 whitespace-nowrap text-slate-600">
                         <div className="flex items-center gap-1.5 text-xs">
-                          <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                          <Clock className="w-3.5 h-3.5 text-slate-400" />
                           <span>{formatDate(device.lastSeenAt)}</span>
                         </div>
                       </td>
 
                       {/* Registered Date */}
-                      <td className="py-3.5 px-4 whitespace-nowrap text-slate-600 dark:text-slate-300">
+                      <td className="py-3.5 px-4 whitespace-nowrap text-slate-600">
                         <div className="flex items-center gap-1.5 text-xs">
-                          <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+                          <Calendar className="w-3.5 h-3.5 text-slate-400" />
                           <span>{formatDate(device.createdAt)}</span>
                         </div>
                       </td>
@@ -443,16 +441,16 @@ export function DevicesClient({
                               <Button 
                                 variant="ghost" 
                                 size="icon"
-                                className="h-8 w-8 p-0 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-950/30 rounded-lg cursor-pointer"
+                                className="h-8 w-8 p-0 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full cursor-pointer"
                               >
                                 <span className="sr-only">Menu aksi</span>
                                 <MoreVertical className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48 p-1 rounded-xl shadow-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                            <DropdownMenuContent align="end" className="w-48 p-1.5 rounded-2xl shadow-2xl border-none bg-white">
                               <DropdownMenuItem 
                                 onClick={() => setSelectedDeviceToRevoke(device)}
-                                className="text-xs font-medium py-2 px-3 rounded-lg cursor-pointer text-rose-600 focus:text-rose-600 focus:bg-rose-50 dark:focus:bg-rose-950/40 flex items-center gap-2"
+                                className="text-xs font-medium py-2 px-3 rounded-xl cursor-pointer text-rose-600 focus:text-rose-600 focus:bg-rose-50 flex items-center gap-2"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                                 <span>Putuskan Perangkat</span>
@@ -474,19 +472,19 @@ export function DevicesClient({
       {/* PAIRING MODAL */}
       {/* ========================================================================= */}
       <Dialog open={isPairingModalOpen} onOpenChange={setIsPairingModalOpen}>
-        <DialogContent className="w-[calc(100vw-2rem)] max-w-md p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-md p-6 sm:p-7 bg-white border-none rounded-3xl shadow-2xl">
           <DialogHeader className="text-center space-y-1">
-            <DialogTitle className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+            <DialogTitle className="text-lg sm:text-xl font-bold tracking-tight text-slate-900">
               Tautkan Perangkat Kasir
             </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground max-w-xs mx-auto">
+            <DialogDescription className="text-xs text-slate-500 max-w-xs mx-auto">
               Scan QR Code ini menggunakan kamera aplikasi Menuin POS, atau ketik kode pairing berikut di layar tablet kasir.
             </DialogDescription>
           </DialogHeader>
 
           <div className="flex flex-col items-center justify-center py-4 space-y-5">
             {/* QR Card */}
-            <div className="p-4 bg-white border border-slate-200/90 rounded-2xl shadow-sm">
+            <div className="p-4 bg-white border-none shadow-sm-md rounded-2xl">
               {pairingCode && (
                 <QRCodeSVG 
                   value={JSON.stringify({ code: pairingCode, outletKey })} 
@@ -497,12 +495,12 @@ export function DevicesClient({
             </div>
 
             {/* Monospace Pairing Code Box */}
-            <div className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-2xl p-4 flex flex-col items-center gap-2">
-              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+            <div className="w-full bg-slate-50/80 border-none rounded-2xl p-4 shadow-sm-md flex flex-col items-center gap-2">
+              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
                 Kode Pairing 6 Digit
               </span>
               <div className="flex items-center gap-3">
-                <span className="text-3xl font-mono font-semibold tracking-widest text-blue-600 dark:text-blue-400">
+                <span className="text-3xl font-mono font-bold tracking-widest text-[#0e59f9]">
                   {pairingCode}
                 </span>
                 <Button
@@ -510,12 +508,12 @@ export function DevicesClient({
                   variant="outline"
                   size="sm"
                   onClick={copyPairingCode}
-                  className="h-8 px-2.5 rounded-lg text-xs gap-1.5 cursor-pointer border-slate-200 dark:border-slate-700"
+                  className="h-8 px-3 rounded-full text-xs gap-1.5 cursor-pointer border-none bg-white shadow-sm-md hover:bg-slate-100 text-slate-700"
                 >
                   {copiedCode ? (
                     <>
                       <Check className="w-3.5 h-3.5 text-emerald-600" />
-                      <span className="text-emerald-600 font-medium">Tersalin</span>
+                      <span className="text-emerald-600 font-semibold">Tersalin</span>
                     </>
                   ) : (
                     <>
@@ -528,12 +526,12 @@ export function DevicesClient({
             </div>
 
             {/* Waiting Beacon */}
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping" />
+            <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+              <span className="w-2 h-2 rounded-full bg-[#0e59f9] animate-ping" />
               <span>Menunggu sambungan dari perangkat kasir...</span>
             </div>
 
-            <p className="text-[11px] text-muted-foreground text-center px-4 leading-relaxed">
+            <p className="text-[11px] text-slate-400 text-center px-4 leading-relaxed">
               Kode berlaku selama <strong>10 menit</strong>. Jendela dialog ini akan otomatis tertutup begitu perangkat berhasil terhubung.
             </p>
           </div>
@@ -547,15 +545,15 @@ export function DevicesClient({
         open={Boolean(selectedDeviceToRevoke)} 
         onOpenChange={(open) => { if (!open) setSelectedDeviceToRevoke(null); }}
       >
-        <DialogContent className="w-[calc(100vw-2rem)] max-w-md p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-md p-6 sm:p-7 bg-white border-none rounded-3xl shadow-2xl">
           <DialogHeader className="text-left space-y-1">
-            <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center mb-1">
-              <AlertTriangle className="w-5 h-5" />
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mb-1">
+              <AlertTriangle className="w-6 h-6" />
             </div>
-            <DialogTitle className="text-base font-semibold text-slate-900 dark:text-slate-100">
+            <DialogTitle className="text-base sm:text-lg font-bold text-slate-900">
               Putuskan Sambungan Perangkat?
             </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
+            <DialogDescription className="text-xs text-slate-500">
               Apakah Anda yakin ingin memutuskan sambungan <strong>{selectedDeviceToRevoke?.name}</strong>? 
               Aplikasi kasir pada perangkat ini akan langsung keluar (logout) dan harus ditautkan ulang untuk dapat beroperasi kembali.
             </DialogDescription>
@@ -567,7 +565,7 @@ export function DevicesClient({
               variant="outline"
               disabled={isRevoking}
               onClick={() => setSelectedDeviceToRevoke(null)}
-              className="h-9 px-4 rounded-xl text-xs font-medium cursor-pointer"
+              className="h-9 px-4 rounded-full text-xs font-semibold border-none bg-white shadow-sm-md hover:bg-slate-100 text-slate-700 cursor-pointer"
             >
               Batal
             </Button>
@@ -575,7 +573,7 @@ export function DevicesClient({
               type="button"
               disabled={isRevoking}
               onClick={handleConfirmRevoke}
-              className="h-9 px-4 rounded-xl text-xs font-medium bg-rose-600 hover:bg-rose-700 text-white cursor-pointer"
+              className="h-9 px-4 rounded-full text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow-md cursor-pointer border-none"
             >
               {isRevoking ? (
                 <>
