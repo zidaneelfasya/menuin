@@ -57,6 +57,10 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      boxShadow: {
+        'sm-md': '0 2px 5px -1px rgba(0, 0, 0, 0.08), 0 1px 3px -1px rgba(0, 0, 0, 0.06)',
+        'form': '0 2px 5px -1px rgba(0, 0, 0, 0.08), 0 1px 3px -1px rgba(0, 0, 0, 0.06)',
+      },
       fontFamily: {
         sans: ["var(--font-poppins)", "sans-serif"],
         heading: ["var(--font-poppins)", "sans-serif"],
