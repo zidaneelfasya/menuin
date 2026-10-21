@@ -98,6 +98,7 @@ export function OrderPaymentModal({
   const [shouldPrintReceipt, setShouldPrintReceipt] = React.useState(true);
 
   const isPaid = order?.paymentStatus === 'PAID';
+  const qrisDynamicEnabled = Boolean(posSettings?.qrisDynamicEnabled);
 
   const subtotal = React.useMemo(() => {
     if (!order) return 0;
@@ -286,11 +287,11 @@ export function OrderPaymentModal({
     <Dialog open={isOpen} onOpenChange={(open) => !isProcessing && !open && onClose()}>
       <DialogContent
         showCloseButton={false}
-        className="max-w-[440px] sm:max-w-[460px] w-full p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 shadow-xl max-h-[92vh] overflow-y-auto scrollbar-hide flex flex-col gap-3"
+        className="max-w-[440px] sm:max-w-[460px] w-full p-5 sm:p-6 rounded-2xl bg-white border border-slate-100 shadow-xl max-h-[92vh] overflow-y-auto scrollbar-hide flex flex-col gap-3"
       >
         {/* Header (Title + Close Button) */}
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800/80">
-          <DialogTitle className="text-base sm:text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+        <div className="flex items-center justify-between pb-1">
+          <DialogTitle className="text-base sm:text-lg font-semibold tracking-tight text-slate-900">
             {isPaid ? 'Detail Pesanan' : 'Pembayaran Kasir'}
           </DialogTitle>
 
@@ -298,7 +299,7 @@ export function OrderPaymentModal({
             type="button"
             onClick={onClose}
             disabled={isProcessing}
-            className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 transition-colors flex items-center justify-center cursor-pointer shadow-2xs active:scale-95 disabled:opacity-50"
+            className="w-7 h-7 rounded-full hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center cursor-pointer shadow-2xs active:scale-95 disabled:opacity-50 border-none"
             aria-label="Tutup"
             title="Tutup"
           >
@@ -310,35 +311,35 @@ export function OrderPaymentModal({
         <div className="space-y-1">
           {/* Baris 1: Nama Pelanggan (kiri) sejajar dengan Nomor Antrean (kanan) */}
           <div className="flex items-baseline justify-between gap-2">
-            <span className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate leading-snug">
+            <span className="text-sm font-semibold text-slate-900 truncate leading-snug">
               {order.customerName || 'Tamu / Umum'}
             </span>
-            <span className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-tight tabular-nums shrink-0">
+            <span className="text-sm font-semibold text-slate-900 tracking-tight tabular-nums shrink-0">
               {queueLabel}
             </span>
           </div>
 
           {/* Baris 2: Nomor Order (kiri) sejajar dengan Nomor Meja / Order Type (kanan) */}
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate">
+            <span className="text-[11px] text-slate-500 font-medium truncate">
               #{order.orderNumber || '-'}
             </span>
-            <span className="inline-flex items-center text-[11px] font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md tracking-tight shrink-0">
+            <span className="inline-flex items-center text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md tracking-tight shrink-0">
               {tableDisplay}
             </span>
           </div>
 
           {/* Baris 3: Tanggal & Waktu */}
-          <div className="flex items-center justify-between text-xs text-slate-400 dark:text-slate-500 font-medium pt-1.5 pb-0.5">
+          <div className="flex items-center justify-between text-xs text-slate-400 font-medium pt-1.5 pb-0.5">
             <span>{dateStr}</span>
             <span>{timeStr}</span>
           </div>
         </div>
 
         {/* Items List Table & Subtotal (Jarak Rapat & Kompak) */}
-        <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 space-y-2">
+        <div className="pt-1.5 space-y-2">
           {/* Items Header */}
-          <div className="grid grid-cols-12 text-[10px] font-medium text-slate-400 dark:text-slate-500 pb-1 border-b border-slate-100 dark:border-slate-800/80 px-1">
+          <div className="grid grid-cols-12 text-[10px] font-medium text-slate-400 pb-1 border-b border-slate-100 px-1">
             <span className="col-span-7">Items</span>
             <span className="col-span-2 text-center">Qty</span>
             <span className="col-span-3 text-right">Price</span>
@@ -351,7 +352,7 @@ export function OrderPaymentModal({
                 key={item.id}
                 className={cn(
                   'grid grid-cols-12 items-center text-xs py-1 px-1 rounded transition-colors',
-                  onToggleItem && 'group/item cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                  onToggleItem && 'group/item cursor-pointer hover:bg-slate-100'
                 )}
                 onClick={() => {
                   if (onToggleItem) {
@@ -366,7 +367,7 @@ export function OrderPaymentModal({
                       'w-3.5 h-3.5 rounded-[4px] border flex items-center justify-center shrink-0 transition-colors',
                       item.isCompleted
                         ? 'bg-blue-600 border-blue-600 text-white'
-                        : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 opacity-70 group-hover/item:opacity-100'
+                        : 'border-slate-300 bg-white opacity-70 group-hover/item:opacity-100'
                     )}
                   >
                     {item.isCompleted && <Check className="w-2.5 h-2.5 stroke-[2.5]" />}
@@ -376,8 +377,8 @@ export function OrderPaymentModal({
                       className={cn(
                         'truncate text-xs block leading-tight',
                         item.isCompleted
-                          ? 'line-through text-slate-400 dark:text-slate-500'
-                          : 'text-slate-800 dark:text-slate-200 font-normal'
+                          ? 'line-through text-slate-400'
+                          : 'text-slate-800 font-normal'
                       )}
                     >
                       {item.productName}
@@ -389,10 +390,10 @@ export function OrderPaymentModal({
                     )}
                   </div>
                 </div>
-                <span className="col-span-2 text-center text-xs font-medium text-slate-600 dark:text-slate-400 tabular-nums">
+                <span className="col-span-2 text-center text-xs font-medium text-slate-600 tabular-nums">
                   {item.quantity}
                 </span>
-                <span className="col-span-3 text-right text-xs font-medium text-slate-700 dark:text-slate-300 tabular-nums">
+                <span className="col-span-3 text-right text-xs font-medium text-slate-700 tabular-nums">
                   {formatCurrency(Number(item.subtotal || item.price * item.quantity || 0))}
                 </span>
               </div>
@@ -400,60 +401,60 @@ export function OrderPaymentModal({
           </div>
 
           {/* Subtotal & Fee Breakdown (Jarak rapat ke items) */}
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 space-y-1 text-xs font-normal">
-            <div className="flex justify-between text-slate-600 dark:text-slate-400">
+          <div className="pt-1.5 space-y-1 text-xs font-normal">
+            <div className="flex justify-between text-slate-600">
               <span>Subtotal</span>
-              <span className="font-medium text-slate-800 dark:text-slate-200 tabular-nums">
+              <span className="font-medium text-slate-800 tabular-nums">
                 {formatCurrency(subtotal)}
               </span>
             </div>
 
             {discount > 0 && (
-              <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-medium">
+              <div className="flex justify-between text-emerald-600 font-medium">
                 <span>Diskon {order.promoCode ? `(${order.promoCode})` : ''}</span>
                 <span className="tabular-nums font-semibold">-{formatCurrency(discount)}</span>
               </div>
             )}
 
             {tax > 0 && (
-              <div className="flex justify-between text-slate-600 dark:text-slate-400">
+              <div className="flex justify-between text-slate-600">
                 <span>Pajak (PB1)</span>
-                <span className="font-medium text-slate-800 dark:text-slate-200 tabular-nums">
+                <span className="font-medium text-slate-800 tabular-nums">
                   +{formatCurrency(tax)}
                 </span>
               </div>
             )}
 
             {serviceCharge > 0 && (
-              <div className="flex justify-between text-slate-600 dark:text-slate-400">
+              <div className="flex justify-between text-slate-600">
                 <span>Biaya Layanan</span>
-                <span className="font-medium text-slate-800 dark:text-slate-200 tabular-nums">
+                <span className="font-medium text-slate-800 tabular-nums">
                   +{formatCurrency(serviceCharge)}
                 </span>
               </div>
             )}
 
             {platformFee > 0 && (
-              <div className="flex justify-between text-slate-600 dark:text-slate-400">
+              <div className="flex justify-between text-slate-600">
                 <span>Biaya Platform</span>
-                <span className="font-medium text-slate-800 dark:text-slate-200 tabular-nums">
+                <span className="font-medium text-slate-800 tabular-nums">
                   +{formatCurrency(platformFee)}
                 </span>
               </div>
             )}
 
             {rounding > 0 && (
-              <div className="flex justify-between text-slate-600 dark:text-slate-400">
+              <div className="flex justify-between text-slate-600">
                 <span>Pembulatan (Rounding)</span>
-                <span className="font-medium text-slate-800 dark:text-slate-200 tabular-nums">
+                <span className="font-medium text-slate-800 tabular-nums">
                   +{formatCurrency(rounding)}
                 </span>
               </div>
             )}
 
-            <div className="flex justify-between items-center pt-1.5 border-t border-slate-100 dark:border-slate-800/80">
-              <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">Total</span>
-              <span className="text-sm font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
+            <div className="flex justify-between items-center pt-1.5">
+              <span className="text-sm font-semibold text-slate-900">Total</span>
+              <span className="text-base font-semibold text-[#0e59f9] tabular-nums font-financial">
                 {formatCurrency(grandTotal)}
               </span>
             </div>
@@ -463,13 +464,13 @@ export function OrderPaymentModal({
         {/* Informasi Pembayaran & Status / Payment Processing */}
         {isPaid ? (
           /* Case 1: Order is Already Paid (Detail Pesanan) */
-          <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+          <div className="space-y-3 pt-2 border-t border-slate-100">
             {/* Metadata Grid (Clean 2x2 Grid, Aligned Badges, No Borders, px-2) */}
             <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs">
               <div className="space-y-1">
                 <span className="text-[11px] text-slate-400 font-medium block">Status Pembayaran</span>
                 <div className="flex items-center">
-                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
                     <CheckCircle2 className="w-3 h-3" />
                     Lunas
                   </span>
@@ -479,7 +480,7 @@ export function OrderPaymentModal({
               <div className="space-y-1 text-right flex flex-col items-end">
                 <span className="text-[11px] text-slate-400 font-medium block">Metode Bayar</span>
                 <div className="flex items-center justify-end">
-                  <span className="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                  <span className="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
                     {formatPaymentMethodLabel(order.paymentMethod)}
                   </span>
                 </div>
@@ -488,7 +489,7 @@ export function OrderPaymentModal({
               <div className="space-y-1">
                 <span className="text-[11px] text-slate-400 font-medium block">Tipe Pemesanan</span>
                 <div className="flex items-center">
-                  <span className="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                  <span className="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
                     {orderTypeLabel}
                   </span>
                 </div>
@@ -497,7 +498,7 @@ export function OrderPaymentModal({
               <div className="space-y-1 text-right flex flex-col items-end">
                 <span className="text-[11px] text-slate-400 font-medium block">Kasir / Saluran</span>
                 <div className="flex items-center justify-end">
-                  <span className="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 truncate max-w-full">
+                  <span className="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 truncate max-w-full">
                     {order.source === 'POS' ? 'Kasir Utama' : 'Self Order (QR)'}
                   </span>
                 </div>
@@ -514,7 +515,7 @@ export function OrderPaymentModal({
                   size="sm"
                   onClick={() => onPrintReceipt(order, 'customer')}
                   className={cn(
-                    "h-10 text-xs font-semibold rounded-full border-slate-200/90 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-2xs gap-1.5 cursor-pointer transition-colors",
+                    "h-11 text-xs font-medium rounded-full border-none shadow-md bg-white hover:bg-slate-100 text-slate-700 gap-1.5 cursor-pointer transition-all",
                     (!onStatusChange || !['NEW', 'PROCESSING', 'READY'].includes(order.status)) && "col-span-2"
                   )}
                   title={posSettings?.kitchenPrintEnabled ? "Cetak struk pelanggan & tiket dapur (otomatis aktif dari pengaturan)" : "Cetak struk pelanggan"}
@@ -532,7 +533,7 @@ export function OrderPaymentModal({
                       type="button"
                       disabled={updatingOrderId === order.id}
                       onClick={() => onStatusChange(order.id, 'PROCESSING')}
-                      className="h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-xs font-semibold shadow-xs transition-transform active:scale-98 gap-1.5 cursor-pointer"
+                      className="h-11 bg-[#0e59f9] hover:bg-[#0b4de0] text-white rounded-full text-xs font-semibold shadow-xs transition-transform active:scale-98 gap-1.5 cursor-pointer"
                     >
                       {updatingOrderId === order.id ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
@@ -548,7 +549,7 @@ export function OrderPaymentModal({
                       type="button"
                       disabled={updatingOrderId === order.id}
                       onClick={() => onStatusChange(order.id, 'READY')}
-                      className="h-10 bg-amber-600 hover:bg-amber-700 text-white rounded-full text-xs font-semibold shadow-xs transition-transform active:scale-98 gap-1.5 cursor-pointer"
+                      className="h-11 bg-amber-600 hover:bg-amber-700 text-white rounded-full text-xs font-semibold shadow-xs transition-transform active:scale-98 gap-1.5 cursor-pointer"
                     >
                       {updatingOrderId === order.id ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
@@ -564,7 +565,7 @@ export function OrderPaymentModal({
                       type="button"
                       disabled={updatingOrderId === order.id}
                       onClick={() => onStatusChange(order.id, 'COMPLETED')}
-                      className="h-10 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full text-xs font-semibold shadow-xs transition-transform active:scale-98 gap-1.5 cursor-pointer"
+                      className="h-11 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full text-xs font-semibold shadow-xs transition-transform active:scale-98 gap-1.5 cursor-pointer"
                     >
                       {updatingOrderId === order.id ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
@@ -598,50 +599,79 @@ export function OrderPaymentModal({
           </div>
         ) : (
           /* Case 2: Unpaid Order (Cashier Payment View) */
-          <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800/80">
-            {/* Payment Method Dropdown */}
-            <div className="space-y-1.5">
-              <span className="text-xs font-medium text-slate-500 dark:text-slate-400 block">
-                Metode Pembayaran
-              </span>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-full border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-700 transition-colors cursor-pointer shadow-2xs"
-                  >
-                    <div className="flex items-center gap-2">
-                      <CurrentMethodIcon className="w-4 h-4 text-blue-600" />
-                      <span className="truncate">{currentMethodItem.label}</span>
-                    </div>
-                    <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="start"
-                  className="w-[260px] p-1 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl"
-                >
-                  {paymentMethodDetails.map((method) => {
-                    const Icon = method.icon;
-                    return (
-                      <DropdownMenuItem
-                        key={method.id}
-                        onClick={() => setPaymentMethod(method.id as PaymentMethodOption)}
-                        className={cn(
-                          'text-xs py-2 px-2.5 rounded-lg flex items-center gap-2 font-medium cursor-pointer',
-                          paymentMethod === method.id
-                            ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-300 font-semibold'
-                            : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
-                        )}
-                      >
-                        <Icon className="w-4 h-4 shrink-0 text-slate-500" />
-                        <span>{method.label}</span>
-                      </DropdownMenuItem>
-                    );
-                  })}
-                </DropdownMenuContent>
-              </DropdownMenu>
+          <div className="space-y-3 pt-1">
+            {/* Payment Method Selector Tabs (5 Options: Tunai, QRIS Toko, QR Dinamis, EDC, Transfer) */}
+            <div className="grid grid-cols-5 p-1 bg-white rounded-full gap-1 shadow-md">
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('cash')}
+                className={cn(
+                  "py-2 px-1 rounded-full text-xs font-semibold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer text-center",
+                  paymentMethod === 'cash'
+                    ? "bg-[#0e59f9] text-white shadow-xs"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium"
+                )}
+              >
+                <Banknote className={cn("w-4 h-4 shrink-0", paymentMethod === 'cash' ? "text-white" : "text-slate-500")} />
+                <span className="truncate w-full text-[11px] leading-tight">Tunai</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('qris_static')}
+                className={cn(
+                  "py-2 px-1 rounded-full text-xs font-semibold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer text-center",
+                  paymentMethod === 'qris_static'
+                    ? "bg-[#0e59f9] text-white shadow-xs"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium"
+                )}
+                title="QRIS Statis Toko (Stiker fisik merchant, bebas fee MDR)"
+              >
+                <QrCode className={cn("w-4 h-4 shrink-0", paymentMethod === 'qris_static' ? "text-white" : "text-slate-500")} />
+                <span className="truncate w-full text-[11px] leading-tight">QRIS Toko</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => qrisDynamicEnabled && setPaymentMethod('qris_dynamic')}
+                disabled={!qrisDynamicEnabled}
+                className={cn(
+                  "py-2 px-1 rounded-full text-xs font-semibold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer text-center disabled:opacity-40 disabled:cursor-not-allowed",
+                  paymentMethod === 'qris_dynamic'
+                    ? "bg-[#0e59f9] text-white shadow-xs"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium"
+                )}
+                title={qrisDynamicEnabled
+                  ? "QRIS Dinamis (nominal terkunci otomatis, dikonfirmasi DOKU)"
+                  : "QRIS Dinamis belum aktif untuk outlet ini"}
+              >
+                <QrCode className={cn("w-4 h-4 shrink-0", paymentMethod === 'qris_dynamic' ? "text-white" : "text-[#0e59f9]")} />
+                <span className="truncate w-full text-[11px] leading-tight">QR Dinamis</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('card')}
+                className={cn(
+                  "py-2 px-1 rounded-full text-xs font-semibold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer text-center",
+                  paymentMethod === 'card'
+                    ? "bg-[#0e59f9] text-white shadow-xs"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium"
+                )}
+              >
+                <CreditCard className={cn("w-4 h-4 shrink-0", paymentMethod === 'card' ? "text-white" : "text-slate-500")} />
+                <span className="truncate w-full text-[11px] leading-tight">Kartu EDC</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('transfer')}
+                className={cn(
+                  "py-2 px-1 rounded-full text-xs font-semibold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer text-center",
+                  paymentMethod === 'transfer'
+                    ? "bg-[#0e59f9] text-white shadow-xs"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium"
+                )}
+              >
+                <ArrowRightLeft className={cn("w-4 h-4 shrink-0", paymentMethod === 'transfer' ? "text-white" : "text-slate-500")} />
+                <span className="truncate w-full text-[11px] leading-tight">Transfer</span>
+              </button>
             </div>
 
             {paymentMethod === 'cash' ? (
@@ -649,10 +679,10 @@ export function OrderPaymentModal({
               <div className="space-y-2.5">
                 {/* Amount Display */}
                 <div className="py-1 flex flex-col items-center justify-center">
-                  <div className="text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 tabular-nums flex items-center justify-center">
+                  <div className="text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900 tabular-nums flex items-center justify-center">
                     <span className="text-slate-400 font-normal mr-1 text-xl sm:text-2xl">Rp</span>
                     <span>{cashReceived > 0 ? cashReceived.toLocaleString('id-ID') : '0'}</span>
-                    <span className="w-0.5 h-5 sm:h-6 bg-blue-600 animate-pulse ml-0.5 inline-block" />
+                    <span className="w-0.5 h-5 sm:h-6 bg-[#0e59f9] animate-pulse ml-0.5 inline-block" />
                   </div>
 
                   {/* Kembalian / Kurang Status Badge */}
@@ -661,8 +691,8 @@ export function OrderPaymentModal({
                       className={cn(
                         'mt-1.5 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold',
                         change >= 0
-                          ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
-                          : 'bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
+                          ? 'bg-emerald-50 text-emerald-700'
+                          : 'bg-rose-50 text-rose-700'
                       )}
                     >
                       <span>
@@ -674,102 +704,117 @@ export function OrderPaymentModal({
                   )}
                 </div>
 
-                {/* Preset Chips (Rounded Full) */}
+                {/* Preset Chips (White Pill with shadow-sm-md, active in blue) */}
                 <div className="grid grid-cols-4 gap-1.5">
                   <button
                     type="button"
                     onClick={() => handlePresetAmount(grandTotal)}
-                    className="py-1.5 px-1 rounded-full bg-blue-50/80 hover:bg-blue-100/80 dark:bg-blue-950/50 text-blue-600 dark:text-blue-300 font-semibold text-xs text-center border border-blue-200/60 dark:border-blue-900/40 transition-colors cursor-pointer active:scale-95"
+                    className={cn(
+                      "py-1.5 px-1 rounded-full font-semibold text-xs text-center transition-all cursor-pointer font-financial tabular-nums",
+                      cashReceived === grandTotal
+                        ? "bg-[#0e59f9] text-white shadow-xs"
+                        : "bg-white text-slate-700 hover:text-slate-900 hover:bg-slate-100 shadow-sm-md font-medium"
+                    )}
                   >
                     Uang Pas
                   </button>
-                  {suggestedAmounts.map((amt) => (
-                    <button
-                      key={amt}
-                      type="button"
-                      onClick={() => handlePresetAmount(amt)}
-                      className="py-1.5 px-1 rounded-full bg-slate-100/80 hover:bg-slate-200/80 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium text-xs text-center border border-slate-200/60 dark:border-slate-700/60 transition-colors cursor-pointer active:scale-95 tabular-nums truncate"
-                    >
-                      {formatCurrency(amt)}
-                    </button>
-                  ))}
+                  {suggestedAmounts.map((amt) => {
+                    const isSelected = cashReceived === amt;
+                    return (
+                      <button
+                        key={amt}
+                        type="button"
+                        onClick={() => handlePresetAmount(amt)}
+                        className={cn(
+                          "py-1.5 px-1 rounded-full text-xs text-center transition-all cursor-pointer font-financial tabular-nums truncate",
+                          isSelected
+                            ? "bg-[#0e59f9] text-white shadow-xs font-semibold"
+                            : "bg-white text-slate-700 hover:text-slate-900 hover:bg-slate-100 shadow-sm-md font-medium"
+                        )}
+                      >
+                        {formatCurrency(amt)}
+                      </button>
+                    );
+                  })}
                 </div>
 
                 {/* 3x4 Touch Numpad */}
-                <div className="grid grid-cols-3 gap-1.5">
+                <div className="grid grid-cols-3 gap-1.5 pt-0.5">
                   {['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0', 'BACKSPACE'].map((btn) => (
                     <button
                       key={btn}
                       type="button"
                       onClick={() => handleNumpadInput(btn)}
                       className={cn(
-                        'h-9 sm:h-10 rounded-xl text-base font-medium flex items-center justify-center transition-all active:scale-[0.96] cursor-pointer select-none border border-slate-200/70 dark:border-slate-800 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-2xs',
-                        btn === 'BACKSPACE' && 'text-slate-500 hover:text-slate-800'
+                        'h-10 sm:h-11 rounded-xl text-base font-medium flex items-center justify-center transition-all active:scale-[0.97] cursor-pointer select-none font-financial tabular-nums',
+                        btn === 'BACKSPACE'
+                          ? 'bg-slate-100 text-slate-600 hover:bg-slate-200 active:bg-slate-300'
+                          : 'text-slate-900 hover:bg-slate-100 active:bg-slate-200 font-semibold'
                       )}
                     >
-                      {btn === 'BACKSPACE' ? <Delete className="w-4 h-4 stroke-[2]" /> : btn}
+                      {btn === 'BACKSPACE' ? <Delete className="w-5 h-5 stroke-[2]" /> : btn}
                     </button>
                   ))}
                 </div>
               </div>
             ) : (
-              /* Non-Cash Guidance */
+              /* Non-Cash Guidance (Cardless Clean Layout) */
               <div className="space-y-2 py-1">
                 {paymentMethod === 'qris_static' && (
-                  <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/70 dark:border-slate-800 text-center space-y-1.5">
-                    <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 mx-auto flex items-center justify-center">
-                      <QrCode className="w-4 h-4" />
+                  <div className="py-4 px-3 rounded-xl text-center space-y-2">
+                    <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 mx-auto shadow-sm flex items-center justify-center">
+                      <QrCode className="w-5 h-5" />
                     </div>
-                    <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                    <p className="text-xs font-semibold text-slate-900">
                       QRIS Statis Toko
                     </p>
-                    <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      Arahkan pelanggan memindai QRIS fisik toko nominal{' '}
-                      <span className="font-semibold text-foreground">{formatCurrency(grandTotal)}</span>.
+                    <p className="text-[11px] text-slate-500 max-w-sm mx-auto leading-relaxed font-normal">
+                      Arahkan pelanggan memindai stiker QRIS fisik toko nominal{' '}
+                      <span className="font-semibold text-slate-900 font-financial tabular-nums">{formatCurrency(grandTotal)}</span>.
                     </p>
                   </div>
                 )}
 
                 {paymentMethod === 'qris_dynamic' && (
-                  <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/70 dark:border-slate-800 text-center space-y-1.5">
-                    <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-600 mx-auto flex items-center justify-center">
-                      <QrCode className="w-4 h-4" />
+                  <div className="py-4 px-3 rounded-xl text-center space-y-2">
+                    <div className="w-10 h-10 rounded-full bg-[#0e59f9]/10 text-[#0e59f9] mx-auto shadow-sm flex items-center justify-center">
+                      <QrCode className="w-5 h-5" />
                     </div>
-                    <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                    <p className="text-xs font-semibold text-slate-900">
                       QRIS Dinamis Menuin
                     </p>
-                    <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      Nominal otomatis terkunci sebesar{' '}
-                      <span className="font-semibold text-foreground">{formatCurrency(grandTotal)}</span>.
+                    <p className="text-[11px] text-slate-500 max-w-sm mx-auto leading-relaxed font-normal">
+                      Kode QR akan tampil dengan nominal terkunci{' '}
+                      <span className="font-semibold text-slate-900 font-financial tabular-nums">{formatCurrency(grandTotal)}</span>.
                     </p>
                   </div>
                 )}
 
                 {paymentMethod === 'card' && (
-                  <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/70 dark:border-slate-800 text-center space-y-1.5">
-                    <div className="w-8 h-8 rounded-full bg-amber-50 dark:bg-amber-950/50 text-amber-600 mx-auto flex items-center justify-center">
-                      <CreditCard className="w-4 h-4" />
+                  <div className="py-4 px-3 rounded-xl text-center space-y-2">
+                    <div className="w-10 h-10 rounded-full bg-amber-50 text-amber-600 mx-auto shadow-sm flex items-center justify-center">
+                      <CreditCard className="w-5 h-5" />
                     </div>
-                    <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                    <p className="text-xs font-semibold text-slate-900">
                       Mesin EDC Toko
                     </p>
-                    <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      Gesek atau tap kartu pada EDC untuk nominal{' '}
-                      <span className="font-semibold text-foreground">{formatCurrency(grandTotal)}</span>.
+                    <p className="text-[11px] text-slate-500 max-w-sm mx-auto leading-relaxed font-normal">
+                      Gesek atau tap kartu pada mesin EDC toko untuk nominal{' '}
+                      <span className="font-semibold text-slate-900 font-financial tabular-nums">{formatCurrency(grandTotal)}</span>.
                     </p>
                   </div>
                 )}
 
                 {paymentMethod === 'transfer' && (
-                  <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/70 dark:border-slate-800 text-center space-y-1.5">
-                    <div className="w-8 h-8 rounded-full bg-purple-50 dark:bg-purple-950/50 text-purple-600 mx-auto flex items-center justify-center">
-                      <ArrowRightLeft className="w-4 h-4" />
+                  <div className="py-4 px-3 rounded-xl text-center space-y-2">
+                    <div className="w-10 h-10 rounded-full bg-purple-50 text-purple-600 mx-auto shadow-sm flex items-center justify-center">
+                      <ArrowRightLeft className="w-5 h-5" />
                     </div>
-                    <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                    <p className="text-xs font-semibold text-slate-900">
                       Transfer Bank Manual
                     </p>
-                    <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      Pastikan dana transfer pelanggan sudah masuk mutasi sebelum menyelesaikan.
+                    <p className="text-[11px] text-slate-500 max-w-sm mx-auto leading-relaxed font-normal">
+                      Pastikan dana transfer pelanggan sudah masuk mutasi sebelum menyelesaikan transaksi.
                     </p>
                   </div>
                 )}
@@ -780,14 +825,14 @@ export function OrderPaymentModal({
             <div className="pt-0.5 px-0.5 flex items-center justify-between text-xs">
               <label
                 htmlFor="modal-print-receipt-check"
-                className="flex items-center gap-2 cursor-pointer text-slate-600 dark:text-slate-300 font-medium select-none"
+                className="flex items-center gap-2 cursor-pointer text-slate-600 font-medium select-none"
               >
                 <div
                   className={cn(
-                    'w-4 h-4 rounded border flex items-center justify-center transition-all',
+                    'w-4 h-4 rounded-full flex items-center justify-center transition-all',
                     shouldPrintReceipt
-                      ? 'bg-blue-600 border-blue-600 text-white'
-                      : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900'
+                      ? 'bg-[#0e59f9] text-white shadow-2xs'
+                      : 'border border-slate-300 bg-white'
                   )}
                   onClick={() => setShouldPrintReceipt(!shouldPrintReceipt)}
                 >
@@ -804,13 +849,13 @@ export function OrderPaymentModal({
             </div>
 
             {/* Bottom Action Buttons: Tepat 2 Tombol (Struk Pelanggan & Bayar Sekarang) */}
-            <div className="grid grid-cols-2 gap-2 pt-1">
+            <div className="grid grid-cols-2 gap-2.5 pt-1">
               {onPrintReceipt && (
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => onPrintReceipt(order, 'customer')}
-                  className="h-10 text-xs font-semibold rounded-full border-slate-200/90 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-2xs gap-1.5 cursor-pointer"
+                  className="h-11 text-xs border-none shadow-md rounded-full font-medium bg-white hover:bg-slate-100 text-slate-700 cursor-pointer transition-all gap-1.5"
                   title={posSettings?.kitchenPrintEnabled ? "Cetak struk tagihan & tiket dapur" : "Cetak struk tagihan"}
                 >
                   <Printer className="w-3.5 h-3.5 text-slate-400 shrink-0" />
@@ -822,7 +867,7 @@ export function OrderPaymentModal({
                 onClick={handleSubmitPayment}
                 disabled={!isCashSufficient || isProcessing}
                 className={cn(
-                  "h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-xs font-semibold shadow-xs transition-all active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-1.5",
+                  "h-11 bg-[#0e59f9] hover:bg-[#0b4de0] text-white rounded-full text-xs font-semibold shadow-xs transition-all active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-1.5",
                   !onPrintReceipt && "col-span-2"
                 )}
               >
@@ -832,7 +877,10 @@ export function OrderPaymentModal({
                     <span className="truncate">Memproses...</span>
                   </>
                 ) : (
-                  <span className="truncate">Bayar Sekarang</span>
+                  <>
+                    <Check className="w-4 h-4 stroke-[2.5]" />
+                    <span className="truncate">{paymentMethod === 'qris_dynamic' ? 'Tampilkan QR (Enter)' : 'Bayar Sekarang (Enter)'}</span>
+                  </>
                 )}
               </Button>
             </div>

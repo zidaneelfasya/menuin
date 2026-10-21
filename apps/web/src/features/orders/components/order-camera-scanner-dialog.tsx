@@ -9,6 +9,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Camera, VideoOff } from "lucide-react";
 
 export interface OrderCameraScannerDialogProps {
@@ -286,17 +287,17 @@ export function OrderCameraScannerDialog({
         }
       }}
     >
-      <DialogContent className="max-w-xs sm:max-w-sm rounded-3xl p-5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden">
+      <DialogContent className="max-w-xs sm:max-w-sm rounded-3xl p-5 bg-white border-none shadow-xl overflow-hidden">
         <DialogHeader className="space-y-1">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
               <Camera className="w-4 h-4 stroke-[2.2]" />
             </div>
             <div>
-              <DialogTitle className="text-base font-semibold tracking-tight text-foreground">
+              <DialogTitle className="text-base font-semibold tracking-tight text-slate-900">
                 Pindai QR Pesanan
               </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground">
+              <DialogDescription className="text-xs text-slate-500">
                 Arahkan kamera ke QR code pesanan pelanggan di kasir.
               </DialogDescription>
             </div>
@@ -304,7 +305,7 @@ export function OrderCameraScannerDialog({
         </DialogHeader>
 
         {/* Viewfinder Area */}
-        <div className="relative my-2 w-full aspect-square max-w-[270px] mx-auto rounded-2xl overflow-hidden bg-slate-900 border border-slate-700/60 shadow-inner flex items-center justify-center">
+        <div className="relative my-2 w-full aspect-square max-w-[270px] mx-auto rounded-2xl overflow-hidden bg-slate-900 shadow-inner flex items-center justify-center">
           {/* Direct HTML5 Video Stream Node */}
           <video
             ref={videoRef}
@@ -346,7 +347,7 @@ export function OrderCameraScannerDialog({
         {/* Camera Selector (If multiple cameras exist) */}
         {cameras.length > 1 && !cameraError && (
           <div className="flex items-center justify-between text-xs px-1">
-            <span className="text-muted-foreground">Pilih Kamera:</span>
+            <span className="text-slate-500">Pilih Kamera:</span>
             <select
               value={selectedCameraId}
               onChange={(e) => {
@@ -354,7 +355,7 @@ export function OrderCameraScannerDialog({
                 setSelectedCameraId(newCameraId);
                 startCamera(newCameraId);
               }}
-              className="text-xs font-semibold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 max-w-[170px] truncate"
+              className="text-xs font-semibold bg-white border-none shadow-sm-md rounded-full px-3 py-1.5 max-w-[170px] truncate cursor-pointer outline-none text-slate-700"
             >
               {cameras.map((c, i) => (
                 <option key={c.id} value={c.id}>
@@ -365,14 +366,15 @@ export function OrderCameraScannerDialog({
           </div>
         )}
 
-        {/* Action Button */}
-        <button
+        {/* Action Button: Pill shape with shadow-md */}
+        <Button
           type="button"
+          variant="outline"
           onClick={handleClose}
-          className="w-full h-9 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-foreground font-semibold text-xs transition-colors cursor-pointer"
+          className="w-full h-11 rounded-full bg-white hover:bg-slate-100 text-slate-700 font-medium text-xs border-none shadow-md transition-all cursor-pointer"
         >
           Tutup
-        </button>
+        </Button>
       </DialogContent>
     </Dialog>
   );

@@ -246,11 +246,9 @@ export const STATUS_CONFIG_MAP: Record<string, StatusConfigItem> = {
 		actionText: "Bayar",
 		icon: <CreditCard className="w-3.5 h-3.5 text-white" />,
 		accentColor: {
-			badge:
-				"bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200",
-			iconBg: "bg-slate-900 dark:bg-slate-700",
-			button:
-				"bg-slate-900 hover:bg-black text-white dark:bg-slate-100 dark:hover:bg-white dark:text-slate-900 shadow-xs",
+			badge: "bg-slate-100 text-slate-800",
+			iconBg: "bg-slate-900",
+			button: "bg-slate-900 hover:bg-black text-white shadow-xs",
 		},
 	},
 	NEW: {
@@ -260,8 +258,8 @@ export const STATUS_CONFIG_MAP: Record<string, StatusConfigItem> = {
 		actionText: "Mulai Siapkan",
 		icon: <Clock className="w-3.5 h-3.5 text-white" />,
 		accentColor: {
-			badge: "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300",
-			iconBg: "bg-blue-600 dark:bg-blue-500",
+			badge: "bg-blue-50 text-blue-700",
+			iconBg: "bg-blue-600",
 			button: "bg-blue-600 hover:bg-blue-700 text-white",
 		},
 	},
@@ -272,7 +270,7 @@ export const STATUS_CONFIG_MAP: Record<string, StatusConfigItem> = {
 		actionText: "Tandai Siap",
 		icon: <ChefHat className="w-3.5 h-3.5 text-white" />,
 		accentColor: {
-			badge: "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300",
+			badge: "bg-amber-50 text-amber-700",
 			iconBg: "bg-amber-500",
 			button: "bg-amber-600 hover:bg-amber-700 text-white",
 		},
@@ -284,8 +282,8 @@ export const STATUS_CONFIG_MAP: Record<string, StatusConfigItem> = {
 		actionText: "Selesaikan",
 		icon: <Check className="w-3.5 h-3.5 text-white stroke-[2.5]" />,
 		accentColor: {
-			badge: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300",
-			iconBg: "bg-emerald-600 dark:bg-emerald-500",
+			badge: "bg-emerald-50 text-emerald-700",
+			iconBg: "bg-emerald-600",
 			button: "bg-emerald-600 hover:bg-emerald-700 text-white",
 		},
 	},
@@ -334,12 +332,12 @@ const OrderCard = React.memo(function OrderCard({
 	return (
 		<div
 			onClick={onSelect}
-			className="group cursor-pointer bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-2xs flex flex-col justify-between gap-3 relative transition-colors"
+			className="group cursor-pointer bg-white shadow-md rounded-2xl p-4 flex flex-col justify-between gap-3 relative transition-colors"
 		>
 			<div>
 				{/* Status Header: Displayed at the very top of the card on List Card mode */}
 				{showStatusHeader && (
-					<div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-slate-100 dark:border-slate-800/80">
+					<div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-slate-100">
 						<div className="flex items-center gap-2 min-w-0">
 							<div
 								className={cn(
@@ -368,34 +366,34 @@ const OrderCard = React.memo(function OrderCard({
 				<div className="space-y-1">
 					{/* Baris 1: Nama Pelanggan (kiri) sejajar dengan Nomor Antrean (kanan) */}
 					<div className="flex items-baseline justify-between gap-2">
-						<span className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate leading-snug">
+						<span className="text-sm font-semibold text-slate-900 truncate leading-snug">
 							{order.customerName || "Tamu / Umum"}
 						</span>
-						<span className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-tight tabular-nums shrink-0">
+						<span className="text-sm font-semibold text-slate-900 tracking-tight tabular-nums shrink-0">
 							{queueLabel}
 						</span>
 					</div>
 
 					{/* Baris 2: Nomor Order/Struk (kiri) sejajar dengan Nomor Meja / Order Type (kanan) */}
 					<div className="flex items-center justify-between gap-2">
-						<span className="text-[12px] text-slate-500 dark:text-slate-400 font-sans font-medium">
+						<span className="text-[12px] text-slate-500 font-sans font-medium">
 							#{order.orderNumber || "-"}
 						</span>
-						<span className="inline-flex items-center text-[11px] font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md tracking-tight shrink-0">
+						<span className="inline-flex items-center text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md tracking-tight shrink-0">
 							{tableDisplay}
 						</span>
 					</div>
 				</div>
 
 				{/* Date and Time Row */}
-				<div className="flex items-center justify-between text-xs text-slate-400 dark:text-slate-500 font-medium pt-2 pb-1">
+				<div className="flex items-center justify-between text-xs text-slate-400 font-medium pt-2 pb-1">
 					<span>{formatOrderFullDate(order.createdAt)}</span>
 					<span>{formatOrderTime(order.createdAt)}</span>
 				</div>
 
 				{/* Items List Table (Header: Items, Qty, Price) */}
-				<div className="pt-2 border-t border-slate-100 dark:border-slate-800/80">
-					<div className="grid grid-cols-12 text-[10px] font-medium text-slate-400 dark:text-slate-500 pb-1 border-b border-slate-100 dark:border-slate-800/80 px-1">
+				<div className="pt-2 border-t border-slate-100">
+					<div className="grid grid-cols-12 text-[10px] font-medium text-slate-400 pb-1 border-b border-slate-100 px-1">
 						<span className="col-span-7">Items</span>
 						<span className="col-span-2 text-center">Qty</span>
 						<span className="col-span-3 text-right">Price</span>
@@ -418,7 +416,7 @@ const OrderCard = React.memo(function OrderCard({
 							order.items.map((item) => (
 								<div
 									key={item.id}
-									className="grid grid-cols-12 items-center text-xs py-1 px-1 group/item cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded transition-colors"
+									className="grid grid-cols-12 items-center text-xs py-1 px-1 group/item cursor-pointer hover:bg-slate-100 rounded transition-colors"
 									onClick={(e) => {
 										e.stopPropagation();
 										onToggleItem(item.id, !item.isCompleted);
@@ -431,7 +429,7 @@ const OrderCard = React.memo(function OrderCard({
 												"w-3.5 h-3.5 rounded-[4px] border flex items-center justify-center shrink-0 transition-colors",
 												item.isCompleted
 													? "bg-blue-600 border-blue-600 text-white"
-													: "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 opacity-70 group-hover/item:opacity-100",
+													: "border-slate-300 bg-white opacity-70 group-hover/item:opacity-100",
 											)}
 										>
 											{item.isCompleted && (
@@ -442,17 +440,17 @@ const OrderCard = React.memo(function OrderCard({
 											className={cn(
 												"truncate text-xs leading-tight",
 												item.isCompleted
-													? "line-through text-slate-400 dark:text-slate-500"
-													: "text-slate-800 dark:text-slate-200 font-normal",
+													? "line-through text-slate-400"
+													: "text-slate-800 font-normal",
 											)}
 										>
 											{item.productName}
 										</span>
 									</div>
-									<span className="col-span-2 text-center text-xs font-medium text-slate-600 dark:text-slate-400 tabular-nums">
+									<span className="col-span-2 text-center text-xs font-medium text-slate-600 tabular-nums">
 										{item.quantity}
 									</span>
-									<span className="col-span-3 text-right text-xs font-medium text-slate-700 dark:text-slate-300 tabular-nums">
+									<span className="col-span-3 text-right text-xs font-medium text-slate-700 tabular-nums">
 										{formatCurrency(Number(item.subtotal || 0))}
 									</span>
 								</div>
@@ -463,12 +461,12 @@ const OrderCard = React.memo(function OrderCard({
 			</div>
 
 			{/* Total & Action Buttons */}
-			<div className="pt-2 border-t border-slate-100 dark:border-slate-800/80">
+			<div className="pt-2 border-t border-slate-100">
 				<div className="flex items-center justify-between">
-					<span className="text-sm font-medium text-slate-900 dark:text-slate-100">
+					<span className="text-sm font-medium text-slate-900">
 						Total
 					</span>
-					<span className="text-sm font-medium text-slate-900 dark:text-slate-100 tabular-nums">
+					<span className="text-sm font-medium text-slate-900 tabular-nums">
 						{formatCurrency(Number(order.grandTotal))}
 					</span>
 				</div>
@@ -504,13 +502,13 @@ const OrderCard = React.memo(function OrderCard({
 
 				{/* Quick online payment check if order is PENDING ONLINE */}
 				{isPendingOnline && onCheckOnlinePayment && (
-					<div className="mt-2 pt-1.5 border-t border-dashed border-slate-100 dark:border-slate-800">
+					<div className="mt-2 pt-1.5 border-t border-dashed border-slate-100">
 						<Button
 							size="sm"
 							variant="outline"
 							onClick={onCheckOnlinePayment}
 							disabled={isSyncingOnline}
-							className="w-full h-7 text-[11px] px-2 border-blue-200 hover:bg-blue-50 text-blue-700 dark:border-blue-900 dark:text-blue-300 rounded-full cursor-pointer"
+							className="w-full h-7 text-[11px] px-2 border-blue-200 hover:bg-blue-50 text-blue-700 rounded-full cursor-pointer"
 						>
 							{isSyncingOnline ? (
 								<Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
@@ -1430,7 +1428,7 @@ export function KanbanBoard({
 			<div
 				key={status}
 				className={cn(
-					"flex-1 min-w-[320px] bg-white dark:bg-slate-900/40 rounded-t-2xl rounded-b-none pt-3 px-3 pb-0 flex flex-col h-full min-h-0",
+					"flex-1 min-w-[320px] bg-white rounded-t-2xl rounded-b-none pt-3 px-3 pb-0 flex flex-col h-full min-h-0",
 					statusFilter === "ALL" ? "max-w-[390px]" : "max-w-[450px]",
 				)}
 			>
@@ -1450,7 +1448,7 @@ export function KanbanBoard({
 						</h3>
 					</div>
 					<div className="flex items-center gap-1.5">
-						<span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 tabular-nums">
+						<span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 tabular-nums">
 							{columnOrders.length}
 						</span>
 						{status !== "PENDING" && (
@@ -1468,7 +1466,7 @@ export function KanbanBoard({
 								className={`h-6 w-6 rounded-full flex items-center justify-center transition-all ${
 									columnOrders.length === 0
 										? "opacity-25 cursor-not-allowed text-slate-400"
-										: "text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xs active:scale-90 hover:border-emerald-300 cursor-pointer"
+										: "text-emerald-600 hover:bg-emerald-50 border-none bg-white shadow-sm-md active:scale-90 cursor-pointer"
 								}`}
 								title={`Selesaikan/Lanjutkan semua pesanan pada status "${title}" ke "${getNextStatusTitle(nextStatus)}"`}
 							>
@@ -1544,7 +1542,7 @@ export function KanbanBoard({
 			/>
 
 			{/* Zone 1: Status Filter Tabs & Header Toolbar Row (Universal Design System) */}
-			<div className="flex flex-col lg:flex-row lg:items-center justify-between border-b border-slate-200 dark:border-slate-800 gap-3 sm:gap-4 shrink-0">
+			<div className="flex flex-col lg:flex-row lg:items-center justify-between border-b border-slate-200 gap-3 sm:gap-4 shrink-0">
 				{/* Left: Underline Status Filter Tabs */}
 				<div className="flex items-center gap-6 overflow-x-auto no-scrollbar pt-1">
 					{statusTabs.map((tab) => {
@@ -1557,8 +1555,8 @@ export function KanbanBoard({
 								className={cn(
 									"relative pb-3 text-xs sm:text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer whitespace-nowrap",
 									isActive
-										? "text-blue-600 dark:text-blue-400 font-semibold"
-										: "text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400",
+										? "text-blue-600 font-semibold"
+										: "text-slate-500 hover:text-blue-600",
 								)}
 							>
 								<span>{tab.label}</span>
@@ -1566,8 +1564,8 @@ export function KanbanBoard({
 									className={cn(
 										"text-xs px-2 py-0.5 rounded-lg font-medium transition-colors",
 										isActive
-											? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300"
-											: "text-slate-400 dark:text-slate-500",
+											? "bg-blue-50 text-blue-700"
+											: "text-slate-400",
 									)}
 								>
 									{tab.count}
@@ -1575,7 +1573,7 @@ export function KanbanBoard({
 								{isActive && (
 									<motion.div
 										layoutId="activeKanbanStatusTabUnderline"
-										className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-500 rounded-full"
+										className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full"
 										transition={{
 											type: "spring",
 											stiffness: 450,
@@ -1598,7 +1596,7 @@ export function KanbanBoard({
 							placeholder="Cari meja, no order, nama..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							className="pl-9 pr-8 h-9 text-xs rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus-visible:ring-blue-600 shadow-2xs"
+							className="pl-9 pr-8 h-9 text-xs rounded-full bg-white border-none focus-visible:ring-blue-600 shadow-sm-md"
 						/>
 						{searchQuery && (
 							<button
@@ -1619,7 +1617,7 @@ export function KanbanBoard({
 								type="button"
 								variant="outline"
 								size="icon"
-								className="relative h-9 w-9 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-2xs shrink-0 rounded-xl cursor-pointer"
+								className="relative h-9 w-9 border-none shadow-sm-md bg-white hover:bg-slate-100 text-slate-700 shrink-0 rounded-full cursor-pointer"
 								title={
 									isAllSelected
 										? "Pengaturan Tampilan & Filter"
@@ -1628,17 +1626,17 @@ export function KanbanBoard({
 							>
 								<SlidersHorizontal className="w-4 h-4 text-slate-500 shrink-0" />
 								{!isAllSelected && (
-									<span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-blue-600 rounded-full ring-2 ring-white dark:ring-slate-900" />
+									<span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-blue-600 rounded-full ring-2 ring-white" />
 								)}
 								<span className="sr-only">Pengaturan Tampilan & Filter</span>
 							</Button>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent
 							align="end"
-							className="w-56 p-2 rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl space-y-0.5"
+							className="w-56 p-2 rounded-2xl border-none bg-white shadow-xl space-y-0.5"
 						>
 							{/* Seksi 1: Mode Tampilan */}
-							<div className="px-3 py-1 text-xs font-semibold text-slate-500 dark:text-slate-400">
+							<div className="px-3 py-1 text-xs font-semibold text-slate-500">
 								Mode Tampilan
 							</div>
 							<DropdownMenuItem
@@ -1647,7 +1645,7 @@ export function KanbanBoard({
 									"text-xs px-3 py-2 cursor-pointer rounded-full font-medium flex items-center transition-colors",
 									viewMode === "kanban"
 										? "bg-blue-600 text-white font-semibold shadow-2xs hover:bg-blue-500 focus:bg-blue-500 focus:text-white data-[highlighted]:bg-blue-500 data-[highlighted]:text-white"
-										: "text-slate-700 dark:text-slate-200 hover:bg-slate-100 hover:text-slate-900 focus:bg-slate-100 focus:text-slate-900 data-[highlighted]:bg-slate-100 data-[highlighted]:text-slate-900 dark:hover:bg-slate-800 dark:focus:bg-slate-800 dark:data-[highlighted]:bg-slate-800",
+										: "text-slate-700 hover:bg-slate-100 hover:text-slate-900 focus:bg-slate-100 focus:text-slate-900 data-[highlighted]:bg-slate-100 data-[highlighted]:text-slate-900",
 								)}
 							>
 								<div className="flex items-center gap-2">
@@ -1666,7 +1664,7 @@ export function KanbanBoard({
 									"text-xs px-3 py-2 cursor-pointer rounded-full font-medium flex items-center transition-colors",
 									viewMode === "list"
 										? "bg-blue-600 text-white font-semibold shadow-2xs hover:bg-blue-500 focus:bg-blue-500 focus:text-white data-[highlighted]:bg-blue-500 data-[highlighted]:text-white"
-										: "text-slate-700 dark:text-slate-200 hover:bg-slate-100 hover:text-slate-900 focus:bg-slate-100 focus:text-slate-900 data-[highlighted]:bg-slate-100 data-[highlighted]:text-slate-900 dark:hover:bg-slate-800 dark:focus:bg-slate-800 dark:data-[highlighted]:bg-slate-800",
+										: "text-slate-700 hover:bg-slate-100 hover:text-slate-900 focus:bg-slate-100 focus:text-slate-900 data-[highlighted]:bg-slate-100 data-[highlighted]:text-slate-900",
 								)}
 							>
 								<div className="flex items-center gap-2">
@@ -1680,17 +1678,17 @@ export function KanbanBoard({
 								</div>
 							</DropdownMenuItem>
 
-							<DropdownMenuSeparator className="my-1.5 bg-slate-100 dark:bg-slate-800" />
+							<DropdownMenuSeparator className="my-1.5 bg-slate-100" />
 
 							{/* Seksi 2: Jenis Pesanan */}
-							<div className="px-3 py-1 text-xs font-semibold text-slate-500 dark:text-slate-400">
+							<div className="px-3 py-1 text-xs font-semibold text-slate-500">
 								Jenis Pesanan
 							</div>
 							<DropdownMenuCheckboxItem
 								checked={isAllSelected}
 								onCheckedChange={toggleSelectAll}
 								onSelect={(e) => e.preventDefault()}
-								className="text-xs py-1.5 pl-8 pr-3 cursor-pointer rounded-full font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 hover:text-slate-900 focus:bg-slate-100 focus:text-slate-900 data-[highlighted]:bg-slate-100 data-[highlighted]:text-slate-900 dark:hover:bg-slate-800 dark:focus:bg-slate-800 dark:data-[highlighted]:bg-slate-800 transition-colors"
+								className="text-xs py-1.5 pl-8 pr-3 cursor-pointer rounded-full font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 focus:bg-slate-100 focus:text-slate-900 data-[highlighted]:bg-slate-100 data-[highlighted]:text-slate-900 transition-colors"
 							>
 								Semua Jenis
 							</DropdownMenuCheckboxItem>
@@ -1698,7 +1696,7 @@ export function KanbanBoard({
 								checked={selectedTypes.includes("DINE_IN")}
 								onCheckedChange={() => toggleType("DINE_IN")}
 								onSelect={(e) => e.preventDefault()}
-								className="text-xs py-1.5 pl-8 pr-3 cursor-pointer rounded-full font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 hover:text-slate-900 focus:bg-slate-100 focus:text-slate-900 data-[highlighted]:bg-slate-100 data-[highlighted]:text-slate-900 dark:hover:bg-slate-800 dark:focus:bg-slate-800 dark:data-[highlighted]:bg-slate-800 transition-colors"
+								className="text-xs py-1.5 pl-8 pr-3 cursor-pointer rounded-full font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 focus:bg-slate-100 focus:text-slate-900 data-[highlighted]:bg-slate-100 data-[highlighted]:text-slate-900 transition-colors"
 							>
 								Dine In (Meja)
 							</DropdownMenuCheckboxItem>
@@ -1706,7 +1704,7 @@ export function KanbanBoard({
 								checked={selectedTypes.includes("TAKEAWAY")}
 								onCheckedChange={() => toggleType("TAKEAWAY")}
 								onSelect={(e) => e.preventDefault()}
-								className="text-xs py-1.5 pl-8 pr-3 cursor-pointer rounded-full font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 hover:text-slate-900 focus:bg-slate-100 focus:text-slate-900 data-[highlighted]:bg-slate-100 data-[highlighted]:text-slate-900 dark:hover:bg-slate-800 dark:focus:bg-slate-800 dark:data-[highlighted]:bg-slate-800 transition-colors"
+								className="text-xs py-1.5 pl-8 pr-3 cursor-pointer rounded-full font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 focus:bg-slate-100 focus:text-slate-900 data-[highlighted]:bg-slate-100 data-[highlighted]:text-slate-900 transition-colors"
 							>
 								Bawa Pulang
 							</DropdownMenuCheckboxItem>
@@ -1714,7 +1712,7 @@ export function KanbanBoard({
 								checked={selectedTypes.includes("ONLINE")}
 								onCheckedChange={() => toggleType("ONLINE")}
 								onSelect={(e) => e.preventDefault()}
-								className="text-xs py-1.5 cursor-pointer rounded-full font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 hover:text-slate-900 focus:bg-slate-100 focus:text-slate-900 data-[highlighted]:bg-slate-100 data-[highlighted]:text-slate-900 dark:hover:bg-slate-800 dark:focus:bg-slate-800 dark:data-[highlighted]:bg-slate-800 transition-colors"
+								className="text-xs py-1.5 pl-8 pr-3 cursor-pointer rounded-full font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 focus:bg-slate-100 focus:text-slate-900 data-[highlighted]:bg-slate-100 data-[highlighted]:text-slate-900 transition-colors"
 							>
 								Online
 							</DropdownMenuCheckboxItem>
@@ -1727,7 +1725,7 @@ export function KanbanBoard({
 						variant="outline"
 						size="icon"
 						onClick={() => setIsCameraScannerOpen(true)}
-						className="h-9 w-9 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-2xs shrink-0 rounded-xl cursor-pointer"
+						className="h-9 w-9 border-none bg-white hover:bg-slate-100 text-slate-700 shadow-sm-md shrink-0 rounded-full cursor-pointer"
 						title="Scan QR pesanan"
 					>
 						<Camera className="w-4 h-4 text-slate-500 shrink-0" />
@@ -1741,7 +1739,7 @@ export function KanbanBoard({
 						size="icon"
 						onClick={handleRefresh}
 						disabled={isRefreshing}
-						className="h-9 w-9 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-2xs shrink-0 rounded-xl active:scale-95 disabled:opacity-50 cursor-pointer"
+						className="h-9 w-9 border-none bg-white hover:bg-slate-100 text-slate-700 shadow-sm-md shrink-0 rounded-full active:scale-95 disabled:opacity-50 cursor-pointer"
 						title="Refresh antrean pesanan"
 					>
 						<RefreshCw
@@ -1774,11 +1772,11 @@ export function KanbanBoard({
 				/* List Card Grid (Sorted by entry into queue - FIFO) */
 				<div className="flex-1 min-h-0 overflow-y-auto pb-4 scrollbar-hide">
 					{listOrders.length === 0 ? (
-						<div className="h-64 flex flex-col items-center justify-center text-center p-6 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
-							<div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 mb-3">
+						<div className="h-64 flex flex-col items-center justify-center text-center p-6 border-2 border-dashed border-slate-200 rounded-2xl">
+							<div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
 								<LayoutGrid className="w-6 h-6" />
 							</div>
-							<p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+							<p className="text-sm font-semibold text-slate-700">
 								Tidak ada antrean pesanan
 							</p>
 							<p className="text-xs text-muted-foreground mt-1 max-w-xs">
@@ -1854,14 +1852,14 @@ export function KanbanBoard({
 					}
 				}}
 			>
-				<DialogContent className="sm:max-w-md bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
-					<DialogHeader className="border-b pb-3 border-slate-100 dark:border-slate-800">
-						<div className="flex items-center gap-2.5">
-							<div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 flex items-center justify-center shrink-0">
+				<DialogContent className="sm:max-w-md bg-white border-none shadow-2xl rounded-3xl p-6 text-slate-900">
+					<DialogHeader>
+						<div className="flex items-center gap-3">
+							<div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
 								<CheckCheck className="w-5 h-5" />
 							</div>
 							<div>
-								<DialogTitle className="text-base font-semibold text-slate-900 dark:text-slate-100">
+								<DialogTitle className="text-base font-semibold text-slate-900">
 									Lanjutkan Semua Pesanan?
 								</DialogTitle>
 								<DialogDescription className="text-xs text-slate-500">
@@ -1872,10 +1870,10 @@ export function KanbanBoard({
 						</div>
 					</DialogHeader>
 
-					<div className="py-3 space-y-3">
-						<p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+					<div className="py-2 space-y-3">
+						<p className="text-xs text-slate-600 leading-relaxed">
 							Apakah Anda yakin untuk menyelesaikan semua pesanan pada status{" "}
-							<span className="text-slate-900 dark:text-slate-100 font-semibold">
+							<span className="text-slate-900 font-semibold">
 								"{bulkModalState.currentStatusTitle}"
 							</span>{" "}
 							sebanyak{" "}
@@ -1890,7 +1888,7 @@ export function KanbanBoard({
 						</p>
 
 						{/* List of Affected Orders */}
-						<div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl p-3 space-y-2">
+						<div className="bg-slate-50 rounded-2xl p-3 space-y-2">
 							<div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
 								Daftar Pesanan ({bulkModalState.orders.length})
 							</div>
@@ -1898,18 +1896,18 @@ export function KanbanBoard({
 								{bulkModalState.orders.map((o) => (
 									<div
 										key={o.id}
-										className="flex items-center justify-between p-1.5 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800"
+										className="flex items-center justify-between p-2 rounded-xl bg-white shadow-sm-md"
 									>
 										<div className="flex items-center gap-2">
-											<span className="font-sans text-[11px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
+											<span className="font-sans text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-800">
 												{o.orderNumber || "#-"}
 											</span>
-											<span className="text-slate-700 dark:text-slate-300 font-medium truncate max-w-[160px]">
+											<span className="text-slate-700 font-medium truncate max-w-[160px]">
 												{o.customerName ||
 													(o.tableNumber ? `Meja ${o.tableNumber}` : "Pesanan")}
 											</span>
 										</div>
-										<span className="text-[11px] font-semibold text-slate-500">
+										<span className="text-[11px] font-semibold text-slate-600">
 											{formatCurrency(Number(o.grandTotal))}
 										</span>
 									</div>
@@ -1918,7 +1916,7 @@ export function KanbanBoard({
 						</div>
 					</div>
 
-					<DialogFooter className="gap-2 sm:gap-0 border-t pt-3 border-slate-100 dark:border-slate-800">
+					<DialogFooter className="grid grid-cols-2 gap-2.5 pt-2">
 						<Button
 							type="button"
 							variant="outline"
@@ -1926,7 +1924,7 @@ export function KanbanBoard({
 								setBulkModalState((prev) => ({ ...prev, isOpen: false }))
 							}
 							disabled={isBulkUpdating}
-							className="border-slate-200 dark:border-slate-800 text-xs font-medium rounded-full h-9 px-4 cursor-pointer"
+							className="h-11 text-xs font-medium rounded-full bg-white hover:bg-slate-100 text-slate-700 border-none shadow-md cursor-pointer transition-all"
 						>
 							Batal
 						</Button>
@@ -1934,7 +1932,7 @@ export function KanbanBoard({
 							type="button"
 							onClick={handleConfirmBulkAdvance}
 							disabled={isBulkUpdating}
-							className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-full h-9 px-4 flex items-center gap-1.5 cursor-pointer shadow-xs"
+							className="h-11 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-full shadow-xs cursor-pointer flex items-center justify-center gap-1.5 transition-all"
 						>
 							{isBulkUpdating ? (
 								<>
@@ -1943,9 +1941,9 @@ export function KanbanBoard({
 								</>
 							) : (
 								<>
-									<Check className="w-3.5 h-3.5 stroke-[2.5]" />
+									<Check className="w-4 h-4 stroke-[2.5]" />
 									<span>
-										Ya, Lanjutkan Semua ({bulkModalState.orders.length})
+										Ya, Lanjutkan ({bulkModalState.orders.length})
 									</span>
 								</>
 							)}

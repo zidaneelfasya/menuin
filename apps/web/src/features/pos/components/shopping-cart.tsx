@@ -239,35 +239,35 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
   const isOjolType = ['GRABFOOD', 'SHOPEEFOOD', 'GOFOOD', 'DELIVERY'].includes(orderType);
 
   return (
-    <div className="flex flex-col h-full bg-card border border-[#EAEFF8] rounded-2xl shadow-xs overflow-hidden">
+    <div className="flex flex-col h-full bg-card dark:border-slate-800 rounded-2xl shadow-md dark:shadow-[0_4px_24px_rgba(0,0,0,0.5)] overflow-hidden">
       {/* 1. ORDER CONFIGURATION HEADER */}
-      <div className="p-3 sm:p-3.5 border-b border-[#EAEFF8] bg-slate-50/50 space-y-2.5">
-        {/* Order Type Segmented Switcher */}
-        <div className="grid grid-cols-3 p-1 bg-slate-100 rounded-xl gap-1 text-xs border border-[#EAEFF8]">
+      <div className="p-3 sm:p-3.5 bg-white space-y-2.5">
+        {/* Order Type Segmented Switcher (White Rounded-Full with Shadow) */}
+        <div className="grid grid-cols-3 p-1 bg-white dark:bg-slate-900 rounded-full gap-1 text-xs shadow-md dark:border-slate-800">
           <button
             type="button"
             onClick={() => setOrderType('DINE_IN')}
             className={cn(
-              "py-1.5 px-2 rounded-lg font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer",
+              "py-1.5 px-2 rounded-full font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer text-xs",
               orderType === 'DINE_IN'
-                ? "bg-white text-[#0e59f9] shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
+                ? "bg-blue-600 text-white shadow-xs"
+                : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/60 font-medium"
             )}
           >
-            <UtensilsCrossed className="w-3.5 h-3.5" />
+            <UtensilsCrossed className={cn("w-3.5 h-3.5", orderType === 'DINE_IN' ? "text-white" : "text-slate-500")} />
             <span>Dine-In</span>
           </button>
           <button
             type="button"
             onClick={() => setOrderType('TAKEAWAY')}
             className={cn(
-              "py-1.5 px-2 rounded-lg font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer",
+              "py-1.5 px-2 rounded-full font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer text-xs",
               orderType === 'TAKEAWAY'
-                ? "bg-white text-[#0e59f9] shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
+                ? "bg-blue-600 text-white shadow-xs"
+                : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/60 font-medium"
             )}
           >
-            <ShoppingBag className="w-3.5 h-3.5" />
+            <ShoppingBag className={cn("w-3.5 h-3.5", orderType === 'TAKEAWAY' ? "text-white" : "text-slate-500")} />
             <span>Takeaway</span>
           </button>
           <button
@@ -276,20 +276,20 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
               if (!isOjolType) setOrderType('GRABFOOD');
             }}
             className={cn(
-              "py-1.5 px-2 rounded-lg font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer",
+              "py-1.5 px-2 rounded-full font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer text-xs",
               isOjolType
-                ? "bg-white text-[#0e59f9] shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
+                ? "bg-blue-600 text-white shadow-xs"
+                : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/60 font-medium"
             )}
           >
-            <Bike className="w-3.5 h-3.5" />
+            <Bike className={cn("w-3.5 h-3.5", isOjolType ? "text-white" : "text-slate-500")} />
             <span>Ojol / Antar</span>
           </button>
         </div>
 
-        {/* Sub-channel picker for Ojol/Delivery */}
+        {/* Sub-channel picker for Ojol/Delivery (Blue Pill Active with White Text, Full Width Grid) */}
         {isOjolType && (
-          <div className="flex gap-1.5 overflow-x-auto pb-0.5 pt-0.5 scrollbar-hide text-[11px]">
+          <div className="grid grid-cols-4 gap-1.5 w-full text-xs">
             {[
               { id: 'GRABFOOD', label: 'GrabFood' },
               { id: 'SHOPEEFOOD', label: 'ShopeeFood' },
@@ -301,10 +301,10 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
                 type="button"
                 onClick={() => setOrderType(sub.id)}
                 className={cn(
-                  "px-2.5 py-1 rounded-md font-medium border transition-colors whitespace-nowrap",
+                  "w-full py-1.5 px-1 rounded-full font-semibold transition-all whitespace-nowrap cursor-pointer text-xs text-center flex items-center justify-center truncate",
                   orderType === sub.id
-                    ? "bg-[#0e59f9]/10 text-[#0e59f9] border-[#0e59f9]/30 font-semibold"
-                    : "bg-white text-slate-600 border-[#EAEFF8] hover:bg-slate-50"
+                    ? "bg-blue-600 text-white border border-blue-600 shadow-xs"
+                    : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-800 dark:hover:bg-slate-800 font-medium"
                 )}
               >
                 {sub.label}
@@ -313,7 +313,7 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
           </div>
         )}
 
-        {/* Customer & Table Inputs */}
+        {/* Customer & Table Inputs (Clean Rounded-Full Inputs) */}
         <div className="flex items-center gap-2">
           {orderType === 'DINE_IN' && (
             <div className="w-24 sm:w-28 shrink-0">
@@ -324,7 +324,7 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
                 placeholder="No. Meja *"
                 value={tableNumber}
                 onChange={(e) => setTableNumber(e.target.value.replace(/\D/g, ''))}
-                className="h-8.5 text-xs bg-white rounded-lg px-2.5 font-medium border-[#EAEFF8] focus-visible:ring-1 focus-visible:ring-[#0e59f9]"
+                className="h-9 text-xs bg-white border-none rounded-full px-3.5 font-medium focus-visible:ring-1 focus-visible:ring-slate-200 shadow-sm-md"
               />
             </div>
           )}
@@ -333,23 +333,23 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
               placeholder={posSettings?.customerNameRequired ? "Nama Pelanggan *" : "Nama Pelanggan (opsional)"}
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
-              className="h-8.5 text-xs bg-white rounded-lg px-2.5 font-medium border-[#EAEFF8] focus-visible:ring-1 focus-visible:ring-[#0e59f9]"
+              className="h-9 text-xs bg-white dark:bg-slate-900 rounded-full px-3.5 font-medium border-none focus-visible:ring-1 focus-visible:ring-slate-200 shadow-sm-md"
             />
           </div>
         </div>
 
         {/* Cart Item Header Bar & Clear Action */}
-        <div className="flex items-center justify-between pt-1">
-          <span className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+        <div className="flex items-center justify-between pt-0.5">
+          <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
             Daftar Item
-            <span className="px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-600 border border-[#EAEFF8] text-[10px] font-semibold font-financial tabular-nums">
+            <span className="text-xs font-normal text-slate-400 dark:text-slate-500 font-financial tabular-nums">
               {items.length}
             </span>
           </span>
 
           {items.length > 0 && (
             showClearConfirm ? (
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5 bg-rose-50 dark:bg-rose-950/40 px-2 py-1 rounded-full border border-rose-200 dark:border-rose-900">
                 <span className="text-[10px] text-destructive font-medium">Hapus semua?</span>
                 <button
                   type="button"
@@ -358,14 +358,14 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
                     setShowClearConfirm(false);
                     toast.info('Keranjang dikosongkan');
                   }}
-                  className="text-[10px] bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded font-medium cursor-pointer"
+                  className="text-[10px] bg-destructive text-destructive-foreground px-2 py-0.5 rounded-full font-semibold cursor-pointer shadow-2xs hover:bg-rose-600 transition-colors"
                 >
                   Ya
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowClearConfirm(false)}
-                  className="text-[10px] text-muted-foreground px-1 py-0.5 rounded hover:bg-slate-100 cursor-pointer"
+                  className="text-[10px] text-muted-foreground px-1.5 py-0.5 rounded-full hover:bg-slate-200/50 cursor-pointer transition-colors"
                 >
                   Batal
                 </button>
@@ -374,30 +374,30 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
               <button 
                 type="button"
                 onClick={() => setShowClearConfirm(true)}
-                className="text-xs text-muted-foreground hover:text-destructive transition-colors flex items-center gap-1 cursor-pointer px-1 py-0.5 rounded"
+                className="text-xs text-muted-foreground  transition-colors flex items-center gap-1 cursor-pointer px-2 py-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
               >
                 <Trash2 size={12} />
-                <span>Kosongkan</span>
+                <span>Reset</span>
               </button>
             )
           )}
         </div>
       </div>
 
-      {/* 2. CART ITEMS LIST */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-2.5 scrollbar-hide">
+      {/* 2. CART ITEMS LIST & COMPACT DETAIL SECTIONS */}
+      <div className="flex-1 overflow-y-auto pl-3 sm:pl-3.5 pr-2 sm:pr-2.5 pb-6 menuin-scrollbar">
         {items.length === 0 ? (
-          <div className="h-full min-h-[160px] flex flex-col items-center justify-center text-muted-foreground text-center p-4">
-            <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-2.5 text-muted-foreground/60 border border-[#EAEFF8]">
+          <div className="h-full min-h-[180px] flex flex-col items-center justify-center text-muted-foreground text-center p-4">
+            <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-2.5 text-muted-foreground/60 border border-slate-200 dark:border-slate-700">
               <ShoppingBag size={22} />
             </div>
-            <p className="text-xs font-semibold text-slate-800">Pesanan masih kosong</p>
+            <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">Pesanan masih kosong</p>
             <p className="text-[11px] text-slate-400 mt-0.5 font-normal">Pilih menu dari katalog untuk mulai mencatat</p>
           </div>
         ) : (
           items.map((item) => (
-            <div key={item.id} className="flex gap-2.5 bg-slate-50/60 p-2.5 rounded-xl border border-[#EAEFF8]">
-              <div className="h-11 w-11 rounded-xl shrink-0 overflow-hidden relative flex items-center justify-center">
+            <div key={item.id} className="flex gap-3 py-3  dark:border-slate-800 transition-colors">
+              <div className="h-12 w-12 rounded-xl shrink-0 overflow-hidden relative flex items-center justify-center bg-slate-100 dark:bg-slate-800">
                 <CartItemThumbnail 
                   src={item.imageUrl} 
                   alt={item.name} 
@@ -406,16 +406,16 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
                   colorIndex={item.colorIndex}
                 />
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-1">
-                  <h4 className="font-semibold text-xs text-slate-800 truncate leading-snug">{item.name}</h4>
+              <div className="flex-1 min-w-0 flex flex-col justify-between">
+                <div className="flex items-start justify-between gap-1.5">
+                  <h4 className="font-semibold text-xs sm:text-[13px] text-slate-900 dark:text-slate-100 truncate leading-snug">{item.name}</h4>
                   <button 
                     type="button"
                     onClick={() => removeItem(item.id)}
-                    className="text-muted-foreground hover:text-destructive transition-colors p-0.5 cursor-pointer shrink-0"
+                    className="text-slate-400 hover:text-destructive transition-colors p-0.5 cursor-pointer shrink-0"
                     title="Hapus menu"
                   >
-                    <Trash2 size={13} />
+                    <Trash2 size={15} />
                   </button>
                 </div>
 
@@ -426,34 +426,34 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
                 )}
 
                 {item.notes && (
-                  <p className="text-[10px] text-muted-foreground italic mt-0.5 line-clamp-1 font-normal">
+                  <p className="text-[10px] text-blue-600 dark:text-blue-400 italic mt-0.5 line-clamp-1 font-normal bg-blue-50/60 dark:bg-blue-950/40 px-1.5 py-0.5 rounded-md">
                     "{item.notes}"
                   </p>
                 )}
 
                 <div className="flex items-center justify-between mt-2 pt-0.5">
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2.5">
                     <button 
                       type="button"
                       onClick={() => handleMinus(item.id, item.quantity)}
-                      className="w-6 h-6 rounded-full bg-white border border-[#EAEFF8] text-slate-700 hover:bg-slate-50 transition-all flex items-center justify-center shadow-2xs active:scale-90 cursor-pointer"
+                      className="w-6 h-6 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex items-center justify-center shadow-2xs active:scale-90 cursor-pointer"
                       aria-label="Kurangi kuantitas"
                     >
                       <Minus className="w-3 h-3 stroke-[2.5]" />
                     </button>
-                    <span className="text-xs font-semibold min-w-5 text-center text-slate-900 select-none font-financial tabular-nums">
+                    <span className="text-xs font-semibold min-w-5 text-center text-slate-900 dark:text-slate-100 select-none font-financial tabular-nums">
                       {item.quantity}
                     </span>
                     <button 
                       type="button"
                       onClick={() => handlePlus(item.id, item.quantity)}
-                      className="w-6 h-6 rounded-full bg-[#0e59f9] hover:bg-[#0b4de0] text-white shadow-xs transition-all flex items-center justify-center active:scale-90 cursor-pointer"
+                      className="w-6 h-6 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition-all flex items-center justify-center active:scale-90 cursor-pointer"
                       aria-label="Tambah kuantitas"
                     >
                       <Plus className="w-3 h-3 stroke-[2.5]" />
                     </button>
                   </div>
-                  <span className="font-semibold text-xs text-slate-900 font-financial tabular-nums">
+                  <span className="font-bold text-xs sm:text-[13px] text-slate-900 dark:text-slate-100 font-financial tabular-nums">
                     {formatCurrency(item.price * item.quantity)}
                   </span>
                 </div>
@@ -464,14 +464,14 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
       </div>
 
       {/* 3. PROMO & FINANCIAL SUMMARY FOOTER */}
-      <div className="p-3 border-t border-[#EAEFF8] bg-slate-50/50 space-y-2">
+      <div className="relative z-10 shrink-0 p-3.5 sm:p-4 -mt-3 bg-white dark:bg-slate-900 rounded-t-3xl border-t border-slate-200/80 dark:border-slate-800 shadow-[0_-8px_25px_rgba(0,0,0,0.07),0_-2px_6px_rgba(0,0,0,0.04)] dark:shadow-[0_-8px_25px_rgba(0,0,0,0.5)] space-y-2">
         {/* Promo trigger in Cart */}
         {appliedPromo ? (
-          <div className="flex items-center justify-between text-xs py-1.5 px-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800">
+          <div className="flex items-center justify-between text-xs py-2 px-3 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 shadow-2xs">
             <div className="flex items-center gap-1.5 min-w-0">
               <Tag size={13} className="shrink-0 text-emerald-600" />
               {appliedPromo.code && (
-                <span className="shrink-0 px-1.5 py-0.5 rounded-md bg-emerald-200/60 text-emerald-900 font-mono text-[10px] font-semibold">
+                <span className="shrink-0 px-2 py-0.5 rounded-full bg-emerald-200/60 text-emerald-900 font-mono text-[10px] font-semibold">
                   {appliedPromo.code}
                 </span>
               )}
@@ -482,7 +482,7 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
               <button 
                 type="button"
                 onClick={handleRemovePromo}
-                className="text-emerald-700 hover:text-destructive p-0.5 cursor-pointer"
+                className="text-emerald-700 hover:text-destructive p-0.5 cursor-pointer rounded-full hover:bg-emerald-100"
                 title="Batalkan promo"
               >
                 <X size={12} />
@@ -493,21 +493,21 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
           <button
             type="button"
             onClick={handleOpenPromoModal}
-            className="w-full flex items-center justify-between text-xs py-2 px-3 rounded-lg border border-dashed border-[#EAEFF8] hover:border-[#0e59f9] hover:bg-[#0e59f9]/5 text-slate-600 hover:text-[#0e59f9] transition-colors cursor-pointer"
+            className="w-full flex items-center justify-between text-xs py-2 px-3.5 rounded-full border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-blue-600 hover:bg-blue-50/40 text-slate-600 dark:text-slate-300 hover:text-blue-600 transition-all cursor-pointer shadow-2xs"
           >
             <span className="flex items-center gap-2 font-medium">
-              <Tag size={13} />
+              <Tag size={13} className="text-blue-600" />
               Pasang Promo / Diskon
             </span>
-            <span className="text-[11px] font-semibold text-[#0e59f9]">Pilih ➔</span>
+            <span className="text-[11px] font-semibold text-blue-600">Pilih</span>
           </button>
         )}
 
         {/* Calculation summary lines */}
-        <div className="space-y-1 text-xs pt-1">
+        <div className="space-y-1.5 text-xs pt-0.5">
           <div className="flex justify-between text-slate-500 font-normal">
             <span>Subtotal Produk</span>
-            <span className="font-medium text-slate-900 font-financial tabular-nums">{formatCurrency(subtotal)}</span>
+            <span className="font-medium text-slate-900 dark:text-slate-100 font-financial tabular-nums">{formatCurrency(subtotal)}</span>
           </div>
 
           {discount > 0 && (
@@ -520,27 +520,27 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
           {serviceRate > 0 && (
             <div className="flex justify-between text-slate-500 font-normal">
               <span>{serviceName} ({serviceRate}%)</span>
-              <span className="font-medium text-slate-900 font-financial tabular-nums">+{formatCurrency(serviceChargeAmount)}</span>
+              <span className="font-medium text-slate-900 dark:text-slate-100 font-financial tabular-nums">+{formatCurrency(serviceChargeAmount)}</span>
             </div>
           )}
 
           {taxRate > 0 && (
             <div className="flex justify-between text-slate-500 font-normal">
               <span>{taxName} ({taxRate}%):</span>
-              <span className="font-medium text-slate-900 font-financial tabular-nums">+{formatCurrency(taxAmount)}</span>
+              <span className="font-medium text-slate-900 dark:text-slate-100 font-financial tabular-nums">+{formatCurrency(taxAmount)}</span>
             </div>
           )}
 
           {roundingAmount > 0 && (
             <div className="flex justify-between text-slate-500 font-normal">
               <span>Pembulatan (Rounding):</span>
-              <span className="font-medium text-slate-900 font-financial tabular-nums">+{formatCurrency(roundingAmount)}</span>
+              <span className="font-medium text-slate-900 dark:text-slate-100 font-financial tabular-nums">+{formatCurrency(roundingAmount)}</span>
             </div>
           )}
 
-          <div className="pt-2 border-t border-[#EAEFF8] flex justify-between items-center">
-            <span className="font-semibold text-sm text-slate-900">Total Tagihan</span>
-            <span className="font-semibold text-xl text-[#0e59f9] font-financial tabular-nums tracking-tight">
+          <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center">
+            <span className="font-semibold text-sm text-slate-900 dark:text-slate-100">Total Tagihan</span>
+            <span className="font-bold text-base text-blue-600 dark:text-blue-400 font-financial tabular-nums tracking-tight">
               {formatCurrency(total)}
             </span>
           </div>
@@ -552,7 +552,7 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
             type="button"
             onClick={onCheckout}
             disabled={items.length === 0 || isProcessing}
-            className="w-full h-11 bg-[#0e59f9] hover:bg-[#0b4de0] text-white rounded-xl font-semibold text-xs shadow-xs hover:shadow-sm transition-all disabled:opacity-50 cursor-pointer flex items-center justify-between px-4 mt-2"
+            className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-semibold text-xs shadow-sm hover:shadow transition-all disabled:opacity-50 cursor-pointer flex items-center justify-between px-4 mt-2 active:scale-[0.99]"
           >
             <span>Bayar Sekarang</span>
             <span className="font-semibold text-sm font-financial tabular-nums">{formatCurrency(total)}</span>
@@ -696,7 +696,7 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
                     placeholder={manualDiscountType === 'FIXED' ? 'Misal: 10000' : 'Misal: 10'}
                     className="h-9 text-xs bg-white border-[#EAEFF8] font-financial tabular-nums"
                   />
-                  <Button
+                  <Button 
                     type="button"
                     size="sm"
                     onClick={handleApplyManualDiscount}
@@ -787,7 +787,7 @@ function CartItemThumbnail({
 
   if (src && !error) {
     return (
-      <div className="w-full h-full rounded-xl overflow-hidden border border-border/40 bg-muted/60 flex items-center justify-center">
+      <div className="w-full h-full rounded-xl overflow-hidden flex items-center justify-center">
         <img
           src={src}
           alt={alt}

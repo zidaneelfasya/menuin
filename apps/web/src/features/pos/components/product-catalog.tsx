@@ -2,6 +2,14 @@
 
 import * as React from 'react';
 import { Plus, Search, Power, PowerOff, CheckCircle2, SlidersHorizontal, Package, X, Image as ImageIcon, Palette, ThumbsUp } from 'lucide-react';
+import { motion } from 'framer-motion';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useCartStore } from '../stores/use-cart-store';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils/format';
@@ -283,7 +291,7 @@ export function ProductCatalog({
     } else if (activeCategory === 'Best Seller') {
       matchesCategory = !!p.isFeatured;
     } else {
-      matchesCategory = p.categoryName === activeCategory;
+      matchesCategory = p.categoryName === activeCategory || p.categoryId === activeCategory;
     }
 
     const matchesSearch =
@@ -295,16 +303,159 @@ export function ProductCatalog({
 
   const hasBestSellers = sortedProducts.some(p => p.isFeatured);
 
+  // Category counts matching Menuin standard status tabs
+  const categoryCounts = React.useMemo(() => {
+    const counts: Record<string, number> = {
+      'Semua': sortedProducts.length,
+      'Best Seller': sortedProducts.filter(p => p.isFeatured).length,
+    };
+    categories.forEach(cat => {
+      counts[cat.name] = sortedProducts.filter(
+        p => p.categoryName === cat.name || p.categoryId === cat.id
+      ).length;
+    });
+    return counts;
+  }, [sortedProducts, categories]);
+
+  const categoryTabs = React.useMemo(() => {
+    const tabs: {
+      id: string;
+      label: string;
+      count: number;
+      icon?: React.ComponentType<{ className?: string }> | null;
+    }[] = [
+      {
+        id: 'Semua',
+        label: 'Semua',
+        count: categoryCounts['Semua'] || 0,
+      },
+    ];
+
+    if (hasBestSellers) {
+      tabs.push({
+        id: 'Best Seller',
+        label: 'Rekomendasi',
+        count: categoryCounts['Best Seller'] || 0,
+        icon: ThumbsUp,
+      });
+    }
+
+    categories.forEach((cat) => {
+      const CategoryIcon = cat.icon ? getCategoryIcon(cat.icon) : null;
+      tabs.push({
+        id: cat.name,
+        label: cat.name,
+        count: categoryCounts[cat.name] || 0,
+        icon: CategoryIcon,
+      });
+    });
+
+    return tabs;
+  }, [categoryCounts, hasBestSellers, categories]);
+
+  // Horizontal scroll & drag management for category filter bar
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+  const tabRefs = React.useRef<Record<string, HTMLButtonElement | null>>({});
+  const [isOverflowing, setIsOverflowing] = React.useState(false);
+
+  // Check if tabs overflow the container to enable drag cursor
+  const checkScroll = React.useCallback(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const { scrollWidth, clientWidth } = el;
+    setIsOverflowing(scrollWidth > clientWidth + 2);
+  }, []);
+
+  React.useEffect(() => {
+    checkScroll();
+    const el = scrollContainerRef.current;
+    if (!el) return;
+
+    el.addEventListener('scroll', checkScroll, { passive: true });
+    window.addEventListener('resize', checkScroll);
+
+    const resizeObserver = new ResizeObserver(() => {
+      checkScroll();
+    });
+    resizeObserver.observe(el);
+
+    return () => {
+      el.removeEventListener('scroll', checkScroll);
+      window.removeEventListener('resize', checkScroll);
+      resizeObserver.disconnect();
+    };
+  }, [checkScroll, categoryTabs.length]);
+
+  // Convert mouse wheel up/down to horizontal scroll
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && el.scrollWidth > el.clientWidth) {
+      el.scrollLeft += e.deltaY;
+    }
+  };
+
+  // Mouse Drag-to-Scroll support (for desktop mouse drag and touch screens)
+  const isMouseDownRef = React.useRef(false);
+  const startXRef = React.useRef(0);
+  const startScrollLeftRef = React.useRef(0);
+  const hasDraggedRef = React.useRef(false);
+  const [isDragging, setIsDragging] = React.useState(false);
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    isMouseDownRef.current = true;
+    hasDraggedRef.current = false;
+    startXRef.current = e.pageX - el.offsetLeft;
+    startScrollLeftRef.current = el.scrollLeft;
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isMouseDownRef.current) return;
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const currentX = e.pageX - el.offsetLeft;
+    const walk = (currentX - startXRef.current) * 1.2;
+    if (Math.abs(walk) > 4) {
+      hasDraggedRef.current = true;
+      if (!isDragging) setIsDragging(true);
+    }
+    el.scrollLeft = startScrollLeftRef.current - walk;
+  };
+
+  const handleMouseUpOrLeave = () => {
+    if (isMouseDownRef.current) {
+      isMouseDownRef.current = false;
+      setIsDragging(false);
+      setTimeout(() => {
+        hasDraggedRef.current = false;
+      }, 50);
+    }
+  };
+
+  // Auto-scroll active tab into view
+  React.useEffect(() => {
+    const activeEl = tabRefs.current[activeCategory];
+    if (activeEl && scrollContainerRef.current) {
+      activeEl.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'center',
+      });
+    }
+  }, [activeCategory]);
+
   return (
     <div className="flex flex-col h-full space-y-4">
-      {/* Search Bar + Display Mode Switcher + Quick Availability Shortcut Button */}
-      <div className="flex items-center gap-2">
+      {/* Search Bar + Compact Settings Dropdown (Tampilan & Ketersediaan) */}
+      <div className="flex items-center gap-2 shrink-0">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <Input
             ref={searchInputRef}
             placeholder="Cari produk atau scan barcode..."
-            className="pl-9 pr-9 bg-white border-[#EAEFF8] focus-visible:ring-1 focus-visible:ring-[#0e59f9] rounded-xl h-11 text-sm shadow-xs"
+            className="pl-9 pr-8 h-9 text-xs rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-slate-200 dark:focus-visible:border-slate-800 focus-visible:outline-none shadow-2xs"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={handleSearchKeyDown}
@@ -316,102 +467,167 @@ export function ProductCatalog({
                 setSearchQuery('');
                 searchInputRef.current?.focus();
               }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
               title="Hapus pencarian"
             >
-              <X className="h-3.5 w-3.5" />
+              <X className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
 
-        {/* Display Mode Switcher: Foto vs Kotak Warna */}
-        <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-[#EAEFF8] shrink-0 h-11 gap-0.5">
-          <button
-            type="button"
-            onClick={() => handleSetDisplayMode('image')}
-            className={cn(
-              "flex items-center gap-1.5 h-9 px-2.5 sm:px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer",
-              displayMode === 'image'
-                ? "bg-white text-slate-900 shadow-2xs"
-                : "text-slate-600 hover:text-slate-900"
-            )}
-            title="Tampilan Gambar (Foto Menu)"
+        {/* Dropdown Pengaturan Tampilan & Ketersediaan (Single Compact Icon Button 36x36px, 100% matching Kanban Board) */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="relative h-9 w-9 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-2xs shrink-0 rounded-xl cursor-pointer"
+              title="Pengaturan Tampilan & Ketersediaan"
+            >
+              <SlidersHorizontal className="w-4 h-4 text-slate-500 shrink-0" />
+              <span className="sr-only">Pengaturan Tampilan & Ketersediaan</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            className="w-56 p-2 rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl space-y-0.5"
           >
-            <ImageIcon className="w-3.5 h-3.5 text-slate-600" />
-            <span className="hidden md:inline">Gambar</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => handleSetDisplayMode('color')}
-            className={cn(
-              "flex items-center gap-1.5 h-9 px-2.5 sm:px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer",
-              displayMode === 'color'
-                ? "bg-white text-slate-900 shadow-2xs"
-                : "text-slate-600 hover:text-slate-900"
-            )}
-            title="Tampilan Warna (POS Cepat Tanpa Gambar)"
-          >
-            <Palette className="w-3.5 h-3.5 text-[#0e59f9]" />
-            <span className="hidden md:inline">Warna</span>
-          </button>
-        </div>
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsAvailabilityModalOpen(true)}
-          className="h-11 px-3.5 rounded-xl border-[#EAEFF8] text-xs font-semibold gap-1.5 shrink-0 bg-white text-slate-800 shadow-2xs hover:bg-slate-50 transition-colors"
-          title="Kelola ketersediaan menu secara cepat"
-        >
-          <Power className="w-3.5 h-3.5 text-emerald-600" />
-          <span className="hidden sm:inline">Ketersediaan</span>
-        </Button>
-      </div>
-
-      {/* Categories with Best Seller Option & Gradient Fade Mask */}
-      <div className="relative flex items-center">
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide w-full [mask-image:linear-gradient(to_right,white_90%,transparent_100%)] sm:[mask-image:none]">
-          <button
-            onClick={() => setActiveCategory('Semua')}
-            className={cn(
-              "px-4 py-2 rounded-xl text-sm whitespace-nowrap transition-colors border",
-              activeCategory === 'Semua'
-                ? "bg-[#0e59f9] text-white border-[#0e59f9] shadow-xs font-semibold"
-                : "bg-white text-slate-600 border-[#EAEFF8] hover:bg-slate-50 font-medium"
-            )}
-          >
-            Semua
-          </button>
-
-          {hasBestSellers && (
-            <button
-              onClick={() => setActiveCategory('Best Seller')}
+            {/* Seksi 1: Mode Tampilan */}
+            <div className="px-3 py-1 text-xs font-medium text-slate-500 dark:text-slate-400">
+              Mode Tampilan
+            </div>
+            <DropdownMenuItem
+              onClick={() => handleSetDisplayMode('image')}
               className={cn(
-                "px-4 py-2 rounded-xl text-sm whitespace-nowrap transition-colors border flex items-center gap-1.5",
-                activeCategory === 'Best Seller'
-                  ? "bg-[#0e59f9] text-white border-[#0e59f9] shadow-xs font-semibold"
-                  : "bg-white text-slate-600 border-[#EAEFF8] hover:bg-slate-50 font-medium"
+                "text-xs px-3 py-2 cursor-pointer rounded-full font-medium flex items-center transition-colors",
+                displayMode === 'image'
+                  ? "bg-blue-600 text-white font-semibold shadow-2xs hover:bg-blue-500 focus:bg-blue-500 focus:text-white data-[highlighted]:bg-blue-500 data-[highlighted]:text-white"
+                  : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 hover:text-slate-900 focus:bg-slate-100 focus:text-slate-900 data-[highlighted]:bg-slate-100 data-[highlighted]:text-slate-900 dark:hover:bg-slate-800 dark:focus:bg-slate-800 dark:data-[highlighted]:bg-slate-800"
               )}
             >
-              <span>Rekomendasi</span>
-            </button>
-          )}
+              <div className="flex items-center gap-2">
+                <ImageIcon
+                  className={cn(
+                    "w-3.5 h-3.5",
+                    displayMode === 'image' ? "text-white" : "text-slate-500"
+                  )}
+                />
+                <span>Gambar</span>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleSetDisplayMode('color')}
+              className={cn(
+                "text-xs px-3 py-2 cursor-pointer rounded-full font-medium flex items-center transition-colors",
+                displayMode === 'color'
+                  ? "bg-blue-600 text-white font-semibold shadow-2xs hover:bg-blue-500 focus:bg-blue-500 focus:text-white data-[highlighted]:bg-blue-500 data-[highlighted]:text-white"
+                  : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 hover:text-slate-900 focus:bg-slate-100 focus:text-slate-900 data-[highlighted]:bg-slate-100 data-[highlighted]:text-slate-900 dark:hover:bg-slate-800 dark:focus:bg-slate-800 dark:data-[highlighted]:bg-slate-800"
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <Palette
+                  className={cn(
+                    "w-3.5 h-3.5",
+                    displayMode === 'color' ? "text-white" : "text-slate-500"
+                  )}
+                />
+                <span>Warna</span>
+              </div>
+            </DropdownMenuItem>
 
-          {categories.map(category => {
-            const CategoryIcon = category.icon ? getCategoryIcon(category.icon) : null;
+            <DropdownMenuSeparator className="my-1.5 bg-slate-100 dark:bg-slate-800" />
+
+            {/* Seksi 2: Manajemen Menu */}
+            <div className="px-3 py-1 text-xs font-medium text-slate-500 dark:text-slate-400">
+              Ketersediaan Menu
+            </div>
+            <DropdownMenuItem
+              onClick={() => setIsAvailabilityModalOpen(true)}
+              className="text-xs px-3 py-2 cursor-pointer rounded-full font-medium flex items-center transition-colors text-slate-700 dark:text-slate-200 hover:bg-slate-100 hover:text-slate-900 focus:bg-slate-100 focus:text-slate-900 data-[highlighted]:bg-slate-100 data-[highlighted]:text-slate-900 dark:hover:bg-slate-800 dark:focus:bg-slate-800 dark:data-[highlighted]:bg-slate-800"
+            >
+              <div className="flex items-center gap-2">
+                <Power className="w-3.5 h-3.5 text-slate-500" />
+                <span>Kelola Ketersediaan</span>
+              </div>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {/* Menuin Standard Category Filter Tabs (Underline Navigation + Horizontal Drag & Scroll) */}
+      <div className="relative border-b border-slate-200 dark:border-slate-800 pt-0.5 select-none shrink-0">
+
+        {/* Draggable & Scrollable Tabs Container */}
+        <div
+          ref={scrollContainerRef}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUpOrLeave}
+          onMouseLeave={handleMouseUpOrLeave}
+          onWheel={handleWheel}
+          className={cn(
+            "flex items-center gap-6 overflow-x-auto scrollbar-hide pt-1 px-1",
+            isOverflowing ? "cursor-grab active:cursor-grabbing" : ""
+          )}
+        >
+          {categoryTabs.map((tab) => {
+            const isActive = activeCategory === tab.id;
+            const TabIcon = tab.icon;
             return (
               <button
-                key={category.id}
-                onClick={() => setActiveCategory(category.name)}
+                key={tab.id}
+                ref={(el) => {
+                  tabRefs.current[tab.id] = el;
+                }}
+                type="button"
+                onClick={(e) => {
+                  if (hasDraggedRef.current) {
+                    e.preventDefault();
+                    return;
+                  }
+                  setActiveCategory(tab.id);
+                }}
                 className={cn(
-                  "px-3.5 py-2 rounded-xl text-sm whitespace-nowrap transition-colors border flex items-center gap-1.5",
-                  activeCategory === category.name
-                    ? "bg-[#0e59f9] text-white border-[#0e59f9] shadow-xs font-semibold"
-                    : "bg-white text-slate-600 border-[#EAEFF8] hover:bg-slate-50 font-medium"
+                  "relative pb-3 text-xs sm:text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer whitespace-nowrap shrink-0 select-none",
+                  isActive
+                    ? "text-blue-600 dark:text-blue-400 font-semibold"
+                    : "text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
                 )}
               >
-                {CategoryIcon && <CategoryIcon className="w-4 h-4 shrink-0" />}
-                <span>{category.name}</span>
+                {TabIcon && (
+                  <TabIcon
+                    className={cn(
+                      "w-4 h-4 shrink-0 transition-colors",
+                      isActive
+                        ? "text-blue-600 dark:text-blue-400"
+                        : "text-slate-400 dark:text-slate-500"
+                    )}
+                  />
+                )}
+                <span>{tab.label}</span>
+                <span
+                  className={cn(
+                    "text-xs px-2 py-0.5 rounded-lg font-medium transition-colors tabular-nums",
+                    isActive
+                      ? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300"
+                      : "text-slate-400 dark:text-slate-500 bg-slate-100/70 dark:bg-slate-800/50"
+                  )}
+                >
+                  {tab.count}
+                </span>
+
+                {isActive && (
+                  <motion.div
+                    layoutId="activePosCategoryTabUnderline"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-500 rounded-full"
+                    transition={{
+                      type: "spring",
+                      stiffness: 450,
+                      damping: 35,
+                    }}
+                  />
+                )}
               </button>
             );
           })}
@@ -440,18 +656,17 @@ export function ProductCatalog({
                   key={product.id}
                   style={{
                     backgroundColor: isAvailable ? palette.bgHex : undefined,
-                    borderColor: isAvailable ? (isInCart ? palette.activeRingHex : palette.borderHex) : undefined,
                     boxShadow: isAvailable && isInCart
-                      ? `0 0 0 1.5px ${palette.activeRingHex}, 0 4px 12px -2px rgba(0, 0, 0, 0.08)`
+                      ? `0 0 0 2px ${palette.activeRingHex}, 0 4px 12px -2px rgba(0, 0, 0, 0.08)`
                       : undefined,
                   }}
                   className={cn(
-                    "rounded-2xl border p-4 sm:p-5 flex flex-col justify-between transition-all select-none relative min-h-[148px] sm:min-h-[156px]",
+                    "rounded-2xl p-4 sm:p-5 flex flex-col justify-between transition-all select-none relative min-h-[148px] sm:min-h-[156px]",
                     isAvailable
                       ? isInCart
-                        ? "cursor-pointer group shadow-sm active:scale-[0.98]"
-                        : "cursor-pointer group hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98]"
-                      : "opacity-40 grayscale-[30%] bg-slate-100 dark:bg-slate-900/60 border-dashed border-slate-300 dark:border-slate-800 cursor-not-allowed pointer-events-none"
+                        ? "cursor-pointer group shadow-xs active:scale-[0.98]"
+                        : "cursor-pointer group shadow-sm hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98]"
+                      : "opacity-40 grayscale-[30%] bg-slate-100 cursor-not-allowed pointer-events-none shadow-none"
                   )}
                   onClick={() => {
                     if (isAvailable) {
@@ -497,10 +712,9 @@ export function ProductCatalog({
                       <div
                         style={{
                           backgroundColor: isAvailable ? palette.iconBgHex : undefined,
-                          borderColor: isAvailable ? palette.borderHex : undefined,
                           color: isAvailable ? palette.iconColorHex : undefined,
                         }}
-                        className="w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 transition-transform group-hover:scale-105"
+                        className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105"
                         title="Menu Rekomendasi"
                       >
 
@@ -520,8 +734,7 @@ export function ProductCatalog({
 
                   {/* Bottom: Price + Cart Quantity Badge */}
                   <div
-                    style={{ borderColor: isAvailable ? `${palette.borderHex}88` : undefined }}
-                    className="flex items-center justify-between gap-2 pt-2 mt-auto border-t border-black/10 dark:border-white/10"
+                    className="flex items-center justify-between gap-2 pt-2 mt-auto"
                   >
                     <span
                       style={{ color: isAvailable ? palette.textPrimaryHex : undefined }}
@@ -581,12 +794,12 @@ export function ProductCatalog({
                 <div
                   key={product.id}
                   className={cn(
-                    "bg-card border rounded-2xl overflow-hidden transition-all flex flex-col relative select-none",
+                    "bg-card rounded-2xl overflow-hidden transition-all flex flex-col relative select-none",
                     isAvailable
                       ? isInCart
-                        ? "cursor-pointer group border-[#0e59f9] shadow-xs ring-1 ring-[#0e59f9]/30 active:scale-[0.98]"
-                        : "cursor-pointer group hover:shadow-md hover:border-[#0e59f9]/40 active:scale-[0.98]"
-                      : "opacity-40 grayscale-[30%] bg-slate-100 dark:bg-slate-900/60 border-dashed border-slate-300 dark:border-slate-800 cursor-not-allowed pointer-events-none"
+                        ? "cursor-pointer group ring-2 ring-[#0e59f9] shadow-xs active:scale-[0.98]"
+                        : "cursor-pointer group shadow-sm hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98]"
+                      : "opacity-40 grayscale-[30%] bg-slate-100 dark:bg-slate-900/60 shadow-none cursor-not-allowed pointer-events-none"
                   )}
                   onClick={() => {
                     if (isAvailable) {
