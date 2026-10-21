@@ -2,11 +2,11 @@ import { ModifierList } from '@/features/modifiers/components/modifier-list';
 import { Metadata } from 'next';
 import { Suspense } from 'react';
 import { getModifierGroups } from '@/lib/actions/modifiers';
-import { TableSkeleton } from '@/components/ui/table-skeleton';
+import ModifiersLoading from './loading';
 import { connection } from "next/server";
 import { requireFeature } from '@/lib/actions/auth-context';
 
-export const metadata: Metadata = { title: 'Modifiers - POS' };
+export const metadata: Metadata = { title: 'Topping & Varian - Menuin' };
 
 async function ModifierDataWrapper() {
   await connection();
@@ -18,7 +18,7 @@ async function ModifierDataWrapper() {
 
 export default function Page() {
   return (
-    <Suspense fallback={<div className="p-6"><TableSkeleton /></div>}>
+    <Suspense fallback={<ModifiersLoading />}>
       <ModifierDataWrapper />
     </Suspense>
   );

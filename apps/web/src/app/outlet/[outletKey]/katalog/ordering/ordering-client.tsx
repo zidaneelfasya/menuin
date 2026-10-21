@@ -64,7 +64,7 @@ export function OrderingClient({ settings }: { settings: any }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
-      <Card>
+      <Card className="rounded-2xl border-none shadow-md bg-white">
         <CardHeader>
           <CardTitle className="text-lg">Tipe Pesanan (Order Types)</CardTitle>
           <CardDescription>
@@ -87,7 +87,7 @@ export function OrderingClient({ settings }: { settings: any }) {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="rounded-2xl border-none shadow-md bg-white">
         <CardHeader>
           <CardTitle className="text-lg">Formulir Pelanggan</CardTitle>
           <CardDescription>
@@ -110,7 +110,7 @@ export function OrderingClient({ settings }: { settings: any }) {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="rounded-2xl border-none shadow-md bg-white">
         <CardHeader>
           <CardTitle className="text-lg">Mode Pemrosesan Pesanan (Dapur)</CardTitle>
           <CardDescription>
@@ -124,7 +124,7 @@ export function OrderingClient({ settings }: { settings: any }) {
               id="orderProcessType" 
               value={orderProcessType}
               onChange={(e) => setOrderProcessType(e.target.value)}
-              className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="flex h-11 w-full items-center justify-between rounded-full border-none shadow-sm-md bg-white px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
             >
               <option value="MANUAL">MANUAL (Sistem Cafe: Pesanan Masuk ➔ Diproses ➔ Siap ➔ Selesai)</option>
               <option value="AUTO">AUTO (Langsung Selesai setelah dibayar. Cocok untuk toko ritel/kue)</option>
@@ -133,7 +133,7 @@ export function OrderingClient({ settings }: { settings: any }) {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="rounded-2xl border-none shadow-md bg-white">
         <CardHeader>
           <CardTitle className="text-lg">Metode Pembayaran Pelanggan</CardTitle>
           <CardDescription>
@@ -141,7 +141,7 @@ export function OrderingClient({ settings }: { settings: any }) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between p-4 border rounded-xl bg-slate-50">
+          <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50 shadow-sm-md">
             <div className="space-y-0.5">
               <Label htmlFor="onlinePaymentEnabled" className="text-base font-semibold cursor-pointer">Aktifkan Pembayaran Non-Tunai (Online)</Label>
               <p className="text-sm text-muted-foreground max-w-md">
@@ -158,7 +158,7 @@ export function OrderingClient({ settings }: { settings: any }) {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="rounded-2xl border-none shadow-md bg-white">
         <CardHeader>
           <CardTitle className="text-lg">Format Kode Pesanan (Order Prefix)</CardTitle>
           <CardDescription>
@@ -175,7 +175,7 @@ export function OrderingClient({ settings }: { settings: any }) {
       </Card>
 
       <div className="flex justify-end">
-        <Button type="submit" disabled={isSaving || !hasChanges} className="gap-2 min-w-[150px]">
+        <Button type="submit" disabled={isSaving || !hasChanges} className="rounded-full shadow-md gap-2 min-w-[150px] h-11">
           {isSaving ? (
             <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Menyimpan...</>
           ) : (
