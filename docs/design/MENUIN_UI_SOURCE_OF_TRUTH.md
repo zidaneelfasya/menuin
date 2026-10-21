@@ -31,9 +31,10 @@ Menuin adalah sistem POS dan manajemen restoran berkinerja tinggi. Tampilan Menu
 | :--- | :--- | :--- | :--- |
 | `font-normal` | 400 | Teks isi, deskripsi, baris data tabel, keterangan waktu, label unit, input form | **Wajib untuk Teks Biasa** |
 | `font-medium` | 500 | Teks navigasi pasif, sub-label tertentu | **Diizinkan jika perlu** |
-| `font-semibold`| 600 | Nominal angka KPI, judul kartu/modal, tombol utama, status badge, label uppercase | **PLAFON MAKSIMAL (CEILING)** |
+| `font-semibold`| 600 | Nominal angka metrik KPI, judul kartu/modal, tombol, status badge, label uppercase | **BATAS MAKSIMAL (CEILING)** |
 | `font-bold` | 700 | - | ❌ **DILARANG KERAS** |
 | `font-extrabold`| 800 | - | ❌ **DILARANG KERAS** |
+| `font-black` | 900 | - | ❌ **DILARANG KERAS** |
 
 ### 2.3. Hirarki Visual Tanpa Bold
 Hierarki dibangun dari perpaduan ukuran font, warna teks, dan tracking:
@@ -296,5 +297,127 @@ Desain storefront publik (katalog menu yang diakses pelanggan via scan QR di mej
 - **Sticky Footer & CTA Button:**
   - Stepper kuantitas bertuliskan `Jumlah pembelian` di kiri dan tombol stepper lingkaran `(-) N (+)` di kanan.
   - Tombol CTA berbentuk kapsul / rounded pill (`rounded-full`) dengan teks `Tambah Pesanan - Rp XX.XXX` (atau `Simpan Perubahan`).
+
+---
+
+## 11. Standar Desain Clean, Minimalist & Borderless Dialog/Modal (Filosofi Desain Menuin)
+
+> *"Beginilah tampilan Menuin seharusnya: tampilan yang terlihat clean, simple, minimalist, namun tetap elegan dan profesional."*
+
+Filosofi desain Menuin menitikberatkan pada kejernihan visual (*visual clarity*), efisiensi interaksi, dan eliminasi *visual noise* yang tidak perlu (garis sekat kaku, tumpukan border kotak berlebih, dan latar abu-abu yang membuat tampilan kotor).
+
+### 11.1. Prinsip Utama: Borderless Interior & Soft Elevation
+1. **Zero Redundant Dividers (Hapus Border Pemisah Dalam Modal):**
+   - Header dialog (`DialogHeader`) dan Footer aksi dialog (`DialogFooter`) menyatu mulus secara visual dengan latar belakang putih bersih (`bg-white`).
+   - Dilarang memberikan garis pemisah horizontal (`border-b`, `border-t`, `divide-y`) di dalam modal kecuali pada tabel data padat.
+   - Dilarang menggunakan latar abu-abu pudar (`bg-slate-50/70`) pada header atau footer modal; seluruh permukaan dalam modal wajib berlatar putih bersih (`bg-white`).
+2. **Hierarki Berbasis Whitespace & Subtle Shadow:**
+   - Pemisahan antar elemen mengandalkan jarak whitespace proporsional (`space-y-3`, `gap-2.5`) dan elevasi bayangan halus (`shadow-sm`, `shadow-2xs`), bukan deretan garis border kotak.
+
+### 11.2. Standar Toggle Switch & Segmented Pill Switcher (Pill Switcher)
+Seluruh switcher di Menuin (baik komponen toggle `<Switch />` maupun tab navigasi switcher segmen seperti *Dine-in / Takeaway / Ojol* dan tab form settings) wajib mengikuti ketentuan:
+- **Bentuk Pill Utuh (`rounded-full`):** Seluruh switcher berbentuk pill tanpa sudut siku.
+- **Warna Aktif (Active State) Wajib Menuin Royal Blue (`bg-[#0e59f9]`):**
+  - Pada toggle switch `<Switch />`: Ketika aktif (`checked`), track switcher wajib berwarna biru solid `bg-[#0e59f9]` dengan thumb putih bulat yang bergeser mulus.
+  - Pada segmented pill switcher: Tab yang aktif berlatar solid Menuin Royal Blue (`bg-[#0e59f9] text-white rounded-full shadow-sm-md font-semibold`).
+- **Warna Tidak Aktif (Inactive / Unchecked State):**
+  - Pada toggle switch: Track berlatar abu-abu netral terang (`bg-slate-200`).
+  - Pada segmented switcher: Teks netral `text-slate-500 hover:text-slate-900` dengan hover `hover:bg-slate-100`.
+- **Ring Focus Interaktif:** Menampilkan ring biru Menuin saat difokuskan (`focus-visible:ring-2 focus-visible:ring-[#0e59f9] focus:outline-none`).
+
+### 11.3. Standar Tombol Quick Action & Nominal Cepat (White Pill Chips)
+- **Bentuk:** Pill utuh (`rounded-full px-3 py-1.5 text-xs font-financial tabular-nums`).
+- **Tanpa Border Kaku:** Dilarang menggunakan border kotak tebal (`border-[#EAEFF8]`). Gunakan tombol pill putih bersih dengan bayangan lembut dan hover tegas (**`bg-white text-slate-700 hover:text-slate-900 hover:bg-slate-100 shadow-sm-md font-medium`**).
+- **Status Terpilih (Active State):** Otomatis berubah menjadi solid Menuin Blue (`bg-[#0e59f9] text-white shadow-xs font-semibold`).
+
+### 11.4. Standar Numpad / Tombol Angka Layar Sentuh
+- **Borderless Buttons:** Seluruh tombol angka (0–9, 00) **wajib borderless** (`border-none`, tanpa `border-[#EAEFF8]`). Tombol menyatu secara elegan dengan latar kanvas putih modal.
+- **Interaksi Halus & Jelas (Hover & Click):** Memberikan feedback visual yang jelas dan kontras:
+  - Hover: `hover:bg-slate-100` (lebih terlihat dan nyaman dibaca kasir)
+  - Active/Click: `active:bg-slate-200 active:scale-[0.97]`
+  - Font: `font-financial tabular-nums text-base font-semibold text-slate-900`
+- **Tombol Hapus / Backspace:** Berbentuk `rounded-xl`, berlatar `bg-slate-100 text-slate-600 hover:bg-slate-200 active:bg-slate-300`, tanpa border garis tajam.
+
+### 11.5. Standar Tombol Aksi Modal (Pill Action Buttons)
+- Seluruh tombol aksi di bagian bawah dialog/modal (seperti "Batal" dan "Selesaikan & Cetak Struk") wajib berbentuk **pill (`rounded-full`)**.
+- **Tombol Sekunder Besar ("Batal" / "Struk Pelanggan"):** `flex-1 h-11 text-xs shadow-md rounded-full font-medium bg-white hover:bg-slate-100 text-slate-700 cursor-pointer transition-all border-none`.
+- **Tombol Primer ("Selesaikan" / "Bayar Sekarang"):** `flex-[2] h-11 bg-[#0e59f9] hover:bg-[#0b4de0] text-white rounded-full text-xs font-semibold shadow-xs transition-all disabled:opacity-50 cursor-pointer`.
+
+### 11.6. Standar Kartu Panduan Non-Tunai (Cardless Clean Guidance)
+- Panduan pembayaran seperti QRIS Statis, QRIS Dinamis, Kartu EDC, dan Transfer Bank disajikan secara **cardless**: tanpa kotak abu-abu `bg-slate-50` berborder tebal.
+- Ikon anchor utama berupa lingkaran `w-10 h-10 rounded-full` berlatar warna tema dengan bayangan halus (`shadow-sm`), tanpa border kaku.
+
+### 11.7. Standar Kartu Katalog Produk POS (Dual State: Resting Borderless & Active Ring)
+- **Tampilan Idle / Istirahat (Resting State):** Seluruh kartu menu (baik Mode Gambar maupun Mode Warna) wajib **borderless** (`border-none`) dengan elevasi lembut `shadow-sm` dan transisi hover `hover:shadow-md hover:-translate-y-0.5`. Tampilan tetap bersih, tenang, dan tidak penuh garis.
+- **Tampilan Aktif / Masuk Keranjang (Active Selected State):**
+  - **Mode Gambar (Image Mode):** Kartu aktif yang masuk ke keranjang menampilkan **ring biru Menuin tegas** (`ring-2 ring-[#0e59f9] shadow-xs active:scale-[0.98]`) serta badge kuantitas di sudut kartu, memudahkan kasir mengidentifikasi item yang sedang dipesan secara instan.
+  - **Mode Warna / Tanpa Gambar (Color Mode):** Ring aktif mengikuti warna palet khas produk tersebut secara harmonis (`boxShadow: 0 0 0 2px ${palette.activeRingHex}, 0 4px 12px -2px rgba(0, 0, 0, 0.08)`), menjaga koherensi warna masing-masing kategori menu.
+
+### 11.8. Standar Thumbnail Item Keranjang Belanja Tanpa Gambar
+- Menu tanpa foto yang masuk ke keranjang belanja disajikan dengan kotak inisial warna pastel yang **borderless** (`border-none` tanpa `borderColor`).
+- Warna latar belakang pastel dan warna teks inisial disesuaikan secara harmonis dengan palet produk, menyatu bersih dan rapi dengan daftar pesanan.
+
+### 11.9. Standar Bentuk Form Input, Elevasi Bayangan, dan Focus Ring
+Seluruh form input di platform Menuin wajib mengikuti aturan standar visual berikut:
+- **Bentuk Form Kecil (Single-line Input & Select):** Wajib berbentuk **pill utuh (`rounded-full`)**, berukuran `h-10 px-4` (atau `h-9` pada form padat), borderless (`border-none`).
+  - **Elevasi Form Kecil:** Wajib menggunakan elevasi sedang penyeimbang **`shadow-sm-md`** (alias `shadow-form`).
+- **Bentuk Form Besar (Textarea / Multi-line Input):** Berbentuk kontainer melengkung lapang **`rounded-2xl`**, borderless (`border-none`), padding lapang `p-3.5`.
+  - **Elevasi Form Besar:** Wajib menggunakan elevasi tegas **`shadow-md`**.
+- **Ring Focus Aktif (Solid Blue Ring):** Ketika elemen form sedang aktif / menerima fokus kursor (`focus` / `focus-visible`), **WAJIB menampilkan ring fokus berwarna biru solid Menuin** tanpa garis outline hitam browser:
+  ```css
+  focus-visible:ring-2 focus-visible:ring-[#0e59f9] focus:outline-none
+  ```
+
+### 11.10. Kebijakan Pure Light Theme (Larangan Dark Mode)
+- **Filosofi:** Desain antarmuka Menuin dirancang murni mengusung tema terang (*Pure Light Theme*) yang seragam, bersih, dan profesional.
+- **Ketentuan:** Dilarang menggunakan atau menambahkan class varian dark mode (`dark:...`, `dark:bg-...`, `dark:text-...`, `dark:border-...`). Seluruh kode komponen wajib menggunakan palet warna light theme secara konsisten.
+
+### 11.11. Standar Dialog & Modal Menuin (Borderless Elevation & Pill Actions)
+- **Container Modal:** Wajib menggunakan sudut melengkung besar `rounded-3xl`, kanvas putih murni `bg-white`, tanpa border garis kaku (`border-none`), dengan elevasi bayangan tinggi yang dramatis dan halus (`shadow-2xl`).
+- **Header & Footer:** Dilarang menggunakan garis batas tegas yang memotong kanvas. Footer menyatu lembut dengan padding lapang dan tombol aksi berbentuk pill utuh (`rounded-full h-10 px-5 text-sm`).
+- **Tombol Batal / Tutup:** Berlatar putih pill dengan elevasi jelas (`rounded-full shadow-md bg-white hover:bg-slate-100 text-slate-700 font-medium`).
+- **Tombol Konfirmasi / Simpan:** Berlatar biru solid Menuin (`rounded-full shadow-md bg-[#0e59f9] hover:bg-blue-600 text-white font-medium`).
+- **Tombol Hapus Destruktif:** Berlatar merah solid Menuin (`rounded-full shadow-md bg-red-600 hover:bg-red-700 text-white font-medium`).
+
+### 11.12. Standar Navigasi Sub-Sidebar & Streaming Skeleton
+- **Navigasi Instan (Zero Render-Blocking):** Ketika pengguna mengklik tab sub-sidebar (misal pada sub-menu `/katalog/*`), URL harus berpindah seketika tanpa terhambat oleh database query di server.
+- **Streaming Skeleton via Suspense:** Setiap halaman sub-menu wajib membungkus pengambilan data server dalam `<Suspense fallback={<LoadingSkeleton />}>` yang dipasangkan dengan file `loading.tsx` yang autentik dan bebas dari class dark mode.
+- **Gaya Tab Sub-Sidebar:** Berbentuk pill atau rounded kapsul dengan state aktif berbayangan tipis (`shadow-xs bg-white text-slate-900 font-semibold`) dan state tidak aktif yang memiliki feedback hover lembut (`hover:bg-slate-100 text-slate-600`).
+
+### 11.13. Standar Modul Daftar Menu (`/items`), Kategori (`/categories`), dan Katalog
+- **Search Bar:** Wajib berbentuk pill kapsul utuh dengan bayangan penyeimbang (`rounded-full shadow-sm-md border-none bg-white focus-visible:ring-2 focus-visible:ring-[#0e59f9] h-10 px-4`).
+- **Tombol Utama Header ("Tambah Item", "Tambah Kategori"):** Berbentuk pill Menuin Blue (`rounded-full shadow-md bg-[#0e59f9] hover:bg-blue-600 text-white h-10 px-5 text-sm font-medium`).
+- **Kartu Kategori Produk (`/categories`):** Menggunakan bingkai rapi yang terstruktur (`bg-white border border-slate-200 rounded-2xl p-4 shadow-xs hover:border-blue-400 hover:shadow-sm transition-all duration-150`).
+- **Ikon Kategori:** Menggunakan latar belakang bulat penuh (**`rounded-full`**), berwarna biru Menuin solid (**`bg-[#0e59f9]`**), **tanpa bayangan/shadow**, dengan teks/ikon putih bersih (**`text-white`**).
+- **Kartu Item Menu POS & Daftar Produk:** Menggunakan elevasi bertingkat (`rounded-2xl border-none shadow-sm-md hover:shadow-md bg-white transition-all duration-150`).
+- **Dropdown & Popup Menu:** Menggunakan sudut membulat `rounded-2xl border-none shadow-2xl bg-white p-1.5` dengan item bertransisi `hover:bg-slate-100 rounded-xl`.
+- **Form Modal Input & Select:** Seluruh field input dan custom select di dalam modal berukuran seragam dengan kontur pill borderless (`rounded-full shadow-sm-md border-none bg-white h-10 px-4`).
+
+### 11.14. Standar Ikon Check / Check State (Green Fill Circle with White Check)
+Setiap kali antarmuka menampilkan ikon tanda centang / check (misalnya status terverifikasi, item select dropdown terpilih, radio pill terpilih, checklist modal, atau indikator verifikasi slug):
+- **Wajib menggunakan latar bulat hijau solid:** `bg-emerald-500 rounded-full`.
+- **Warna Ikon:** Tanda centang di dalamnya **wajib berwarna putih bersih** (`text-white`).
+- **Ukuran Standar:**
+  - Dropdown / Inline: `size-4 rounded-full bg-emerald-500 text-white p-0.5`
+  - Input Indicator / Badge: `w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center`
+  - Sukses / Hero Status: `w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center`
+
+### 11.15. Standar Ikon di Dalam Card (Inversi Warna Card Putih vs Biru)
+Penggunaan ikon anchor di dalam sebuah kartu (card) wajib mematuhi aturan kontras inversi berikut:
+1. **Jika Card Berwarna Putih (`bg-white`):**
+   - Latar belakang wadah ikon **wajib bulat berwarna biru Menuin solid** (`rounded-full bg-[#0e59f9]`).
+   - Teks atau ikon di dalamnya **wajib berwarna putih** (`text-white`).
+   - Contoh: Header card form settings, kartu profil, kartu transaksi, dsb (`w-10 h-10 rounded-full bg-[#0e59f9] text-white flex items-center justify-center`).
+2. **Jika Card Berwarna Biru (`bg-[#0e59f9]` / Hero Card):**
+   - Berlaku **kebalikannya secara simetris**:
+   - Latar belakang wadah ikon **wajib bulat berwarna putih** (`rounded-full bg-white`).
+   - Teks atau ikon di dalamnya **wajib berwarna biru Menuin** (`text-[#0e59f9]`).
+   - Contoh: Hero summary card di dashboard atau kasir (`w-10 h-10 rounded-full bg-white text-[#0e59f9] flex items-center justify-center`).
+
+
+
+
+
+
 
 
