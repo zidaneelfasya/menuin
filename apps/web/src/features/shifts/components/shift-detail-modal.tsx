@@ -88,18 +88,18 @@ export function ShiftDetailModal({
                 Rekap Sesi Shift #{shift?.id?.slice(0, 8).toUpperCase() || '...'}
               </h2>
               {shift?.status === 'ACTIVE' ? (
-                <span className="inline-flex items-center text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800">
+                <span className="inline-flex items-center text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border-none dark:bg-emerald-950/40 dark:text-emerald-400">
                   Sedang Berjalan
                 </span>
               ) : (
-                <span className="inline-flex items-center text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200/80 dark:bg-slate-800 dark:text-slate-300">
+                <span className="inline-flex items-center text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border-none dark:bg-slate-800 dark:text-slate-300">
                   Shift Selesai
                 </span>
               )}
             </div>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400 mt-1 font-normal">
               <span>
-                Kasir: <strong className="font-semibold text-slate-800 dark:text-slate-200">{shift?.cashierName || 'Kasir'}</strong>
+                Kasir: <span className="font-semibold text-slate-800 dark:text-slate-200">{shift?.cashierName || 'Kasir'}</span>
               </span>
               <span>•</span>
               <span>{shift?.restaurantName || 'Outlet'}</span>
@@ -129,7 +129,7 @@ export function ShiftDetailModal({
         {loading ? (
           <div className="flex-1 flex flex-col items-center justify-center min-h-[380px] gap-3">
             <Loader2 className="w-8 h-8 animate-spin text-[#0e59f9]" />
-            <p className="text-xs text-slate-500 font-medium">Memuat rincian shift kasir...</p>
+            <p className="text-xs text-slate-500 font-medium">Mengambil data rekap shift...</p>
           </div>
         ) : data ? (
           <ScrollArea className="flex-1 px-6 py-5">
@@ -142,7 +142,7 @@ export function ShiftDetailModal({
                   <div>
                     <div className="flex items-center justify-between pb-3.5 border-b border-[#EAEFF8] mb-3.5">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl bg-[#0e59f9] text-white flex items-center justify-center shadow-xs flex-shrink-0">
+                        <div className="w-9 h-9 rounded-full bg-[#0e59f9] text-white flex items-center justify-center shadow-xs flex-shrink-0">
                           <ShoppingBag className="w-4 h-4 text-white" />
                         </div>
                         <div>
@@ -187,7 +187,7 @@ export function ShiftDetailModal({
                   <div>
                     <div className="flex items-center justify-between pb-3.5 border-b border-[#EAEFF8] mb-3.5">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl bg-[#0e59f9] text-white flex items-center justify-center shadow-xs flex-shrink-0">
+                        <div className="w-9 h-9 rounded-full bg-[#0e59f9] text-white flex items-center justify-center shadow-xs flex-shrink-0">
                           <CreditCard className="w-4 h-4 text-white" />
                         </div>
                         <div>
@@ -259,7 +259,7 @@ export function ShiftDetailModal({
                   <div>
                     <div className="flex items-center justify-between pb-3.5 border-b border-[#EAEFF8] mb-3.5">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl bg-[#0e59f9] text-white flex items-center justify-center shadow-xs flex-shrink-0">
+                        <div className="w-9 h-9 rounded-full bg-[#0e59f9] text-white flex items-center justify-center shadow-xs flex-shrink-0">
                           <Banknote className="w-4 h-4 text-white" />
                         </div>
                         <div>
@@ -362,143 +362,137 @@ export function ShiftDetailModal({
 
               {/* TAB 1: TRANSAKSI */}
               {activeTab === 'transactions' && (
-                <div className="border border-[#EAEFF8] dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900 overflow-hidden shadow-xs">
-                  <div className="max-h-[320px] overflow-auto">
-                    <Table>
-                      <TableHeader className="sticky top-0 z-10 bg-slate-50/75 dark:bg-slate-800/75 backdrop-blur-xs">
-                        <TableRow className="border-b border-[#EAEFF8] dark:border-slate-800">
-                          <TableHead className="w-[80px] text-xs font-semibold text-slate-600 py-3 px-4">Jam</TableHead>
-                          <TableHead className="w-[130px] text-xs font-semibold text-slate-600 py-3 px-4">No. Order</TableHead>
-                          <TableHead className="w-[90px] text-xs font-semibold text-slate-600 py-3 px-4">Channel</TableHead>
-                          <TableHead className="w-[130px] text-xs font-semibold text-slate-600 py-3 px-4">Tipe Pesanan</TableHead>
-                          <TableHead className="text-xs font-semibold text-slate-600 py-3 px-4">Metode Bayar</TableHead>
-                          <TableHead className="text-right w-[130px] text-xs font-semibold text-slate-600 py-3 px-4">Total Belanja</TableHead>
+                <div className="max-h-[360px] overflow-auto">
+                  <Table>
+                    <TableHeader className="sticky top-0 z-10 bg-slate-50/75 dark:bg-slate-800/75 backdrop-blur-xs">
+                      <TableRow className="border-b border-[#EAEFF8] dark:border-slate-800">
+                        <TableHead className="w-[130px] text-xs font-semibold text-slate-600 py-3 px-4">No. Order</TableHead>
+                        <TableHead className="w-[90px] text-xs font-semibold text-slate-600 py-3 px-4">Channel</TableHead>
+                        <TableHead className="w-[130px] text-xs font-semibold text-slate-600 py-3 px-4">Tipe Pesanan</TableHead>
+                        <TableHead className="text-xs font-semibold text-slate-600 py-3 px-4">Metode Bayar</TableHead>
+                        <TableHead className="w-[90px] text-xs font-semibold text-slate-600 py-3 px-4">Jam</TableHead>
+                        <TableHead className="text-right w-[130px] text-xs font-semibold text-slate-600 py-3 px-4">Total Belanja</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody className="divide-y divide-[#EAEFF8] dark:divide-slate-800/80">
+                      {data.transactions.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-10 text-xs text-slate-400">
+                            Belum ada transaksi pada shift ini.
+                          </TableCell>
                         </TableRow>
-                      </TableHeader>
-                      <TableBody className="divide-y divide-[#EAEFF8] dark:divide-slate-800/80">
-                        {data.transactions.length === 0 ? (
-                          <TableRow>
-                            <TableCell colSpan={6} className="text-center py-10 text-xs text-slate-400">
-                              Belum ada transaksi pada shift ini.
+                      ) : (
+                        data.transactions.map((tx: any) => (
+                          <TableRow key={tx.id} className="text-xs hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
+                            <TableCell className="py-3 px-4 font-mono font-semibold text-slate-900 dark:text-slate-100">
+                              {tx.orderNumber ? `#${tx.orderNumber}` : tx.id.slice(0, 8)}
+                            </TableCell>
+                            <TableCell className="py-3 px-4 font-normal text-slate-600 dark:text-slate-400">
+                              {formatOrderSourceLabel(tx.source)}
+                            </TableCell>
+                            <TableCell className="py-3 px-4 font-medium text-slate-700 dark:text-slate-300">
+                              {tx.orderType ? formatOrderTypeLabel(tx.orderType) : '-'}
+                            </TableCell>
+                            <TableCell className="py-3 px-4 font-semibold text-slate-800 dark:text-slate-200">
+                              {formatPaymentMethodLabel(tx.paymentMethod)}
+                            </TableCell>
+                            <TableCell className="py-3 px-4 text-slate-500 font-financial tabular-nums">
+                              {format(new Date(tx.createdAt), 'HH:mm:ss')}
+                            </TableCell>
+                            <TableCell className="py-3 px-4 text-right font-financial font-semibold text-slate-900 dark:text-white tabular-nums">
+                              {formatCurrency(Number(tx.grandTotal))}
                             </TableCell>
                           </TableRow>
-                        ) : (
-                          data.transactions.map((tx: any) => (
-                            <TableRow key={tx.id} className="text-xs hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
-                              <TableCell className="py-3 px-4 text-slate-500 font-financial tabular-nums">
-                                {format(new Date(tx.createdAt), 'HH:mm:ss')}
-                              </TableCell>
-                              <TableCell className="py-3 px-4 font-mono font-semibold text-slate-900 dark:text-slate-100">
-                                {tx.orderNumber ? `#${tx.orderNumber}` : tx.id.slice(0, 8)}
-                              </TableCell>
-                              <TableCell className="py-3 px-4 font-normal text-slate-600 dark:text-slate-400">
-                                {formatOrderSourceLabel(tx.source)}
-                              </TableCell>
-                              <TableCell className="py-3 px-4 font-medium text-slate-700 dark:text-slate-300">
-                                {tx.orderType ? formatOrderTypeLabel(tx.orderType) : '-'}
-                              </TableCell>
-                              <TableCell className="py-3 px-4 font-semibold text-slate-800 dark:text-slate-200">
-                                {formatPaymentMethodLabel(tx.paymentMethod)}
-                              </TableCell>
-                              <TableCell className="py-3 px-4 text-right font-financial font-semibold text-slate-900 dark:text-white tabular-nums">
-                                {formatCurrency(Number(tx.grandTotal))}
-                              </TableCell>
-                            </TableRow>
-                          ))
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
                 </div>
               )}
 
               {/* TAB 2: PRODUK TERJUAL */}
               {activeTab === 'products' && (
-                <div className="border border-[#EAEFF8] dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900 overflow-hidden shadow-xs">
-                  <div className="max-h-[320px] overflow-auto">
-                    <Table>
-                      <TableHeader className="sticky top-0 z-10 bg-slate-50/75 dark:bg-slate-800/75 backdrop-blur-xs">
-                        <TableRow className="border-b border-[#EAEFF8] dark:border-slate-800">
-                          <TableHead className="w-[50px] text-center text-xs font-semibold text-slate-600 py-3 px-4">No</TableHead>
-                          <TableHead className="text-xs font-semibold text-slate-600 py-3 px-4">Nama Produk / Menu</TableHead>
-                          <TableHead className="text-center w-[120px] text-xs font-semibold text-slate-600 py-3 px-4">Qty Terjual</TableHead>
-                          <TableHead className="text-right w-[160px] text-xs font-semibold text-slate-600 py-3 px-4">Total Omzet</TableHead>
+                <div className="max-h-[360px] overflow-auto">
+                  <Table>
+                    <TableHeader className="sticky top-0 z-10 bg-slate-50/75 dark:bg-slate-800/75 backdrop-blur-xs">
+                      <TableRow className="border-b border-[#EAEFF8] dark:border-slate-800">
+                        <TableHead className="w-[50px] text-center text-xs font-semibold text-slate-600 py-3 px-4">No</TableHead>
+                        <TableHead className="text-xs font-semibold text-slate-600 py-3 px-4">Nama Produk / Menu</TableHead>
+                        <TableHead className="text-center w-[120px] text-xs font-semibold text-slate-600 py-3 px-4">Qty Terjual</TableHead>
+                        <TableHead className="text-right w-[160px] text-xs font-semibold text-slate-600 py-3 px-4">Total Omzet</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody className="divide-y divide-[#EAEFF8] dark:divide-slate-800/80">
+                      {data.soldProducts.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-center py-10 text-xs text-slate-400">
+                            Tidak ada data produk terjual pada shift ini.
+                          </TableCell>
                         </TableRow>
-                      </TableHeader>
-                      <TableBody className="divide-y divide-[#EAEFF8] dark:divide-slate-800/80">
-                        {data.soldProducts.length === 0 ? (
-                          <TableRow>
-                            <TableCell colSpan={4} className="text-center py-10 text-xs text-slate-400">
-                              Tidak ada data produk terjual pada shift ini.
+                      ) : (
+                        data.soldProducts.map((item: any, idx: number) => (
+                          <TableRow key={idx} className="text-xs hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
+                            <TableCell className="py-3 px-4 text-center font-financial text-slate-400 tabular-nums">{idx + 1}</TableCell>
+                            <TableCell className="py-3 px-4 font-semibold text-slate-900 dark:text-slate-100">{item.name}</TableCell>
+                            <TableCell className="py-3 px-4 text-center font-financial font-semibold text-slate-800 dark:text-slate-200 tabular-nums">
+                              {item.totalQuantity} pcs
+                            </TableCell>
+                            <TableCell className="py-3 px-4 text-right font-financial font-semibold text-slate-900 dark:text-white tabular-nums">
+                              {formatCurrency(Number(item.totalRevenue))}
                             </TableCell>
                           </TableRow>
-                        ) : (
-                          data.soldProducts.map((item: any, idx: number) => (
-                            <TableRow key={idx} className="text-xs hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
-                              <TableCell className="py-3 px-4 text-center font-financial text-slate-400 tabular-nums">{idx + 1}</TableCell>
-                              <TableCell className="py-3 px-4 font-semibold text-slate-900 dark:text-slate-100">{item.name}</TableCell>
-                              <TableCell className="py-3 px-4 text-center font-financial font-semibold text-slate-800 dark:text-slate-200 tabular-nums">
-                                {item.totalQuantity} pcs
-                              </TableCell>
-                              <TableCell className="py-3 px-4 text-right font-financial font-semibold text-slate-900 dark:text-white tabular-nums">
-                                {formatCurrency(Number(item.totalRevenue))}
-                              </TableCell>
-                            </TableRow>
-                          ))
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
                 </div>
               )}
 
               {/* TAB 3: ARUS KAS LACI */}
               {activeTab === 'cash' && (
-                <div className="border border-[#EAEFF8] dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900 overflow-hidden shadow-xs">
-                  <div className="max-h-[320px] overflow-auto">
-                    <Table>
-                      <TableHeader className="sticky top-0 z-10 bg-slate-50/75 dark:bg-slate-800/75 backdrop-blur-xs">
-                        <TableRow className="border-b border-[#EAEFF8] dark:border-slate-800">
-                          <TableHead className="w-[80px] text-xs font-semibold text-slate-600 py-3 px-4">Jam</TableHead>
-                          <TableHead className="w-[120px] text-xs font-semibold text-slate-600 py-3 px-4">Tipe Kas</TableHead>
-                          <TableHead className="text-xs font-semibold text-slate-600 py-3 px-4">Keterangan / Keperluan</TableHead>
-                          <TableHead className="text-right w-[150px] text-xs font-semibold text-slate-600 py-3 px-4">Nominal</TableHead>
+                <div className="max-h-[360px] overflow-auto">
+                  <Table>
+                    <TableHeader className="sticky top-0 z-10 bg-slate-50/75 dark:bg-slate-800/75 backdrop-blur-xs">
+                      <TableRow className="border-b border-[#EAEFF8] dark:border-slate-800">
+                        <TableHead className="w-[80px] text-xs font-semibold text-slate-600 py-3 px-4">Jam</TableHead>
+                        <TableHead className="w-[120px] text-xs font-semibold text-slate-600 py-3 px-4">Tipe Kas</TableHead>
+                        <TableHead className="text-xs font-semibold text-slate-600 py-3 px-4">Keterangan / Keperluan</TableHead>
+                        <TableHead className="text-right w-[150px] text-xs font-semibold text-slate-600 py-3 px-4">Nominal</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody className="divide-y divide-[#EAEFF8] dark:divide-slate-800/80">
+                      {data.cashMovements.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-center py-10 text-xs text-slate-400">
+                            Tidak ada catatan kas masuk atau keluar pada shift ini.
+                          </TableCell>
                         </TableRow>
-                      </TableHeader>
-                      <TableBody className="divide-y divide-[#EAEFF8] dark:divide-slate-800/80">
-                        {data.cashMovements.length === 0 ? (
-                          <TableRow>
-                            <TableCell colSpan={4} className="text-center py-10 text-xs text-slate-400">
-                              Tidak ada catatan kas masuk atau keluar pada shift ini.
+                      ) : (
+                        data.cashMovements.map((move: any) => (
+                          <TableRow key={move.id} className="text-xs hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
+                            <TableCell className="py-3 px-4 font-financial text-slate-500 tabular-nums">
+                              {format(new Date(move.createdAt), 'HH:mm')}
+                            </TableCell>
+                            <TableCell className="py-3 px-4">
+                              {move.type === 'IN' ? (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border-none">
+                                  Kas Masuk
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 border-none">
+                                  Kas Keluar
+                                </span>
+                              )}
+                            </TableCell>
+                            <TableCell className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">{move.description}</TableCell>
+                            <TableCell className={`py-3 px-4 text-right font-financial font-semibold tabular-nums ${move.type === 'IN' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                              {move.type === 'IN' ? '+' : '-'}{formatCurrency(Number(move.amount))}
                             </TableCell>
                           </TableRow>
-                        ) : (
-                          data.cashMovements.map((move: any) => (
-                            <TableRow key={move.id} className="text-xs hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
-                              <TableCell className="py-3 px-4 font-financial text-slate-500 tabular-nums">
-                                {format(new Date(move.createdAt), 'HH:mm')}
-                              </TableCell>
-                              <TableCell className="py-3 px-4">
-                                {move.type === 'IN' ? (
-                                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                                    <ArrowDownLeft className="w-3.5 h-3.5" /> Masuk
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-rose-600 dark:text-rose-400">
-                                    <ArrowUpRight className="w-3.5 h-3.5" /> Keluar
-                                  </span>
-                                )}
-                              </TableCell>
-                              <TableCell className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">{move.description}</TableCell>
-                              <TableCell className={`py-3 px-4 text-right font-financial font-semibold tabular-nums ${move.type === 'IN' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                {move.type === 'IN' ? '+' : '-'}{formatCurrency(Number(move.amount))}
-                              </TableCell>
-                            </TableRow>
-                          ))
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
                 </div>
               )}
             </div>

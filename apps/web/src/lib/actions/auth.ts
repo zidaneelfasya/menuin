@@ -4,7 +4,7 @@ import { cache } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { db } from '@/lib/db';
 import { memberships, tenants, accounts, subscriptions } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { getCurrentContext } from './auth-context';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
@@ -69,6 +69,37 @@ export const getAvailableTenants = cache(async () => {
     .innerJoin(tenants, eq(memberships.tenantId, tenants.id))
     .where(eq(memberships.accountId, account.id));
 
+  const tenantIds = results.map(row => row.tenant.id);
+
+  const teamMembersByTenant: Record<string, { id: string; name: string; email: string; role: string }[]> = {};
+
+  if (tenantIds.length > 0) {
+    const allMembers = await db
+      .select({
+        membershipId: memberships.id,
+        tenantId: memberships.tenantId,
+        displayName: memberships.displayName,
+        accountName: accounts.name,
+        email: accounts.email,
+        role: memberships.role,
+      })
+      .from(memberships)
+      .innerJoin(accounts, eq(memberships.accountId, accounts.id))
+      .where(inArray(memberships.tenantId, tenantIds));
+
+    for (const m of allMembers) {
+      if (!teamMembersByTenant[m.tenantId]) {
+        teamMembersByTenant[m.tenantId] = [];
+      }
+      teamMembersByTenant[m.tenantId].push({
+        id: m.membershipId,
+        name: m.displayName || m.accountName || m.email,
+        email: m.email,
+        role: m.role,
+      });
+    }
+  }
+
   return results.map(row => ({
     membershipId: row.member.id,
     role: row.member.role,
@@ -78,6 +109,7 @@ export const getAvailableTenants = cache(async () => {
     outletKey: row.tenant.outletKey,
     storeLogoUrl: row.tenant.storeLogoUrl,
     storeDescription: row.tenant.storeDescription,
+    teamMembers: teamMembersByTenant[row.tenant.id] || [],
   }));
 });
 
