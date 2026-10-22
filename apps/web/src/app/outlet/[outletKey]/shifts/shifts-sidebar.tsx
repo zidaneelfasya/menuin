@@ -16,24 +16,27 @@ interface ShiftsSidebarProps {
   hasActiveShift?: boolean;
 }
 
-export function ShiftsSidebar({ outletKey }: ShiftsSidebarProps) {
+interface NavItem {
+  id: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  tab: string;
+  badge?: string;
+}
+
+export function ShiftsSidebar({ outletKey, hasActiveShift }: ShiftsSidebarProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
 
   const currentTab = searchParams.get('tab') || 'active';
 
-  const navItems: Array<{
-    id: string;
-    label: string;
-    icon: any;
-    tab: string;
-    badge?: string;
-  }> = [
+  const navItems: NavItem[] = [
     {
       id: 'active',
       label: 'Shift Aktif',
       icon: IconClock,
       tab: 'active',
+      badge: hasActiveShift ? 'Aktif' : undefined,
     },
     {
       id: 'movements',

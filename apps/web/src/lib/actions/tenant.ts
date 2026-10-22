@@ -55,12 +55,17 @@ export async function createTenantAction(formData: FormData) {
       ? sanitizeOrderPrefix(rawPrefix)
       : resolveOrderPrefix({ name: restaurantName });
 
+    const rawPhoto = formData.get('storefrontPhotoUrl') as string | null;
+    const storefrontPhotoUrl = rawPhoto && rawPhoto.trim() ? rawPhoto.trim() : null;
+
     // Create new tenant
     const [newTenant] = await db.insert(tenants).values({
       name: restaurantName,
       outletKey,
       slug,
       orderPrefix,
+      storefrontPhotoUrl,
+      storeLogoUrl: storefrontPhotoUrl,
     }).returning();
 
     // Generate a random 6 digit PIN
@@ -76,9 +81,10 @@ export async function createTenantAction(formData: FormData) {
       status: 'ACTIVE',
     });
 
-    return { success: true };
+    return { success: true, tenantSlug: slug };
   } catch (error: any) {
     console.error('Failed to create tenant:', error);
     return { error: error.message || 'Failed to create workspace' };
   }
 }
+

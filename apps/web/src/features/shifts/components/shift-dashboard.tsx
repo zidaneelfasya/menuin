@@ -36,6 +36,7 @@ import {
   Coins,
   Banknote,
   Plus,
+  Loader2,
 } from "lucide-react";
 import {
   Dialog,
@@ -90,6 +91,7 @@ export function ShiftDashboard({
 
   // Modal for past shift history
   const [modalShiftId, setModalShiftId] = React.useState<string | null>(null);
+  const [navigatingShiftId, setNavigatingShiftId] = React.useState<string | null>(null);
 
   // In-page actions for today's active shift: 'NONE' | 'END_SHIFT'
   const [activePanel, setActivePanel] = React.useState<"NONE" | "END_SHIFT">("NONE");
@@ -284,33 +286,61 @@ export function ShiftDashboard({
       render: (shift) => {
         const diff = Number(shift.cashDifference || 0);
         if (diff === 0) {
-          return <span className="font-financial tabular-nums text-emerald-600 font-semibold">Pas</span>;
+          return (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border-none font-financial tabular-nums">
+              Pas
+            </span>
+          );
         }
         if (diff < 0) {
-          return <span className="font-financial tabular-nums text-rose-600 font-semibold">Kurang {formatCurrency(Math.abs(diff))}</span>;
+          return (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border-none font-financial tabular-nums">
+              Kurang {formatCurrency(Math.abs(diff))}
+            </span>
+          );
         }
-        return <span className="font-financial tabular-nums text-[#0e59f9] font-semibold">Lebih {formatCurrency(diff)}</span>;
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-[#0e59f9] border-none font-financial tabular-nums">
+            Lebih {formatCurrency(diff)}
+          </span>
+        );
       },
     },
     {
       key: "action",
       header: "Aksi",
       align: "right",
-      render: (shift) => (
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 px-3.5 text-xs font-medium rounded-full border-none shadow-sm-md bg-white hover:bg-slate-100 text-slate-700 cursor-pointer"
-          onClick={(e) => {
-            e.stopPropagation();
-            setModalShiftId(shift.id);
-          }}
-        >
-          Detail
-        </Button>
-      ),
+      render: (shift) => {
+        const isNavigating = navigatingShiftId === shift.id;
+        return (
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={isNavigating}
+            className="h-8 px-3.5 text-xs font-semibold rounded-full border-none shadow-sm-md bg-white hover:bg-slate-100 text-slate-700 cursor-pointer disabled:opacity-50"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (outletKey) {
+                setNavigatingShiftId(shift.id);
+                router.push(`/outlet/${outletKey}/shifts/${shift.id}`);
+              } else {
+                setModalShiftId(shift.id);
+              }
+            }}
+          >
+            {isNavigating ? (
+              <span className="flex items-center gap-1.5">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                <span>Memuat...</span>
+              </span>
+            ) : (
+              "Detail"
+            )}
+          </Button>
+        );
+      },
     },
-  ], []);
+  ], [outletKey, router, navigatingShiftId]);
 
   const transactionColumns = React.useMemo<AppTableColumn<any>[]>(() => [
     {
@@ -415,6 +445,62 @@ export function ShiftDashboard({
           )}
         >
           {m.type === "IN" ? "+" : "-"}{formatCurrency(Number(m.amount))}
+        </span>
+      ),
+    },
+  ], []);
+
+  const activityColumns = React.useMemo<AppTableColumn<any>[]>(() => [
+    {
+      key: "time",
+      header: "Waktu",
+      render: (act) => (
+        <span className="text-slate-500 font-financial tabular-nums">
+          {format(act.time, "HH:mm")}
+        </span>
+      ),
+    },
+    {
+      key: "title",
+      header: "Aktivitas",
+      render: (act) => (
+        <div>
+          <div className="font-semibold text-slate-900">
+            {act.title}
+          </div>
+          {act.details && (
+            <div className="text-[11px] text-slate-400 mt-0.5">
+              {act.details}
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: "paymentMethod",
+      header: "Metode",
+      render: (act) => (
+        <span className="font-semibold text-xs text-slate-800">
+          {act.paymentMethod}
+        </span>
+      ),
+    },
+    {
+      key: "amount",
+      header: "Nominal",
+      align: "right",
+      render: (act) => (
+        <span
+          className={cn(
+            "font-financial font-semibold tabular-nums",
+            act.type === "CASH_IN"
+              ? "text-emerald-600"
+              : act.type === "CASH_OUT"
+              ? "text-rose-600"
+              : "text-slate-900"
+          )}
+        >
+          {act.type === "CASH_OUT" ? "-" : "+"}{formatCurrency(act.amount)}
         </span>
       ),
     },
@@ -752,11 +838,11 @@ export function ShiftDashboard({
                 </div>
               )}
 
-              {/* Ringkasan Aktivitas Terkini (5 Terakhir) */}
-              <div className="bg-white rounded-2xl border-none shadow-sm-md p-5 sm:p-6 space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              {/* Tabel Aktivitas Terkini Shift Ini */}
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <h3 className="text-sm font-semibold text-slate-900 tracking-tight">
+                    <h3 className="text-base font-semibold text-slate-900 tracking-tight">
                       Aktivitas Terkini Shift Ini
                     </h3>
                     <p className="text-xs text-slate-500 mt-0.5 font-medium">
@@ -764,8 +850,10 @@ export function ShiftDashboard({
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button
+                    <Button
                       type="button"
+                      variant="outline"
+                      size="sm"
                       onClick={() => {
                         setRawAmount("");
                         setDescInput("");
@@ -774,70 +862,29 @@ export function ShiftDashboard({
                       }}
                       className="text-xs font-semibold text-[#0e59f9] bg-white hover:bg-slate-100 shadow-sm-md px-3.5 py-1.5 rounded-full transition-all cursor-pointer border-none"
                     >
-                      + Catat Kas Laci
-                    </button>
-                    <button
+                      <Plus className="w-3.5 h-3.5" />
+                      Catat Kas Laci
+                    </Button>
+                    <Button
                       type="button"
+                      variant="outline"
+                      size="sm"
                       onClick={() => router.replace(`/outlet/${outletKey}/shifts?tab=transactions`, { scroll: false })}
                       className="text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-100 shadow-sm-md px-3.5 py-1.5 rounded-full transition-all cursor-pointer border-none"
                     >
-                      Lihat Semua Transaksi
-                    </button>
+                      Semua Transaksi
+                    </Button>
                   </div>
                 </div>
 
-                <div className="divide-y divide-slate-100">
-                  {timelineActivities.length === 0 ? (
-                    <div className="py-8 text-center text-xs text-slate-400">
-                      Belum ada aktivitas kas atau transaksi pada sesi shift ini.
-                    </div>
-                  ) : (
-                    timelineActivities.slice(0, 5).map((act) => (
-                      <div
-                        key={act.id}
-                        className="py-3 flex items-center justify-between text-xs hover:bg-slate-50/80 px-2 rounded-xl transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={cn(
-                            "w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-2xs",
-                            act.type === "CASH_IN"
-                              ? "bg-emerald-50 text-emerald-600"
-                              : act.type === "CASH_OUT"
-                              ? "bg-rose-50 text-rose-600"
-                              : "bg-blue-50 text-[#0e59f9]"
-                          )}>
-                            {act.type === "CASH_IN" ? (
-                              <ArrowDownLeft className="w-4 h-4" />
-                            ) : act.type === "CASH_OUT" ? (
-                              <ArrowUpRight className="w-4 h-4" />
-                            ) : (
-                              <Receipt className="w-4 h-4" />
-                            )}
-                          </div>
-                          <div>
-                            <div className="font-semibold text-slate-900">
-                              {act.title}
-                            </div>
-                            <div className="text-[11px] text-slate-500 mt-0.5">
-                              {format(act.time, "HH:mm")} • {act.subtitle}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className={cn(
-                          "font-financial font-semibold tabular-nums text-right text-xs",
-                          act.type === "CASH_IN"
-                            ? "text-emerald-600"
-                            : act.type === "CASH_OUT"
-                            ? "text-rose-600"
-                            : "text-slate-900"
-                        )}>
-                          {act.type === "CASH_OUT" ? "-" : "+"}{formatCurrency(act.amount)}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
+                <AppTable
+                  columns={activityColumns}
+                  data={timelineActivities}
+                  keyExtractor={(act) => act.id}
+                  pageSize={5}
+                  emptyTitle="Belum ada aktivitas"
+                  emptyDescription="Belum ada aktivitas kas atau transaksi pada sesi shift ini."
+                />
               </div>
             </div>
           ) : (
@@ -968,7 +1015,7 @@ export function ShiftDashboard({
             </div>
 
             <div className="flex items-center gap-3 flex-wrap">
-              {/* Quick Balance Indicators */}
+              {/* Quick Balance Indicators - Borderless */}
               <div className="flex items-center gap-2 text-xs font-financial tabular-nums">
                 <span className="px-3.5 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border-none flex items-center gap-1.5 font-semibold">
                   <ArrowDownLeft className="w-3.5 h-3.5" />
@@ -998,8 +1045,6 @@ export function ShiftDashboard({
 
           {/* Tabel Log Mutasi Kas */}
           <AppTable
-            title="Log Mutasi Kas Laci Shift Ini"
-            subtitle={`${activeShift?.cashMovements?.length || 0} mutasi kas tercatat`}
             columns={movementColumns}
             data={activeShift?.cashMovements || []}
             keyExtractor={(item) => item.id}
@@ -1015,10 +1060,19 @@ export function ShiftDashboard({
       {/* TAB 3: TRANSAKSI SHIFT BERJALAN */}
       {/* ========================================================================= */}
       {activeTab === "transactions" && (
-        <div className="space-y-4">
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-xl font-semibold text-slate-900 tracking-tight">
+                Transaksi Shift Aktif
+              </h1>
+              <p className="text-xs text-slate-500 mt-0.5 font-medium">
+                Daftar seluruh pesanan yang berhasil diproses pada sesi shift ini
+              </p>
+            </div>
+          </div>
+
           <AppTable
-            title={`Transaksi Pada Shift Aktif (${activeShift?.transactions?.length || 0})`}
-            subtitle="Daftar seluruh pesanan yang berhasil diproses pada sesi shift ini"
             columns={transactionColumns}
             data={activeShift?.transactions || []}
             keyExtractor={(item) => item.id}
@@ -1034,16 +1088,31 @@ export function ShiftDashboard({
       {/* TAB 4: RIWAYAT & REKAP SHIFT (AUDIT) */}
       {/* ========================================================================= */}
       {activeTab === "history" && (
-        <div className="space-y-4">
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-xl font-semibold text-slate-900 tracking-tight">
+                Riwayat Shift
+              </h1>
+              <p className="text-xs text-slate-500 mt-0.5 font-medium">
+                Arsip rekapitulasi sesi kasir dan rekonsiliasi kas
+              </p>
+            </div>
+          </div>
+
           <AppTable
-            title={`Riwayat Shift (${shiftHistory.length})`}
-            subtitle="Arsip rekapitulasi sesi kasir dan rekonsiliasi kas"
             columns={historyColumns}
             data={shiftHistory}
             keyExtractor={(item) => item.id}
             searchKey={(item) => `${item.cashierName || ''} ${item.id || ''}`}
             searchPlaceholder="Cari kasir / ID shift..."
-            onRowClick={(item) => setModalShiftId(item.id)}
+            onRowClick={(item) => {
+              if (outletKey) {
+                router.push(`/outlet/${outletKey}/shifts/${item.id}`);
+              } else {
+                setModalShiftId(item.id);
+              }
+            }}
             emptyTitle="Belum ada riwayat shift"
             emptyDescription="Tidak ada data riwayat shift yang sesuai dengan pencarian."
           />

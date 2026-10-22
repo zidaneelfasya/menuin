@@ -99,7 +99,7 @@ export function ShiftDetailModal({
             </div>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 mt-1 font-normal">
               <span>
-                Kasir: <strong className="font-semibold text-slate-800">{shift?.cashierName || 'Kasir'}</strong>
+                Kasir: <span className="font-semibold text-slate-800">{shift?.cashierName || 'Kasir'}</span>
               </span>
               <span>•</span>
               <span>{shift?.restaurantName || 'Outlet'}</span>
@@ -129,7 +129,7 @@ export function ShiftDetailModal({
         {loading ? (
           <div className="flex-1 flex flex-col items-center justify-center min-h-[380px] gap-3">
             <Loader2 className="w-8 h-8 animate-spin text-[#0e59f9]" />
-            <p className="text-xs text-slate-500 font-medium">Memuat rincian shift kasir...</p>
+            <p className="text-xs text-slate-500 font-medium">Mengambil data rekap shift...</p>
           </div>
         ) : data ? (
           <ScrollArea className="flex-1 px-6 py-5">
