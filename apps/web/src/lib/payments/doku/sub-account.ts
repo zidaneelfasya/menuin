@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { getSnapConfig } from './snap/config';
 import { snapPost } from './snap/client';
 import { generateExternalId } from './snap/signature';
+import type { ProviderOnboardingStatus } from '@menuin/types';
 
 /**
  * DOKU Sub Account V2 (Model A: Menuin = Platform, tiap outlet = Sub Account).
@@ -27,9 +28,31 @@ export type CreateSubAccountInput = {
 
 export type CreateSubAccountResult = {
   accountId: string;
-  status: string | null;
+  /** Status internal hasil pemetaan `status` DOKU (lihat mapDokuSubAccountStatus). */
+  status: ProviderOnboardingStatus;
+  /** Status mentah dari DOKU, untuk log/audit. */
+  providerStatus: string | null;
   raw: unknown;
 };
+
+const ACTIVE_STATUSES = new Set(['ACTIVE', 'ACTIVATED', 'SUCCESS', 'APPROVED', 'VERIFIED']);
+const SUSPENDED_STATUSES = new Set(['SUSPENDED', 'BLOCKED', 'FROZEN', 'INACTIVE', 'DISABLED']);
+const FAILED_STATUSES = new Set(['FAILED', 'REJECTED', 'DECLINED']);
+
+/**
+ * Memetakan `status` Sub Account dari DOKU ke status internal.
+ * Registrasi sukses tanpa field status dianggap ACTIVE (profileId sudah terbit).
+ * Status yang tidak dikenal dianggap PENDING_REVIEW, bukan ACTIVE, supaya
+ * pembayaran tidak dibuka ke akun yang belum jelas statusnya.
+ */
+export function mapDokuSubAccountStatus(status: string | null | undefined): ProviderOnboardingStatus {
+  if (status === null || status === undefined || status.trim() === '') return 'ACTIVE';
+  const normalized = status.trim().toUpperCase();
+  if (ACTIVE_STATUSES.has(normalized)) return 'ACTIVE';
+  if (SUSPENDED_STATUSES.has(normalized)) return 'SUSPENDED';
+  if (FAILED_STATUSES.has(normalized)) return 'FAILED';
+  return 'PENDING_REVIEW';
+}
 
 export async function createSubAccount(input: CreateSubAccountInput): Promise<CreateSubAccountResult> {
   const config = getSnapConfig();
@@ -47,7 +70,8 @@ export async function createSubAccount(input: CreateSubAccountInput): Promise<Cr
   }
   return {
     accountId: parsed.data.profileId,
-    status: parsed.data.status ?? null,
+    status: mapDokuSubAccountStatus(parsed.data.status),
+    providerStatus: parsed.data.status ?? null,
     raw: data,
   };
 }

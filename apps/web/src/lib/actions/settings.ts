@@ -1,14 +1,12 @@
 "use server";
 
 import { db } from '@/lib/db';
-import { tenants, businessProfiles } from '@/lib/db/schema';
-import { and, eq, isNull, lt, ne, or } from 'drizzle-orm';
+import { tenants } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
 import { getCurrentUser } from './auth';
 import { revalidatePath } from 'next/cache';
-import { DokuApiError } from '@/lib/payments/doku/client';
 import { getDokuConfig } from '@/lib/payments/doku/config';
 import { getSnapConfig } from '@/lib/payments/doku/snap/config';
-import { createSubAccount } from '@/lib/payments/doku/sub-account';
 import { provisionDokuSubAccountForTenant } from '@/lib/payments/doku/doku-adapter';
 
 function getPaymentGatewayInfo(tenant: typeof tenants.$inferSelect) {
@@ -219,12 +217,10 @@ export async function updateStoreGeneralSettings(formData: FormData) {
 	}
 }
 
-const SUB_ACCOUNT_PROVISIONING = 'PROVISIONING';
-const PROVISIONING_STALE_MS = 2 * 60_000;
-
 /**
  * Membuat DOKU Sub Account untuk outlet ini (Model Platform). Hanya OWNER.
- * Dijaga agar klik ganda tidak membuat dua Sub Account.
+ * Guard verifikasi 3 pilar dan lock anti klik ganda ada di
+ * provisionDokuSubAccountForTenant, supaya semua jalur aktivasi sama.
  */
 export async function activateDokuSubAccount() {
   try {
@@ -246,93 +242,15 @@ export async function activateDokuSubAccount() {
       return { success: false, error: 'Payment gateway platform belum dikonfigurasi. Hubungi tim Menuin.' };
     }
 
-    const [tenant] = await db.select().from(tenants).where(eq(tenants.id, user.tenantId)).limit(1);
-    if (!tenant) return { success: false, error: 'Tenant tidak ditemukan' };
-    if (tenant.dokuSubAccountId && tenant.dokuSubAccountStatus === 'ACTIVE') {
-      return { success: true, subAccountId: tenant.dokuSubAccountId };
+    const result = await provisionDokuSubAccountForTenant(user.tenantId, user.id);
+    if (!result.success || !result.subAccountId) {
+      return { success: false, error: result.error || 'Gagal mengaktifkan akun pembayaran' };
     }
 
-    // Strict Verification Assertions (BV-015)
-    if (!tenant.businessProfileId) {
-      return {
-        success: false,
-        error: 'Outlet belum dihubungkan ke Profil Badan Usaha. Selesaikan Verifikasi Bisnis terlebih dahulu.',
-      };
+    if (user && typeof user === 'object' && 'outletKey' in user) {
+      revalidatePath(`/outlet/${user.outletKey}`, 'layout');
     }
-
-    const [businessProfile] = await db
-      .select()
-      .from(businessProfiles)
-      .where(eq(businessProfiles.id, tenant.businessProfileId))
-      .limit(1);
-
-    if (!businessProfile) {
-      return { success: false, error: 'Profil bisnis terhubung tidak ditemukan.' };
-    }
-
-    if (businessProfile.verificationStatus !== 'verified') {
-      return {
-        success: false,
-        error: `Profil badan usaha belum terverifikasi (status: ${businessProfile.verificationStatus}). Aktivasi akun DOKU memerlukan persetujuan verifikasi Tier 1.`,
-      };
-    }
-
-    if (tenant.outletComplianceStatus !== 'verified') {
-      return {
-        success: false,
-        error: `Kepatuhan lokasi outlet belum terverifikasi (status: ${tenant.outletComplianceStatus}). Aktivasi akun DOKU memerlukan persetujuan verifikasi lokasi Tier 2.`,
-      };
-    }
-
-    // Klaim "lock" di DB: hanya satu request yang boleh membuat Sub Account.
-    const staleBefore = new Date(Date.now() - PROVISIONING_STALE_MS);
-    const claimed = await db
-      .update(tenants)
-      .set({ dokuSubAccountStatus: SUB_ACCOUNT_PROVISIONING, updatedAt: new Date() })
-      .where(
-        and(
-          eq(tenants.id, tenant.id),
-          isNull(tenants.dokuSubAccountId),
-          or(
-            isNull(tenants.dokuSubAccountStatus),
-            ne(tenants.dokuSubAccountStatus, SUB_ACCOUNT_PROVISIONING),
-            lt(tenants.updatedAt, staleBefore)
-          )
-        )
-      )
-      .returning({ id: tenants.id });
-
-    if (claimed.length === 0) {
-      return { success: false, error: 'Aktivasi sedang diproses. Muat ulang halaman dalam beberapa saat.' };
-    }
-
-    try {
-      const result = await provisionDokuSubAccountForTenant(tenant.id, user.id);
-
-      if (!result.success || !result.subAccountId) {
-        throw new Error(result.error || 'Gagal membuat Sub Account DOKU.');
-      }
-
-      if (user && typeof user === 'object' && 'outletKey' in user) {
-        revalidatePath(`/outlet/${user.outletKey}`, 'layout');
-      }
-      return { success: true, subAccountId: result.subAccountId };
-    } catch (error) {
-      await db
-        .update(tenants)
-        .set({ dokuSubAccountStatus: 'FAILED', updatedAt: new Date() })
-        .where(eq(tenants.id, tenant.id));
-
-      console.error(JSON.stringify({
-        scope: 'payments',
-        event: 'sub_account_create_failed',
-        tenantId: tenant.id,
-        status: error instanceof DokuApiError ? error.status : null,
-        response: error instanceof DokuApiError ? error.responseBody : null,
-        error: error instanceof Error ? error.message : String(error),
-      }));
-      return { success: false, error: 'Gagal membuat akun pembayaran di DOKU. Silakan coba lagi.' };
-    }
+    return { success: true, subAccountId: result.subAccountId };
   } catch (error) {
     console.error('Error activating DOKU sub account:', error);
     return { success: false, error: 'Gagal mengaktifkan akun pembayaran' };

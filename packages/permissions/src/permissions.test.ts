@@ -40,6 +40,14 @@ describe('Permissions Model (BV-002)', () => {
     expect(hasPermission(Role.STAFF, VerificationPermissions.MANAGE_LEGAL)).toBe(false);
   });
 
+  it('grants payment provider management only to SYSTEM_ADMIN and SUPERADMIN', () => {
+    expect(hasPermission(Role.SYSTEM_ADMIN, VerificationPermissions.MANAGE_PAYMENT_PROVIDER)).toBe(true);
+    expect(hasPermission(Role.SUPERADMIN, VerificationPermissions.MANAGE_PAYMENT_PROVIDER)).toBe(true);
+    expect(hasPermission(Role.VERIFICATION_ADMIN, VerificationPermissions.MANAGE_PAYMENT_PROVIDER)).toBe(false);
+    expect(hasPermission(Role.CARE_AGENT, VerificationPermissions.MANAGE_PAYMENT_PROVIDER)).toBe(false);
+    expect(hasPermission(Role.OWNER, VerificationPermissions.MANAGE_PAYMENT_PROVIDER)).toBe(false);
+  });
+
   it('assertPermission throws ForbiddenError on missing permission', () => {
     expect(() => assertPermission(Role.OWNER, VerificationPermissions.APPROVE)).toThrow(
       ForbiddenError

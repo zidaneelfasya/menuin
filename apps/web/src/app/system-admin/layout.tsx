@@ -12,6 +12,7 @@ import {
   IconUsers,
   IconArrowLeft,
   IconLogout,
+  IconCreditCard,
 } from '@tabler/icons-react';
 
 export const metadata: Metadata = {
@@ -132,6 +133,14 @@ export default async function SystemAdminLayout({
                   Queue
                 </span>
               </div>
+            </Link>
+
+            <Link
+              href="/system-admin/payments"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800/60 transition-colors"
+            >
+              <IconCreditCard className="w-4 h-4 text-neutral-500" />
+              <span>Akun Pembayaran</span>
             </Link>
 
             <Link

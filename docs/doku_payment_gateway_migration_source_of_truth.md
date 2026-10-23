@@ -24,6 +24,7 @@ harus diperbarui.
 | 2 | Langganan Menuin via DOKU (menggantikan `/api/checkout` + webhook Midtrans subscription) | ✅ Selesai (menunggu uji live di sandbox) |
 | 3 | POS QRIS dinamis via SNAP (RSA key pair, token B2B, notifikasi SNAP) | ✅ Selesai (menunggu uji live di sandbox) |
 | 4 | Antrean review, pencatatan refund, import settlement (fee riil) | ✅ Selesai |
+| Sub Account | Registrasi Sub Account V2 per outlet (guard 3 pilar verifikasi), pemetaan status, halaman admin `/system-admin/payments` | ✅ Selesai (menunggu uji live di sandbox). Belum: sinkronisasi status otomatis dari DOKU |
 
 ## 3. Alur pembayaran (Fase 1)
 
@@ -103,7 +104,10 @@ Refund lewat API DOKU dan penarikan laporan settlement otomatis lewat API **belu
 | `apps/web/src/lib/payments/doku/signature.ts` | Signature Non-SNAP (HMAC-SHA256 + Digest) dengan perbandingan constant-time. |
 | `apps/web/src/lib/payments/doku/client.ts` | HTTP client: timeout, `Request-Id` unik, error API vs network (outcome unknown). |
 | `apps/web/src/lib/payments/doku/checkout.ts` | Create Checkout dan Check Status. |
-| `apps/web/src/lib/payments/doku/sub-account.ts` | Membuat Sub Account outlet. |
+| `apps/web/src/lib/payments/doku/sub-account.ts` | Registrasi Sub Account V2 (`/sub-account/v2.0/register`, SNAP) dan pemetaan status DOKU → status internal (`mapDokuSubAccountStatus`). |
+| `apps/web/src/lib/payments/doku/doku-adapter.ts` | `provisionDokuSubAccountForTenant`: guard 3 pilar verifikasi, lock anti klik ganda, panggil DOKU, simpan ke `tenants` + `provider_onboardings` + audit log. Satu-satunya jalur registrasi lewat API. |
+| `apps/web/src/lib/payments/doku/sub-account-admin.ts` | Operasi tim Menuin: daftar status Sub Account semua outlet, tautkan ID manual, ubah status. |
+| `apps/web/src/lib/actions/admin-payments.ts` + `app/system-admin/payments/` | Server action (izin `payments:manage_provider`, SYSTEM_ADMIN/SUPERADMIN) dan halaman **Akun Pembayaran** admin. |
 | `apps/web/src/lib/payments/doku/notification.ts` | Parsing header dan payload webhook. |
 | `apps/web/src/lib/payments/state-machine.ts` | Aturan transisi status (murni, diuji unit). |
 | `apps/web/src/lib/payments/payment.service.ts` | Create (order dan langganan), apply outcome, sync, webhook, dan rekonsiliasi. Satu-satunya pintu ke DB pembayaran. |
@@ -141,7 +145,7 @@ Signature = "HMACSHA256=" + base64(HMAC-SHA256(secretKey, Component))
 |---|---|
 | Buat pembayaran | `POST /checkout/v1/payment`, lalu ambil `response.payment.url` |
 | Cek status | `GET /orders/v1/status/{invoice_number}`, lalu baca `transaction.status` |
-| Buat Sub Account | `POST /sac-merchant/v1/accounts`, lalu ambil `account.id` (`SAC-…`) |
+| Buat Sub Account | `POST /sub-account/v2.0/register` (SNAP: token B2B + signature simetris), lalu ambil `profileId` (`SAC-…`). Lihat §5c |
 | Routing dana ke outlet | tambahkan `additional_info.account.id = "SAC-…"` di request Checkout |
 
 **Pemetaan status:** `SUCCESS → PAID`, `PENDING → PENDING`, `FAILED → FAILED`, `EXPIRED → EXPIRED`. Status lain diabaikan.
@@ -154,13 +158,48 @@ Sumber: [`doku-postman-collection.json`](https://raw.githubusercontent.com/PTNUS
 |---|---|
 | Checkout `POST /checkout/v1/payment` | ✅ Signature (Digest base64 SHA-256, `HMACSHA256=` + base64 HMAC-SHA256, timestamp `toISOString().slice(0,19)+"Z"`) dan bentuk body cocok |
 | Check Status `GET /orders/v1/status/{invoice}` | ✅ Signature tanpa Digest, cocok |
-| Create Sub Account `POST /sac-merchant/v1/accounts` | ✅ Body `{account:{email,type:"STANDARD",name}}` cocok |
+| Sub Account V2 `POST /sub-account/v2.0/register` | ✅ Body `{partnerReferenceNo,type,email,name,parentProfileId}` dengan `parentProfileId` = Client ID platform, sesuai collection |
 | Token B2B `POST /authorization/v1/access-token/b2b` | ✅ Header `X-CLIENT-KEY`/`X-TIMESTAMP`/`X-SIGNATURE` (SHA256withRSA `clientId\|timestamp`), body `grantType` cocok |
 | Signature simetris SNAP | ✅ HMAC-SHA512 base64 atas `METHOD:path:token:lowerhex(sha256(minify(body))):timestamp` cocok |
 | `CHANNEL-ID` | ⚠️ **Diperbaiki.** DOKU memakai kode seperti `H2H`/`VA008`, bukan angka 5 digit. Default sekarang `H2H` |
 | QRIS MPM generate/query, refund Checkout, settlement report | ❌ Tidak ada di collection. Masih berdasarkan library resmi dan standar SNAP, perlu dikonfirmasi saat uji live |
 
-Catatan: collection juga memuat **Sub Account V2** (`/sub-account/v2.0/register`, SNAP-style dengan `parentProfileId` = Client ID). Implementasi saat ini memakai V1, yang ID `SAC-…`-nya dipakai di `additional_info.account.id` Checkout. Pindah ke V2 hanya bila DOKU mensyaratkannya.
+Catatan: implementasi sudah pindah dari Sub Account V1 (`POST /sac-merchant/v1/accounts`) ke **V2**. Akun V2 tampil di dashboard DOKU (Wallet as a Service → Sub Account V2) dan `profileId`-nya dipakai di `additional_info.account.id` Checkout. Field `status` pada respons V2 belum terkonfirmasi; lihat §5c.
+
+## 5c. Sub Account outlet
+
+**Alur aktivasi.** OWNER menekan **Aktifkan Akun Pembayaran** (Pengaturan) atau tombol aktivasi di halaman Verifikasi. Keduanya memanggil `provisionDokuSubAccountForTenant`:
+
+1. Outlet yang sudah punya `doku_sub_account_id` **tidak pernah didaftarkan ulang**. Kalau statusnya `ACTIVE` langsung sukses, selain itu dikembalikan pesan sesuai status.
+2. Guard 3 pilar: profil badan usaha `verified`, rekening settlement `verified`, kepatuhan lokasi outlet `verified`.
+3. Klaim lock `doku_sub_account_status = PROVISIONING` (atomik, kedaluwarsa 2 menit) supaya klik ganda atau request paralel hanya membuat satu akun.
+4. Panggil `POST /sub-account/v2.0/register`. Kredensial SNAP (`DOKU_PRIVATE_KEY`, `DOKU_PUBLIC_KEY`) wajib, termasuk di sandbox.
+5. Simpan `profileId` dan status hasil pemetaan ke `tenants`, `provider_onboardings`, dan `verification_audit_logs`. `online_payment_enabled` hanya dinyalakan otomatis bila statusnya `ACTIVE`.
+
+**Pemetaan status** (`mapDokuSubAccountStatus`):
+
+| Status dari DOKU | Status internal |
+|---|---|
+| tidak ada / kosong (registrasi sukses) | `ACTIVE` |
+| `ACTIVE`, `ACTIVATED`, `SUCCESS`, `APPROVED`, `VERIFIED` | `ACTIVE` |
+| `SUSPENDED`, `BLOCKED`, `FROZEN`, `INACTIVE`, `DISABLED` | `SUSPENDED` |
+| `FAILED`, `REJECTED`, `DECLINED` | `FAILED` |
+| lainnya (mis. `PENDING`) | `PENDING_REVIEW` (aman: pembayaran belum dibuka) |
+
+Status mentah DOKU disimpan di metadata audit log (`providerStatus`). Perbarui tabel ini begitu nilai sebenarnya terlihat saat uji live.
+
+**Tidak ada ID buatan.** Bila DOKU gagal atau timeout, status menjadi `FAILED` tanpa ID, error dicatat di log (`event: sub_account_create_failed` beserta respons DOKU), dan OWNER/admin bisa mencoba lagi. Data QRIS (`doku_qris_merchant_id`/`doku_qris_terminal_id`) tidak diisi otomatis; isinya harus dari DOKU.
+
+**Pembayaran hanya ke Sub Account `ACTIVE`.** Storefront (`isOnlinePaymentAvailable`) dan payment readiness guard menolak Sub Account yang `PENDING_REVIEW`, `SUSPENDED`, atau `FAILED` bila Sub Account diwajibkan (`DOKU_REQUIRE_SUB_ACCOUNT`).
+
+**Halaman admin `/system-admin/payments`** (SYSTEM_ADMIN/SUPERADMIN, manual fallback BV-015):
+- Daftar outlet beserta status Sub Account dan status verifikasi. Yang butuh tindakan (`FAILED`, `PROVISIONING` macet lebih dari 2 menit, `PENDING_REVIEW`) tampil paling atas.
+- **Tautkan** profileId secara manual, misalnya bila akun dibuat langsung di dashboard DOKU. Format wajib `SAC-…`, ID tidak boleh dipakai outlet lain, menimpa ID lama harus dicentang, dan ditolak saat registrasi API sedang berjalan.
+- **Ubah Status**: `PENDING_REVIEW` → `ACTIVE` setelah DOKU mengaktifkan akun, atau bekukan (`SUSPENDED`).
+- **Daftar Ulang** lewat API untuk outlet tanpa ID (mis. setelah `FAILED`).
+- Setiap aksi wajib catatan dan tercatat di `verification_audit_logs` (`DOKU_SUB_ACCOUNT_LINKED_MANUALLY`, `DOKU_SUB_ACCOUNT_STATUS_CHANGED`, `DOKU_SUB_ACCOUNT_PROVISIONED`).
+
+**Belum ada:** sinkronisasi status otomatis dari DOKU (polling atau webhook Sub Account). Sementara ini status `PENDING_REVIEW` diperbarui manual lewat halaman admin.
 
 ## 5b. Spesifikasi SNAP (QRIS)
 
@@ -201,7 +240,7 @@ Format berikut diverifikasi dari library resmi `doku-nodejs-library`:
 
 **`payment_webhook_events`**: log mentah notifikasi. Unik per `(provider, request_id)`, dipakai untuk dedupe, audit, dan replay.
 
-**`tenants`**: `doku_sub_account_id` dan `doku_sub_account_status`. Kolom `doku_client_id`, `doku_secret_key`, dan `doku_environment` adalah legacy dan tidak dipakai.
+**`tenants`**: `doku_sub_account_id` dan `doku_sub_account_status` (`PROVISIONING`, `ACTIVE`, `PENDING_REVIEW`, `SUSPENDED`, `FAILED`, atau kosong). Kolom `doku_client_id`, `doku_secret_key`, dan `doku_environment` adalah legacy dan tidak dipakai.
 
 **`transactions`**: `gateway_fee` dan `net_amount` baru diisi saat pembayaran online **sukses**. Saat order dibuat, nilainya 0 dan grand total.
 
@@ -236,6 +275,10 @@ Format berikut diverifikasi dari library resmi `doku-nodejs-library`:
 | Polling paralel (beberapa tab/perangkat) | Klaim cek atomik (`UPDATE … WHERE last_checked_at < batas`), sehingga hanya satu request yang ke DOKU per interval. |
 | Kasir/aplikasi mobile mengirim `QRIS_DYNAMIC` sebagai lunas | Ditolak: `createTransaction` dan `/api/mobile/v1/pos` menolak metode gateway. |
 | Notifikasi QRIS palsu | Tanpa token SNAP yang valid dibalas 401. Dengan token valid pun status tetap diambil dari `qr-mpm-query`. |
+| OWNER klik "Aktifkan Akun Pembayaran" berkali-kali atau paralel | Lock `PROVISIONING` atomik: hanya satu registrasi ke DOKU, request lain mendapat "Aktivasi sedang diproses". |
+| Registrasi Sub Account gagal atau timeout | Status `FAILED` tanpa ID, bisa dicoba ulang. Tidak ada ID pengganti buatan. |
+| Sub Account sudah terbit di DOKU tapi gagal disimpan | ID tetap disimpan ke `tenants` (best-effort) dan dicatat di log `sub_account_persist_failed`, supaya tidak didaftarkan ulang. |
+| DOKU mengembalikan status bukan aktif | Disimpan sebagai `PENDING_REVIEW`/`SUSPENDED`/`FAILED`. Pembayaran online belum dibuka sampai admin mengubahnya ke `ACTIVE`. |
 | Urutan lock | Target (order/tagihan) → `payment_attempts` → `subscriptions` → `tenants` di semua jalur, sehingga tidak bisa deadlock. Billing action sengaja **tidak** mengunci baris tenant. |
 
 ## 8. Konfigurasi (env server)
@@ -251,8 +294,8 @@ Format berikut diverifikasi dari library resmi `doku-nodejs-library`:
 | `DOKU_ESTIMATED_MDR_PERCENT` | – | Default `0.7` |
 | `APP_BASE_URL` | disarankan | Origin publik, mis. `https://app.menuin.id` |
 | `CRON_SECRET` | ✅ untuk cron | Header `Authorization: Bearer <CRON_SECRET>` |
-| `DOKU_PRIVATE_KEY` | ✅ untuk QRIS | Private key RSA milik Menuin (PEM). Public key-nya diunggah ke DOKU. |
-| `DOKU_PUBLIC_KEY` | ✅ untuk QRIS | Public key **milik DOKU** (PEM). Aplikasi menolak start kalau isinya sama dengan public key Menuin. |
+| `DOKU_PRIVATE_KEY` | ✅ untuk QRIS dan Sub Account | Private key RSA milik Menuin (PEM). Public key-nya diunggah ke DOKU. |
+| `DOKU_PUBLIC_KEY` | ✅ untuk QRIS dan Sub Account | Public key **milik DOKU** (PEM). Aplikasi menolak start kalau isinya sama dengan public key Menuin. |
 | `DOKU_SNAP_CHANNEL_ID` | – | Default `H2H` |
 | `DOKU_QRIS_MERCHANT_ID` / `DOKU_QRIS_TERMINAL_ID` | sandbox | Merchant QRIS default untuk sandbox |
 | `DOKU_QRIS_VALIDITY_MINUTES` | – | Default `10` |
@@ -271,7 +314,7 @@ Kredensial **tidak boleh** di-commit, ditempel di chat, atau disimpan di DB. Gun
    - Ambil public key DOKU dan merchant/terminal ID QRIS.
    - Daftarkan base URL SNAP `https://<domain>/api/snap`, sehingga endpoint-nya menjadi `/v1.0/access-token/b2b` dan `/v1.0/qr/qr-mpm-notify`.
 5. Jadwalkan cron `GET /api/cron/payment-reconcile` setiap 5 menit dengan header Authorization. Bisa lewat Vercel Cron (paket Pro), Supabase `pg_cron` + `pg_net`, atau scheduler eksternal.
-6. Sebagai OWNER: buka **Pengaturan → Pembayaran Online → Aktifkan Akun Pembayaran** (membuat Sub Account), lalu aktifkan **Katalog → Pemesanan → Pembayaran Non-Tunai**.
+6. Selesaikan Verifikasi Bisnis outlet (3 pilar disetujui admin). Lalu sebagai OWNER: buka **Pengaturan → Pembayaran Online → Aktifkan Akun Pembayaran** (membuat Sub Account), lalu aktifkan **Katalog → Pemesanan → Pembayaran Non-Tunai**. Kalau registrasi gagal, admin bisa mendaftarkan ulang atau menautkan ID manual di **`/system-admin/payments`**.
 
 ## 10. Checklist uji sandbox (end-to-end)
 
@@ -282,6 +325,9 @@ Kredensial **tidak boleh** di-commit, ditempel di chat, atau disimpan di DB. Gun
 - [ ] Kirim ulang notifikasi dari dashboard DOKU: tidak ada pencatatan ganda.
 - [ ] Kirim notifikasi palsu (signature salah): 401.
 - [ ] Matikan webhook (URL salah) lalu jalankan cron: status tetap tersinkron.
+- [ ] Sub Account: aktivasi dari Pengaturan berhasil, `profileId` dari DOKU tersimpan, dan akun tampil di dashboard DOKU (Sub Account V2). Catat nilai `status` di respons untuk memperbarui tabel pemetaan di §5c.
+- [ ] Sub Account: klik aktivasi dua kali cepat, hanya satu akun yang terbentuk di DOKU.
+- [ ] Sub Account: dengan kredensial SNAP salah, status menjadi `FAILED` dan muncul di `/system-admin/payments`, lalu "Daftar Ulang" berhasil setelah kredensial diperbaiki.
 - [ ] Dana masuk ke Sub Account outlet yang benar (cek `additional_info.account.id`).
 - [ ] Langganan: owner yang terkunci bayar paket Starter, dashboard terbuka, `/checkout/status` menampilkan "Pembayaran berhasil".
 - [ ] Langganan: perpanjang saat masih aktif, sisa hari bertambah.
@@ -305,5 +351,5 @@ Integration test membutuhkan database **uji** yang sudah berisi skema dan migras
 1. Lengkapi dokumen legal dan kontrak platform dengan DOKU.
 2. Buat kredensial production **baru**. Jangan pakai ulang kredensial yang pernah dibagikan.
 3. Ganti env ke production (`DOKU_ENV=production`, key production). `DOKU_REQUIRE_SUB_ACCOUNT` otomatis `true`.
-4. Daftarkan Notification URL production, lalu buat Sub Account production untuk tiap outlet.
+4. Daftarkan Notification URL production, lalu buat Sub Account production untuk tiap outlet. ID sandbox tidak berlaku di production: buat akun production per outlet lalu tautkan lewat `/system-admin/payments` (centang "Timpa ID lama").
 5. Pantau log `scope=payments` dan attempt dengan `requires_review = true`.

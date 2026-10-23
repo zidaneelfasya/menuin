@@ -894,13 +894,28 @@ export function SettingsClient({
                       </div>
                       <div className="md:col-span-8 space-y-3">
                         {paymentGateway.subAccountId ? (
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-mono text-xs px-2.5 py-1.5 rounded-lg bg-muted text-foreground">
-                              {paymentGateway.subAccountId}
-                            </span>
-                            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                              {paymentGateway.subAccountStatus || 'ACTIVE'}
-                            </span>
+                          <div className="space-y-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-mono text-xs px-2.5 py-1.5 rounded-lg bg-muted text-foreground">
+                                {paymentGateway.subAccountId}
+                              </span>
+                              <span
+                                className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+                                  paymentGateway.subAccountStatus === 'ACTIVE'
+                                    ? 'bg-emerald-100 text-emerald-800'
+                                    : 'bg-amber-100 text-amber-800'
+                                }`}
+                              >
+                                {paymentGateway.subAccountStatus || 'UNKNOWN'}
+                              </span>
+                            </div>
+                            {paymentGateway.subAccountStatus !== 'ACTIVE' && (
+                              <p className="text-xs text-muted-foreground leading-relaxed">
+                                {paymentGateway.subAccountStatus === 'PENDING_REVIEW'
+                                  ? 'Akun sudah terdaftar dan menunggu aktivasi dari DOKU. Pembayaran online belum bisa dipakai.'
+                                  : 'Akun belum aktif sehingga pembayaran online belum bisa dipakai. Hubungi tim Menuin.'}
+                              </p>
+                            )}
                           </div>
                         ) : (
                           <>
