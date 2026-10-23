@@ -16,13 +16,14 @@ import {
   ShoppingBag,
   CreditCard,
   Banknote,
-  Printer,
+  FileSpreadsheet,
   ArrowLeft,
   Clock,
   User,
   Store,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { exportShiftDetailToExcel } from '../utils/shift-excel';
 import { cn } from '@/lib/utils';
 import {
   Table,
@@ -64,8 +65,8 @@ export function ShiftDetailView({ outletKey, data }: ShiftDetailViewProps) {
     }
   }, [shift?.startTime, shift?.endTime]);
 
-  const handlePrint = () => {
-    window.print();
+  const handleExportExcel = () => {
+    exportShiftDetailToExcel(data, outletKey);
   };
 
   return (
@@ -103,11 +104,11 @@ export function ShiftDetailView({ outletKey, data }: ShiftDetailViewProps) {
           <Button
             variant="outline"
             size="sm"
-            onClick={handlePrint}
+            onClick={handleExportExcel}
             className="text-xs font-semibold gap-2 h-9 px-3.5 rounded-xl border-[#EAEFF8] bg-white text-slate-700 hover:bg-slate-50 shadow-xs cursor-pointer"
           >
-            <Printer className="w-4 h-4 text-slate-500" />
-            <span>Cetak Rekap</span>
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            <span>Export Excel</span>
           </Button>
         </div>
       </div>

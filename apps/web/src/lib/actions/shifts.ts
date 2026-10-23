@@ -2,9 +2,33 @@
 
 import { db } from '@/lib/db';
 import { shifts, cashMovements, transactions, transactionItems, products, memberships, tenants } from '@/lib/db/schema';
-import { eq, desc, and, or, sql } from 'drizzle-orm';
+import { eq, desc, and, or, sql, inArray } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from './auth';
+
+// Lightweight check for active shift existence (used in shifts sidebar & layout)
+export async function checkHasActiveShift() {
+  try {
+    const user = await getCurrentUser();
+    if (!user || !user.tenantId) return false;
+
+    const [active] = await db
+      .select({ id: shifts.id })
+      .from(shifts)
+      .where(
+        and(
+          eq(shifts.tenantId, user.tenantId),
+          eq(shifts.status, 'ACTIVE')
+        )
+      )
+      .limit(1);
+
+    return Boolean(active?.id);
+  } catch (error) {
+    console.error('Error checking active shift:', error);
+    return false;
+  }
+}
 
 // 1. Get active shift for current user (or any user in tenant if they have one)
 export async function getActiveShift() {
@@ -286,7 +310,7 @@ export async function addCashMovement(shiftId: string, type: 'IN' | 'OUT', amoun
 }
 
 // 5. Get Shift History
-export async function getShiftHistory() {
+export async function getShiftHistory(limit = 50) {
   try {
     const user = await getCurrentUser();
     if (!user || !user.tenantId) return { success: false, error: 'Unauthorized' };
@@ -310,26 +334,35 @@ export async function getShiftHistory() {
       .from(shifts)
       .leftJoin(memberships, eq(shifts.membershipId, memberships.id))
       .where(eq(shifts.tenantId, user.tenantId))
-      .orderBy(desc(shifts.createdAt));
+      .orderBy(desc(shifts.createdAt))
+      .limit(limit);
 
-    // Also get transaction counts & sales summary for each shift
-    const enrichedHistory = await Promise.all(
-      historyRows.map(async (shift) => {
-        const txSummary = await db
-          .select({
-            count: sql<number>`CAST(COUNT(${transactions.id}) AS INT)`,
-            total: sql<number>`COALESCE(SUM(${transactions.grandTotal}), 0)`
-          })
-          .from(transactions)
-          .where(eq(transactions.shiftId, shift.id));
+    if (historyRows.length === 0) {
+      return { success: true, data: [] };
+    }
 
-        return {
-          ...shift,
-          totalTransactions: Number(txSummary[0]?.count || 0),
-          totalSales: Number(txSummary[0]?.total || 0),
-        };
+    // Batch query transaction counts & sales summary in a single grouped query (eliminates N+1)
+    const shiftIds = historyRows.map((s) => s.id);
+    const txSummaries = await db
+      .select({
+        shiftId: transactions.shiftId,
+        count: sql<number>`CAST(COUNT(${transactions.id}) AS INT)`,
+        total: sql<number>`COALESCE(SUM(${transactions.grandTotal}), 0)`
       })
-    );
+      .from(transactions)
+      .where(inArray(transactions.shiftId, shiftIds))
+      .groupBy(transactions.shiftId);
+
+    const summaryMap = new Map(txSummaries.map((s) => [s.shiftId, s]));
+
+    const enrichedHistory = historyRows.map((shift) => {
+      const summary = summaryMap.get(shift.id);
+      return {
+        ...shift,
+        totalTransactions: Number(summary?.count || 0),
+        totalSales: Number(summary?.total || 0),
+      };
+    });
 
     return { success: true, data: enrichedHistory };
   } catch (error) {

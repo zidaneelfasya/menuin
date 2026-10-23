@@ -37,7 +37,9 @@ import {
   Banknote,
   Plus,
   Loader2,
+  FileSpreadsheet,
 } from "lucide-react";
+import { exportShiftHistoryToExcel } from "../utils/shift-excel";
 import {
   Dialog,
   DialogContent,
@@ -522,8 +524,9 @@ export function ShiftDashboard({
     }
   }, [activeShift?.startTime]);
 
-  // Combined timeline of movements and transactions for today
+  // Combined timeline of movements and transactions for today (only computed when active tab is selected)
   const timelineActivities = React.useMemo(() => {
+    if (activeTab !== "active") return [];
     const list: any[] = [];
 
     if (activeShift?.cashMovements) {
@@ -557,10 +560,11 @@ export function ShiftDashboard({
     }
 
     return list.sort((a, b) => b.time.getTime() - a.time.getTime());
-  }, [activeShift]);
+  }, [activeShift, activeTab]);
 
-  // Generate 7-day calendar strip
+  // Generate 7-day calendar strip (only when schedule tab is active)
   const daysOfWeek = React.useMemo(() => {
+    if (activeTab !== "schedule") return [];
     const days = [];
     const today = new Date();
     const currentDay = today.getDay();
@@ -580,7 +584,7 @@ export function ShiftDashboard({
       });
     }
     return days;
-  }, []);
+  }, [activeTab]);
 
   const totalSalesAmount = activeShift?.metrics?.totalSales || 0;
   const totalCashSales = activeShift?.metrics?.totalCashSales || 0;
@@ -1100,6 +1104,18 @@ export function ShiftDashboard({
                 Arsip rekapitulasi sesi kasir dan rekonsiliasi kas
               </p>
             </div>
+
+            {shiftHistory.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportShiftHistoryToExcel(shiftHistory, outletKey)}
+                className="rounded-xl border-[#EAEFF8] bg-white text-slate-700 hover:bg-slate-50 text-xs font-semibold h-9 px-3.5 gap-2 shadow-xs cursor-pointer"
+              >
+                <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                <span>Export Excel</span>
+              </Button>
+            )}
           </div>
 
           <AppTable

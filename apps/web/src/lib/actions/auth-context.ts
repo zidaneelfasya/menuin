@@ -89,14 +89,13 @@ export const getMembership = cache(async (accountId: string, tenantId: string) =
 });
 
 export const getSubscription = cache(async (tenantId: string) => {
-  // We guarantee only 1 active subscription exists due to unique conditional index,
-  // but we also support TRIALING status.
+  // Only ACTIVE subscriptions are considered valid (no trial)
   const [subscription] = await db.select()
     .from(subscriptions)
     .where(
       and(
         eq(subscriptions.tenantId, tenantId),
-        inArray(subscriptions.status, ['ACTIVE', 'TRIALING'])
+        eq(subscriptions.status, 'ACTIVE')
       )
     )
     .orderBy(desc(subscriptions.createdAt))
@@ -109,11 +108,11 @@ export function getEntitlements(subscription: any, now: Date = new Date()) {
   let features: FeatureKey[] = [];
   let isLocked = true;
 
-  // Langganan berbayar / trial berakhir di currentPeriodEnd. Null = tanpa batas (mis. diberikan admin).
+  // Langganan berbayar berakhir di currentPeriodEnd. Null = tanpa batas (mis. diberikan admin).
   const periodEnd = subscription?.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : null;
   const withinPeriod = !periodEnd || periodEnd.getTime() > now.getTime();
 
-  if (subscription && (subscription.status === 'ACTIVE' || subscription.status === 'TRIALING') && withinPeriod) {
+  if (subscription && subscription.status === 'ACTIVE' && withinPeriod) {
     isLocked = false;
     if (subscription.plan === 'FREE' || subscription.plan === 'BASIC') {
       features = ['POS', 'CATALOG', 'INVENTORY'];
@@ -170,7 +169,10 @@ export const getCurrentContext = cache(async (): Promise<AuthContext | null> => 
     if (!membership) return null;
 
     const subscription = await getSubscription(tenant.id);
-    const entitlements = getEntitlements(subscription);
+    const isSystemAdmin = account.systemRole === 'SYSTEM_ADMIN' || account.systemRole === 'SUPERADMIN';
+    const entitlements = isSystemAdmin
+      ? { features: ['POS', 'CATALOG', 'INVENTORY', 'REPORTS', 'FINANCE', 'TEAM'] as FeatureKey[], isLocked: false }
+      : getEntitlements(subscription);
 
     return {
       account: {

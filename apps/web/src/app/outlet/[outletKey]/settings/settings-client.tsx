@@ -392,21 +392,21 @@ export function SettingsClient({
         <div className="w-full">
           {/* TAB 1: PROFIL TOKO */}
           <TabsContent value="store" className="mt-0 outline-none">
-            <div className="bg-card border border-border/70 rounded-2xl p-6 sm:p-8 shadow-xs">
-              <form onSubmit={handleSaveStore} className="space-y-6">
-                <div className="pb-5 border-b border-border/60">
+            <div className="max-w-3xl space-y-5">
+              <form onSubmit={handleSaveStore} className="space-y-5">
+                <div className="pb-1">
                   <h2 className="text-lg font-semibold tracking-tight text-foreground">
                     Profil & Identitas Toko
                   </h2>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     Atur nama toko, tautan publik katalog digital, logo, dan tema warna utama.
                   </p>
                 </div>
 
-                <div className="divide-y divide-border/60">
+                <div className="space-y-1">
                   {/* ROW 1: LOGO OUTLET */}
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-start">
-                    <div className="md:col-span-4 space-y-0.5">
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-6 py-3.5 items-start">
+                    <div className="md:col-span-5 space-y-0.5">
                       <Label className="text-sm font-semibold text-foreground">
                         Logo Outlet
                       </Label>
@@ -414,9 +414,9 @@ export function SettingsClient({
                         Tampil di header aplikasi, katalog digital, dan struk kasir.
                       </p>
                     </div>
-                    <div className="md:col-span-8">
+                    <div className="md:col-span-7">
                       <div className="flex items-center gap-4">
-                        <div className="relative w-18 h-18 rounded-2xl overflow-hidden border border-border/80 bg-muted/40 flex items-center justify-center shrink-0 shadow-2xs">
+                        <div className="relative w-16 h-16 rounded-2xl overflow-hidden border border-border/80 bg-muted/40 flex items-center justify-center shrink-0 shadow-2xs">
                           {storeLogoUrl ? (
                             <img
                               src={storeLogoUrl}
@@ -424,7 +424,7 @@ export function SettingsClient({
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <span className="text-muted-foreground text-lg font-semibold">
+                            <span className="text-muted-foreground text-base font-semibold">
                               {storeName ? storeName.slice(0, 2).toUpperCase() : 'MN'}
                             </span>
                           )}
@@ -463,7 +463,7 @@ export function SettingsClient({
                             )}
                           </div>
                           <p className="text-[11px] text-muted-foreground">
-                            Format PNG, JPG, WebP. Rasio 1:1, maks 5MB.
+                            Format PNG, JPG, WebP (1:1, maks 5MB).
                           </p>
                         </div>
                       </div>
@@ -471,8 +471,8 @@ export function SettingsClient({
                   </div>
 
                   {/* ROW 2: BANNER / COVER OUTLET */}
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-start">
-                    <div className="md:col-span-4 space-y-0.5">
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-6 py-3.5 items-start">
+                    <div className="md:col-span-5 space-y-0.5">
                       <Label className="text-sm font-semibold text-foreground">
                         Banner Sampul
                       </Label>
@@ -480,9 +480,9 @@ export function SettingsClient({
                         Banner utama yang tampil pada header katalog digital toko Anda.
                       </p>
                     </div>
-                    <div className="md:col-span-8 space-y-3">
+                    <div className="md:col-span-7 space-y-2">
                       {storeBannerUrl ? (
-                        <div className="relative rounded-xl overflow-hidden border border-border/80 aspect-[3/1] max-w-md bg-muted/30">
+                        <div className="relative rounded-xl overflow-hidden border border-border/80 aspect-[3/1] max-w-sm bg-muted/30">
                           <img
                             src={storeBannerUrl}
                             alt="Banner Toko"
@@ -495,7 +495,7 @@ export function SettingsClient({
                           )}
                         </div>
                       ) : (
-                        <div className="rounded-xl border border-dashed border-border/80 p-4 max-w-md bg-muted/10 text-center">
+                        <div className="rounded-xl border border-dashed border-border/80 p-3.5 max-w-sm bg-muted/10 text-center">
                           <p className="text-xs text-muted-foreground">Belum ada banner sampul</p>
                         </div>
                       )}
@@ -533,8 +533,8 @@ export function SettingsClient({
                   </div>
 
                   {/* ROW 3: NAMA TOKO */}
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-start">
-                    <div className="md:col-span-4 space-y-0.5">
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-6 py-3.5 items-start">
+                    <div className="md:col-span-5 space-y-0.5">
                       <Label htmlFor="storeName" className="text-sm font-semibold text-foreground">
                         Nama Toko
                       </Label>
@@ -542,21 +542,21 @@ export function SettingsClient({
                         Nama resmi toko atau outlet Anda.
                       </p>
                     </div>
-                    <div className="md:col-span-8">
+                    <div className="md:col-span-7">
                       <Input
                         id="storeName"
                         value={storeName}
                         onChange={(e) => setStoreName(e.target.value)}
                         placeholder="Contoh: Kopi Titik Temu"
-                        className="rounded-xl h-11 bg-background/80 hover:bg-background focus:bg-background border-border/80 text-sm focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
+                        className="rounded-xl h-10 bg-background/80 hover:bg-background focus:bg-background border-border/80 text-sm focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all max-w-md"
                         required
                       />
                     </div>
                   </div>
 
                   {/* ROW 4: USERNAME / SLUG */}
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-start">
-                    <div className="md:col-span-4 space-y-0.5">
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-6 py-3.5 items-start">
+                    <div className="md:col-span-5 space-y-0.5">
                       <Label htmlFor="storeSlug" className="text-sm font-semibold text-foreground">
                         Username / Slug Toko
                       </Label>
@@ -564,9 +564,9 @@ export function SettingsClient({
                         URL publik katalog online toko Anda.
                       </p>
                     </div>
-                    <div className="md:col-span-8">
-                      <div className="flex items-center rounded-xl border border-border/80 bg-background/80 hover:bg-background focus-within:bg-background overflow-hidden focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
-                        <div className="px-3.5 py-2.5 bg-muted/50 border-r border-border/80 text-xs font-mono text-muted-foreground font-medium select-none">
+                    <div className="md:col-span-7">
+                      <div className="flex items-center rounded-xl border border-border/80 bg-background/80 hover:bg-background focus-within:bg-background overflow-hidden focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all max-w-md">
+                        <div className="px-3.5 py-2 bg-muted/50 border-r border-border/80 text-xs font-mono text-muted-foreground font-medium select-none">
                           menuin.id/store/
                         </div>
                         <Input
@@ -574,9 +574,9 @@ export function SettingsClient({
                           value={storeSlug}
                           onChange={(e) => setStoreSlug(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
                           placeholder="kopi-titik-temu"
-                          className="border-0 rounded-none h-11 bg-transparent text-sm font-mono focus-visible:ring-0 focus-visible:ring-offset-0 px-3.5"
+                          className="border-0 rounded-none h-10 bg-transparent text-sm font-mono focus-visible:ring-0 focus-visible:ring-offset-0 px-3.5"
                         />
-                        <div className="pr-3.5 text-primary shrink-0">
+                        <div className="pr-3 text-primary shrink-0">
                           <IconCircleCheck className="w-4 h-4" />
                         </div>
                       </div>
@@ -584,8 +584,8 @@ export function SettingsClient({
                   </div>
 
                   {/* ROW 5: DESKRIPSI TOKO */}
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-start">
-                    <div className="md:col-span-4 space-y-0.5">
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-6 py-3.5 items-start">
+                    <div className="md:col-span-5 space-y-0.5">
                       <Label htmlFor="storeDescription" className="text-sm font-semibold text-foreground">
                         Deskripsi Toko
                       </Label>
@@ -593,21 +593,21 @@ export function SettingsClient({
                         Deskripsi singkat outlet untuk katalog digital.
                       </p>
                     </div>
-                    <div className="md:col-span-8">
+                    <div className="md:col-span-7">
                       <Textarea
                         id="storeDescription"
                         rows={3}
                         value={storeDescription}
                         onChange={(e) => setStoreDescription(e.target.value)}
                         placeholder="Tuliskan deskripsi singkat mengenai outlet Anda..."
-                        className="rounded-xl bg-background/80 hover:bg-background focus:bg-background border-border/80 text-sm resize-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all p-3.5"
+                        className="rounded-xl bg-background/80 hover:bg-background focus:bg-background border-border/80 text-sm resize-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all p-3 max-w-md"
                       />
                     </div>
                   </div>
 
                   {/* ROW 6: WARNA TEMA / BRANDING */}
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-start">
-                    <div className="md:col-span-4 space-y-0.5">
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-6 py-3.5 items-start">
+                    <div className="md:col-span-5 space-y-0.5">
                       <Label className="text-sm font-semibold text-foreground">
                         Warna Tema Utama
                       </Label>
@@ -615,7 +615,7 @@ export function SettingsClient({
                         Warna aksen utama tema dan katalog toko.
                       </p>
                     </div>
-                    <div className="md:col-span-8">
+                    <div className="md:col-span-7">
                       <ColorPicker
                         value={primaryColor}
                         onChange={setPrimaryColor}
@@ -624,7 +624,7 @@ export function SettingsClient({
                   </div>
 
                   {/* ROW 7: FORMAT KODE PESANAN (ORDER PREFIX) */}
-                  <div className="py-5">
+                  <div className="py-3.5">
                     <OrderPrefixPicker
                       value={orderPrefix}
                       onChange={setOrderPrefix}
@@ -634,11 +634,11 @@ export function SettingsClient({
                 </div>
 
                 {/* SAVE ACTION BAR */}
-                <div className="flex items-center justify-end pt-5 border-t border-border/60">
+                <div className="flex items-center justify-end pt-3">
                   <Button
                     disabled={isSavingStore || !hasStoreChanges}
                     type="submit"
-                    className="min-w-[150px] h-11 rounded-xl text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all cursor-pointer"
+                    className="min-w-[150px] h-10 rounded-xl text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all cursor-pointer"
                   >
                     {isSavingStore ? (
                       <><IconLoader2 className="mr-2 h-4 w-4 animate-spin" /> Menyimpan...</>
@@ -653,20 +653,20 @@ export function SettingsClient({
 
           {/* TAB 2: PAJAK & BIAYA LAYANAN */}
           <TabsContent value="tax" className="mt-0 outline-none">
-            <div className="bg-card border border-border/70 rounded-2xl p-6 sm:p-8 shadow-xs">
-              <form onSubmit={handleSaveTax} className="space-y-6">
-                <div className="pb-5 border-b border-border/60">
+            <div className="max-w-3xl space-y-5">
+              <form onSubmit={handleSaveTax} className="space-y-5">
+                <div className="pb-1">
                   <h2 className="text-lg font-semibold tracking-tight text-foreground">
                     Pajak Restoran & Biaya Layanan
                   </h2>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     Atur persentase pajak PB1 dan service charge yang otomatis dihitung pada pesanan kasir POS.
                   </p>
                 </div>
 
-                <div className="divide-y divide-border/60">
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-start">
-                    <div className="md:col-span-4 space-y-0.5">
+                <div className="space-y-1">
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-6 py-3.5 items-start">
+                    <div className="md:col-span-5 space-y-0.5">
                       <Label htmlFor="taxName" className="text-sm font-semibold text-foreground">
                         Nama Label Pajak
                       </Label>
@@ -674,74 +674,72 @@ export function SettingsClient({
                         Label yang tercetak pada struk kasir pelanggan.
                       </p>
                     </div>
-                    <div className="md:col-span-8">
+                    <div className="md:col-span-7">
                       <Input
                         id="taxName"
                         value={taxName}
                         onChange={(e) => setTaxName(e.target.value)}
                         placeholder="Contoh: Pajak Restoran (PB1)"
-                        className="rounded-xl h-11 bg-background/80 hover:bg-background focus:bg-background border-border/80 text-sm focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
+                        className="rounded-xl h-10 bg-background/80 hover:bg-background focus:bg-background border-border/80 text-sm focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all max-w-md"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-start">
-                    <div className="md:col-span-4 space-y-0.5">
-                      <Label htmlFor="posTaxRate" className="text-sm font-semibold text-foreground">
-                        Tarif Pajak POS (%)
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-6 py-3.5 items-start">
+                    <div className="md:col-span-5 space-y-0.5">
+                      <Label className="text-sm font-semibold text-foreground">
+                        Tarif Pajak & Layanan
                       </Label>
                       <p className="text-xs text-muted-foreground leading-relaxed">
-                        Persentase pajak yang dibebankan ke subtotal order kasir.
+                        Persentase pajak PB1 dan service charge pesanan kasir.
                       </p>
                     </div>
-                    <div className="md:col-span-8">
-                      <div className="relative">
-                        <Input
-                          id="posTaxRate"
-                          type="number"
-                          step="0.1"
-                          min="0"
-                          max="100"
-                          value={posTaxRate}
-                          onChange={(e) => setPosTaxRate(e.target.value)}
-                          placeholder="10"
-                          className="rounded-xl h-11 bg-background/80 hover:bg-background focus:bg-background border-border/80 text-sm pr-10 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
-                        />
-                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">%</span>
+                    <div className="md:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-md">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="posTaxRate" className="text-xs font-medium text-muted-foreground">
+                          Tarif Pajak POS (%)
+                        </Label>
+                        <div className="relative">
+                          <Input
+                            id="posTaxRate"
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            max="100"
+                            value={posTaxRate}
+                            onChange={(e) => setPosTaxRate(e.target.value)}
+                            placeholder="10"
+                            className="rounded-xl h-10 bg-background/80 hover:bg-background focus:bg-background border-border/80 text-sm pr-9 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">%</span>
+                        </div>
                       </div>
-                    </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-start">
-                    <div className="md:col-span-4 space-y-0.5">
-                      <Label htmlFor="serviceChargeRate" className="text-sm font-semibold text-foreground">
-                        Biaya Layanan (%)
-                      </Label>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        Persentase biaya layanan untuk pesanan dine-in.
-                      </p>
-                    </div>
-                    <div className="md:col-span-8">
-                      <div className="relative">
-                        <Input
-                          id="serviceChargeRate"
-                          type="number"
-                          step="0.1"
-                          min="0"
-                          max="100"
-                          value={serviceChargeRate}
-                          onChange={(e) => setServiceChargeRate(e.target.value)}
-                          placeholder="5"
-                          className="rounded-xl h-11 bg-background/80 hover:bg-background focus:bg-background border-border/80 text-sm pr-10 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
-                        />
-                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">%</span>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="serviceChargeRate" className="text-xs font-medium text-muted-foreground">
+                          Biaya Layanan (%)
+                        </Label>
+                        <div className="relative">
+                          <Input
+                            id="serviceChargeRate"
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            max="100"
+                            value={serviceChargeRate}
+                            onChange={(e) => setServiceChargeRate(e.target.value)}
+                            placeholder="5"
+                            className="rounded-xl h-10 bg-background/80 hover:bg-background focus:bg-background border-border/80 text-sm pr-9 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">%</span>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex justify-end pt-5 border-t border-border/60">
-                  <Button disabled={isSavingTax || !hasTaxChanges} type="submit" className="min-w-[150px] h-11 rounded-xl text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all cursor-pointer">
+                <div className="flex justify-end pt-3">
+                  <Button disabled={isSavingTax || !hasTaxChanges} type="submit" className="min-w-[150px] h-10 rounded-xl text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all cursor-pointer">
                     {isSavingTax ? (
                       <><IconLoader2 className="mr-2 h-4 w-4 animate-spin" /> Menyimpan...</>
                     ) : (
@@ -755,99 +753,90 @@ export function SettingsClient({
 
           {/* TAB 3: KOMISI ONLINE FOOD */}
           <TabsContent value="platform" className="mt-0 outline-none">
-            <div className="bg-card border border-border/70 rounded-2xl p-6 sm:p-8 shadow-xs">
-              <form onSubmit={handleSavePlatformFees} className="space-y-6">
-                <div className="pb-5 border-b border-border/60">
+            <div className="max-w-3xl space-y-5">
+              <form onSubmit={handleSavePlatformFees} className="space-y-5">
+                <div className="pb-1">
                   <h2 className="text-lg font-semibold tracking-tight text-foreground">
                     Potongan Komisi Online Food
                   </h2>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     Potongan komisi mitra pesan-antar makanan untuk kalkulasi estimasi pendapatan bersih.
                   </p>
                 </div>
 
-                <div className="divide-y divide-border/60">
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-start">
-                    <div className="md:col-span-4 space-y-0.5">
-                      <Label htmlFor="grabFoodFeeRate" className="text-sm font-semibold text-foreground">
-                        GrabFood (%)
+                <div className="space-y-1">
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-6 py-3.5 items-start">
+                    <div className="md:col-span-5 space-y-0.5">
+                      <Label className="text-sm font-semibold text-foreground">
+                        Komisi Mitra Pesan-Antar
                       </Label>
                       <p className="text-xs text-muted-foreground leading-relaxed">
-                        Persentase komisi bagi hasil GrabFood.
+                        Persentase bagi hasil mitra pesan-antar makanan.
                       </p>
                     </div>
-                    <div className="md:col-span-8">
-                      <div className="relative">
-                        <Input
-                          id="grabFoodFeeRate"
-                          type="number"
-                          step="0.1"
-                          min="0"
-                          max="100"
-                          value={grabFoodFeeRate}
-                          onChange={(e) => setGrabFoodFeeRate(e.target.value)}
-                          className="rounded-xl h-11 bg-background/80 hover:bg-background focus:bg-background border-border/80 text-sm pr-10 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
-                        />
-                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">%</span>
+                    <div className="md:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-md">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="grabFoodFeeRate" className="text-xs font-medium text-muted-foreground">
+                          GrabFood (%)
+                        </Label>
+                        <div className="relative">
+                          <Input
+                            id="grabFoodFeeRate"
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            max="100"
+                            value={grabFoodFeeRate}
+                            onChange={(e) => setGrabFoodFeeRate(e.target.value)}
+                            className="rounded-xl h-10 bg-background/80 hover:bg-background focus:bg-background border-border/80 text-sm pr-8 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
+                          />
+                          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">%</span>
+                        </div>
                       </div>
-                    </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-start">
-                    <div className="md:col-span-4 space-y-0.5">
-                      <Label htmlFor="shopeeFoodFeeRate" className="text-sm font-semibold text-foreground">
-                        ShopeeFood (%)
-                      </Label>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        Persentase komisi bagi hasil ShopeeFood.
-                      </p>
-                    </div>
-                    <div className="md:col-span-8">
-                      <div className="relative">
-                        <Input
-                          id="shopeeFoodFeeRate"
-                          type="number"
-                          step="0.1"
-                          min="0"
-                          max="100"
-                          value={shopeeFoodFeeRate}
-                          onChange={(e) => setShopeeFoodFeeRate(e.target.value)}
-                          className="rounded-xl h-11 bg-background/80 hover:bg-background focus:bg-background border-border/80 text-sm pr-10 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
-                        />
-                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">%</span>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="shopeeFoodFeeRate" className="text-xs font-medium text-muted-foreground">
+                          ShopeeFood (%)
+                        </Label>
+                        <div className="relative">
+                          <Input
+                            id="shopeeFoodFeeRate"
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            max="100"
+                            value={shopeeFoodFeeRate}
+                            onChange={(e) => setShopeeFoodFeeRate(e.target.value)}
+                            className="rounded-xl h-10 bg-background/80 hover:bg-background focus:bg-background border-border/80 text-sm pr-8 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
+                          />
+                          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">%</span>
+                        </div>
                       </div>
-                    </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-start">
-                    <div className="md:col-span-4 space-y-0.5">
-                      <Label htmlFor="goFoodFeeRate" className="text-sm font-semibold text-foreground">
-                        GoFood (%)
-                      </Label>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        Persentase komisi bagi hasil GoFood.
-                      </p>
-                    </div>
-                    <div className="md:col-span-8">
-                      <div className="relative">
-                        <Input
-                          id="goFoodFeeRate"
-                          type="number"
-                          step="0.1"
-                          min="0"
-                          max="100"
-                          value={goFoodFeeRate}
-                          onChange={(e) => setGoFoodFeeRate(e.target.value)}
-                          className="rounded-xl h-11 bg-background/80 hover:bg-background focus:bg-background border-border/80 text-sm pr-10 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
-                        />
-                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">%</span>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="goFoodFeeRate" className="text-xs font-medium text-muted-foreground">
+                          GoFood (%)
+                        </Label>
+                        <div className="relative">
+                          <Input
+                            id="goFoodFeeRate"
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            max="100"
+                            value={goFoodFeeRate}
+                            onChange={(e) => setGoFoodFeeRate(e.target.value)}
+                            className="rounded-xl h-10 bg-background/80 hover:bg-background focus:bg-background border-border/80 text-sm pr-8 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
+                          />
+                          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">%</span>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex justify-end pt-5 border-t border-border/60">
-                  <Button disabled={isSavingPlatform || !hasPlatformChanges} type="submit" className="min-w-[150px] h-11 rounded-xl text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all cursor-pointer">
+                <div className="flex justify-end pt-3">
+                  <Button disabled={isSavingPlatform || !hasPlatformChanges} type="submit" className="min-w-[150px] h-10 rounded-xl text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all cursor-pointer">
                     {isSavingPlatform ? (
                       <><IconLoader2 className="mr-2 h-4 w-4 animate-spin" /> Menyimpan...</>
                     ) : (
@@ -862,18 +851,18 @@ export function SettingsClient({
           {/* TAB 4: PEMBAYARAN ONLINE (DOKU) */}
           {isOwnerOnly && (
             <TabsContent value="payment" className="mt-0 outline-none">
-              <div className="bg-card border border-border/70 rounded-2xl p-6 sm:p-8 shadow-xs space-y-6">
-                <div className="pb-5 border-b border-border/60 flex items-start justify-between gap-4">
+              <div className="max-w-3xl space-y-5">
+                <div className="pb-1 flex items-start justify-between gap-4">
                   <div>
                     <h2 className="text-lg font-semibold tracking-tight text-foreground">
                       Pembayaran Online (DOKU)
                     </h2>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Terima QRIS, Virtual Account, e-wallet, dan kartu dari pesanan online. Dana masuk ke akun pembayaran outlet Anda.
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Terima QRIS, Virtual Account, e-wallet, dan kartu dari pesanan online.
                     </p>
                   </div>
                   {paymentGateway?.environment === 'sandbox' && (
-                    <span className="shrink-0 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-amber-100 text-amber-800">
+                    <span className="shrink-0 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800">
                       Mode Uji Coba
                     </span>
                   )}
@@ -884,15 +873,15 @@ export function SettingsClient({
                     Payment gateway belum dikonfigurasi di platform. Hubungi tim Menuin.
                   </p>
                 ) : (
-                  <div className="divide-y divide-border/60">
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-start">
-                      <div className="md:col-span-4 space-y-0.5">
+                  <div>
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-6 py-3.5 items-start">
+                      <div className="md:col-span-5 space-y-0.5">
                         <Label className="text-sm font-semibold text-foreground">Akun Pembayaran Outlet</Label>
                         <p className="text-xs text-muted-foreground leading-relaxed">
                           Sub Account DOKU tempat dana pesanan online outlet ini diterima.
                         </p>
                       </div>
-                      <div className="md:col-span-8 space-y-3">
+                      <div className="md:col-span-7 space-y-2.5">
                         {paymentGateway.subAccountId ? (
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="font-mono text-xs px-2.5 py-1.5 rounded-lg bg-muted text-foreground">
@@ -914,7 +903,7 @@ export function SettingsClient({
                               type="button"
                               onClick={handleActivatePayment}
                               disabled={isSavingPayment}
-                              className="min-w-[180px] h-11 rounded-xl text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all cursor-pointer"
+                              className="min-w-[180px] h-10 rounded-xl text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all cursor-pointer"
                             >
                               {isSavingPayment ? (
                                 <><IconLoader2 className="mr-2 h-4 w-4 animate-spin" /> Mengaktifkan...</>
@@ -929,7 +918,7 @@ export function SettingsClient({
                   </div>
                 )}
 
-                <p className="text-xs text-muted-foreground pt-5 border-t border-border/60">
+                <p className="text-xs text-muted-foreground pt-2">
                   Pembayaran online untuk pelanggan dinyalakan/dimatikan di menu Katalog → Pemesanan.
                 </p>
               </div>
@@ -938,18 +927,18 @@ export function SettingsClient({
 
           {/* TAB 5: PREFERENSI TAMPILAN */}
           <TabsContent value="bestseller" className="mt-0 outline-none">
-            <div className="bg-card border border-border/70 rounded-2xl p-6 sm:p-8 shadow-xs">
-              <form onSubmit={handleSaveDisplay} className="space-y-6">
-                <div className="pb-5 border-b border-border/60">
+            <div className="max-w-3xl space-y-5">
+              <form onSubmit={handleSaveDisplay} className="space-y-5">
+                <div className="pb-1">
                   <h2 className="text-lg font-semibold tracking-tight text-foreground">
                     Preferensi Tampilan Katalog POS
                   </h2>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     Sesuaikan urutan dan tata letak produk di katalog kasir.
                   </p>
                 </div>
 
-                <div className="p-4.5 rounded-2xl border border-border/70 bg-muted/20 flex items-center justify-between gap-4">
+                <div className="py-3.5 flex items-center justify-between gap-6 max-w-xl">
                   <div className="space-y-0.5">
                     <Label htmlFor="posPinBestSellers" className="text-sm font-semibold text-foreground">
                       Sematkan Menu Terlaris di Paling Atas
@@ -965,8 +954,8 @@ export function SettingsClient({
                   />
                 </div>
 
-                <div className="flex justify-end pt-5 border-t border-border/60">
-                  <Button disabled={isSavingDisplay || !hasDisplayChanges} type="submit" className="min-w-[150px] h-11 rounded-xl text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all cursor-pointer">
+                <div className="flex justify-end pt-3 max-w-xl">
+                  <Button disabled={isSavingDisplay || !hasDisplayChanges} type="submit" className="min-w-[150px] h-10 rounded-xl text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all cursor-pointer">
                     {isSavingDisplay ? (
                       <><IconLoader2 className="mr-2 h-4 w-4 animate-spin" /> Menyimpan...</>
                     ) : (
@@ -989,7 +978,7 @@ export function SettingsClient({
               
               {/* FORM CONTROLS (7 COLS) */}
               <div className="lg:col-span-7">
-                <div className="bg-card border border-border/70 rounded-2xl p-6 sm:p-8 shadow-xs space-y-6">
+                <div className="space-y-6">
                   <Tabs defaultValue="customer_receipt" className="w-full">
                     <TabsList className="grid grid-cols-2 w-full mb-6 bg-muted/60 p-1 rounded-xl">
                       <TabsTrigger value="customer_receipt" className="rounded-lg text-xs font-semibold py-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs shadow-none cursor-pointer">
@@ -999,13 +988,12 @@ export function SettingsClient({
                         <IconChefHat className="h-4 w-4 mr-1.5" /> Tiket Dapur (Slip)
                       </TabsTrigger>
                     </TabsList>
-
                     {/* SUB-FORM 1: STRUK PELANGGAN */}
                     <TabsContent value="customer_receipt" className="mt-0">
-                      <form onSubmit={handleSaveReceipt} className="space-y-6">
-                        <div className="divide-y divide-border/60">
+                      <form onSubmit={handleSaveReceipt} className="space-y-4">
+                        <div className="space-y-3">
                           {/* HEADER TEXT */}
-                          <div className="py-4 space-y-1.5">
+                          <div className="space-y-1">
                             <Label htmlFor="receiptHeader" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                               Header Struk (Alamat & Kontak Outlet)
                             </Label>
@@ -1015,12 +1003,12 @@ export function SettingsClient({
                               value={receiptHeader}
                               onChange={(e) => setReceiptHeader(e.target.value)}
                               placeholder="Jl. Thamrin No. 12, Jakarta Pusat&#10;Telp: 0812-3456-7890"
-                              className="rounded-xl bg-background/80 hover:bg-background focus:bg-background border-border/80 font-mono text-xs resize-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all p-3.5"
+                              className="rounded-xl bg-background/80 hover:bg-background focus:bg-background border-border/80 font-mono text-xs resize-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all p-3"
                             />
                           </div>
 
                           {/* FOOTER TEXT */}
-                          <div className="py-4 space-y-1.5">
+                          <div className="space-y-1">
                             <Label htmlFor="receiptFooter" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                               Footer Struk (Pesan Penutup)
                             </Label>
@@ -1030,12 +1018,12 @@ export function SettingsClient({
                               value={receiptFooter}
                               onChange={(e) => setReceiptFooter(e.target.value)}
                               placeholder="Terima kasih atas kunjungan Anda!&#10;Follow IG: @outlet_resmi"
-                              className="rounded-xl bg-background/80 hover:bg-background focus:bg-background border-border/80 font-mono text-xs resize-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all p-3.5"
+                              className="rounded-xl bg-background/80 hover:bg-background focus:bg-background border-border/80 font-mono text-xs resize-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all p-3"
                             />
                           </div>
 
                           {/* WIFI NOTE */}
-                          <div className="py-4 space-y-1.5">
+                          <div className="space-y-1">
                             <Label htmlFor="receiptCustomNote" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                               Catatan Khusus / Info WiFi
                             </Label>
@@ -1044,58 +1032,56 @@ export function SettingsClient({
                               value={receiptCustomNote}
                               onChange={(e) => setReceiptCustomNote(e.target.value)}
                               placeholder="WiFi: TamuResto / Pass: ngopidulu"
-                              className="rounded-xl h-11 bg-background/80 hover:bg-background focus:bg-background border-border/80 text-xs focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
+                              className="rounded-xl h-10 bg-background/80 hover:bg-background focus:bg-background border-border/80 text-xs focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
                             />
                           </div>
 
                           {/* TOGGLES LIST */}
-                          <div className="py-4 space-y-2">
-                            <div className="rounded-2xl border border-border/60 bg-muted/15 divide-y divide-border/40 overflow-hidden">
-                              <div className="flex items-center justify-between p-3.5 hover:bg-muted/30 transition-colors">
-                                <div className="space-y-0.5">
-                                  <Label className="font-semibold text-xs text-foreground">Logo Toko di Header</Label>
-                                  <p className="text-[11px] text-muted-foreground">Cetak logo di bagian paling atas struk</p>
-                                </div>
-                                <Switch checked={receiptShowLogo} onCheckedChange={setReceiptShowLogo} />
+                          <div className="space-y-1 pt-1">
+                            <div className="flex items-center justify-between p-2.5 rounded-lg hover:bg-muted/30 transition-colors">
+                              <div className="space-y-0.5">
+                                <Label className="font-semibold text-xs text-foreground">Logo Toko di Header</Label>
+                                <p className="text-[11px] text-muted-foreground">Cetak logo di bagian paling atas struk</p>
                               </div>
+                              <Switch checked={receiptShowLogo} onCheckedChange={setReceiptShowLogo} />
+                            </div>
 
-                              <div className="flex items-center justify-between p-3.5 hover:bg-muted/30 transition-colors">
-                                <div className="space-y-0.5">
-                                  <Label className="font-semibold text-xs text-foreground">Nama Kasir</Label>
-                                  <p className="text-[11px] text-muted-foreground">Tampilkan nama kasir yang melayani transaksi</p>
-                                </div>
-                                <Switch checked={receiptShowCashier} onCheckedChange={setReceiptShowCashier} />
+                            <div className="flex items-center justify-between p-2.5 rounded-lg hover:bg-muted/30 transition-colors">
+                              <div className="space-y-0.5">
+                                <Label className="font-semibold text-xs text-foreground">Nama Kasir</Label>
+                                <p className="text-[11px] text-muted-foreground">Tampilkan nama kasir yang melayani transaksi</p>
                               </div>
+                              <Switch checked={receiptShowCashier} onCheckedChange={setReceiptShowCashier} />
+                            </div>
 
-                              <div className="flex items-center justify-between p-3.5 hover:bg-muted/30 transition-colors">
-                                <div className="space-y-0.5">
-                                  <Label className="font-semibold text-xs text-foreground">Nama Pelanggan</Label>
-                                  <p className="text-[11px] text-muted-foreground">Tampilkan nama pemesan</p>
-                                </div>
-                                <Switch checked={receiptShowCustomer} onCheckedChange={setReceiptShowCustomer} />
+                            <div className="flex items-center justify-between p-2.5 rounded-lg hover:bg-muted/30 transition-colors">
+                              <div className="space-y-0.5">
+                                <Label className="font-semibold text-xs text-foreground">Nama Pelanggan</Label>
+                                <p className="text-[11px] text-muted-foreground">Tampilkan nama pemesan</p>
                               </div>
+                              <Switch checked={receiptShowCustomer} onCheckedChange={setReceiptShowCustomer} />
+                            </div>
 
-                              <div className="flex items-center justify-between p-3.5 hover:bg-muted/30 transition-colors">
-                                <div className="space-y-0.5">
-                                  <Label className="font-semibold text-xs text-foreground">Nomor Meja</Label>
-                                  <p className="text-[11px] text-muted-foreground">Tampilkan nomor meja (Dine-In)</p>
-                                </div>
-                                <Switch checked={receiptShowTable} onCheckedChange={setReceiptShowTable} />
+                            <div className="flex items-center justify-between p-2.5 rounded-lg hover:bg-muted/30 transition-colors">
+                              <div className="space-y-0.5">
+                                <Label className="font-semibold text-xs text-foreground">Nomor Meja</Label>
+                                <p className="text-[11px] text-muted-foreground">Tampilkan nomor meja (Dine-In)</p>
                               </div>
+                              <Switch checked={receiptShowTable} onCheckedChange={setReceiptShowTable} />
+                            </div>
 
-                              <div className="flex items-center justify-between p-3.5 hover:bg-muted/30 transition-colors">
-                                <div className="space-y-0.5">
-                                  <Label className="font-semibold text-xs text-foreground">Catatan Item & WiFi</Label>
-                                  <p className="text-[11px] text-muted-foreground">Cetak baris catatan item dan kotak info WiFi</p>
-                                </div>
-                                <Switch checked={receiptShowNotes} onCheckedChange={setReceiptShowNotes} />
+                            <div className="flex items-center justify-between p-2.5 rounded-lg hover:bg-muted/30 transition-colors">
+                              <div className="space-y-0.5">
+                                <Label className="font-semibold text-xs text-foreground">Catatan Item & WiFi</Label>
+                                <p className="text-[11px] text-muted-foreground">Cetak baris catatan item dan kotak info WiFi</p>
                               </div>
+                              <Switch checked={receiptShowNotes} onCheckedChange={setReceiptShowNotes} />
                             </div>
                           </div>
                         </div>
 
-                        <div className="flex justify-end pt-4 border-t border-border/60">
-                          <Button disabled={isSavingReceipt || !hasReceiptChanges} type="submit" className="min-w-[150px] h-11 rounded-xl text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all cursor-pointer">
+                        <div className="flex justify-end pt-2">
+                          <Button disabled={isSavingReceipt || !hasReceiptChanges} type="submit" className="min-w-[150px] h-10 rounded-xl text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all cursor-pointer">
                             {isSavingReceipt ? (
                               <><IconLoader2 className="mr-2 h-4 w-4 animate-spin" /> Menyimpan...</>
                             ) : (
@@ -1108,11 +1094,11 @@ export function SettingsClient({
 
                     {/* SUB-FORM 2: TIKET DAPUR */}
                     <TabsContent value="kitchen_ticket" className="mt-0">
-                      <form onSubmit={handleSaveKitchen} className="space-y-6">
-                        <div className="divide-y divide-border/60">
+                      <form onSubmit={handleSaveKitchen} className="space-y-4">
+                        <div className="space-y-3">
                           {/* MASTER TOGGLE */}
-                          <div className="py-3">
-                            <div className="flex items-center justify-between p-4 border border-primary/20 rounded-2xl bg-primary/5">
+                          <div>
+                            <div className="flex items-center justify-between p-3.5 border border-primary/20 rounded-xl bg-primary/5">
                               <div className="space-y-0.5">
                                 <Label className="font-semibold text-xs text-foreground">
                                   Otomatis Cetak Tiket Dapur Saat Bayar
@@ -1126,7 +1112,7 @@ export function SettingsClient({
                           </div>
 
                           {/* TITLE */}
-                          <div className="py-4 space-y-1.5">
+                          <div className="space-y-1">
                             <Label htmlFor="kitchenTicketTitle" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                               Judul Tiket Dapur
                             </Label>
@@ -1135,12 +1121,12 @@ export function SettingsClient({
                               value={kitchenTicketTitle}
                               onChange={(e) => setKitchenTicketTitle(e.target.value)}
                               placeholder="TIKET DAPUR / BAR"
-                              className="rounded-xl h-11 bg-background/80 hover:bg-background focus:bg-background border-border/80 text-xs font-semibold focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
+                              className="rounded-xl h-10 bg-background/80 hover:bg-background focus:bg-background border-border/80 text-xs font-semibold focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
                             />
                           </div>
 
                           {/* NOTES */}
-                          <div className="py-4 space-y-1.5">
+                          <div className="space-y-1">
                             <Label htmlFor="kitchenTicketNotes" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                               Catatan Kaki Dapur
                             </Label>
@@ -1149,58 +1135,56 @@ export function SettingsClient({
                               value={kitchenTicketNotes}
                               onChange={(e) => setKitchenTicketNotes(e.target.value)}
                               placeholder="Harap periksa kelengkapan pesanan sebelum disajikan"
-                              className="rounded-xl h-11 bg-background/80 hover:bg-background focus:bg-background border-border/80 text-xs focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
+                              className="rounded-xl h-10 bg-background/80 hover:bg-background focus:bg-background border-border/80 text-xs focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
                             />
                           </div>
 
                           {/* TOGGLES LIST */}
-                          <div className="py-4 space-y-2">
-                            <div className="rounded-2xl border border-border/60 bg-muted/15 divide-y divide-border/40 overflow-hidden">
-                              <div className="flex items-center justify-between p-3.5 hover:bg-muted/30 transition-colors">
-                                <div className="space-y-0.5">
-                                  <Label className="font-semibold text-xs text-foreground">Nomor Meja & Channel</Label>
-                                  <p className="text-[11px] text-muted-foreground">Cetak nomor meja dan tipe order (Dine In / Take Away)</p>
-                                </div>
-                                <Switch checked={kitchenShowTable} onCheckedChange={setKitchenShowTable} />
+                          <div className="space-y-1 pt-1">
+                            <div className="flex items-center justify-between p-2.5 rounded-lg hover:bg-muted/30 transition-colors">
+                              <div className="space-y-0.5">
+                                <Label className="font-semibold text-xs text-foreground">Nomor Meja & Channel</Label>
+                                <p className="text-[11px] text-muted-foreground">Cetak nomor meja dan tipe order (Dine In / Take Away)</p>
                               </div>
+                              <Switch checked={kitchenShowTable} onCheckedChange={setKitchenShowTable} />
+                            </div>
 
-                              <div className="flex items-center justify-between p-3.5 hover:bg-muted/30 transition-colors">
-                                <div className="space-y-0.5">
-                                  <Label className="font-semibold text-xs text-foreground">Nama Pelanggan</Label>
-                                  <p className="text-[11px] text-muted-foreground">Tampilkan nama pemesan di tiket dapur</p>
-                                </div>
-                                <Switch checked={kitchenShowCustomer} onCheckedChange={setKitchenShowCustomer} />
+                            <div className="flex items-center justify-between p-2.5 rounded-lg hover:bg-muted/30 transition-colors">
+                              <div className="space-y-0.5">
+                                <Label className="font-semibold text-xs text-foreground">Nama Pelanggan</Label>
+                                <p className="text-[11px] text-muted-foreground">Tampilkan nama pemesan di tiket dapur</p>
                               </div>
+                              <Switch checked={kitchenShowCustomer} onCheckedChange={setKitchenShowCustomer} />
+                            </div>
 
-                              <div className="flex items-center justify-between p-3.5 hover:bg-muted/30 transition-colors">
-                                <div className="space-y-0.5">
-                                  <Label className="font-semibold text-xs text-foreground">Nama Kasir / Staf</Label>
-                                  <p className="text-[11px] text-muted-foreground">Tampilkan nama staf pembuat order</p>
-                                </div>
-                                <Switch checked={kitchenShowCashier} onCheckedChange={setKitchenShowCashier} />
+                            <div className="flex items-center justify-between p-2.5 rounded-lg hover:bg-muted/30 transition-colors">
+                              <div className="space-y-0.5">
+                                <Label className="font-semibold text-xs text-foreground">Nama Kasir / Staf</Label>
+                                <p className="text-[11px] text-muted-foreground">Tampilkan nama staf pembuat order</p>
                               </div>
+                              <Switch checked={kitchenShowCashier} onCheckedChange={setKitchenShowCashier} />
+                            </div>
 
-                              <div className="flex items-center justify-between p-3.5 hover:bg-muted/30 transition-colors">
-                                <div className="space-y-0.5">
-                                  <Label className="font-semibold text-xs text-foreground">Catatan Khusus Pesanan</Label>
-                                  <p className="text-[11px] text-muted-foreground">Cetak instruksi memasak (Pedas, Less Ice, Tanpa Bawang, dll)</p>
-                                </div>
-                                <Switch checked={kitchenShowNotes} onCheckedChange={setKitchenShowNotes} />
+                            <div className="flex items-center justify-between p-2.5 rounded-lg hover:bg-muted/30 transition-colors">
+                              <div className="space-y-0.5">
+                                <Label className="font-semibold text-xs text-foreground">Catatan Khusus Pesanan</Label>
+                                <p className="text-[11px] text-muted-foreground">Cetak instruksi memasak (Pedas, Less Ice, Tanpa Bawang, dll)</p>
                               </div>
+                              <Switch checked={kitchenShowNotes} onCheckedChange={setKitchenShowNotes} />
+                            </div>
 
-                              <div className="flex items-center justify-between p-3.5 hover:bg-muted/30 transition-colors">
-                                <div className="space-y-0.5">
-                                  <Label className="font-semibold text-xs text-foreground">Pemisah Potong Kertas</Label>
-                                  <p className="text-[11px] text-muted-foreground">Cetak garis pemotong jika 1 printer dipakai bersama</p>
-                                </div>
-                                <Switch checked={kitchenAutoCut} onCheckedChange={setKitchenAutoCut} />
+                            <div className="flex items-center justify-between p-2.5 rounded-lg hover:bg-muted/30 transition-colors">
+                              <div className="space-y-0.5">
+                                <Label className="font-semibold text-xs text-foreground">Pemisah Potong Kertas</Label>
+                                <p className="text-[11px] text-muted-foreground">Cetak garis pemotong jika 1 printer dipakai bersama</p>
                               </div>
+                              <Switch checked={kitchenAutoCut} onCheckedChange={setKitchenAutoCut} />
                             </div>
                           </div>
                         </div>
 
-                        <div className="flex justify-end pt-4 border-t border-border/60">
-                          <Button disabled={isSavingKitchen || !hasKitchenChanges} type="submit" className="min-w-[150px] h-11 rounded-xl text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all cursor-pointer">
+                        <div className="flex justify-end pt-2">
+                          <Button disabled={isSavingKitchen || !hasKitchenChanges} type="submit" className="min-w-[150px] h-10 rounded-xl text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all cursor-pointer">
                             {isSavingKitchen ? (
                               <><IconLoader2 className="mr-2 h-4 w-4 animate-spin" /> Menyimpan...</>
                             ) : (

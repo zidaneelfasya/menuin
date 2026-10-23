@@ -58,15 +58,66 @@ export async function createTenantAction(formData: FormData) {
     const rawPhoto = formData.get('storefrontPhotoUrl') as string | null;
     const storefrontPhotoUrl = rawPhoto && rawPhoto.trim() ? rawPhoto.trim() : null;
 
+    // Parse business categories
+    const rawCategories = formData.get('businessCategories') as string | null;
+    let selectedCategoryIds: string[] = [];
+    if (rawCategories) {
+      try {
+        const parsed = JSON.parse(rawCategories);
+        if (Array.isArray(parsed)) selectedCategoryIds = parsed;
+      } catch {
+        selectedCategoryIds = rawCategories.split(',').map(s => s.trim()).filter(Boolean);
+      }
+    }
+
+    const { BUSINESS_CATEGORIES, getModifierTemplatesForCategories } = await import('@/lib/constants/business-categories');
+    const matchedCategoryBadges = BUSINESS_CATEGORIES
+      .filter(c => selectedCategoryIds.includes(c.id))
+      .map(c => c.badge);
+    const cuisineType = matchedCategoryBadges.length > 0 ? matchedCategoryBadges.join(' • ') : null;
+
     // Create new tenant
     const [newTenant] = await db.insert(tenants).values({
       name: restaurantName,
       outletKey,
       slug,
       orderPrefix,
+      cuisineType,
       storefrontPhotoUrl,
       storeLogoUrl: storefrontPhotoUrl,
     }).returning();
+
+    // Auto-seed standard modifier groups & modifiers based on selected business categories
+    if (selectedCategoryIds.length > 0) {
+      const templates = getModifierTemplatesForCategories(selectedCategoryIds);
+      if (templates.length > 0) {
+        const { modifierGroups, modifiers } = await import('@/lib/db/schema');
+        for (const tpl of templates) {
+          const groupId = crypto.randomUUID();
+          await db.insert(modifierGroups).values({
+            id: groupId,
+            tenantId: newTenant.id,
+            name: tpl.name,
+            isRequired: tpl.isRequired,
+            minSelections: tpl.minSelections,
+            maxSelections: tpl.maxSelections,
+          });
+
+          if (tpl.modifiers.length > 0) {
+            await db.insert(modifiers).values(
+              tpl.modifiers.map(m => ({
+                id: crypto.randomUUID(),
+                tenantId: newTenant.id,
+                groupId,
+                name: m.name,
+                price: m.price,
+                isAvailable: true,
+              }))
+            );
+          }
+        }
+      }
+    }
 
     // Generate a random 6 digit PIN
     const randomPin = Math.floor(100000 + Math.random() * 900000).toString();

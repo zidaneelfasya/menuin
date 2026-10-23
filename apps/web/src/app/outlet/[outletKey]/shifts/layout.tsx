@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { getActiveShift } from '@/lib/actions/shifts';
+import { checkHasActiveShift } from '@/lib/actions/shifts';
 import { ShiftsSidebar } from './shifts-sidebar';
 
 export const metadata: Metadata = {
@@ -14,8 +14,7 @@ export default async function ShiftsLayout({
   params: Promise<{ outletKey: string }>;
 }) {
   const { outletKey } = await params;
-  const activeShiftResult = await getActiveShift();
-  const hasActiveShift = Boolean(activeShiftResult.success && activeShiftResult.data);
+  const hasActiveShift = await checkHasActiveShift();
 
   return (
     <div className="flex flex-col md:flex-row h-full w-full overflow-hidden bg-[#F9FBFF]">

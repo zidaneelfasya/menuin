@@ -45,21 +45,21 @@ export function PosSettingsForm({ initialData }: { initialData: any }) {
   };
 
   return (
-    <div className="bg-card border border-border/70 rounded-2xl p-6 sm:p-8 shadow-xs">
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="pb-5 border-b border-border/60">
+    <div className="max-w-3xl space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="pb-1">
           <h2 className="text-lg font-semibold tracking-tight text-foreground">
             Alur Kasir & Operasional POS
           </h2>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-xs text-muted-foreground mt-0.5">
             Konfigurasi alur checkout kasir, pembulatan nominal, dan integrasi tiket pesanan dapur.
           </p>
         </div>
 
-        <div className="divide-y divide-border/60">
+        <div className="space-y-1">
           {/* ROW 1: SINKRONISASI DAPUR */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-center">
-            <div className="md:col-span-8 space-y-0.5">
+          <div className="flex items-center justify-between gap-6 py-3.5">
+            <div className="space-y-0.5 max-w-xl">
               <Label htmlFor="posKitchenSync" className="text-sm font-semibold text-foreground">
                 Kirim Pesanan Kasir ke Layar Dapur
               </Label>
@@ -67,18 +67,16 @@ export function PosSettingsForm({ initialData }: { initialData: any }) {
                 Saat pesanan dibayar di kasir, otomatis masuk ke antrean dapur (Kanban Dapur).
               </p>
             </div>
-            <div className="md:col-span-4 flex justify-start md:justify-end">
-              <Switch
-                id="posKitchenSync"
-                checked={posKitchenSync}
-                onCheckedChange={setPosKitchenSync}
-              />
-            </div>
+            <Switch
+              id="posKitchenSync"
+              checked={posKitchenSync}
+              onCheckedChange={setPosKitchenSync}
+            />
           </div>
 
           {/* ROW 2: ORDER TYPE SELECTION */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-start">
-            <div className="md:col-span-4 space-y-0.5">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-6 py-3.5 items-start">
+            <div className="md:col-span-5 space-y-0.5">
               <Label className="text-sm font-semibold text-foreground">
                 Pilihan Tipe Pesanan (Order Type)
               </Label>
@@ -86,9 +84,9 @@ export function PosSettingsForm({ initialData }: { initialData: any }) {
                 Aturan pemilihan Dine In / Take Away saat kasir checkout.
               </p>
             </div>
-            <div className="md:col-span-8">
+            <div className="md:col-span-7">
               <Select value={posOrderTypeSelection} onValueChange={setPosOrderTypeSelection}>
-                <SelectTrigger className="w-full h-11 bg-background/80 hover:bg-background border-border/80 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
+                <SelectTrigger className="w-full max-w-md h-10 bg-background/80 hover:bg-background border-border/80 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
                   <SelectValue placeholder="Pilih aturan tipe pesanan" />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl shadow-lg border-border/80">
@@ -101,8 +99,8 @@ export function PosSettingsForm({ initialData }: { initialData: any }) {
           </div>
 
           {/* ROW 3: PIN BEST SELLERS */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-center">
-            <div className="md:col-span-8 space-y-0.5">
+          <div className="flex items-center justify-between gap-6 py-3.5">
+            <div className="space-y-0.5 max-w-xl">
               <Label htmlFor="posPinBestSellersForm" className="text-sm font-semibold text-foreground">
                 Sematkan Best Seller di Posisi Teratas
               </Label>
@@ -110,18 +108,16 @@ export function PosSettingsForm({ initialData }: { initialData: any }) {
                 Produk unggulan / best seller otomatis ditampilkan di baris paling awal antarmuka kasir.
               </p>
             </div>
-            <div className="md:col-span-4 flex justify-start md:justify-end">
-              <Switch
-                id="posPinBestSellersForm"
-                checked={posPinBestSellers}
-                onCheckedChange={setPosPinBestSellers}
-              />
-            </div>
+            <Switch
+              id="posPinBestSellersForm"
+              checked={posPinBestSellers}
+              onCheckedChange={setPosPinBestSellers}
+            />
           </div>
 
           {/* ROW 4: PEMBULATAN NOMINAL KE RATUSAN (ROUNDING 1-99) */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-center">
-            <div className="md:col-span-8 space-y-0.5">
+          <div className="flex items-center justify-between gap-6 py-3.5">
+            <div className="space-y-0.5 max-w-xl">
               <div className="flex items-center gap-2">
                 <Label htmlFor="posRoundingForm" className="text-sm font-semibold text-foreground">
                   Pembulatan Nominal ke Ratusan (Rounding 1–99)
@@ -131,24 +127,22 @@ export function PosSettingsForm({ initialData }: { initialData: any }) {
                 </span>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Membulatkan total pembayaran ke atas (ceiling) ke ratusan rupiah terdekat jika terdapat pecahan 1–99 rupiah (contoh: Rp 49.950 digenapkan menjadi Rp 50.000) untuk mempermudah pembayaran tunai dan uang kembalian kasir.
+                Membulatkan total pembayaran ke atas ke ratusan rupiah terdekat jika terdapat pecahan 1–99 rupiah untuk mempermudah uang kembalian.
               </p>
             </div>
-            <div className="md:col-span-4 flex justify-start md:justify-end">
-              <Switch
-                id="posRoundingForm"
-                checked={posRounding}
-                onCheckedChange={setPosRounding}
-              />
-            </div>
+            <Switch
+              id="posRoundingForm"
+              checked={posRounding}
+              onCheckedChange={setPosRounding}
+            />
           </div>
         </div>
 
-        <div className="flex justify-end pt-5 border-t border-border/60">
+        <div className="flex justify-end pt-3">
           <Button 
             disabled={isSaving || !hasChanges} 
             type="submit" 
-            className="min-w-[150px] h-11 rounded-xl text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all cursor-pointer"
+            className="min-w-[150px] h-10 rounded-xl text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all cursor-pointer"
           >
             {isSaving ? <><IconLoader2 className="mr-2 h-4 w-4 animate-spin" /> Menyimpan...</> : <><IconDeviceFloppy className="mr-2 h-4 w-4" /> Simpan Alur Kasir</>}
           </Button>

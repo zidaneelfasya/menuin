@@ -201,17 +201,6 @@ export async function signUpAction(formData: FormData) {
       status: 'ACTIVE',
     });
 
-    // 5. Automatically activate 14-day Free Trial (Lengkap / PRO tier)
-    const now = new Date();
-    const trialEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
-    await db.insert(subscriptions).values({
-      tenantId: newTenant.id,
-      plan: 'PRO',
-      status: 'TRIALING',
-      currentPeriodStart: now,
-      currentPeriodEnd: trialEnd,
-    });
-
     return { success: true };
   } catch (dbError: any) {
     console.error('Database error during sign up:', dbError);

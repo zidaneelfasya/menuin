@@ -9,16 +9,24 @@ import {
   IconInfoCircle,
   IconX,
   IconPhoto,
-  IconTrash,
   IconBuildingStore,
   IconReceipt2,
-  IconCamera,
+  IconChefHat,
+  IconCoffee,
+  IconToolsKitchen2,
+  IconBurger,
+  IconCup,
+  IconCake,
+  IconSoup,
 } from '@tabler/icons-react';
 import { Check } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { createTenantAction } from '@/lib/actions/tenant';
 import { usePageTransition } from '@/components/providers/page-transition-provider';
 import { OrderPrefixPicker } from '@/components/shared/order-prefix-picker';
+import {
+  BUSINESS_CATEGORIES,
+} from '@/lib/constants/business-categories';
 import { cn } from '@/lib/utils';
 
 export interface AccountInfo {
@@ -53,8 +61,9 @@ function MenuinMWatermark({ className }: { className?: string }) {
 }
 
 export function CreateTenantClient({ account: _account, isAdmin: _isAdmin }: CreateTenantClientProps) {
-  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(1);
   const [restaurantName, setRestaurantName] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(['coffee_shop']);
   const [orderPrefix, setOrderPrefix] = useState('KSR');
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -76,8 +85,31 @@ export function CreateTenantClient({ account: _account, isAdmin: _isAdmin }: Cre
   };
 
   const handleNextFromStep2 = () => {
+    if (selectedCategories.length === 0) {
+      setError('Silakan pilih minimal satu kategori usaha.');
+      return;
+    }
     setError('');
     setCurrentStep(3);
+  };
+
+  const handleNextFromStep3 = () => {
+    setError('');
+    setCurrentStep(4);
+  };
+
+  const toggleCategory = (categoryId: string) => {
+    setSelectedCategories((prev) => {
+      if (prev.includes(categoryId)) {
+        if (prev.length === 1) {
+          return prev;
+        }
+        return prev.filter((id) => id !== categoryId);
+      } else {
+        return [...prev, categoryId];
+      }
+    });
+    if (error) setError('');
   };
 
   const handleProcessFile = (file: File) => {
@@ -128,6 +160,11 @@ export function CreateTenantClient({ account: _account, isAdmin: _isAdmin }: Cre
       return;
     }
 
+    if (currentStep === 3) {
+      handleNextFromStep3();
+      return;
+    }
+
     if (!restaurantName.trim()) {
       setError('Silakan masukkan nama cabang restoran Anda.');
       setCurrentStep(1);
@@ -139,6 +176,7 @@ export function CreateTenantClient({ account: _account, isAdmin: _isAdmin }: Cre
 
     const formData = new FormData();
     formData.append('restaurantName', restaurantName);
+    formData.append('businessCategories', JSON.stringify(selectedCategories));
     formData.append('orderPrefix', orderPrefix);
     if (photoPreview) {
       formData.append('storefrontPhotoUrl', photoPreview);
@@ -158,7 +196,6 @@ export function CreateTenantClient({ account: _account, isAdmin: _isAdmin }: Cre
     }
   };
 
-  // Steps definition matching F&B terms and reference image
   const steps = [
     {
       number: 1,
@@ -168,22 +205,48 @@ export function CreateTenantClient({ account: _account, isAdmin: _isAdmin }: Cre
     },
     {
       number: 2,
+      title: 'Kategori Usaha',
+      subtitle: 'Fokus & jenis menu usaha',
+      icon: IconChefHat,
+    },
+    {
+      number: 3,
       title: 'Kode Nota Kasir',
       subtitle: 'Singkatan outlet di struk & antrean',
       icon: IconReceipt2,
     },
     {
-      number: 3,
+      number: 4,
       title: 'Logo Usaha',
       subtitle: 'Identitas brand resto (opsional)',
       icon: IconPhoto,
     },
   ];
 
+  const renderCategoryIcon = (iconName: string) => {
+    const iconClass = 'w-9 h-9 stroke-[1.5] transition-colors';
+    switch (iconName) {
+      case 'coffee':
+        return <IconCoffee className={iconClass} />;
+      case 'restaurant':
+        return <IconToolsKitchen2 className={iconClass} />;
+      case 'fast_food':
+        return <IconBurger className={iconClass} />;
+      case 'boba_drink':
+        return <IconCup className={iconClass} />;
+      case 'bakery_dessert':
+        return <IconCake className={iconClass} />;
+      case 'street_food':
+        return <IconSoup className={iconClass} />;
+      default:
+        return <IconChefHat className={iconClass} />;
+    }
+  };
+
   return (
     <div className="min-h-screen w-full flex flex-col md:flex-row bg-white text-slate-900 font-sans relative overflow-x-hidden">
-      {/* LEFT SIDEBAR: Deep Blue Brand Panel with Stepper (Mirrors Reference Image) */}
-      <aside className="w-full md:w-[380px] lg:w-[420px] flex-shrink-0 bg-[#0055D6] text-white p-6 sm:p-8 md:p-10 flex flex-col justify-between relative overflow-hidden select-none">
+      {/* LEFT SIDEBAR: Deep Blue Brand Panel with Stepper */}
+      <aside className="w-full md:w-[360px] lg:w-[400px] flex-shrink-0 bg-[#0055D6] text-white p-6 sm:p-8 md:p-10 flex flex-col justify-between relative overflow-hidden select-none">
         {/* Ambient Blurry Menuin 'M' Emblem Watermark in the corner */}
         <MenuinMWatermark
           className="-bottom-16 -left-14 w-80 h-64 text-white opacity-15 blur-[5px] scale-110"
@@ -219,14 +282,14 @@ export function CreateTenantClient({ account: _account, isAdmin: _isAdmin }: Cre
           </div>
         </div>
 
-        {/* Center: Vertical Stepper Timeline (Persis Sesuai Desain Awal) */}
+        {/* Center: Vertical Stepper Timeline */}
         <div className="my-8 md:my-auto relative z-10">
-          <div className="space-y-6 sm:space-y-8">
+          <div className="space-y-6 sm:space-y-7">
             {steps.map((step, idx) => {
               const isCurrent = currentStep === step.number;
               const isComplete =
                 step.number < currentStep ||
-                (step.number === 3 && Boolean(photoPreview));
+                (step.number === 4 && Boolean(photoPreview));
               const isLast = idx === steps.length - 1;
               const IconComponent = step.icon;
 
@@ -244,12 +307,15 @@ export function CreateTenantClient({ account: _account, isAdmin: _isAdmin }: Cre
                         } else if (step.number === 3) {
                           if (restaurantName.trim()) setCurrentStep(3);
                           else setError('Silakan masukkan nama cabang restoran Anda.');
+                        } else if (step.number === 4) {
+                          if (restaurantName.trim()) setCurrentStep(4);
+                          else setError('Silakan masukkan nama cabang restoran Anda.');
                         }
                       }}
                       className={cn(
                         'w-10 h-10 rounded-full flex items-center justify-center transition-all cursor-pointer',
                         isCurrent
-                          ? 'bg-white text-[#0055D6]'
+                          ? 'bg-white text-[#0055D6] shadow-sm'
                           : isComplete
                           ? 'bg-white/25 text-white border border-white/40 hover:bg-white/35'
                           : 'bg-white/10 text-white/70 border border-white/20 hover:bg-white/20'
@@ -266,8 +332,8 @@ export function CreateTenantClient({ account: _account, isAdmin: _isAdmin }: Cre
                     {!isLast && (
                       <div
                         className={cn(
-                          'w-[2px] my-2 transition-colors',
-                          isComplete ? 'bg-white/60 h-10 sm:h-12' : 'bg-white/20 h-10 sm:h-12'
+                          'w-[2px] my-1.5 transition-colors',
+                          isComplete ? 'bg-white/60 h-8 sm:h-10' : 'bg-white/20 h-8 sm:h-10'
                         )}
                       />
                     )}
@@ -284,6 +350,9 @@ export function CreateTenantClient({ account: _account, isAdmin: _isAdmin }: Cre
                           else setError('Silakan masukkan nama cabang restoran Anda.');
                         } else if (step.number === 3) {
                           if (restaurantName.trim()) setCurrentStep(3);
+                          else setError('Silakan masukkan nama cabang restoran Anda.');
+                        } else if (step.number === 4) {
+                          if (restaurantName.trim()) setCurrentStep(4);
                           else setError('Silakan masukkan nama cabang restoran Anda.');
                         }
                       }}
@@ -308,7 +377,7 @@ export function CreateTenantClient({ account: _account, isAdmin: _isAdmin }: Cre
           </div>
         </div>
 
-        {/* Bottom Link: Kembali ke Daftar Outlet (Desktop dengan Arrow) */}
+        {/* Bottom Link: Kembali ke Daftar Outlet */}
         <div className="relative z-10 hidden md:block pt-4 border-t border-white/15">
           <button
             type="button"
@@ -321,41 +390,40 @@ export function CreateTenantClient({ account: _account, isAdmin: _isAdmin }: Cre
         </div>
       </aside>
 
-      {/* RIGHT MAIN WORKSPACE: Clean Form Canvas (Lebih Besar & Generous Padding to Eliminate Empty Whitespace) */}
+      {/* RIGHT MAIN WORKSPACE */}
       <main className="flex-1 min-w-0 flex flex-col bg-white relative overflow-y-auto">
-        {/* Subtle blurry Menuin 'M' watermark on right edge */}
-        <MenuinMWatermark
-          className="hidden lg:block -top-10 -right-12 w-96 h-80 text-blue-600/10 blur-[8px] pointer-events-none"
-        />
-
-        {/* Form Container (Lebih Besar max-w-3xl, Padding Nyaman & Proporsional) */}
-        <div className="w-full max-w-3xl mx-auto px-6 sm:px-12 md:px-16 py-10 md:py-16 flex-1 flex flex-col justify-center relative z-10">
-          {/* Step Eyebrow (Step 1/3) */}
+        {/* Form Container */}
+        <div className="w-full max-w-4xl mx-auto px-6 sm:px-12 md:px-16 py-10 md:py-14 flex-1 flex flex-col justify-center relative z-10">
+          {/* Step Eyebrow */}
           <span className="text-xs font-semibold text-slate-400 block mb-1.5">
-            Step {currentStep}/3
+            Step {currentStep}/4
           </span>
 
-          {/* Step Main Title (Font Maksimal Semi Bold) */}
+          {/* Step Main Title */}
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900 leading-tight">
             {currentStep === 1
               ? 'Basic Info'
               : currentStep === 2
+              ? 'Apa fokus usaha resto Anda?'
+              : currentStep === 3
               ? 'Kode Nota Kasir & Antrean'
               : 'Logo Usaha (Opsional)'}
           </h1>
 
-          {/* Step Subtitle / Description (Bahasa Ramah F&B) */}
-          <p className="text-xs sm:text-sm text-slate-500 mt-2 mb-7 leading-relaxed">
+          {/* Step Subtitle / Description */}
+          <p className="text-xs sm:text-sm text-slate-500 mt-2 mb-8 leading-relaxed max-w-2xl">
             {currentStep === 1
               ? 'Masukkan nama cabang restoran Anda untuk memulai operasional akun POS dan sistem kasir.'
-              : 'Tentukan singkatan nama outlet untuk dicetak di awal nomor struk kasir dan tiket pesanan dapur pelanggan.'}
-            {currentStep === 3 &&
-              'Unggah logo usaha restoran atau gerai Anda. Langkah ini opsional dan dapat dilewati sekarang.'}
+              : currentStep === 2
+              ? 'Pilih satu atau beberapa kategori untuk menyesuaikan opsi varian dan menu kasir Anda.'
+              : currentStep === 3
+              ? 'Tentukan singkatan nama outlet untuk dicetak di awal nomor struk kasir dan tiket pesanan dapur pelanggan.'
+              : 'Unggah logo usaha restoran atau gerai Anda. Langkah ini opsional dan dapat dilewati sekarang.'}
           </p>
 
           <form onSubmit={onSubmit} className="space-y-6">
             {error && (
-              <div className="bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-2.5 p-3.5 rounded-[4px] text-xs font-medium">
+              <div className="bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-2.5 p-3.5 rounded-lg text-xs font-medium">
                 <IconAlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
                 <p>{error}</p>
               </div>
@@ -363,7 +431,7 @@ export function CreateTenantClient({ account: _account, isAdmin: _isAdmin }: Cre
 
             {/* STEP 1: RESTAURANT NAME */}
             {currentStep === 1 && (
-              <div className="space-y-6">
+              <div className="space-y-6 max-w-2xl">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="restaurantName" className="text-xs font-semibold text-slate-800">
@@ -389,14 +457,14 @@ export function CreateTenantClient({ account: _account, isAdmin: _isAdmin }: Cre
                     required
                     autoFocus
                     disabled={loading}
-                    className="w-full h-11 rounded-[4px] border border-slate-300 bg-white px-3.5 text-sm font-normal text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#0055D6] focus:ring-1 focus:ring-[#0055D6] disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed transition-all"
+                    className="w-full h-11 rounded-lg border border-slate-300 bg-white px-3.5 text-sm font-normal text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#0055D6] focus:ring-1 focus:ring-[#0055D6] disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed transition-all"
                   />
                   <p className="text-[11px] text-slate-400 pt-0.5">
                     Gunakan nama yang mudah dikenali pelanggan dan staf kasir.
                   </p>
                 </div>
 
-                {/* Primary Action Buttons (Di Pinggir, Diperlebar Sedang) */}
+                {/* Primary Action Buttons */}
                 <div className="pt-3 flex items-center gap-3">
                   <button
                     type="button"
@@ -418,23 +486,56 @@ export function CreateTenantClient({ account: _account, isAdmin: _isAdmin }: Cre
               </div>
             )}
 
-            {/* STEP 2: ORDER PREFIX PICKER (F&B FRIENDLY) */}
+            {/* STEP 2: BUSINESS CATEGORIES PICKER (Matches Reference Design) */}
             {currentStep === 2 && (
               <div className="space-y-6">
-                <OrderPrefixPicker
-                  value={orderPrefix}
-                  onChange={setOrderPrefix}
-                  outletName={restaurantName}
-                  disabled={loading}
-                />
+                {/* 3 Columns x 2 Rows Grid matching reference image */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {BUSINESS_CATEGORIES.map((cat) => {
+                    const isSelected = selectedCategories.includes(cat.id);
+                    return (
+                      <button
+                        type="button"
+                        key={cat.id}
+                        onClick={() => toggleCategory(cat.id)}
+                        className={cn(
+                          'flex flex-col items-center text-center p-6 rounded-2xl border transition-all cursor-pointer select-none relative group',
+                          isSelected
+                            ? 'border-2 border-[#0055D6] bg-[#F8FAFF]'
+                            : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/40'
+                        )}
+                      >
+                        {/* Centered Outline Icon */}
+                        <div
+                          className={cn(
+                            'mb-4 flex items-center justify-center transition-colors',
+                            isSelected ? 'text-[#0055D6]' : 'text-slate-400 group-hover:text-slate-600'
+                          )}
+                        >
+                          {renderCategoryIcon(cat.icon)}
+                        </div>
 
-                {/* Action Buttons (Di Pinggir, Diperlebar Sedang) */}
-                <div className="pt-3 flex items-center gap-3">
+                        {/* Title */}
+                        <h3 className="text-sm sm:text-base font-semibold text-slate-900 mb-1.5 leading-snug">
+                          {cat.title}
+                        </h3>
+
+                        {/* Subtitle */}
+                        <p className="text-xs text-slate-500 leading-relaxed max-w-[210px] mx-auto">
+                          {cat.subtitle}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Primary Action Buttons */}
+                <div className="pt-4 flex items-center gap-3">
                   <button
                     type="button"
                     onClick={() => handleNextFromStep2()}
-                    disabled={loading}
-                    className="min-w-[130px] px-8 h-9 rounded-full text-xs sm:text-sm font-semibold bg-[#0055D6] hover:bg-blue-700 text-white inline-flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50 shadow-xs"
+                    disabled={loading || selectedCategories.length === 0}
+                    className="min-w-[130px] px-8 h-9 rounded-full text-xs sm:text-sm font-semibold bg-[#0055D6] hover:bg-blue-700 text-white inline-flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
                   >
                     Next
                   </button>
@@ -451,9 +552,42 @@ export function CreateTenantClient({ account: _account, isAdmin: _isAdmin }: Cre
               </div>
             )}
 
-            {/* STEP 3: LOGO USAHA (OPSIONAL) */}
+            {/* STEP 3: ORDER PREFIX PICKER */}
             {currentStep === 3 && (
-              <div className="space-y-6">
+              <div className="space-y-6 max-w-2xl">
+                <OrderPrefixPicker
+                  value={orderPrefix}
+                  onChange={setOrderPrefix}
+                  outletName={restaurantName}
+                  disabled={loading}
+                />
+
+                {/* Action Buttons */}
+                <div className="pt-3 flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleNextFromStep3()}
+                    disabled={loading}
+                    className="min-w-[130px] px-8 h-9 rounded-full text-xs sm:text-sm font-semibold bg-[#0055D6] hover:bg-blue-700 text-white inline-flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50 shadow-xs"
+                  >
+                    Next
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep(2)}
+                    disabled={loading}
+                    className="min-w-[110px] px-7 h-9 rounded-full text-xs sm:text-sm font-semibold border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 inline-flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    Back
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 4: LOGO USAHA (OPSIONAL) */}
+            {currentStep === 4 && (
+              <div className="space-y-6 max-w-2xl">
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -463,7 +597,7 @@ export function CreateTenantClient({ account: _account, isAdmin: _isAdmin }: Cre
                   id="storefrontPhotoInput"
                 />
 
-                {/* Single Clean Dropzone Area */}
+                {/* Dropzone Area */}
                 <div
                   onDragOver={(e) => {
                     e.preventDefault();
@@ -486,7 +620,6 @@ export function CreateTenantClient({ account: _account, isAdmin: _isAdmin }: Cre
                 >
                   {!photoPreview ? (
                     <>
-                      {/* Custom White Photo Card with Menuin Blue Up-Arrow Circle Badge */}
                       <div className="relative inline-block select-none mb-4">
                         <div className="w-24 h-20 bg-white rounded-2xl shadow-sm border border-slate-100/90 flex items-center justify-center">
                           <svg viewBox="0 0 48 40" className="w-12 h-10">
@@ -498,7 +631,6 @@ export function CreateTenantClient({ account: _account, isAdmin: _isAdmin }: Cre
                             />
                           </svg>
                         </div>
-                        {/* Blue Upward Arrow Badge */}
                         <div className="absolute -bottom-1.5 -right-1.5 w-7 h-7 bg-[#0055D6] rounded-full flex items-center justify-center shadow-md ring-2 ring-white">
                           <svg
                             className="w-3.5 h-3.5 stroke-white stroke-[2.5]"
@@ -513,7 +645,6 @@ export function CreateTenantClient({ account: _account, isAdmin: _isAdmin }: Cre
                         </div>
                       </div>
 
-                      {/* Dropzone Instructional Text */}
                       <p className="text-sm text-slate-800 font-normal">
                         <button
                           type="button"
@@ -532,7 +663,6 @@ export function CreateTenantClient({ account: _account, isAdmin: _isAdmin }: Cre
                       </p>
                     </>
                   ) : (
-                    /* Selected/Preview Logo State */
                     <div className="flex flex-col items-center gap-3">
                       <div className="w-24 h-24 rounded-2xl overflow-hidden bg-white shadow-sm border border-slate-200/80 p-1 flex items-center justify-center">
                         <img
@@ -573,7 +703,7 @@ export function CreateTenantClient({ account: _account, isAdmin: _isAdmin }: Cre
                   )}
                 </div>
 
-                {/* Action Buttons (Di Pinggir, Diperlebar Sedang) */}
+                {/* Action Buttons */}
                 <div className="pt-3 flex items-center gap-3">
                   <button
                     type="submit"
@@ -594,7 +724,7 @@ export function CreateTenantClient({ account: _account, isAdmin: _isAdmin }: Cre
 
                   <button
                     type="button"
-                    onClick={() => setCurrentStep(2)}
+                    onClick={() => setCurrentStep(3)}
                     disabled={loading}
                     className="min-w-[110px] px-7 h-9 rounded-full text-xs sm:text-sm font-semibold border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 inline-flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50"
                   >
@@ -607,9 +737,8 @@ export function CreateTenantClient({ account: _account, isAdmin: _isAdmin }: Cre
         </div>
       </main>
 
-      {/* Floating Tips Button & Panel (Rounded Full Button) */}
+      {/* Floating Tips Button & Panel */}
       <aside aria-label="Tips pengisian cabang">
-        {/* Floating Toggle Button: "Tips" (Rounded Full) */}
         <button
           type="button"
           onClick={() => setIsTipsOpen(!isTipsOpen)}
@@ -624,13 +753,12 @@ export function CreateTenantClient({ account: _account, isAdmin: _isAdmin }: Cre
           <span>Tips</span>
         </button>
 
-        {/* Floating Guideline Panel (Distinct Tips per Step, F&B Friendly Terms) */}
         {isTipsOpen && (
           <div className="fixed bottom-20 right-4 sm:right-6 z-50 w-[350px] max-w-[calc(100vw-2rem)] bg-white rounded-2xl border border-slate-200 p-5 shadow-2xl flex flex-col space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-150 font-sans">
-            {/* Eyebrow & Close Header */}
+            {/* Header */}
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <span className="text-[11px] font-semibold text-slate-400 block">
-                Tips Langkah {currentStep} dari 3
+                Tips Langkah {currentStep} dari 4
               </span>
               <button
                 type="button"
@@ -648,6 +776,8 @@ export function CreateTenantClient({ account: _account, isAdmin: _isAdmin }: Cre
                 {currentStep === 1
                   ? 'Tips Nama Cabang'
                   : currentStep === 2
+                  ? 'Tips Kategori Usaha'
+                  : currentStep === 3
                   ? 'Tips Kode Nota Kasir'
                   : 'Tips Logo Usaha'}
               </h3>
@@ -655,6 +785,8 @@ export function CreateTenantClient({ account: _account, isAdmin: _isAdmin }: Cre
                 {currentStep === 1
                   ? 'Nama cabang yang tepat mempermudah pencarian outlet dan koordinasi operasional tim.'
                   : currentStep === 2
+                  ? 'Kategori usaha membantu menyiapkan varian & modifier default otomatis yang relevan untuk kasir Anda.'
+                  : currentStep === 3
                   ? 'Singkatan kode nota memudahkan kasir dan dapur melacak nomor pesanan pelanggan.'
                   : 'Logo usaha yang menarik membantu pelanggan mengenali brand dan outlet Anda.'}
               </p>
@@ -688,6 +820,27 @@ export function CreateTenantClient({ account: _account, isAdmin: _isAdmin }: Cre
                     </li>
                   </>
                 ) : currentStep === 2 ? (
+                  <>
+                    <li className="flex items-start gap-2">
+                      <span className="w-4 h-4 rounded-full bg-blue-50 text-[#0055D6] text-[10px] font-semibold flex items-center justify-center flex-shrink-0 mt-0.5">
+                        1
+                      </span>
+                      <span>Pilih satu atau beberapa kategori yang paling sesuai dengan jenis produk outlet Anda.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="w-4 h-4 rounded-full bg-blue-50 text-[#0055D6] text-[10px] font-semibold flex items-center justify-center flex-shrink-0 mt-0.5">
+                        2
+                      </span>
+                      <span>Sistem akan menyiapkan grup varian dasar untuk kasir Anda (misalnya Ukuran Gelas, Tingkat Manis, atau Level Pedas).</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="w-4 h-4 rounded-full bg-blue-50 text-[#0055D6] text-[10px] font-semibold flex items-center justify-center flex-shrink-0 mt-0.5">
+                        3
+                      </span>
+                      <span>Varian dan harga dapat diubah, ditambah, atau dihapus kapan saja melalui menu katalog.</span>
+                    </li>
+                  </>
+                ) : currentStep === 3 ? (
                   <>
                     <li className="flex items-start gap-2">
                       <span className="w-4 h-4 rounded-full bg-blue-50 text-[#0055D6] text-[10px] font-semibold flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -734,11 +887,13 @@ export function CreateTenantClient({ account: _account, isAdmin: _isAdmin }: Cre
             </div>
 
             {/* Note box per Step */}
-            <div className="p-3 rounded-[4px] bg-slate-50 border border-slate-100 text-[11px] text-slate-500">
+            <div className="p-3 rounded-lg bg-slate-50 border border-slate-100 text-[11px] text-slate-500">
               <span className="font-semibold text-slate-700 block mb-0.5">Catatan:</span>
               {currentStep === 1
                 ? 'Nama tidak boleh mengandung simbol khusus agar tautan menu tetap rapi.'
                 : currentStep === 2
+                ? 'Modifier yang dibuat otomatis dapat langsung dihubungkan ke produk di katalog kasir Anda.'
+                : currentStep === 3
                 ? 'Kode nota hanya berlaku khusus untuk gerai ini dan dapat disesuaikan kembali nanti.'
                 : 'Ukuran file maksimal 12 MB dengan format gambar JPG, PNG, atau WebP.'}
             </div>

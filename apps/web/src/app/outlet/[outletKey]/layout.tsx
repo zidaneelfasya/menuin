@@ -40,8 +40,11 @@ async function AuthWrapper({ children }: { children: React.ReactNode }) {
 
   const availableTenants = await getAvailableTenants();
   
-  // The dashboard structure is accessible even without a subscription,
-  // individual features will be locked via requireFeature() guards and error boundaries.
+  // Kunci akses dashboard jika belum berlangganan aktif
+  if (!user.isPaid) {
+    return <PaymentGate user={user} />;
+  }
+
   return <MainLayout user={user} availableTenants={availableTenants}>{children}</MainLayout>;
 }
 

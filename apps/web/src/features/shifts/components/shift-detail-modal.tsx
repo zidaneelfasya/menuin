@@ -19,10 +19,11 @@ import {
   Banknote,
   ArrowDownLeft,
   ArrowUpRight,
-  Printer,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
+import { exportShiftDetailToExcel } from '../utils/shift-excel';
 import { cn } from '@/lib/utils';
 import {
   Table,
@@ -73,8 +74,10 @@ export function ShiftDetailModal({
     }
   }, [shift?.startTime, shift?.endTime]);
 
-  const handlePrint = () => {
-    window.print();
+  const handleExportExcel = () => {
+    if (data) {
+      exportShiftDetailToExcel(data);
+    }
   };
 
   return (
@@ -117,11 +120,12 @@ export function ShiftDetailModal({
             <Button
               variant="outline"
               size="sm"
+              disabled={!data || loading}
               className="text-xs font-semibold gap-1.5 h-9 rounded-xl border-[#EAEFF8] dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 print:hidden cursor-pointer"
-              onClick={handlePrint}
+              onClick={handleExportExcel}
             >
-              <Printer className="w-3.5 h-3.5 text-slate-500" />
-              Cetak Rekap
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+              Export Excel
             </Button>
           </div>
         </div>
