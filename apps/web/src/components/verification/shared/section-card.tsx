@@ -32,7 +32,7 @@ export function SectionCard({
     if (verificationStatus === 'verified') {
       return (
         <span
-          className="inline-flex items-center px-2 py-0.5 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-semibold"
+          className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold"
           title="Data pada bagian ini telah diverifikasi dan disetujui"
         >
           Terverifikasi
@@ -43,7 +43,7 @@ export function SectionCard({
     if (verificationStatus === 'action_required') {
       return (
         <span
-          className="inline-flex items-center px-2 py-0.5 rounded-xl bg-rose-50 text-rose-700 text-xs font-semibold"
+          className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 text-xs font-semibold"
           title={statusNote || 'Terdapat data atau dokumen yang perlu diperbaiki'}
         >
           Perlu Revisi
@@ -54,7 +54,7 @@ export function SectionCard({
     if (verificationStatus === 'under_review' || verificationStatus === 'pending') {
       return (
         <span
-          className="inline-flex items-center px-2 py-0.5 rounded-xl bg-blue-50 text-[#0e59f9] text-xs font-semibold"
+          className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-blue-50 text-[#0e59f9] text-xs font-semibold"
           title="Data sedang diperiksa oleh tim kepatuhan"
         >
           Sedang Ditinjau
@@ -68,7 +68,7 @@ export function SectionCard({
   return (
     <div
       className={cn(
-        'bg-white rounded-2xl border border-[#EAEFF8] p-5 sm:p-6 shadow-sm space-y-4',
+        'bg-white rounded-2xl border-none p-5 sm:p-6 shadow-sm-md hover:shadow-md transition-all space-y-4',
         className
       )}
     >

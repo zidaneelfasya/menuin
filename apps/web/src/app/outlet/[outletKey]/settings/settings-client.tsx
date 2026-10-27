@@ -392,31 +392,36 @@ export function SettingsClient({
         <div className="w-full">
           {/* TAB 1: PROFIL TOKO */}
           <TabsContent value="store" className="mt-0 outline-none">
-            <div className="bg-card border border-border/70 rounded-2xl p-6 sm:p-8 shadow-xs">
+            <div className="bg-white border-none rounded-2xl p-6 sm:p-8 shadow-sm-md hover:shadow-md transition-all">
               <form onSubmit={handleSaveStore} className="space-y-6">
-                <div className="pb-5 border-b border-border/60">
-                  <h2 className="text-lg font-semibold tracking-tight text-foreground">
-                    Profil & Identitas Toko
-                  </h2>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Atur nama toko, tautan publik katalog digital, logo, dan tema warna utama.
-                  </p>
+                <div className="flex items-center gap-3.5 pb-5 border-b border-slate-100">
+                  <div className="w-10 h-10 rounded-full bg-[#0e59f9] text-white flex items-center justify-center shrink-0">
+                    <IconBuildingStore className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold tracking-tight text-slate-900">
+                      Profil & Identitas Toko
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Atur nama toko, tautan publik katalog digital, logo, dan tema warna utama.
+                    </p>
+                  </div>
                 </div>
 
-                <div className="divide-y divide-border/60">
+                <div className="divide-y divide-slate-100">
                   {/* ROW 1: LOGO OUTLET */}
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-start">
                     <div className="md:col-span-4 space-y-0.5">
-                      <Label className="text-sm font-semibold text-foreground">
+                      <Label className="text-sm font-semibold text-slate-900">
                         Logo Outlet
                       </Label>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
+                      <p className="text-xs text-slate-500 leading-relaxed">
                         Tampil di header aplikasi, katalog digital, dan struk kasir.
                       </p>
                     </div>
                     <div className="md:col-span-8">
                       <div className="flex items-center gap-4">
-                        <div className="relative w-18 h-18 rounded-2xl overflow-hidden border border-border/80 bg-muted/40 flex items-center justify-center shrink-0 shadow-2xs">
+                        <div className="relative w-18 h-18 rounded-2xl overflow-hidden border border-slate-100 bg-slate-50 flex items-center justify-center shrink-0 shadow-sm-md">
                           {storeLogoUrl ? (
                             <img
                               src={storeLogoUrl}
@@ -424,7 +429,7 @@ export function SettingsClient({
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <span className="text-muted-foreground text-lg font-semibold">
+                            <span className="text-slate-400 text-lg font-semibold">
                               {storeName ? storeName.slice(0, 2).toUpperCase() : 'MN'}
                             </span>
                           )}
@@ -443,9 +448,9 @@ export function SettingsClient({
                               size="sm"
                               onClick={() => logoInputRef.current?.click()}
                               disabled={isUploadingLogo}
-                              className="h-9 px-3.5 text-xs font-medium rounded-xl hover:bg-muted/70 transition-all cursor-pointer"
+                              className="h-9 px-4 text-xs font-semibold rounded-full border-none bg-white shadow-sm-md hover:bg-slate-100 text-slate-700 transition-all cursor-pointer"
                             >
-                              <IconUpload className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
+                              <IconUpload className="w-3.5 h-3.5 mr-1.5 text-slate-500" />
                               {isUploadingLogo ? 'Mengunggah...' : 'Upload Logo'}
                             </Button>
                             {storeLogoUrl && (
@@ -455,14 +460,14 @@ export function SettingsClient({
                                 size="sm"
                                 onClick={() => setStoreLogoUrl(null)}
                                 disabled={isUploadingLogo}
-                                className="h-9 px-3 text-xs font-medium text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl cursor-pointer"
+                                className="h-9 px-4 text-xs font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-full transition-all cursor-pointer border-none"
                               >
                                 <IconTrash className="w-3.5 h-3.5 mr-1.5" />
                                 Hapus
                               </Button>
                             )}
                           </div>
-                          <p className="text-[11px] text-muted-foreground">
+                          <p className="text-[11px] text-slate-400">
                             Format PNG, JPG, WebP. Rasio 1:1, maks 5MB.
                           </p>
                         </div>
@@ -473,16 +478,16 @@ export function SettingsClient({
                   {/* ROW 2: BANNER / COVER OUTLET */}
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-start">
                     <div className="md:col-span-4 space-y-0.5">
-                      <Label className="text-sm font-semibold text-foreground">
+                      <Label className="text-sm font-semibold text-slate-900">
                         Banner Sampul
                       </Label>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
+                      <p className="text-xs text-slate-500 leading-relaxed">
                         Banner utama yang tampil pada header katalog digital toko Anda.
                       </p>
                     </div>
                     <div className="md:col-span-8 space-y-3">
                       {storeBannerUrl ? (
-                        <div className="relative rounded-xl overflow-hidden border border-border/80 aspect-[3/1] max-w-md bg-muted/30">
+                        <div className="relative rounded-2xl overflow-hidden border-none shadow-sm-md aspect-[3/1] max-w-md bg-slate-50">
                           <img
                             src={storeBannerUrl}
                             alt="Banner Toko"
@@ -495,8 +500,8 @@ export function SettingsClient({
                           )}
                         </div>
                       ) : (
-                        <div className="rounded-xl border border-dashed border-border/80 p-4 max-w-md bg-muted/10 text-center">
-                          <p className="text-xs text-muted-foreground">Belum ada banner sampul</p>
+                        <div className="rounded-2xl border border-dashed border-slate-200 p-4 max-w-md bg-slate-50/50 text-center">
+                          <p className="text-xs text-slate-400">Belum ada banner sampul</p>
                         </div>
                       )}
 
@@ -507,9 +512,9 @@ export function SettingsClient({
                           size="sm"
                           onClick={() => bannerInputRef.current?.click()}
                           disabled={isUploadingBanner}
-                          className="h-9 px-3.5 text-xs font-medium rounded-xl hover:bg-muted/70 transition-all cursor-pointer"
+                          className="h-9 px-4 text-xs font-semibold rounded-full border-none bg-white shadow-sm-md hover:bg-slate-100 text-slate-700 transition-all cursor-pointer"
                         >
-                          <IconCamera className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
+                          <IconCamera className="w-3.5 h-3.5 mr-1.5 text-slate-500" />
                           {isUploadingBanner ? 'Mengunggah...' : storeBannerUrl ? 'Ganti Banner' : 'Upload Banner'}
                         </Button>
                         {storeBannerUrl && (
@@ -519,14 +524,14 @@ export function SettingsClient({
                             size="sm"
                             onClick={() => setStoreBannerUrl(null)}
                             disabled={isUploadingBanner}
-                            className="h-9 px-3 text-xs font-medium text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl cursor-pointer"
+                            className="h-9 px-4 text-xs font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-full transition-all cursor-pointer border-none"
                           >
                             <IconTrash className="w-3.5 h-3.5 mr-1.5" />
                             Hapus
                           </Button>
                         )}
                       </div>
-                      <p className="text-[11px] text-muted-foreground">
+                      <p className="text-[11px] text-slate-400">
                         Format landscape disarankan (rasio 3:1), maks 5MB.
                       </p>
                     </div>
@@ -535,10 +540,10 @@ export function SettingsClient({
                   {/* ROW 3: NAMA TOKO */}
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-start">
                     <div className="md:col-span-4 space-y-0.5">
-                      <Label htmlFor="storeName" className="text-sm font-semibold text-foreground">
+                      <Label htmlFor="storeName" className="text-sm font-semibold text-slate-900">
                         Nama Toko
                       </Label>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
+                      <p className="text-xs text-slate-500 leading-relaxed">
                         Nama resmi toko atau outlet Anda.
                       </p>
                     </div>
@@ -548,7 +553,7 @@ export function SettingsClient({
                         value={storeName}
                         onChange={(e) => setStoreName(e.target.value)}
                         placeholder="Contoh: Kopi Titik Temu"
-                        className="rounded-xl h-11 bg-background/80 hover:bg-background focus:bg-background border-border/80 text-sm focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
+                        className="rounded-full h-10 px-4 bg-slate-50 border-none shadow-sm-md text-xs sm:text-sm font-medium focus-visible:ring-2 focus-visible:ring-[#0e59f9] focus:outline-none transition-all text-slate-800 placeholder:text-slate-400"
                         required
                       />
                     </div>
@@ -557,16 +562,16 @@ export function SettingsClient({
                   {/* ROW 4: USERNAME / SLUG */}
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-start">
                     <div className="md:col-span-4 space-y-0.5">
-                      <Label htmlFor="storeSlug" className="text-sm font-semibold text-foreground">
+                      <Label htmlFor="storeSlug" className="text-sm font-semibold text-slate-900">
                         Username / Slug Toko
                       </Label>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
+                      <p className="text-xs text-slate-500 leading-relaxed">
                         URL publik katalog online toko Anda.
                       </p>
                     </div>
                     <div className="md:col-span-8">
-                      <div className="flex items-center rounded-xl border border-border/80 bg-background/80 hover:bg-background focus-within:bg-background overflow-hidden focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
-                        <div className="px-3.5 py-2.5 bg-muted/50 border-r border-border/80 text-xs font-mono text-muted-foreground font-medium select-none">
+                      <div className="flex items-center rounded-full bg-slate-50 shadow-sm-md border-none overflow-hidden focus-within:ring-2 focus-within:ring-[#0e59f9] transition-all">
+                        <div className="px-4 py-2.5 bg-slate-100/80 border-r border-slate-200 text-xs font-mono text-slate-500 font-medium select-none rounded-l-full">
                           menuin.id/store/
                         </div>
                         <Input
@@ -574,10 +579,10 @@ export function SettingsClient({
                           value={storeSlug}
                           onChange={(e) => setStoreSlug(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
                           placeholder="kopi-titik-temu"
-                          className="border-0 rounded-none h-11 bg-transparent text-sm font-mono focus-visible:ring-0 focus-visible:ring-offset-0 px-3.5"
+                          className="border-0 rounded-none h-10 bg-transparent text-xs sm:text-sm font-mono focus-visible:ring-0 focus-visible:ring-offset-0 px-3.5 focus:outline-none"
                         />
-                        <div className="pr-3.5 text-primary shrink-0">
-                          <IconCircleCheck className="w-4 h-4" />
+                        <div className="mr-3 w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0">
+                          <IconCheck className="w-3 h-3 stroke-[2.5]" />
                         </div>
                       </div>
                     </div>
@@ -586,10 +591,10 @@ export function SettingsClient({
                   {/* ROW 5: DESKRIPSI TOKO */}
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-start">
                     <div className="md:col-span-4 space-y-0.5">
-                      <Label htmlFor="storeDescription" className="text-sm font-semibold text-foreground">
+                      <Label htmlFor="storeDescription" className="text-sm font-semibold text-slate-900">
                         Deskripsi Toko
                       </Label>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
+                      <p className="text-xs text-slate-500 leading-relaxed">
                         Deskripsi singkat outlet untuk katalog digital.
                       </p>
                     </div>
@@ -600,7 +605,7 @@ export function SettingsClient({
                         value={storeDescription}
                         onChange={(e) => setStoreDescription(e.target.value)}
                         placeholder="Tuliskan deskripsi singkat mengenai outlet Anda..."
-                        className="rounded-xl bg-background/80 hover:bg-background focus:bg-background border-border/80 text-sm resize-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all p-3.5"
+                        className="rounded-2xl bg-slate-50 border-none shadow-md text-xs sm:text-sm font-normal resize-none focus-visible:ring-2 focus-visible:ring-[#0e59f9] focus:outline-none transition-all p-4 text-slate-800 placeholder:text-slate-400"
                       />
                     </div>
                   </div>
@@ -608,10 +613,10 @@ export function SettingsClient({
                   {/* ROW 6: WARNA TEMA / BRANDING */}
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-start">
                     <div className="md:col-span-4 space-y-0.5">
-                      <Label className="text-sm font-semibold text-foreground">
+                      <Label className="text-sm font-semibold text-slate-900">
                         Warna Tema Utama
                       </Label>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
+                      <p className="text-xs text-slate-500 leading-relaxed">
                         Warna aksen utama tema dan katalog toko.
                       </p>
                     </div>
@@ -634,11 +639,11 @@ export function SettingsClient({
                 </div>
 
                 {/* SAVE ACTION BAR */}
-                <div className="flex items-center justify-end pt-5 border-t border-border/60">
+                <div className="flex items-center justify-end pt-5 border-t border-slate-100">
                   <Button
                     disabled={isSavingStore || !hasStoreChanges}
                     type="submit"
-                    className="min-w-[150px] h-11 rounded-xl text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all cursor-pointer"
+                    className="min-w-[150px] h-10 px-5 rounded-full text-xs font-semibold bg-[#0e59f9] hover:bg-[#0b4de0] text-white shadow-md transition-all cursor-pointer border-none"
                   >
                     {isSavingStore ? (
                       <><IconLoader2 className="mr-2 h-4 w-4 animate-spin" /> Menyimpan...</>
@@ -653,24 +658,29 @@ export function SettingsClient({
 
           {/* TAB 2: PAJAK & BIAYA LAYANAN */}
           <TabsContent value="tax" className="mt-0 outline-none">
-            <div className="bg-card border border-border/70 rounded-2xl p-6 sm:p-8 shadow-xs">
+            <div className="bg-white border-none rounded-2xl p-6 sm:p-8 shadow-sm-md hover:shadow-md transition-all">
               <form onSubmit={handleSaveTax} className="space-y-6">
-                <div className="pb-5 border-b border-border/60">
-                  <h2 className="text-lg font-semibold tracking-tight text-foreground">
-                    Pajak Restoran & Biaya Layanan
-                  </h2>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Atur persentase pajak PB1 dan service charge yang otomatis dihitung pada pesanan kasir POS.
-                  </p>
+                <div className="flex items-center gap-3.5 pb-5 border-b border-slate-100">
+                  <div className="w-10 h-10 rounded-full bg-[#0e59f9] text-white flex items-center justify-center shrink-0">
+                    <IconReceipt className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold tracking-tight text-slate-900">
+                      Pajak Restoran & Biaya Layanan
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Atur persentase pajak PB1 dan service charge yang otomatis dihitung pada pesanan kasir POS.
+                    </p>
+                  </div>
                 </div>
 
-                <div className="divide-y divide-border/60">
+                <div className="divide-y divide-slate-100">
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-start">
                     <div className="md:col-span-4 space-y-0.5">
-                      <Label htmlFor="taxName" className="text-sm font-semibold text-foreground">
+                      <Label htmlFor="taxName" className="text-sm font-semibold text-slate-900">
                         Nama Label Pajak
                       </Label>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
+                      <p className="text-xs text-slate-500 leading-relaxed">
                         Label yang tercetak pada struk kasir pelanggan.
                       </p>
                     </div>
@@ -680,17 +690,17 @@ export function SettingsClient({
                         value={taxName}
                         onChange={(e) => setTaxName(e.target.value)}
                         placeholder="Contoh: Pajak Restoran (PB1)"
-                        className="rounded-xl h-11 bg-background/80 hover:bg-background focus:bg-background border-border/80 text-sm focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
+                        className="rounded-full h-10 px-4 bg-slate-50 border-none shadow-sm-md text-xs sm:text-sm font-medium focus-visible:ring-2 focus-visible:ring-[#0e59f9] focus:outline-none transition-all text-slate-800 placeholder:text-slate-400"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-start">
                     <div className="md:col-span-4 space-y-0.5">
-                      <Label htmlFor="posTaxRate" className="text-sm font-semibold text-foreground">
+                      <Label htmlFor="posTaxRate" className="text-sm font-semibold text-slate-900">
                         Tarif Pajak POS (%)
                       </Label>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
+                      <p className="text-xs text-slate-500 leading-relaxed">
                         Persentase pajak yang dibebankan ke subtotal order kasir.
                       </p>
                     </div>
@@ -705,19 +715,19 @@ export function SettingsClient({
                           value={posTaxRate}
                           onChange={(e) => setPosTaxRate(e.target.value)}
                           placeholder="10"
-                          className="rounded-xl h-11 bg-background/80 hover:bg-background focus:bg-background border-border/80 text-sm pr-10 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
+                          className="rounded-full h-10 px-4 bg-slate-50 border-none shadow-sm-md text-xs sm:text-sm font-medium pr-10 focus-visible:ring-2 focus-visible:ring-[#0e59f9] focus:outline-none transition-all text-slate-800 placeholder:text-slate-400"
                         />
-                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">%</span>
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400">%</span>
                       </div>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-start">
                     <div className="md:col-span-4 space-y-0.5">
-                      <Label htmlFor="serviceChargeRate" className="text-sm font-semibold text-foreground">
+                      <Label htmlFor="serviceChargeRate" className="text-sm font-semibold text-slate-900">
                         Biaya Layanan (%)
                       </Label>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
+                      <p className="text-xs text-slate-500 leading-relaxed">
                         Persentase biaya layanan untuk pesanan dine-in.
                       </p>
                     </div>
@@ -732,16 +742,16 @@ export function SettingsClient({
                           value={serviceChargeRate}
                           onChange={(e) => setServiceChargeRate(e.target.value)}
                           placeholder="5"
-                          className="rounded-xl h-11 bg-background/80 hover:bg-background focus:bg-background border-border/80 text-sm pr-10 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
+                          className="rounded-full h-10 px-4 bg-slate-50 border-none shadow-sm-md text-xs sm:text-sm font-medium pr-10 focus-visible:ring-2 focus-visible:ring-[#0e59f9] focus:outline-none transition-all text-slate-800 placeholder:text-slate-400"
                         />
-                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">%</span>
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400">%</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex justify-end pt-5 border-t border-border/60">
-                  <Button disabled={isSavingTax || !hasTaxChanges} type="submit" className="min-w-[150px] h-11 rounded-xl text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all cursor-pointer">
+                <div className="flex justify-end pt-5 border-t border-slate-100">
+                  <Button disabled={isSavingTax || !hasTaxChanges} type="submit" className="min-w-[150px] h-10 px-5 rounded-full text-xs font-semibold bg-[#0e59f9] hover:bg-[#0b4de0] text-white shadow-md transition-all cursor-pointer border-none">
                     {isSavingTax ? (
                       <><IconLoader2 className="mr-2 h-4 w-4 animate-spin" /> Menyimpan...</>
                     ) : (
@@ -755,24 +765,29 @@ export function SettingsClient({
 
           {/* TAB 3: KOMISI ONLINE FOOD */}
           <TabsContent value="platform" className="mt-0 outline-none">
-            <div className="bg-card border border-border/70 rounded-2xl p-6 sm:p-8 shadow-xs">
+            <div className="bg-white border-none rounded-2xl p-6 sm:p-8 shadow-sm-md hover:shadow-md transition-all">
               <form onSubmit={handleSavePlatformFees} className="space-y-6">
-                <div className="pb-5 border-b border-border/60">
-                  <h2 className="text-lg font-semibold tracking-tight text-foreground">
-                    Potongan Komisi Online Food
-                  </h2>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Potongan komisi mitra pesan-antar makanan untuk kalkulasi estimasi pendapatan bersih.
-                  </p>
+                <div className="flex items-center gap-3.5 pb-5 border-b border-slate-100">
+                  <div className="w-10 h-10 rounded-full bg-[#0e59f9] text-white flex items-center justify-center shrink-0">
+                    <IconMoped className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold tracking-tight text-slate-900">
+                      Potongan Komisi Online Food
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Potongan komisi mitra pesan-antar makanan untuk kalkulasi estimasi pendapatan bersih.
+                    </p>
+                  </div>
                 </div>
 
-                <div className="divide-y divide-border/60">
+                <div className="divide-y divide-slate-100">
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-start">
                     <div className="md:col-span-4 space-y-0.5">
-                      <Label htmlFor="grabFoodFeeRate" className="text-sm font-semibold text-foreground">
+                      <Label htmlFor="grabFoodFeeRate" className="text-sm font-semibold text-slate-900">
                         GrabFood (%)
                       </Label>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
+                      <p className="text-xs text-slate-500 leading-relaxed">
                         Persentase komisi bagi hasil GrabFood.
                       </p>
                     </div>
@@ -786,19 +801,19 @@ export function SettingsClient({
                           max="100"
                           value={grabFoodFeeRate}
                           onChange={(e) => setGrabFoodFeeRate(e.target.value)}
-                          className="rounded-xl h-11 bg-background/80 hover:bg-background focus:bg-background border-border/80 text-sm pr-10 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
+                          className="rounded-full h-10 px-4 bg-slate-50 border-none shadow-sm-md text-xs sm:text-sm font-medium pr-10 focus-visible:ring-2 focus-visible:ring-[#0e59f9] focus:outline-none transition-all text-slate-800 placeholder:text-slate-400"
                         />
-                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">%</span>
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400">%</span>
                       </div>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-start">
                     <div className="md:col-span-4 space-y-0.5">
-                      <Label htmlFor="shopeeFoodFeeRate" className="text-sm font-semibold text-foreground">
+                      <Label htmlFor="shopeeFoodFeeRate" className="text-sm font-semibold text-slate-900">
                         ShopeeFood (%)
                       </Label>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
+                      <p className="text-xs text-slate-500 leading-relaxed">
                         Persentase komisi bagi hasil ShopeeFood.
                       </p>
                     </div>
@@ -812,19 +827,19 @@ export function SettingsClient({
                           max="100"
                           value={shopeeFoodFeeRate}
                           onChange={(e) => setShopeeFoodFeeRate(e.target.value)}
-                          className="rounded-xl h-11 bg-background/80 hover:bg-background focus:bg-background border-border/80 text-sm pr-10 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
+                          className="rounded-full h-10 px-4 bg-slate-50 border-none shadow-sm-md text-xs sm:text-sm font-medium pr-10 focus-visible:ring-2 focus-visible:ring-[#0e59f9] focus:outline-none transition-all text-slate-800 placeholder:text-slate-400"
                         />
-                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">%</span>
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400">%</span>
                       </div>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-start">
                     <div className="md:col-span-4 space-y-0.5">
-                      <Label htmlFor="goFoodFeeRate" className="text-sm font-semibold text-foreground">
+                      <Label htmlFor="goFoodFeeRate" className="text-sm font-semibold text-slate-900">
                         GoFood (%)
                       </Label>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
+                      <p className="text-xs text-slate-500 leading-relaxed">
                         Persentase komisi bagi hasil GoFood.
                       </p>
                     </div>
@@ -838,16 +853,16 @@ export function SettingsClient({
                           max="100"
                           value={goFoodFeeRate}
                           onChange={(e) => setGoFoodFeeRate(e.target.value)}
-                          className="rounded-xl h-11 bg-background/80 hover:bg-background focus:bg-background border-border/80 text-sm pr-10 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
+                          className="rounded-full h-10 px-4 bg-slate-50 border-none shadow-sm-md text-xs sm:text-sm font-medium pr-10 focus-visible:ring-2 focus-visible:ring-[#0e59f9] focus:outline-none transition-all text-slate-800 placeholder:text-slate-400"
                         />
-                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">%</span>
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400">%</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex justify-end pt-5 border-t border-border/60">
-                  <Button disabled={isSavingPlatform || !hasPlatformChanges} type="submit" className="min-w-[150px] h-11 rounded-xl text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all cursor-pointer">
+                <div className="flex justify-end pt-5 border-t border-slate-100">
+                  <Button disabled={isSavingPlatform || !hasPlatformChanges} type="submit" className="min-w-[150px] h-10 px-5 rounded-full text-xs font-semibold bg-[#0e59f9] hover:bg-[#0b4de0] text-white shadow-md transition-all cursor-pointer border-none">
                     {isSavingPlatform ? (
                       <><IconLoader2 className="mr-2 h-4 w-4 animate-spin" /> Menyimpan...</>
                     ) : (
@@ -862,49 +877,56 @@ export function SettingsClient({
           {/* TAB 4: PEMBAYARAN ONLINE (DOKU) */}
           {isOwnerOnly && (
             <TabsContent value="payment" className="mt-0 outline-none">
-              <div className="bg-card border border-border/70 rounded-2xl p-6 sm:p-8 shadow-xs space-y-6">
-                <div className="pb-5 border-b border-border/60 flex items-start justify-between gap-4">
-                  <div>
-                    <h2 className="text-lg font-semibold tracking-tight text-foreground">
-                      Pembayaran Online (DOKU)
-                    </h2>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Terima QRIS, Virtual Account, e-wallet, dan kartu dari pesanan online. Dana masuk ke akun pembayaran outlet Anda.
-                    </p>
+              <div className="bg-white border-none rounded-2xl p-6 sm:p-8 shadow-sm-md hover:shadow-md transition-all space-y-6">
+                <div className="flex items-center gap-3.5 pb-5 border-b border-slate-100">
+                  <div className="w-10 h-10 rounded-full bg-[#0e59f9] text-white flex items-center justify-center shrink-0">
+                    <IconCreditCard className="w-5 h-5" />
                   </div>
-                  {paymentGateway?.environment === 'sandbox' && (
-                    <span className="shrink-0 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-amber-100 text-amber-800">
-                      Mode Uji Coba
-                    </span>
-                  )}
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <h2 className="text-lg font-semibold tracking-tight text-slate-900">
+                          Pembayaran Online (DOKU)
+                        </h2>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          Terima QRIS, Virtual Account, e-wallet, dan kartu dari pesanan online.
+                        </p>
+                      </div>
+                      {paymentGateway?.environment === 'sandbox' && (
+                        <span className="shrink-0 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border-none">
+                          Mode Uji Coba
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 {!paymentGateway?.platformConfigured ? (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-slate-500">
                     Payment gateway belum dikonfigurasi di platform. Hubungi tim Menuin.
                   </p>
                 ) : (
-                  <div className="divide-y divide-border/60">
+                  <div className="divide-y divide-slate-100">
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-start">
                       <div className="md:col-span-4 space-y-0.5">
-                        <Label className="text-sm font-semibold text-foreground">Akun Pembayaran Outlet</Label>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
+                        <Label className="text-sm font-semibold text-slate-900">Akun Pembayaran Outlet</Label>
+                        <p className="text-xs text-slate-500 leading-relaxed">
                           Sub Account DOKU tempat dana pesanan online outlet ini diterima.
                         </p>
                       </div>
                       <div className="md:col-span-8 space-y-3">
                         {paymentGateway.subAccountId ? (
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-mono text-xs px-2.5 py-1.5 rounded-lg bg-muted text-foreground">
+                            <span className="font-mono text-xs px-2.5 py-1.5 rounded-xl bg-slate-100 text-slate-800">
                               {paymentGateway.subAccountId}
                             </span>
-                            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                            <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border-none">
                               {paymentGateway.subAccountStatus || 'ACTIVE'}
                             </span>
                           </div>
                         ) : (
                           <>
-                            <p className="text-xs text-muted-foreground leading-relaxed">
+                            <p className="text-xs text-slate-500 leading-relaxed">
                               {paymentGateway.subAccountRequired
                                 ? 'Belum aktif. Aktifkan agar pelanggan bisa membayar online.'
                                 : 'Belum aktif. Selama mode uji coba, pembayaran tetap bisa dites tanpa akun outlet.'}
@@ -914,7 +936,7 @@ export function SettingsClient({
                               type="button"
                               onClick={handleActivatePayment}
                               disabled={isSavingPayment}
-                              className="min-w-[180px] h-11 rounded-xl text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all cursor-pointer"
+                              className="min-w-[180px] h-10 px-5 rounded-full text-xs font-semibold bg-[#0e59f9] hover:bg-[#0b4de0] text-white shadow-md transition-all cursor-pointer border-none"
                             >
                               {isSavingPayment ? (
                                 <><IconLoader2 className="mr-2 h-4 w-4 animate-spin" /> Mengaktifkan...</>
@@ -929,7 +951,7 @@ export function SettingsClient({
                   </div>
                 )}
 
-                <p className="text-xs text-muted-foreground pt-5 border-t border-border/60">
+                <p className="text-xs text-slate-400 pt-5 border-t border-slate-100">
                   Pembayaran online untuk pelanggan dinyalakan/dimatikan di menu Katalog → Pemesanan.
                 </p>
               </div>
@@ -938,23 +960,28 @@ export function SettingsClient({
 
           {/* TAB 5: PREFERENSI TAMPILAN */}
           <TabsContent value="bestseller" className="mt-0 outline-none">
-            <div className="bg-card border border-border/70 rounded-2xl p-6 sm:p-8 shadow-xs">
+            <div className="bg-white border-none rounded-2xl p-6 sm:p-8 shadow-sm-md hover:shadow-md transition-all">
               <form onSubmit={handleSaveDisplay} className="space-y-6">
-                <div className="pb-5 border-b border-border/60">
-                  <h2 className="text-lg font-semibold tracking-tight text-foreground">
-                    Preferensi Tampilan Katalog POS
-                  </h2>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Sesuaikan urutan dan tata letak produk di katalog kasir.
-                  </p>
+                <div className="flex items-center gap-3.5 pb-5 border-b border-slate-100">
+                  <div className="w-10 h-10 rounded-full bg-[#0e59f9] text-white flex items-center justify-center shrink-0">
+                    <IconAdjustmentsHorizontal className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold tracking-tight text-slate-900">
+                      Preferensi Tampilan Katalog POS
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Sesuaikan urutan dan tata letak produk di katalog kasir.
+                    </p>
+                  </div>
                 </div>
 
-                <div className="p-4.5 rounded-2xl border border-border/70 bg-muted/20 flex items-center justify-between gap-4">
+                <div className="p-4.5 rounded-2xl border-none bg-slate-50/80 shadow-sm-md flex items-center justify-between gap-4">
                   <div className="space-y-0.5">
-                    <Label htmlFor="posPinBestSellers" className="text-sm font-semibold text-foreground">
+                    <Label htmlFor="posPinBestSellers" className="text-sm font-semibold text-slate-900">
                       Sematkan Menu Terlaris di Paling Atas
                     </Label>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
+                    <p className="text-xs text-slate-500 leading-relaxed">
                       Tampilkan produk dengan riwayat penjualan tertinggi di deretan pertama katalog kasir.
                     </p>
                   </div>
@@ -965,8 +992,8 @@ export function SettingsClient({
                   />
                 </div>
 
-                <div className="flex justify-end pt-5 border-t border-border/60">
-                  <Button disabled={isSavingDisplay || !hasDisplayChanges} type="submit" className="min-w-[150px] h-11 rounded-xl text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all cursor-pointer">
+                <div className="flex justify-end pt-5 border-t border-slate-100">
+                  <Button disabled={isSavingDisplay || !hasDisplayChanges} type="submit" className="min-w-[150px] h-10 px-5 rounded-full text-xs font-semibold bg-[#0e59f9] hover:bg-[#0b4de0] text-white shadow-md transition-all cursor-pointer border-none">
                     {isSavingDisplay ? (
                       <><IconLoader2 className="mr-2 h-4 w-4 animate-spin" /> Menyimpan...</>
                     ) : (
@@ -989,13 +1016,33 @@ export function SettingsClient({
               
               {/* FORM CONTROLS (7 COLS) */}
               <div className="lg:col-span-7">
-                <div className="bg-card border border-border/70 rounded-2xl p-6 sm:p-8 shadow-xs space-y-6">
+                <div className="bg-white border-none rounded-2xl p-6 sm:p-8 shadow-sm-md hover:shadow-md transition-all space-y-6">
+                  <div className="flex items-center gap-3.5 pb-5 border-b border-slate-100">
+                    <div className="w-10 h-10 rounded-full bg-[#0e59f9] text-white flex items-center justify-center shrink-0">
+                      <IconPrinter className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-semibold tracking-tight text-slate-900">
+                        Struk Kasir & Tiket Dapur
+                      </h2>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Kustomisasi header, footer, dan format cetak struk kasir serta slip order dapur.
+                      </p>
+                    </div>
+                  </div>
+
                   <Tabs defaultValue="customer_receipt" className="w-full">
-                    <TabsList className="grid grid-cols-2 w-full mb-6 bg-muted/60 p-1 rounded-xl">
-                      <TabsTrigger value="customer_receipt" className="rounded-lg text-xs font-semibold py-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs shadow-none cursor-pointer">
+                    <TabsList className="grid grid-cols-2 w-full mb-6 bg-slate-100 p-1 rounded-full h-auto">
+                      <TabsTrigger 
+                        value="customer_receipt" 
+                        className="rounded-full text-xs font-semibold py-2 transition-all cursor-pointer text-slate-500 data-[state=active]:bg-[#0e59f9] data-[state=active]:text-white data-[state=active]:shadow-sm-md shadow-none"
+                      >
                         <IconReceipt2 className="h-4 w-4 mr-1.5" /> Struk Pelanggan
                       </TabsTrigger>
-                      <TabsTrigger value="kitchen_ticket" className="rounded-lg text-xs font-semibold py-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs shadow-none cursor-pointer">
+                      <TabsTrigger 
+                        value="kitchen_ticket" 
+                        className="rounded-full text-xs font-semibold py-2 transition-all cursor-pointer text-slate-500 data-[state=active]:bg-[#0e59f9] data-[state=active]:text-white data-[state=active]:shadow-sm-md shadow-none"
+                      >
                         <IconChefHat className="h-4 w-4 mr-1.5" /> Tiket Dapur (Slip)
                       </TabsTrigger>
                     </TabsList>
@@ -1003,10 +1050,10 @@ export function SettingsClient({
                     {/* SUB-FORM 1: STRUK PELANGGAN */}
                     <TabsContent value="customer_receipt" className="mt-0">
                       <form onSubmit={handleSaveReceipt} className="space-y-6">
-                        <div className="divide-y divide-border/60">
+                        <div className="divide-y divide-slate-100">
                           {/* HEADER TEXT */}
                           <div className="py-4 space-y-1.5">
-                            <Label htmlFor="receiptHeader" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                            <Label htmlFor="receiptHeader" className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                               Header Struk (Alamat & Kontak Outlet)
                             </Label>
                             <Textarea
@@ -1015,13 +1062,13 @@ export function SettingsClient({
                               value={receiptHeader}
                               onChange={(e) => setReceiptHeader(e.target.value)}
                               placeholder="Jl. Thamrin No. 12, Jakarta Pusat&#10;Telp: 0812-3456-7890"
-                              className="rounded-xl bg-background/80 hover:bg-background focus:bg-background border-border/80 font-mono text-xs resize-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all p-3.5"
+                              className="rounded-2xl bg-slate-50 border-none shadow-md font-mono text-xs resize-none focus-visible:ring-2 focus-visible:ring-[#0e59f9] focus:outline-none transition-all p-3.5 text-slate-800 placeholder:text-slate-400"
                             />
                           </div>
 
                           {/* FOOTER TEXT */}
                           <div className="py-4 space-y-1.5">
-                            <Label htmlFor="receiptFooter" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                            <Label htmlFor="receiptFooter" className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                               Footer Struk (Pesan Penutup)
                             </Label>
                             <Textarea
@@ -1030,13 +1077,13 @@ export function SettingsClient({
                               value={receiptFooter}
                               onChange={(e) => setReceiptFooter(e.target.value)}
                               placeholder="Terima kasih atas kunjungan Anda!&#10;Follow IG: @outlet_resmi"
-                              className="rounded-xl bg-background/80 hover:bg-background focus:bg-background border-border/80 font-mono text-xs resize-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all p-3.5"
+                              className="rounded-2xl bg-slate-50 border-none shadow-md font-mono text-xs resize-none focus-visible:ring-2 focus-visible:ring-[#0e59f9] focus:outline-none transition-all p-3.5 text-slate-800 placeholder:text-slate-400"
                             />
                           </div>
 
                           {/* WIFI NOTE */}
                           <div className="py-4 space-y-1.5">
-                            <Label htmlFor="receiptCustomNote" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                            <Label htmlFor="receiptCustomNote" className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                               Catatan Khusus / Info WiFi
                             </Label>
                             <Input
@@ -1044,49 +1091,49 @@ export function SettingsClient({
                               value={receiptCustomNote}
                               onChange={(e) => setReceiptCustomNote(e.target.value)}
                               placeholder="WiFi: TamuResto / Pass: ngopidulu"
-                              className="rounded-xl h-11 bg-background/80 hover:bg-background focus:bg-background border-border/80 text-xs focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
+                              className="rounded-full h-10 px-4 bg-slate-50 border-none shadow-sm-md text-xs sm:text-sm font-medium focus-visible:ring-2 focus-visible:ring-[#0e59f9] focus:outline-none transition-all text-slate-800 placeholder:text-slate-400"
                             />
                           </div>
 
                           {/* TOGGLES LIST */}
                           <div className="py-4 space-y-2">
-                            <div className="rounded-2xl border border-border/60 bg-muted/15 divide-y divide-border/40 overflow-hidden">
-                              <div className="flex items-center justify-between p-3.5 hover:bg-muted/30 transition-colors">
+                            <div className="rounded-2xl border-none bg-slate-50/80 shadow-sm-md divide-y divide-slate-100 overflow-hidden">
+                              <div className="flex items-center justify-between p-3.5 hover:bg-slate-100/50 transition-colors">
                                 <div className="space-y-0.5">
-                                  <Label className="font-semibold text-xs text-foreground">Logo Toko di Header</Label>
-                                  <p className="text-[11px] text-muted-foreground">Cetak logo di bagian paling atas struk</p>
+                                  <Label className="font-semibold text-xs text-slate-900">Logo Toko di Header</Label>
+                                  <p className="text-[11px] text-slate-500">Cetak logo di bagian paling atas struk</p>
                                 </div>
                                 <Switch checked={receiptShowLogo} onCheckedChange={setReceiptShowLogo} />
                               </div>
 
-                              <div className="flex items-center justify-between p-3.5 hover:bg-muted/30 transition-colors">
+                              <div className="flex items-center justify-between p-3.5 hover:bg-slate-100/50 transition-colors">
                                 <div className="space-y-0.5">
-                                  <Label className="font-semibold text-xs text-foreground">Nama Kasir</Label>
-                                  <p className="text-[11px] text-muted-foreground">Tampilkan nama kasir yang melayani transaksi</p>
+                                  <Label className="font-semibold text-xs text-slate-900">Nama Kasir</Label>
+                                  <p className="text-[11px] text-slate-500">Tampilkan nama kasir yang melayani transaksi</p>
                                 </div>
                                 <Switch checked={receiptShowCashier} onCheckedChange={setReceiptShowCashier} />
                               </div>
 
-                              <div className="flex items-center justify-between p-3.5 hover:bg-muted/30 transition-colors">
+                              <div className="flex items-center justify-between p-3.5 hover:bg-slate-100/50 transition-colors">
                                 <div className="space-y-0.5">
-                                  <Label className="font-semibold text-xs text-foreground">Nama Pelanggan</Label>
-                                  <p className="text-[11px] text-muted-foreground">Tampilkan nama pemesan</p>
+                                  <Label className="font-semibold text-xs text-slate-900">Nama Pelanggan</Label>
+                                  <p className="text-[11px] text-slate-500">Tampilkan nama pemesan</p>
                                 </div>
                                 <Switch checked={receiptShowCustomer} onCheckedChange={setReceiptShowCustomer} />
                               </div>
 
-                              <div className="flex items-center justify-between p-3.5 hover:bg-muted/30 transition-colors">
+                              <div className="flex items-center justify-between p-3.5 hover:bg-slate-100/50 transition-colors">
                                 <div className="space-y-0.5">
-                                  <Label className="font-semibold text-xs text-foreground">Nomor Meja</Label>
-                                  <p className="text-[11px] text-muted-foreground">Tampilkan nomor meja (Dine-In)</p>
+                                  <Label className="font-semibold text-xs text-slate-900">Nomor Meja</Label>
+                                  <p className="text-[11px] text-slate-500">Tampilkan nomor meja (Dine-In)</p>
                                 </div>
                                 <Switch checked={receiptShowTable} onCheckedChange={setReceiptShowTable} />
                               </div>
 
-                              <div className="flex items-center justify-between p-3.5 hover:bg-muted/30 transition-colors">
+                              <div className="flex items-center justify-between p-3.5 hover:bg-slate-100/50 transition-colors">
                                 <div className="space-y-0.5">
-                                  <Label className="font-semibold text-xs text-foreground">Catatan Item & WiFi</Label>
-                                  <p className="text-[11px] text-muted-foreground">Cetak baris catatan item dan kotak info WiFi</p>
+                                  <Label className="font-semibold text-xs text-slate-900">Catatan Item & WiFi</Label>
+                                  <p className="text-[11px] text-slate-500">Cetak baris catatan item dan kotak info WiFi</p>
                                 </div>
                                 <Switch checked={receiptShowNotes} onCheckedChange={setReceiptShowNotes} />
                               </div>
@@ -1094,8 +1141,8 @@ export function SettingsClient({
                           </div>
                         </div>
 
-                        <div className="flex justify-end pt-4 border-t border-border/60">
-                          <Button disabled={isSavingReceipt || !hasReceiptChanges} type="submit" className="min-w-[150px] h-11 rounded-xl text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all cursor-pointer">
+                        <div className="flex justify-end pt-4 border-t border-slate-100">
+                          <Button disabled={isSavingReceipt || !hasReceiptChanges} type="submit" className="min-w-[150px] h-10 px-5 rounded-full text-xs font-semibold bg-[#0e59f9] hover:bg-[#0b4de0] text-white shadow-md transition-all cursor-pointer border-none">
                             {isSavingReceipt ? (
                               <><IconLoader2 className="mr-2 h-4 w-4 animate-spin" /> Menyimpan...</>
                             ) : (
@@ -1109,16 +1156,16 @@ export function SettingsClient({
                     {/* SUB-FORM 2: TIKET DAPUR */}
                     <TabsContent value="kitchen_ticket" className="mt-0">
                       <form onSubmit={handleSaveKitchen} className="space-y-6">
-                        <div className="divide-y divide-border/60">
+                        <div className="divide-y divide-slate-100">
                           {/* MASTER TOGGLE */}
                           <div className="py-3">
-                            <div className="flex items-center justify-between p-4 border border-primary/20 rounded-2xl bg-primary/5">
+                            <div className="flex items-center justify-between p-4 border-none shadow-sm-md rounded-2xl bg-blue-50/70">
                               <div className="space-y-0.5">
-                                <Label className="font-semibold text-xs text-foreground">
-                                  Otomatis Cetak Tiket Dapur Saat Bayar
+                                <Label className="font-semibold text-xs text-slate-900">
+                                  Otomatis Cetak Tiket Dapur Bersama Struk
                                 </Label>
-                                <p className="text-[11px] text-muted-foreground">
-                                  Cetak salinan slip pesanan khusus koki/barista setiap transaksi kasir selesai.
+                                <p className="text-[11px] text-slate-500">
+                                  Jika aktif, setiap mencetak struk (di kasir atau modal pesanan) akan otomatis mencetak struk pelanggan dan tiket dapur sekaligus dalam sekali proses print.
                                 </p>
                               </div>
                               <Switch checked={kitchenPrintEnabled} onCheckedChange={setKitchenPrintEnabled} />
@@ -1127,7 +1174,7 @@ export function SettingsClient({
 
                           {/* TITLE */}
                           <div className="py-4 space-y-1.5">
-                            <Label htmlFor="kitchenTicketTitle" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                            <Label htmlFor="kitchenTicketTitle" className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                               Judul Tiket Dapur
                             </Label>
                             <Input
@@ -1135,13 +1182,13 @@ export function SettingsClient({
                               value={kitchenTicketTitle}
                               onChange={(e) => setKitchenTicketTitle(e.target.value)}
                               placeholder="TIKET DAPUR / BAR"
-                              className="rounded-xl h-11 bg-background/80 hover:bg-background focus:bg-background border-border/80 text-xs font-semibold focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
+                              className="rounded-full h-10 px-4 bg-slate-50 border-none shadow-sm-md text-xs font-semibold focus-visible:ring-2 focus-visible:ring-[#0e59f9] focus:outline-none transition-all text-slate-800 placeholder:text-slate-400"
                             />
                           </div>
 
                           {/* NOTES */}
                           <div className="py-4 space-y-1.5">
-                            <Label htmlFor="kitchenTicketNotes" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                            <Label htmlFor="kitchenTicketNotes" className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                               Catatan Kaki Dapur
                             </Label>
                             <Input
@@ -1149,49 +1196,49 @@ export function SettingsClient({
                               value={kitchenTicketNotes}
                               onChange={(e) => setKitchenTicketNotes(e.target.value)}
                               placeholder="Harap periksa kelengkapan pesanan sebelum disajikan"
-                              className="rounded-xl h-11 bg-background/80 hover:bg-background focus:bg-background border-border/80 text-xs focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
+                              className="rounded-full h-10 px-4 bg-slate-50 border-none shadow-sm-md text-xs sm:text-sm font-medium focus-visible:ring-2 focus-visible:ring-[#0e59f9] focus:outline-none transition-all text-slate-800 placeholder:text-slate-400"
                             />
                           </div>
 
                           {/* TOGGLES LIST */}
                           <div className="py-4 space-y-2">
-                            <div className="rounded-2xl border border-border/60 bg-muted/15 divide-y divide-border/40 overflow-hidden">
-                              <div className="flex items-center justify-between p-3.5 hover:bg-muted/30 transition-colors">
+                            <div className="rounded-2xl border-none bg-slate-50/80 shadow-sm-md divide-y divide-slate-100 overflow-hidden">
+                              <div className="flex items-center justify-between p-3.5 hover:bg-slate-100/50 transition-colors">
                                 <div className="space-y-0.5">
-                                  <Label className="font-semibold text-xs text-foreground">Nomor Meja & Channel</Label>
-                                  <p className="text-[11px] text-muted-foreground">Cetak nomor meja dan tipe order (Dine In / Take Away)</p>
+                                  <Label className="font-semibold text-xs text-slate-900">Nomor Meja & Channel</Label>
+                                  <p className="text-[11px] text-slate-500">Cetak nomor meja dan tipe order (Dine In / Take Away)</p>
                                 </div>
                                 <Switch checked={kitchenShowTable} onCheckedChange={setKitchenShowTable} />
                               </div>
 
-                              <div className="flex items-center justify-between p-3.5 hover:bg-muted/30 transition-colors">
+                              <div className="flex items-center justify-between p-3.5 hover:bg-slate-100/50 transition-colors">
                                 <div className="space-y-0.5">
-                                  <Label className="font-semibold text-xs text-foreground">Nama Pelanggan</Label>
-                                  <p className="text-[11px] text-muted-foreground">Tampilkan nama pemesan di tiket dapur</p>
+                                  <Label className="font-semibold text-xs text-slate-900">Nama Pelanggan</Label>
+                                  <p className="text-[11px] text-slate-500">Tampilkan nama pemesan di tiket dapur</p>
                                 </div>
                                 <Switch checked={kitchenShowCustomer} onCheckedChange={setKitchenShowCustomer} />
                               </div>
 
-                              <div className="flex items-center justify-between p-3.5 hover:bg-muted/30 transition-colors">
+                              <div className="flex items-center justify-between p-3.5 hover:bg-slate-100/50 transition-colors">
                                 <div className="space-y-0.5">
-                                  <Label className="font-semibold text-xs text-foreground">Nama Kasir / Staf</Label>
-                                  <p className="text-[11px] text-muted-foreground">Tampilkan nama staf pembuat order</p>
+                                  <Label className="font-semibold text-xs text-slate-900">Nama Kasir / Staf</Label>
+                                  <p className="text-[11px] text-slate-500">Tampilkan nama staf pembuat order</p>
                                 </div>
                                 <Switch checked={kitchenShowCashier} onCheckedChange={setKitchenShowCashier} />
                               </div>
 
-                              <div className="flex items-center justify-between p-3.5 hover:bg-muted/30 transition-colors">
+                              <div className="flex items-center justify-between p-3.5 hover:bg-slate-100/50 transition-colors">
                                 <div className="space-y-0.5">
-                                  <Label className="font-semibold text-xs text-foreground">Catatan Khusus Pesanan</Label>
-                                  <p className="text-[11px] text-muted-foreground">Cetak instruksi memasak (Pedas, Less Ice, Tanpa Bawang, dll)</p>
+                                  <Label className="font-semibold text-xs text-slate-900">Catatan Khusus Pesanan</Label>
+                                  <p className="text-[11px] text-slate-500">Cetak instruksi memasak (Pedas, Less Ice, Tanpa Bawang, dll)</p>
                                 </div>
                                 <Switch checked={kitchenShowNotes} onCheckedChange={setKitchenShowNotes} />
                               </div>
 
-                              <div className="flex items-center justify-between p-3.5 hover:bg-muted/30 transition-colors">
+                              <div className="flex items-center justify-between p-3.5 hover:bg-slate-100/50 transition-colors">
                                 <div className="space-y-0.5">
-                                  <Label className="font-semibold text-xs text-foreground">Pemisah Potong Kertas</Label>
-                                  <p className="text-[11px] text-muted-foreground">Cetak garis pemotong jika 1 printer dipakai bersama</p>
+                                  <Label className="font-semibold text-xs text-slate-900">Pemisah Potong Kertas</Label>
+                                  <p className="text-[11px] text-slate-500">Cetak garis pemotong jika 1 printer dipakai bersama</p>
                                 </div>
                                 <Switch checked={kitchenAutoCut} onCheckedChange={setKitchenAutoCut} />
                               </div>
@@ -1199,8 +1246,8 @@ export function SettingsClient({
                           </div>
                         </div>
 
-                        <div className="flex justify-end pt-4 border-t border-border/60">
-                          <Button disabled={isSavingKitchen || !hasKitchenChanges} type="submit" className="min-w-[150px] h-11 rounded-xl text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all cursor-pointer">
+                        <div className="flex justify-end pt-4 border-t border-slate-100">
+                          <Button disabled={isSavingKitchen || !hasKitchenChanges} type="submit" className="min-w-[150px] h-10 px-5 rounded-full text-xs font-semibold bg-[#0e59f9] hover:bg-[#0b4de0] text-white shadow-md transition-all cursor-pointer border-none">
                             {isSavingKitchen ? (
                               <><IconLoader2 className="mr-2 h-4 w-4 animate-spin" /> Menyimpan...</>
                             ) : (
@@ -1217,15 +1264,15 @@ export function SettingsClient({
               {/* LIVE THERMAL PREVIEW (5 COLS) */}
               <div className="lg:col-span-5">
                 <div className="sticky top-6 space-y-3">
-                  <div className="flex items-center justify-between bg-muted/60 p-1 rounded-xl border border-border/60">
+                  <div className="flex items-center justify-between bg-slate-100 p-1 rounded-full border-none shadow-sm-md">
                     <button
                       type="button"
                       onClick={() => setPreviewTab('customer')}
                       className={cn(
-                        "flex-1 text-xs font-semibold py-2 px-3 rounded-lg transition-all cursor-pointer",
+                        "flex-1 text-xs font-semibold py-2 px-3 rounded-full transition-all cursor-pointer",
                         previewTab === 'customer'
-                          ? "bg-background shadow-xs text-foreground font-semibold"
-                          : "text-muted-foreground hover:text-foreground"
+                          ? "bg-[#0e59f9] shadow-sm-md text-white font-semibold"
+                          : "text-slate-500 hover:text-slate-900"
                       )}
                     >
                       Preview Struk Kasir
@@ -1234,10 +1281,10 @@ export function SettingsClient({
                       type="button"
                       onClick={() => setPreviewTab('kitchen')}
                       className={cn(
-                        "flex-1 text-xs font-semibold py-2 px-3 rounded-lg transition-all cursor-pointer",
+                        "flex-1 text-xs font-semibold py-2 px-3 rounded-full transition-all cursor-pointer",
                         previewTab === 'kitchen'
-                          ? "bg-background shadow-xs text-foreground font-semibold"
-                          : "text-muted-foreground hover:text-foreground"
+                          ? "bg-[#0e59f9] shadow-sm-md text-white font-semibold"
+                          : "text-slate-500 hover:text-slate-900"
                       )}
                     >
                       Preview Tiket Dapur
@@ -1246,7 +1293,7 @@ export function SettingsClient({
 
                   {/* PREVIEW STRUK */}
                   {previewTab === 'customer' && (
-                    <div className="bg-white p-6 sm:p-7 rounded-2xl shadow-md border border-border/80 font-mono text-xs leading-relaxed text-zinc-900 select-none">
+                    <div className="bg-white p-6 sm:p-7 rounded-2xl shadow-sm-md border-none font-mono text-xs leading-relaxed text-zinc-900 select-none">
                       <div className="text-center space-y-1 pb-3 border-b border-dashed border-zinc-300">
                         {receiptShowLogo && (
                           <div className="flex justify-center mb-2">
@@ -1387,7 +1434,7 @@ export function SettingsClient({
 
                   {/* PREVIEW TIKET DAPUR */}
                   {previewTab === 'kitchen' && (
-                    <div className="bg-white p-6 sm:p-7 rounded-2xl shadow-md border border-border/80 font-mono text-xs leading-relaxed text-zinc-900 select-none">
+                    <div className="bg-white p-6 sm:p-7 rounded-2xl shadow-sm-md border-none font-mono text-xs leading-relaxed text-zinc-900 select-none">
                       <div className="text-center space-y-1 pb-3 border-b border-zinc-900">
                         <div className="font-semibold text-sm tracking-wider uppercase">
                           {kitchenTicketTitle || 'TIKET DAPUR'}

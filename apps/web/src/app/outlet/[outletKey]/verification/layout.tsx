@@ -11,7 +11,7 @@ export default async function VerificationHubLayout({
   return (
     <div className="flex flex-col md:flex-row h-full w-full overflow-hidden bg-[#F9FBFF]">
       {/* Sub-sidebar docked flush with primary rail */}
-      <aside className="w-full md:w-60 flex-shrink-0 bg-white border-r border-[#EAEFF8] flex flex-col h-auto md:h-full relative z-20 shadow-[4px_0_16px_rgba(0,0,0,0.04),1px_0_4px_rgba(0,0,0,0.02)] print:hidden">
+      <aside className="w-full md:w-60 flex-shrink-0 bg-white border-r border-slate-100 flex flex-col h-auto md:h-full relative z-20 shadow-[4px_0_16px_rgba(0,0,0,0.03)] print:hidden">
         <VerificationNav />
       </aside>
 

@@ -16,7 +16,7 @@ async function ReportsOverviewDataWrapper({ outletKey }: { outletKey: string }) 
 
   if (!res.success || !res.data) {
     return (
-      <div className="p-8 text-center text-slate-500 bg-white rounded-2xl border border-slate-200">
+      <div className="p-8 text-center text-slate-500 bg-white rounded-2xl border-none shadow-sm-md">
         {res.error || "Gagal memuat ringkasan laporan."}
       </div>
     );

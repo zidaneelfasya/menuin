@@ -26,7 +26,7 @@ export function GuidelinePanel({ className }: { className?: string }) {
   return (
     <aside
       className={cn(
-        'w-[340px] flex-shrink-0 bg-white border-l border-[#EAEFF8] p-5 overflow-y-auto no-scrollbar',
+        'w-[340px] flex-shrink-0 bg-white border-l border-slate-100 shadow-[-4px_0_16px_rgba(0,0,0,0.03)] p-5 overflow-y-auto no-scrollbar',
         className
       )}
     >
@@ -83,7 +83,7 @@ export function GuidelinePanel({ className }: { className?: string }) {
 
             {/* Note box */}
             {currentItem.note && (
-              <div className="p-3 rounded-[6px] bg-slate-50/80 border border-slate-100 text-[11px] text-slate-500">
+              <div className="p-3.5 rounded-2xl bg-slate-50 border-none shadow-xs text-[11px] text-slate-500">
                 <span className="font-semibold text-slate-700 block mb-0.5">Catatan:</span>
                 {currentItem.note}
               </div>
@@ -101,7 +101,7 @@ function SampleIllustrationCard({
   type: 'NIB' | 'NPWP' | 'KTP' | 'BANK' | 'STOREFRONT' | 'CASHIER';
 }) {
   return (
-    <div className="rounded-[6px] border border-[#EAEFF8] bg-[#F9FBFF] p-3.5 relative overflow-hidden select-none">
+    <div className="rounded-2xl border-none shadow-sm-md bg-[#F9FBFF] p-4 relative overflow-hidden select-none">
       {/* Watermark "CONTOH" */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.08] rotate-[-25deg]">
         <span className="text-4xl font-semibold text-slate-900">
@@ -111,10 +111,10 @@ function SampleIllustrationCard({
 
       <div className="relative z-10 space-y-2">
         {type === 'NIB' && (
-          <div className="bg-white rounded-[6px] border border-slate-200/80 p-3 shadow-xs space-y-2 text-[10px]">
+          <div className="bg-white rounded-xl border-none shadow-xs p-3 space-y-2 text-[10px]">
             <div className="border-b border-slate-100 pb-1.5 flex items-center justify-between">
               <span className="font-semibold text-slate-800">REPUBLIK INDONESIA</span>
-              <span className="px-2 py-0.5 rounded-xl bg-emerald-50 text-emerald-700 font-semibold text-[9px]">
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold text-[10px]">
                 STATUS: TERBIT
               </span>
             </div>

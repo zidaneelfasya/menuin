@@ -49,29 +49,47 @@ export function TableQrDialog({ tableName, url }: TableQrDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="text-slate-600 hover:text-catalog-primary hover:bg-catalog-primary/10">
-          <QrCode className="h-4 w-4" />
+        <Button 
+          variant="outline" 
+          size="icon" 
+          className="h-8 w-8 rounded-full border-none shadow-sm-md bg-white hover:bg-slate-100 text-slate-700 cursor-pointer"
+          title="Lihat & Cetak QR Code Meja"
+        >
+          <QrCode className="h-4 w-4 text-slate-600" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-sm flex flex-col items-center p-8">
-        <DialogHeader className="w-full text-center mb-4">
-          <DialogTitle className="text-2xl font-semibold">QR Code {tableName}</DialogTitle>
+      <DialogContent className="sm:max-w-sm flex flex-col items-center p-6 rounded-3xl bg-white border-none shadow-2xl">
+        <DialogHeader className="w-full text-center mb-2">
+          <DialogTitle className="text-xl font-semibold text-slate-900">QR Code {tableName}</DialogTitle>
         </DialogHeader>
         
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-6">
+        <div className="bg-white p-4 rounded-2xl shadow-md border-none mb-5 flex items-center justify-center">
           <QRCodeSVG 
             value={url} 
-            size={250} 
+            size={220} 
             level={"H"} 
             includeMargin={true}
             ref={svgRef}
           />
         </div>
         
-        <Button onClick={handleDownload} className="w-full gap-2 h-12 text-md font-semibold bg-catalog-primary hover:bg-catalog-primary/90 text-white rounded-xl">
-          <Download className="w-5 h-5" />
-          Download QR Code
-        </Button>
+        <div className="w-full space-y-2">
+          <Button 
+            onClick={handleDownload} 
+            className="w-full gap-2 h-11 text-xs font-semibold bg-[#0e59f9] hover:bg-[#0b4de0] text-white rounded-full shadow-xs cursor-pointer flex items-center justify-center"
+          >
+            <Download className="w-4 h-4" />
+            Download QR Code
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setIsOpen(false)}
+            className="w-full h-11 text-xs font-medium rounded-full bg-white hover:bg-slate-100 text-slate-700 border-none shadow-md cursor-pointer transition-all"
+          >
+            Tutup
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );

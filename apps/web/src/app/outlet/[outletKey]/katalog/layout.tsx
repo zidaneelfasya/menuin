@@ -1,7 +1,13 @@
-import { ReactNode } from "react";
+import { ReactNode, Suspense } from "react";
 import { CatalogNav } from "./catalog-nav";
 import { StorefrontPreviewMockup } from "@/components/catalog/storefront-preview-mockup";
 import { getTenantCatalogSettings } from "@/lib/actions/catalog";
+
+async function StorefrontPreviewLoader({ outletKey }: { outletKey: string }) {
+  const settings = await getTenantCatalogSettings().catch(() => null);
+  const slug = settings?.slug || outletKey;
+  return <StorefrontPreviewMockup slug={slug} outletKey={outletKey} />;
+}
 
 export default async function CatalogLayout({ 
   children,
@@ -11,8 +17,6 @@ export default async function CatalogLayout({
   params: Promise<{ outletKey: string }>;
 }) {
   const { outletKey } = await params;
-  const settings = await getTenantCatalogSettings().catch(() => null);
-  const slug = settings?.slug || outletKey;
 
   return (
     <div className="flex flex-col md:flex-row h-full w-full overflow-hidden bg-[#F9FBFF]">
@@ -29,10 +33,11 @@ export default async function CatalogLayout({
       </main>
 
       {/* Persistent Live Storefront Phone Mockup (iPhone 14) on the Right */}
-      <StorefrontPreviewMockup slug={slug} outletKey={outletKey} />
+      <Suspense fallback={
+        <aside className="hidden xl:flex w-[380px] 2xl:w-[420px] flex-shrink-0 bg-white/60 border-l border-[#EAEFF8] flex-col items-center justify-center p-4 h-full relative z-20" />
+      }>
+        <StorefrontPreviewLoader outletKey={outletKey} />
+      </Suspense>
     </div>
   );
 }
-
-
-

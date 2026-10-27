@@ -51,11 +51,20 @@ export default {
           "4": "hsl(var(--chart-4))",
           "5": "hsl(var(--chart-5))",
         },
+        catalog: {
+          primary: "var(--catalog-primary, #0e59f9)",
+          "primary-light": "var(--catalog-primary-light, #eff6ff)",
+          "primary-border": "var(--catalog-primary-border, #bfdbfe)",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      boxShadow: {
+        'sm-md': '0 2px 5px -1px rgba(0, 0, 0, 0.08), 0 1px 3px -1px rgba(0, 0, 0, 0.06)',
+        'form': '0 2px 5px -1px rgba(0, 0, 0, 0.08), 0 1px 3px -1px rgba(0, 0, 0, 0.06)',
       },
       fontFamily: {
         sans: ["var(--font-poppins)", "sans-serif"],

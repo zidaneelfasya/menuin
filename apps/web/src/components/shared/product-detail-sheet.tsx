@@ -79,6 +79,7 @@ export function ProductDetailSheet({
   editingCartItemId = null,
   onAddToCart,
 }: ProductDetailSheetProps) {
+  const themeColor = primaryColor || 'var(--catalog-primary, #0e59f9)';
   // Map of groupId -> { [modifierId]: quantity }
   const [selectedMap, setSelectedMap] = React.useState<Record<string, Record<string, number>>>({});
   const [notes, setNotes] = React.useState('');
@@ -287,7 +288,7 @@ export function ProductDetailSheet({
                 />
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-slate-800">
-                  <span className="text-sm font-semibold uppercase tracking-wider text-slate-300">
+                  <span className="text-sm font-semibold text-slate-300">
                     Menu Spesial
                   </span>
                 </div>
@@ -448,26 +449,22 @@ export function ProductDetailSheet({
                                 {/* Kanan: Harga & Kontrol Selector (Bulat Radio vs Kotak Checkbox) */}
                                 <div className="flex items-center gap-3 shrink-0">
                                   {isAvailable && (
-                                    <span
-                                      className={`text-xs sm:text-sm ${
-                                        modPrice > 0 ? 'font-medium text-slate-800' : 'text-slate-400 font-normal'
-                                      }`}
-                                    >
+                                    <span className="text-xs sm:text-sm font-medium text-slate-800">
                                       {modPrice > 0 ? `+${formatCurrency(modPrice)}` : 'Gratis'}
                                     </span>
                                   )}
 
                                   {isRadio ? (
-                                    /* Bulat (Radio) untuk Pilihan Wajib & Single-Select */
+                                    /* Bulat (Radio) untuk Pilihan Wajib & Single-Select - Diperbesar dengan border tipis 1.5px */
                                     <div
-                                      className={`w-[22px] h-[22px] rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
+                                      className={`w-6 h-6 rounded-full border-[1.5px] flex items-center justify-center shrink-0 transition-all ${
                                         isSelected
                                           ? 'border-catalog-primary bg-white'
                                           : 'border-slate-300 bg-white group-hover:border-slate-400'
                                       }`}
                                       style={
                                         isSelected
-                                          ? { borderColor: 'var(--catalog-primary, #059669)' }
+                                          ? { borderColor: themeColor }
                                           : undefined
                                       }
                                     >
@@ -476,15 +473,15 @@ export function ProductDetailSheet({
                                           initial={{ scale: 0 }}
                                           animate={{ scale: 1 }}
                                           transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                                          className="w-2.5 h-2.5 rounded-full bg-catalog-primary"
-                                          style={{ backgroundColor: 'var(--catalog-primary, #059669)' }}
+                                          className="w-3 h-3 rounded-full bg-catalog-primary"
+                                          style={{ backgroundColor: themeColor }}
                                         />
                                       )}
                                     </div>
                                   ) : (
-                                    /* Checkbox (Kotak Persegi) untuk Opsional / Multi-Select */
+                                    /* Checkbox (Kotak Persegi) untuk Opsional / Multi-Select - Kotak presisi dengan rounded-[4px] agar tidak terlalu bulat */
                                     <div
-                                      className={`w-[22px] h-[22px] rounded-sm border-2 flex items-center justify-center shrink-0 transition-all ${
+                                      className={`w-6 h-6 rounded-sm border-[1.5px] flex items-center justify-center shrink-0 transition-all ${
                                         isSelected
                                           ? 'border-catalog-primary bg-catalog-primary text-white shadow-2xs'
                                           : 'border-slate-300 bg-white group-hover:border-slate-400'
@@ -492,8 +489,8 @@ export function ProductDetailSheet({
                                       style={
                                         isSelected
                                           ? {
-                                              borderColor: 'var(--catalog-primary, #059669)',
-                                              backgroundColor: 'var(--catalog-primary, #059669)',
+                                              borderColor: themeColor,
+                                              backgroundColor: themeColor,
                                             }
                                           : undefined
                                       }
@@ -504,7 +501,7 @@ export function ProductDetailSheet({
                                           animate={{ scale: 1 }}
                                           transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                                         >
-                                          <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                          <Check className="w-4 h-4 stroke-[2.5]" />
                                         </motion.div>
                                       )}
                                     </div>
@@ -533,14 +530,14 @@ export function ProductDetailSheet({
                   placeholder="Contoh: Jangan terlalu manis, es dipisah, ekstra sedotan..."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="min-h-[78px] rounded-xl border-slate-200 text-xs sm:text-sm focus-visible:ring-catalog-primary placeholder:text-slate-400 resize-none p-3"
+                  className="min-h-[78px] rounded-2xl border-slate-200 text-xs sm:text-sm focus-visible:ring-catalog-primary placeholder:text-slate-400 resize-none p-3 shadow-2xs"
                   maxLength={200}
                 />
               </div>
             </div>
           </div>
 
-          {/* 5. Sticky Bottom Bar: Stepper & CTA Button (Pill Rounded ala Gojek) */}
+          {/* 5. Sticky Bottom Bar: Stepper & CTA Button (Pill Rounded ala Menuin) */}
           <div className="bg-white border-t border-slate-150 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-lg flex flex-col gap-3 shrink-0 z-20">
             {/* Stepper Row: "Jumlah pembelian" + [-] [qty] [+] */}
             <div className="flex items-center justify-between">
@@ -552,22 +549,19 @@ export function ProductDetailSheet({
                   type="button"
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
                   disabled={quantity <= 1}
-                  className="w-8 h-8 rounded-full border border-slate-300 flex items-center justify-center text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:border-slate-200 disabled:cursor-not-allowed active:scale-95 transition-all cursor-pointer"
+                  className="w-8 h-8 rounded-full bg-white text-slate-900 hover:bg-slate-50 border border-slate-700 shadow-sm-md disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition-all cursor-pointer flex items-center justify-center"
                   aria-label="Kurangi jumlah pesanan"
                 >
-                  <Minus className="w-4 h-4 stroke-[2]" />
+                  <Minus className="w-4 h-4 stroke-[2.2] text-slate-700" />
                 </button>
-                <span className="min-w-[24px] text-center font-semibold text-base text-slate-900 font-numeric">
+                <span className="min-w-[24px] text-center font-semibold text-base text-slate-900 font-numeric tabular-nums">
                   {quantity}
                 </span>
                 <button
                   type="button"
                   onClick={() => setQuantity(quantity + 1)}
-                  className="w-8 h-8 rounded-full border border-catalog-primary text-catalog-primary flex items-center justify-center hover:bg-slate-50 active:scale-95 transition-all cursor-pointer"
-                  style={{
-                    borderColor: 'var(--catalog-primary, #059669)',
-                    color: 'var(--catalog-primary, #059669)',
-                  }}
+                  className="w-8 h-8 rounded-full bg-catalog-primary hover:bg-catalog-primary/90 text-white shadow-sm-md active:scale-95 transition-all cursor-pointer flex items-center justify-center border-none"
+                  style={{ backgroundColor: themeColor }}
                   aria-label="Tambah jumlah pesanan"
                 >
                   <Plus className="w-4 h-4 stroke-[2.5]" />
@@ -582,23 +576,17 @@ export function ProductDetailSheet({
               </p>
             )}
 
-            {/* Primary Action Button (Rounded Pill ala Gojek) */}
+            {/* Primary Action Button (Menuin Large Pill with shadow-md) */}
             <button
               type="button"
               disabled={!isValid}
               onClick={handleAddAction}
-              className={`w-full h-12 rounded-full font-semibold text-sm sm:text-base flex items-center justify-center transition-all cursor-pointer active:scale-[0.99] shadow-xs ${
+              className={`w-full h-12 rounded-full font-semibold text-sm sm:text-base flex items-center justify-center transition-all cursor-pointer active:scale-[0.99] ${
                 isValid
-                  ? 'bg-catalog-primary text-white hover:opacity-95'
+                  ? 'bg-catalog-primary hover:bg-catalog-primary/90 text-white shadow-md'
                   : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
               }`}
-              style={
-                isValid
-                  ? {
-                      backgroundColor: 'var(--catalog-primary, #059669)',
-                    }
-                  : undefined
-              }
+              style={isValid ? { backgroundColor: themeColor } : undefined}
             >
               <span>
                 {editingCartItemId ? 'Simpan Perubahan' : 'Tambah Pesanan'} - {formatCurrency(grandTotal)}
@@ -634,7 +622,7 @@ export function ProductDetailSheet({
                 />
               </div>
               <div className="text-white text-center px-4 mt-2">
-                <p className="font-semibold text-base sm:text-lg uppercase">{product.name}</p>
+                <p className="font-semibold text-base sm:text-lg">{product.name}</p>
                 <p className="text-sm text-gray-300">{formatCurrency(basePrice)}</p>
               </div>
             </DialogPrimitive.Content>

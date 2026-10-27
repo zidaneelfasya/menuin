@@ -98,8 +98,8 @@ export function SettlementClient({ outletKey, data }: SettlementClientProps) {
           title="Rekening Settlement"
           description="Rekening bank penampungan pencairan hasil transaksi QRIS dinamis."
         />
-        <div className="bg-white rounded-2xl border border-[#EAEFF8] p-8 text-center max-w-lg mx-auto space-y-4">
-          <div className="w-12 h-12 rounded-xl bg-blue-50 text-[#0e59f9] flex items-center justify-center mx-auto">
+        <div className="bg-white rounded-2xl border-none shadow-sm-md hover:shadow-md transition-all p-8 text-center max-w-lg mx-auto space-y-4">
+          <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#0e59f9] flex items-center justify-center mx-auto">
             <Landmark className="w-6 h-6" />
           </div>
           <div>
@@ -113,12 +113,12 @@ export function SettlementClient({ outletKey, data }: SettlementClientProps) {
           {isOwner ? (
             <Link
               href={`/outlet/${outletKey}/verification/onboarding?step=1`}
-              className="inline-flex items-center justify-center h-9 px-4 rounded-xl bg-[#0e59f9] text-white text-xs font-semibold hover:bg-blue-700 transition-colors shadow-xs"
+              className="inline-flex items-center justify-center h-9 px-5 rounded-full bg-[#0e59f9] text-white text-xs font-semibold hover:bg-[#0b4de0] transition-colors shadow-md"
             >
               Mulai Pengisian
             </Link>
           ) : (
-            <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-500">
+            <div className="p-3 rounded-2xl bg-slate-50 border-none shadow-xs text-xs text-slate-500">
               Pendaftaran rekening hanya dapat dilakukan oleh Pemilik (Owner) outlet.
             </div>
           )}
@@ -130,7 +130,7 @@ export function SettlementClient({ outletKey, data }: SettlementClientProps) {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow={`Verifikasi Bisnis \u2022 ${tenant.name}`}
+        eyebrow={`Verifikasi Bisnis • ${tenant.name}`}
         title="Rekening Settlement"
         description="Rekening bank penampungan pencairan dana transaksi QRIS dinamis. Rekening dapat digunakan bersama oleh banyak outlet."
         badge={
@@ -142,7 +142,7 @@ export function SettlementClient({ outletKey, data }: SettlementClientProps) {
         {isOwner && (
           <Link
             href={`/outlet/${outletKey}/verification/onboarding?step=3`}
-            className="h-9 px-3.5 rounded-xl bg-[#0e59f9] text-white hover:bg-blue-700 text-xs font-semibold shadow-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="h-9 px-4 rounded-full bg-[#0e59f9] text-white hover:bg-[#0b4de0] text-xs font-semibold shadow-md inline-flex items-center gap-1.5 transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Tambah Rekening</span>
@@ -162,7 +162,7 @@ export function SettlementClient({ outletKey, data }: SettlementClientProps) {
             Belum ada rekening settlement yang terdaftar.
           </p>
         ) : (
-          <div className="rounded-xl border border-slate-200/80 overflow-hidden">
+          <div className="rounded-2xl border-none shadow-xs overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -183,7 +183,7 @@ export function SettlementClient({ outletKey, data }: SettlementClientProps) {
                     <TableRow key={acc.id}>
                       <TableCell className="font-semibold text-slate-900">
                         <div className="flex items-center gap-2">
-                          <span className="inline-block px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[11px] font-semibold">
+                          <span className="inline-block px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[11px] font-semibold">
                             {acc.bankName}
                           </span>
                           <span>{acc.bankAccountNumberMasked}</span>
@@ -215,12 +215,12 @@ export function SettlementClient({ outletKey, data }: SettlementClientProps) {
                       <TableCell>
                         <div className="flex items-center gap-1.5 flex-wrap">
                           {acc.isDefault && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-xl text-[10px] font-semibold bg-blue-50 text-[#0e59f9]">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-[#0e59f9]">
                               Utama
                             </span>
                           )}
                           {isCurrentOutletAccount && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-xl text-[10px] font-semibold bg-emerald-50 text-emerald-700">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700">
                               Outlet Ini
                             </span>
                           )}

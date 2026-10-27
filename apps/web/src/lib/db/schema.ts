@@ -440,6 +440,7 @@ export const transactions = pgTable('transactions', {
   customerName: text('customer_name'),
   customerPhone: text('customer_phone'),
   tableNumber: text('table_number'),
+  queueNumber: integer('queue_number'),
   publicToken: uuid('public_token').defaultRandom().unique(), // For public order tracking
   orderNumber: text('order_number'), // Tenant-scoped unique
   snapToken: text('snap_token'),
@@ -455,6 +456,7 @@ export const transactions = pgTable('transactions', {
     // Compound Indexes for fast pagination and status tabs:
     tenantCreatedIdx: index('transactions_tenant_created_idx').on(table.tenantId, table.createdAt),
     tenantStatusIdx: index('transactions_tenant_status_idx').on(table.tenantId, table.paymentStatus, table.createdAt),
+    tenantStatusCreatedIdx: index('transactions_tenant_status_created_idx').on(table.tenantId, table.status, table.createdAt),
     // Financial Idempotency Unique Constraint per tenant:
     tenantIdempotencyUnique: uniqueIndex('transactions_tenant_idempotency_unique').on(table.tenantId, table.idempotencyKey),
     posSessionFk: foreignKey({
@@ -489,6 +491,7 @@ export const transactionItems = pgTable('transaction_items', {
 }, (table) => {
   return {
     tenantTrxIdx: index('trx_items_tenant_trx_idx').on(table.tenantId, table.transactionId),
+    tenantCompletedIdx: index('trx_items_tenant_completed_idx').on(table.tenantId, table.isCompleted),
     transactionFk: foreignKey({
       columns: [table.tenantId, table.transactionId],
       foreignColumns: [transactions.tenantId, transactions.id]

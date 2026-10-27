@@ -7,6 +7,7 @@ import { getModifierGroups } from '@/lib/actions/modifiers';
 import { getCurrentUser } from '@/lib/actions/auth';
 import { TableSkeleton } from '@/components/ui/table-skeleton';
 import { requireFeature } from '@/lib/actions/auth-context';
+import ItemsLoading from './loading';
 
 export const metadata: Metadata = {
   title: 'Daftar Menu - Menuin',
@@ -37,7 +38,7 @@ async function ProductsDataWrapper() {
 
 export default function Page() {
   return (
-    <Suspense fallback={<div className="p-6"><TableSkeleton /></div>}>
+    <Suspense fallback={<ItemsLoading />}>
       <ProductsDataWrapper />
     </Suspense>
   );

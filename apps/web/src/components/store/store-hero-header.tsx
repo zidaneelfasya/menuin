@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ArrowLeft, ChevronRight, BadgeCheck } from 'lucide-react';
@@ -50,11 +50,18 @@ export function StoreHeroHeader({
   totalSold = 0,
   totalProducts = 0,
 }: StoreHeroHeaderProps) {
+  const themeColor = tenant.primaryColor || 'var(--catalog-primary, #0e59f9)';
   const pathname = usePathname();
+  const [isMounted, setIsMounted] = useState(false);
   const [isOutletDetailOpen, setIsOutletDetailOpen] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Cart store for service type
   const { orderType, setOrderType, tableNumber: cartTableNumber } = useCartStore();
+  const activeOrderType = isMounted ? orderType : 'DINE_IN';
   const currentTable = cartTableNumber || initialTableNumber;
 
   // Suppress hero banner and outlet card on cart/checkout routes
@@ -157,10 +164,10 @@ export function StoreHeroHeader({
           onClick={(e) => e.stopPropagation()}
           className="absolute top-2.5 left-2.5 right-2.5 sm:top-3 sm:left-3 sm:right-3 flex items-center justify-between z-30 pointer-events-auto"
         >
-          {/* Left: Back / Home Link */}
+          {/* Left: Back / Home Link (White pill with shadow-sm-md) */}
           <Link
             href={homeLink}
-            className="w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-md flex items-center justify-center border border-white/20 shadow-xs transition-all active:scale-95 cursor-pointer"
+            className="w-8 h-8 rounded-full bg-white/95 hover:bg-white text-slate-800 shadow-sm-md border border-slate-200/80 flex items-center justify-center transition-all active:scale-95 cursor-pointer"
             aria-label="Kembali ke menu"
           >
             <ArrowLeft className="w-4 h-4 stroke-[2.2]" />
@@ -177,8 +184,8 @@ export function StoreHeroHeader({
       </div>
 
       {/* 2. Floating Outlet Card (Clean, Essential-Only, Zero-Emoji) */}
-      <div className="w-full px-3.5 sm:px-4 -mt-7 relative z-10">
-        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-3.5 sm:p-4 text-left transition-all">
+      <div className="w-full px-3.5 sm:px-4 -mt-7 relative z-10 mb-4 sm:mb-5">
+        <div className="bg-white rounded-2xl shadow-md p-3.5 sm:p-4 text-left transition-all">
           {/* Top Row: Logo Thumbnail + Name & Info + Detail Chevron (No border on Chevron) */}
           <div
             onClick={() => setIsOutletDetailOpen(true)}
@@ -193,7 +200,10 @@ export function StoreHeroHeader({
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
               ) : (
-                <div className="w-full h-full bg-catalog-primary text-white font-semibold text-lg flex items-center justify-center">
+                <div
+                  className="w-full h-full bg-catalog-primary text-white font-semibold text-lg flex items-center justify-center"
+                  style={{ backgroundColor: themeColor }}
+                >
                   {tenant.name.charAt(0).toUpperCase()}
                 </div>
               )}
@@ -258,19 +268,20 @@ export function StoreHeroHeader({
             </span>
           </div>
 
-          {/* Service Type Toggle (Makan di Sini vs Bawa Pulang - Zero Emoji) */}
-          <div className="grid grid-cols-2 gap-1 p-1 bg-slate-100 rounded-xl mt-3">
+          {/* Service Type Switcher (White Container Pill with shadow-md & Solid Menuin Blue Active Pill) */}
+          <div className="grid grid-cols-2 gap-1.5 p-1 bg-white rounded-full shadow-md mt-3.5 border-none">
             <button
               type="button"
               onClick={() => {
                 setOrderType('DINE_IN');
                 toast.success('Mode pesanan: Makan di Tempat');
               }}
-              className={`py-1.5 px-3 rounded-lg text-xs font-semibold text-center transition-all cursor-pointer ${
-                orderType === 'DINE_IN'
-                  ? 'bg-catalog-primary text-white shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900'
+              className={`py-2 px-3 rounded-full text-xs font-semibold text-center transition-all cursor-pointer ${
+                activeOrderType === 'DINE_IN'
+                  ? 'bg-catalog-primary text-white shadow-sm-md'
+                  : 'bg-transparent text-slate-600 hover:text-slate-900 font-medium'
               }`}
+              style={activeOrderType === 'DINE_IN' ? { backgroundColor: themeColor } : undefined}
             >
               Makan di Sini
             </button>
@@ -281,11 +292,12 @@ export function StoreHeroHeader({
                 setOrderType('TAKEAWAY');
                 toast.success('Mode pesanan: Bawa Pulang');
               }}
-              className={`py-1.5 px-3 rounded-lg text-xs font-semibold text-center transition-all cursor-pointer ${
-                orderType === 'TAKEAWAY'
-                  ? 'bg-catalog-primary text-white shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900'
+              className={`py-2 px-3 rounded-full text-xs font-semibold text-center transition-all cursor-pointer ${
+                activeOrderType === 'TAKEAWAY'
+                  ? 'bg-catalog-primary text-white shadow-sm-md'
+                  : 'bg-transparent text-slate-600 hover:text-slate-900 font-medium'
               }`}
+              style={activeOrderType === 'TAKEAWAY' ? { backgroundColor: themeColor } : undefined}
             >
               Bawa Pulang
             </button>

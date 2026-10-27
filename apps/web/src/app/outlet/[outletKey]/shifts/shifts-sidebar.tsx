@@ -73,8 +73,8 @@ export function ShiftsSidebar({ outletKey, hasActiveShift }: ShiftsSidebarProps)
       {/* Desktop Header */}
       <div className="hidden md:flex items-center gap-2.5 px-2 py-3 mb-2">
         <div className="min-w-0">
-          <h2 className="text-lg font-semibold text-gray-900 truncate">Shift Kasir</h2>
-          <p className="text-[10px] text-gray-500 truncate">Sesi Kasir & Arus Kas</p>
+          <h2 className="text-lg font-semibold text-slate-900 tracking-tight truncate">Shift Kasir</h2>
+          <p className="text-[10px] text-slate-400 font-medium truncate">Sesi Kasir & Arus Kas</p>
         </div>
       </div>
 
@@ -91,21 +91,21 @@ export function ShiftsSidebar({ outletKey, hasActiveShift }: ShiftsSidebarProps)
               className={cn(
                 "flex items-center gap-2.5 rounded-full px-3.5 py-2.5 text-xs md:text-sm font-medium transition-all duration-150 whitespace-nowrap cursor-pointer text-left w-full",
                 isActive
-                  ? "bg-[#0e59f9] text-white font-semibold shadow-sm"
-                  : "text-gray-600 hover:bg-gray-100/70 hover:text-gray-900"
+                  ? "bg-[#0e59f9] text-white font-semibold shadow-sm-md"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
               )}
             >
               <item.icon
                 className={cn(
                   "h-4 w-4 flex-shrink-0",
-                  isActive ? "text-white" : "text-gray-500"
+                  isActive ? "text-white" : "text-slate-500"
                 )}
               />
               <span className="flex-1 truncate">{item.label}</span>
               {item.badge && (
                 <span
                   className={cn(
-                    "text-[10px] px-1.5 py-0.5 rounded-full font-semibold border-none",
+                    "text-[10px] px-2 py-0.5 rounded-full font-semibold border-none",
                     isActive
                       ? "bg-white/20 text-white"
                       : "bg-emerald-50 text-emerald-700"

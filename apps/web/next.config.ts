@@ -11,6 +11,7 @@ const DEV_TUNNEL_ORIGINS = [
 ];
 
 const nextConfig: NextConfig = {
+  devIndicators: false,
   allowedDevOrigins: DEV_TUNNEL_ORIGINS,
   experimental: {
     serverActions: {

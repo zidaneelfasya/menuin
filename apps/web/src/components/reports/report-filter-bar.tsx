@@ -56,10 +56,10 @@ export function ReportFilterBar({
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-[#EAEFF8] p-4 shadow-sm space-y-3 print:hidden">
+    <div className="bg-white rounded-2xl border-none p-4 shadow-sm-md space-y-3 print:hidden">
       <div className="flex flex-wrap items-center justify-between gap-3">
         {/* Filter Pills */}
-        <div className="flex flex-wrap items-center gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200/50">
+        <div className="flex flex-wrap items-center gap-1 bg-slate-100/80 p-1 rounded-full border-none">
           {filterTabs.map((tab) => {
             const isActive = period === tab.id;
             return (
@@ -68,10 +68,10 @@ export function ReportFilterBar({
                 type="button"
                 onClick={() => handleTabClick(tab.id)}
                 className={cn(
-                  "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+                  "px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer",
                   isActive
                     ? "bg-[#0e59f9] text-white shadow-xs"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
                 )}
               >
                 {tab.label}
@@ -96,7 +96,7 @@ export function ReportFilterBar({
               size="sm"
               onClick={onRefresh}
               disabled={isLoading}
-              className="h-9 border-slate-200 shadow-2xs gap-1.5 text-slate-700"
+              className="h-9 px-4 rounded-full border-none bg-white text-slate-700 shadow-sm-md hover:bg-slate-100 font-medium text-xs gap-1.5 cursor-pointer"
             >
               <RefreshCw className={cn("h-3.5 w-3.5", isLoading && "animate-spin")} />
               <span>Segarkan</span>
@@ -109,7 +109,7 @@ export function ReportFilterBar({
               variant="outline"
               size="sm"
               onClick={onExportExcel}
-              className="h-9 border-slate-200 shadow-2xs gap-1.5 text-slate-700 hover:text-[#0e59f9]"
+              className="h-9 px-4 rounded-full border-none bg-white text-slate-700 shadow-sm-md hover:bg-slate-100 font-medium text-xs gap-1.5 cursor-pointer"
             >
               <Download className="h-3.5 w-3.5 text-emerald-600" />
               <span>Export Excel</span>
@@ -121,7 +121,7 @@ export function ReportFilterBar({
               type="button"
               size="sm"
               onClick={onPrint}
-              className="h-9 bg-slate-900 hover:bg-slate-800 text-white shadow-2xs gap-1.5"
+              className="h-9 px-4 rounded-full bg-slate-900 hover:bg-slate-800 text-white shadow-md font-medium text-xs gap-1.5 cursor-pointer"
             >
               <Printer className="h-3.5 w-3.5" />
               <span>Cetak / PDF</span>
@@ -142,7 +142,7 @@ export function ReportFilterBar({
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="h-8 text-xs w-36 bg-slate-50"
+              className="h-8 text-xs w-36 rounded-full border-none bg-white shadow-sm-md px-3 text-slate-800"
               required
             />
           </div>
@@ -152,11 +152,11 @@ export function ReportFilterBar({
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="h-8 text-xs w-36 bg-slate-50"
+              className="h-8 text-xs w-36 rounded-full border-none bg-white shadow-sm-md px-3 text-slate-800"
               required
             />
           </div>
-          <Button type="submit" size="sm" className="h-8 text-xs bg-[#0e59f9] text-white">
+          <Button type="submit" size="sm" className="h-8 px-4 text-xs font-semibold rounded-full bg-[#0e59f9] hover:bg-[#0b4de0] text-white shadow-sm-md cursor-pointer">
             Terapkan
           </Button>
         </form>

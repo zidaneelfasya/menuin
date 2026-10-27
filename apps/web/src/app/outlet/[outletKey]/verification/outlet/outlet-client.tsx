@@ -89,7 +89,7 @@ export function OutletClient({ outletKey, data }: OutletClientProps) {
         {isOwner && (
           <Link
             href={`/outlet/${outletKey}/verification/onboarding?step=4`}
-            className="h-9 px-3.5 rounded-xl bg-white border border-[#EAEFF8] text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="h-9 px-4 rounded-full bg-white border-none text-xs font-semibold text-slate-700 hover:bg-slate-100 shadow-sm-md inline-flex items-center gap-1.5 transition-all cursor-pointer"
           >
             <Edit3 className="w-3.5 h-3.5 text-slate-500" />
             <span>Ubah Data Gerai</span>
@@ -135,7 +135,7 @@ export function OutletClient({ outletKey, data }: OutletClientProps) {
               <label className="text-xs font-medium text-slate-600 tracking-tight block mb-1.5">
                 Tautan Google Maps
               </label>
-              <div className="rounded-xl border border-[#EAEFF8] bg-slate-50/70 p-3 flex items-center justify-between gap-3">
+              <div className="rounded-xl border-none shadow-sm-md bg-slate-50 p-3 flex items-center justify-between gap-3">
                 <span className="text-xs text-slate-700 truncate">{tenant.mapsUrl}</span>
                 <a
                   href={tenant.mapsUrl}
@@ -161,7 +161,7 @@ export function OutletClient({ outletKey, data }: OutletClientProps) {
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Tampak Depan */}
-          <div className="rounded-xl border border-[#EAEFF8] p-4 bg-slate-50/50 space-y-2">
+          <div className="rounded-2xl border-none shadow-sm-md bg-slate-50/70 p-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-800">
                 Foto Tampak Depan Gerai
@@ -210,7 +210,7 @@ export function OutletClient({ outletKey, data }: OutletClientProps) {
           </div>
 
           {/* Area Meja Kasir */}
-          <div className="rounded-xl border border-[#EAEFF8] p-4 bg-slate-50/50 space-y-2">
+          <div className="rounded-2xl border-none shadow-sm-md bg-slate-50/70 p-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-800">
                 Foto Area Meja Kasir / POS

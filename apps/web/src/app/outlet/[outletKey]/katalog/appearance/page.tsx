@@ -1,23 +1,21 @@
 import { getTenantCatalogSettings } from "@/lib/actions/catalog";
 import { AppearanceClient } from "./appearance-client";
-import { connection } from "next/server";
 import { Suspense } from "react";
-import { Loader2 } from "lucide-react";
 import { Metadata } from "next";
+import CatalogAppearanceLoading from "./loading";
 
 export const metadata: Metadata = {
   title: 'Tampilan Self QR - Menuin',
 };
 
 async function AppearanceDataWrapper() {
-  await connection();
   const settings = await getTenantCatalogSettings();
 
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Tampilan Self QR</h1>
-        <p className="text-sm text-muted-foreground mt-1">
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Tampilan Self QR</h1>
+        <p className="text-sm text-slate-500 mt-1">
           Sesuaikan logo, banner cover, deskripsi, dan warna utama Self QR publik toko Anda.
         </p>
       </div>
@@ -43,7 +41,7 @@ async function AppearanceDataWrapper() {
 
 export default function CatalogAppearancePage() {
   return (
-    <Suspense fallback={<div className="p-6 flex justify-center"><Loader2 className="animate-spin h-6 w-6 text-muted-foreground" /></div>}>
+    <Suspense fallback={<CatalogAppearanceLoading />}>
       <AppearanceDataWrapper />
     </Suspense>
   );

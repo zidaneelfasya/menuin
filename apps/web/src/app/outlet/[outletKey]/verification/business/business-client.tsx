@@ -43,8 +43,8 @@ export function BusinessClient({ outletKey, data }: BusinessClientProps) {
           title="Profil Usaha"
           description="Legalitas badan usaha dan izin berusaha yang terdaftar di Menuin."
         />
-        <div className="bg-white rounded-2xl border border-[#EAEFF8] p-8 text-center max-w-lg mx-auto space-y-4">
-          <div className="w-12 h-12 rounded-xl bg-blue-50 text-[#0e59f9] flex items-center justify-center mx-auto">
+        <div className="bg-white rounded-2xl border-none shadow-sm-md hover:shadow-md transition-all p-8 text-center max-w-lg mx-auto space-y-4">
+          <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#0e59f9] flex items-center justify-center mx-auto">
             <FileText className="w-6 h-6" />
           </div>
           <div>
@@ -58,12 +58,12 @@ export function BusinessClient({ outletKey, data }: BusinessClientProps) {
           {isOwner ? (
             <Link
               href={`/outlet/${outletKey}/verification/onboarding?step=1`}
-              className="inline-flex items-center justify-center h-9 px-4 rounded-xl bg-[#0e59f9] text-white text-xs font-semibold hover:bg-blue-700 transition-colors shadow-xs"
+              className="inline-flex items-center justify-center h-9 px-5 rounded-full bg-[#0e59f9] text-white text-xs font-semibold hover:bg-[#0b4de0] transition-colors shadow-md"
             >
               Lengkapi Profil Usaha
             </Link>
           ) : (
-            <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-500">
+            <div className="p-3 rounded-2xl bg-slate-50 border-none shadow-xs text-xs text-slate-500">
               Pendaftaran hanya dapat dilakukan oleh Pemilik (Owner) outlet.
             </div>
           )}
@@ -103,7 +103,7 @@ export function BusinessClient({ outletKey, data }: BusinessClientProps) {
         {isOwner && (
           <Link
             href={`/outlet/${outletKey}/verification/onboarding?step=1`}
-            className="h-9 px-3.5 rounded-xl bg-white border border-[#EAEFF8] text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="h-9 px-4 rounded-full bg-white border-none text-xs font-semibold text-slate-700 hover:bg-slate-100 shadow-sm-md inline-flex items-center gap-1.5 transition-all cursor-pointer"
           >
             <Edit3 className="w-3.5 h-3.5 text-slate-500" />
             <span>Ubah Data</span>

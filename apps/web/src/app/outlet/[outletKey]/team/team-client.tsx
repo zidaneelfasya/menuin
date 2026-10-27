@@ -121,67 +121,67 @@ function DoodleAvatar({ name, email }: { name?: string | null; email: string }) 
       <img
         src={avatarDataUri}
         alt={name || email}
-        className="h-9 w-9 rounded-full object-cover border border-blue-200/90 dark:border-blue-900/60 bg-blue-50/50 dark:bg-slate-800 shrink-0 select-none shadow-xs"
+        className="h-9 w-9 rounded-full object-cover border border-blue-200/60 bg-blue-50/50 shrink-0 select-none shadow-xs"
         loading="lazy"
       />
     );
   }
 
   return (
-    <div className="h-9 w-9 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800/80 text-blue-600 dark:text-blue-300 font-medium text-xs flex items-center justify-center shrink-0 shadow-xs select-none">
+    <div className="h-9 w-9 rounded-full bg-blue-50 border border-blue-200 text-[#0e59f9] font-medium text-xs flex items-center justify-center shrink-0 shadow-xs select-none">
       {initial}
     </div>
   );
 }
 
-// Role badge pill with clean borderless pastel theme
+// Role badge pill with clean borderless pastel theme (Zero Dot Policy)
 function RoleBadge({ role }: { role: string }) {
   if (role === 'SYSTEM_ADMIN' || role === 'SUPERADMIN' || role === 'VERIFICATION_ADMIN') {
     return (
-      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-purple-100/80 text-purple-800 dark:bg-purple-950/60 dark:text-purple-200 border-none">
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-purple-50 text-purple-700 border-none">
         System Admin
       </span>
     );
   }
   if (role === 'OWNER') {
     return (
-      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-blue-100/80 text-blue-800 dark:bg-blue-950/60 dark:text-blue-200 border-none">
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-[#0e59f9] border-none font-semibold">
         Owner
       </span>
     );
   }
   if (role === 'MANAGER') {
     return (
-      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-indigo-100/80 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-200 border-none">
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-indigo-50 text-indigo-700 border-none">
         Manager
       </span>
     );
   }
   if (role === 'CASHIER') {
     return (
-      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-teal-100/80 text-teal-800 dark:bg-teal-950/60 dark:text-teal-200 border-none">
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-teal-50 text-teal-700 border-none">
         Kasir POS
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-none">
+    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700 border-none">
       Staff
     </span>
   );
 }
 
-// Status badge pill with clean borderless pastel theme
+// Status badge pill with clean borderless pastel theme (Zero Dot Policy)
 function StatusBadge({ status }: { status: 'ACTIVE' | 'PENDING' }) {
   if (status === 'ACTIVE') {
     return (
-      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border-none">
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-600 border-none">
         Aktif
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-amber-100/80 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border-none">
+    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-700 border-none">
       Menunggu
     </span>
   );
@@ -511,56 +511,59 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-            Team Management
+          <h1 className="text-xl font-semibold tracking-tight text-slate-900">
+            Tim & Karyawan
           </h1>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <p className="text-xs text-slate-500 mt-0.5">
             Kelola anggota tim outlet, peran hak akses, dan PIN kasir untuk operasional POS.
           </p>
         </div>
       </div>
 
-      {/* Clean Metric Stats Strip (Unified Blue Palette, Not Extra Bold) */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-card flex items-center justify-between shadow-xs">
+      {/* Clean Metric Stats Strip (Hero Blue Card + White Cards) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* Card 1: Hero Blue */}
+        <div className="p-5 rounded-2xl border-none shadow-md bg-[#0e59f9] text-white hover:shadow-lg transition-all flex items-center justify-between">
           <div>
-            <p className="text-xs font-medium text-muted-foreground">Total Anggota</p>
-            <p className="text-xl font-semibold font-inter text-slate-900 dark:text-slate-100 mt-0.5">
+            <p className="text-xs font-medium text-blue-100">Total Anggota</p>
+            <p className="text-2xl font-bold font-inter text-white mt-1">
               {totalMembersCount}
             </p>
           </div>
-          <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-            <Users className="w-4 h-4" />
+          <div className="w-10 h-10 rounded-full bg-white/20 text-white flex items-center justify-center">
+            <Users className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-card flex items-center justify-between shadow-xs">
+        {/* Card 2: White */}
+        <div className="p-5 rounded-2xl border-none shadow-sm-md hover:shadow-md bg-white transition-all flex items-center justify-between">
           <div>
-            <p className="text-xs font-medium text-muted-foreground">Kasir POS Terdaftar</p>
-            <p className="text-xl font-semibold font-inter text-slate-900 dark:text-slate-100 mt-0.5">
+            <p className="text-xs font-medium text-slate-500">Kasir POS Terdaftar</p>
+            <p className="text-2xl font-bold font-inter text-slate-900 mt-1">
               {cashierCount}
             </p>
           </div>
-          <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-            <Key className="w-4 h-4" />
+          <div className="w-10 h-10 rounded-full bg-blue-50 text-[#0e59f9] flex items-center justify-center">
+            <Key className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-card flex items-center justify-between shadow-xs">
+        {/* Card 3: White */}
+        <div className="p-5 rounded-2xl border-none shadow-sm-md hover:shadow-md bg-white transition-all flex items-center justify-between">
           <div>
-            <p className="text-xs font-medium text-muted-foreground">Undangan Menunggu</p>
-            <p className="text-xl font-semibold font-inter text-slate-900 dark:text-slate-100 mt-0.5">
+            <p className="text-xs font-medium text-slate-500">Undangan Menunggu</p>
+            <p className="text-2xl font-bold font-inter text-slate-900 mt-1">
               {pendingCount}
             </p>
           </div>
-          <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-            <Clock className="w-4 h-4" />
+          <div className="w-10 h-10 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center">
+            <Clock className="w-5 h-5" />
           </div>
         </div>
       </div>
 
-      {/* Search Bar & Unified Blue Filter Tabs */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-2">
+      {/* Search Bar & Underline Filter Tabs */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-2">
         {/* Tab Filters (Underline style with live counters) */}
         <div className="flex items-center gap-6 overflow-x-auto pb-1 sm:pb-0">
           {[
@@ -578,23 +581,23 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
                 className={cn(
                   "relative pb-2.5 text-xs font-medium transition-colors flex items-center gap-2 cursor-pointer whitespace-nowrap",
                   isActive
-                    ? "text-blue-600 dark:text-blue-400 font-semibold"
-                    : "text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
+                    ? "text-[#0e59f9] font-semibold"
+                    : "text-slate-500 hover:text-slate-900"
                 )}
               >
                 <span>{tab.label}</span>
                 <span className={cn(
-                  "text-xs px-2 py-0.5 rounded-lg font-medium transition-colors",
+                  "text-[11px] px-2.5 py-0.5 rounded-full font-medium transition-colors border-none",
                   isActive
-                    ? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300"
-                    : "text-slate-400 dark:text-slate-500"
+                    ? "bg-blue-50 text-[#0e59f9]"
+                    : "text-slate-400 bg-slate-100"
                 )}>
                   {tab.count}
                 </span>
                 {isActive && (
                   <motion.div
                     layoutId="activeTeamTabUnderline"
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-500 rounded-full"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#0e59f9] rounded-full"
                     transition={{ type: "spring", stiffness: 450, damping: 35 }}
                   />
                 )}
@@ -606,19 +609,19 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
         {/* Right Actions: Search & Invite Dialog */}
         <div className="flex items-center gap-2.5">
           <div className="relative w-full sm:w-56">
-            <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <Input 
               placeholder="Cari anggota tim..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-9 text-xs rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus-visible:ring-blue-600"
+              className="pl-9 pr-4 h-9 text-xs rounded-full bg-white border-none shadow-sm-md text-slate-900 placeholder:text-slate-400 focus-visible:ring-1 focus-visible:ring-[#0e59f9]"
             />
           </div>
 
           <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
             <DialogTrigger asChild>
               <Button 
-                className="inline-flex items-center gap-1.5 bg-[#2563EB] hover:bg-[#1D4ED8] active:translate-y-0 text-white h-9 px-3.5 rounded-xl text-xs font-medium transition-all duration-150 ease-out hover:-translate-y-px shadow-xs shrink-0 cursor-pointer"
+                className="inline-flex items-center gap-1.5 bg-[#0e59f9] hover:bg-[#0b4de0] text-white h-9 px-4 rounded-full text-xs font-semibold shadow-md transition-all shrink-0 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 <span>Undang Anggota</span>
@@ -626,20 +629,20 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
             </DialogTrigger>
 
             {/* Dynamic Flexible Invite Modal */}
-            <DialogContent className="w-[calc(100vw-2rem)] max-w-lg p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl">
-              <DialogHeader className="space-y-1 text-left">
-                <DialogTitle className="text-base font-semibold text-slate-900 dark:text-slate-100">
+            <DialogContent className="w-[calc(100vw-2rem)] max-w-lg p-6 sm:p-7 bg-white border-none rounded-3xl shadow-2xl">
+              <DialogHeader className="space-y-1 text-left pb-2 border-b border-slate-100">
+                <DialogTitle className="text-base font-semibold text-slate-900">
                   Undang Anggota Tim
                 </DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground break-words">
+                <DialogDescription className="text-xs text-slate-500 break-words">
                   Kirim email undangan untuk menambahkan staf atau kasir ke outlet ini.
                 </DialogDescription>
               </DialogHeader>
 
               <form onSubmit={onInviteSubmit} className="space-y-4 pt-2">
                 <div className="space-y-1.5 text-left">
-                  <Label htmlFor="email" className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                    Alamat Email <span className="text-blue-600">*</span>
+                  <Label htmlFor="email" className="text-xs font-medium text-slate-700">
+                    Alamat Email <span className="text-[#0e59f9]">*</span>
                   </Label>
                   <Input 
                     id="email" 
@@ -647,40 +650,40 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
                     type="email" 
                     required 
                     placeholder="nama@email.com"
-                    className="h-9 text-xs rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus-visible:ring-1 focus-visible:ring-[#2563EB]"
+                    className="h-10 text-xs rounded-xl border border-slate-200/80 bg-slate-50/50 focus:bg-white focus:border-[#0e59f9]"
                   />
                 </div>
                 
                 <div className="space-y-2 text-left">
-                  <Label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                    Peran / Hak Akses <span className="text-blue-600">*</span>
+                  <Label className="text-xs font-medium text-slate-700">
+                    Peran / Hak Akses <span className="text-[#0e59f9]">*</span>
                   </Label>
                   <RadioGroup name="role" defaultValue="CASHIER" className="flex flex-col space-y-2">
-                    <label htmlFor="r-cashier" className="flex items-start space-x-3 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-blue-50/40 dark:hover:bg-blue-950/20 cursor-pointer transition-colors">
-                      <RadioGroupItem value="CASHIER" id="r-cashier" className="mt-0.5 text-[#2563EB]" />
+                    <label htmlFor="r-cashier" className="flex items-start space-x-3 p-3.5 rounded-2xl border border-slate-200/80 hover:bg-slate-50 cursor-pointer transition-colors">
+                      <RadioGroupItem value="CASHIER" id="r-cashier" className="mt-0.5 text-[#0e59f9]" />
                       <div className="flex flex-col text-xs min-w-0">
-                        <span className="font-medium text-slate-900 dark:text-slate-200">Kasir (POS Only)</span>
-                        <span className="text-[11px] text-muted-foreground mt-0.5 break-words">
+                        <span className="font-semibold text-slate-900">Kasir (POS Only)</span>
+                        <span className="text-[11px] text-slate-500 mt-0.5 break-words">
                           Dapat login ke perangkat POS untuk menerima pesanan dan pembayaran.
                         </span>
                       </div>
                     </label>
 
-                    <label htmlFor="r-manager" className="flex items-start space-x-3 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-blue-50/40 dark:hover:bg-blue-950/20 cursor-pointer transition-colors">
-                      <RadioGroupItem value="MANAGER" id="r-manager" className="mt-0.5 text-[#2563EB]" />
+                    <label htmlFor="r-manager" className="flex items-start space-x-3 p-3.5 rounded-2xl border border-slate-200/80 hover:bg-slate-50 cursor-pointer transition-colors">
+                      <RadioGroupItem value="MANAGER" id="r-manager" className="mt-0.5 text-[#0e59f9]" />
                       <div className="flex flex-col text-xs min-w-0">
-                        <span className="font-medium text-slate-900 dark:text-slate-200">Manager</span>
-                        <span className="text-[11px] text-muted-foreground mt-0.5 break-words">
+                        <span className="font-semibold text-slate-900">Manager</span>
+                        <span className="text-[11px] text-slate-500 mt-0.5 break-words">
                           Akses dashboard, kelola tim, menu katalog, dan lihat laporan omzet.
                         </span>
                       </div>
                     </label>
 
-                    <label htmlFor="r-staff" className="flex items-start space-x-3 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-blue-50/40 dark:hover:bg-blue-950/20 cursor-pointer transition-colors">
-                      <RadioGroupItem value="STAFF" id="r-staff" className="mt-0.5 text-[#2563EB]" />
+                    <label htmlFor="r-staff" className="flex items-start space-x-3 p-3.5 rounded-2xl border border-slate-200/80 hover:bg-slate-50 cursor-pointer transition-colors">
+                      <RadioGroupItem value="STAFF" id="r-staff" className="mt-0.5 text-[#0e59f9]" />
                       <div className="flex flex-col text-xs min-w-0">
-                        <span className="font-medium text-slate-900 dark:text-slate-200">Staff Dapur / Waiter</span>
-                        <span className="text-[11px] text-muted-foreground mt-0.5 break-words">
+                        <span className="font-semibold text-slate-900">Staff Dapur / Waiter</span>
+                        <span className="text-[11px] text-slate-500 mt-0.5 break-words">
                           Akses display layar dapur (Kitchen Display) dan status tiket pesanan.
                         </span>
                       </div>
@@ -688,20 +691,20 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
                   </RadioGroup>
                 </div>
                 
-                <div className="flex items-center justify-end gap-2 pt-2">
+                <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
                   <Button 
                     type="button" 
                     variant="outline" 
                     onClick={() => setIsInviteOpen(false)}
                     disabled={isSubmittingInvite}
-                    className="h-9 px-3.5 text-xs rounded-xl border-slate-200 dark:border-slate-700 cursor-pointer"
+                    className="h-9 px-4 text-xs font-semibold rounded-full border-none bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer"
                   >
                     Batal
                   </Button>
                   <Button 
                     type="submit" 
                     disabled={isSubmittingInvite}
-                    className="h-9 px-4 text-xs font-medium rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white transition-colors cursor-pointer"
+                    className="h-9 px-5 text-xs font-semibold rounded-full bg-[#0e59f9] hover:bg-[#0b4de0] text-white shadow-md transition-colors cursor-pointer"
                   >
                     {isSubmittingInvite ? (
                       <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Mengirim...</>
@@ -719,49 +722,49 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
       {/* Main Table */}
       {hasRows ? (
         <div className="space-y-4">
-          <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-950 overflow-hidden shadow-xs">
+          <div className="rounded-2xl border-none bg-white overflow-hidden shadow-sm-md">
           <div className="relative w-full overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="bg-slate-50/70 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-200/80 dark:border-slate-800">
-                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-slate-500 dark:text-slate-400 tracking-tight w-[240px]">
+                <tr className="bg-slate-50/70 text-slate-500 font-semibold border-b border-slate-100">
+                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-slate-500 tracking-tight w-[240px]">
                     User
                   </th>
-                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-slate-500 dark:text-slate-400 tracking-tight">
+                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-slate-500 tracking-tight">
                     Email Address
                   </th>
-                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-slate-500 dark:text-slate-400 tracking-tight">
+                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-slate-500 tracking-tight">
                     Role
                   </th>
-                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-slate-500 dark:text-slate-400 tracking-tight">
+                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-slate-500 tracking-tight">
                     POS PIN
                   </th>
-                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-slate-500 dark:text-slate-400 tracking-tight">
+                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-slate-500 tracking-tight">
                     Date Added
                   </th>
-                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-slate-500 dark:text-slate-400 tracking-tight">
+                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-slate-500 tracking-tight">
                     Status
                   </th>
-                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-right text-slate-500 dark:text-slate-400 tracking-tight w-[60px]">
+                  <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap text-right text-slate-500 tracking-tight w-[60px]">
                     Aksi
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+              <tbody className="divide-y divide-slate-100">
                 {paginatedRows.map((row) => {
                   if (row.kind === 'MEMBER') {
                     const member = row.data;
                     return (
                       <TableRow 
                         key={`member-${member.id}`} 
-                        className="h-16 hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-colors group"
+                        className="h-16 hover:bg-slate-100/60 transition-colors group border-b border-slate-100"
                       >
                         {/* User (Doodle Avatar + Name) */}
                         <TableCell className="px-5">
                           <div className="flex items-center gap-3">
                             <DoodleAvatar name={member.name} email={member.email} />
                             <div className="flex flex-col min-w-0">
-                              <span className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">
+                              <span className="text-sm font-semibold text-slate-900 truncate">
                                 {member.name || member.email.split('@')[0]}
                               </span>
                             </div>
@@ -771,13 +774,13 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
                         {/* Email Address with Copy Button */}
                         <TableCell className="px-4">
                           <div className="flex items-center gap-1.5 group/email">
-                            <span className="text-sm text-slate-600 dark:text-slate-400 font-inter font-normal truncate max-w-[220px]">
+                            <span className="text-sm text-slate-600 font-inter font-normal truncate max-w-[220px]">
                               {member.email}
                             </span>
                             <button
                               type="button"
                               onClick={() => handleCopyEmail(member.email)}
-                              className="opacity-0 group-hover/email:opacity-100 p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-muted-foreground hover:text-foreground transition-opacity cursor-pointer"
+                              className="opacity-0 group-hover/email:opacity-100 p-1 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-opacity cursor-pointer"
                               title="Salin email"
                             >
                               <Copy className="w-3.5 h-3.5" />
@@ -796,17 +799,17 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
                             <button
                               type="button"
                               onClick={() => openPinModal(member)}
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-normal text-blue-700 dark:text-blue-300 bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60 hover:bg-blue-100/70 transition-colors cursor-pointer group/pin"
+                              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium text-[#0e59f9] bg-blue-50 hover:bg-blue-100/70 transition-colors cursor-pointer border-none"
                               title="Klik untuk ubah POS PIN"
                             >
-                              <Key className="w-3.5 h-3.5 text-blue-500" />
+                              <Key className="w-3.5 h-3.5 text-[#0e59f9]" />
                               <span>PIN Aktif</span>
                             </button>
                           ) : (
                             <button
                               type="button"
                               onClick={() => openPinModal(member)}
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-normal text-muted-foreground border border-dashed border-slate-300 dark:border-slate-700 hover:border-blue-400 hover:text-blue-600 transition-colors cursor-pointer"
+                              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium text-slate-500 bg-slate-100 hover:bg-slate-200 hover:text-slate-700 transition-colors cursor-pointer border-none"
                               title="Klik untuk atur POS PIN"
                             >
                               <Plus className="w-3.5 h-3.5" />
@@ -817,7 +820,7 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
 
                         {/* Date Added */}
                         <TableCell className="px-4">
-                          <span className="text-sm font-inter font-normal text-slate-600 dark:text-slate-400">
+                          <span className="text-sm font-inter font-normal text-slate-600">
                             {formatDateAdded(member.createdAt)}
                           </span>
                         </TableCell>
@@ -834,28 +837,28 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
                               <Button 
                                 variant="ghost" 
                                 size="icon" 
-                                className="h-8 w-8 p-0 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                                className="h-8 w-8 p-0 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors cursor-pointer"
                               >
                                 <span className="sr-only">Aksi</span>
                                 <MoreVertical className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-[180px] p-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs">
+                            <DropdownMenuContent align="end" className="w-[180px] p-1.5 rounded-2xl border-none shadow-2xl bg-white text-xs">
                               {member.pinHash && (
                                 <DropdownMenuItem 
                                   onClick={() => openViewPinModal(member)}
-                                  className="py-1.5 px-2.5 rounded-lg cursor-pointer font-medium"
+                                  className="py-2 px-2.5 rounded-xl cursor-pointer font-medium hover:bg-slate-100 text-slate-700"
                                 >
-                                  <Eye className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+                                  <Eye className="mr-2 h-3.5 w-3.5 text-slate-500" />
                                   Lihat POS PIN
                                 </DropdownMenuItem>
                               )}
                               
                               <DropdownMenuItem 
                                 onClick={() => openPinModal(member)}
-                                className="py-1.5 px-2.5 rounded-lg cursor-pointer font-medium"
+                                className="py-2 px-2.5 rounded-xl cursor-pointer font-medium hover:bg-slate-100 text-slate-700"
                               >
-                                <Key className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+                                <Key className="mr-2 h-3.5 w-3.5 text-slate-500" />
                                 {member.pinHash ? 'Ubah POS PIN' : 'Atur POS PIN'}
                               </DropdownMenuItem>
                               
@@ -863,19 +866,19 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
                                 <>
                                   <DropdownMenuItem 
                                     onClick={() => openRoleModal(member)}
-                                    className="py-1.5 px-2.5 rounded-lg cursor-pointer font-medium"
+                                    className="py-2 px-2.5 rounded-xl cursor-pointer font-medium hover:bg-slate-100 text-slate-700"
                                   >
-                                    <Shield className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+                                    <Shield className="mr-2 h-3.5 w-3.5 text-slate-500" />
                                     Ubah Role
                                   </DropdownMenuItem>
                                   
-                                  <DropdownMenuSeparator className="my-1 border-slate-100 dark:border-slate-800" />
+                                  <DropdownMenuSeparator className="my-1 border-slate-100" />
                                   
                                   <DropdownMenuItem 
                                     onClick={() => openDeleteModal(member)} 
-                                    className="py-1.5 px-2.5 rounded-lg cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/40 font-medium"
+                                    className="py-2 px-2.5 rounded-xl cursor-pointer text-rose-600 focus:text-rose-600 focus:bg-rose-50 font-medium"
                                   >
-                                    <Trash2 className="mr-2 h-3.5 w-3.5 text-red-600" />
+                                    <Trash2 className="mr-2 h-3.5 w-3.5 text-rose-600" />
                                     Hapus Anggota
                                   </DropdownMenuItem>
                                 </>
@@ -891,17 +894,17 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
                   return (
                     <TableRow 
                       key={`invite-${invite.id}`} 
-                      className="h-16 hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-colors bg-blue-50/20 dark:bg-blue-950/10 group"
+                      className="h-16 hover:bg-slate-100/60 transition-colors bg-blue-50/20 group border-b border-slate-100"
                     >
                       {/* User (Doodle Avatar + Email Prefix) */}
                       <TableCell className="px-5">
                         <div className="flex items-center gap-3">
                           <DoodleAvatar email={invite.email} />
                           <div className="flex flex-col min-w-0">
-                            <span className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">
+                            <span className="text-sm font-semibold text-slate-900 truncate">
                               {invite.email.split('@')[0]}
                             </span>
-                            <span className="text-[11px] text-muted-foreground font-normal">
+                            <span className="text-[11px] text-slate-400 font-normal">
                               Menunggu konfirmasi
                             </span>
                           </div>
@@ -911,13 +914,13 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
                       {/* Email */}
                       <TableCell className="px-4">
                         <div className="flex items-center gap-1.5 group/email">
-                          <span className="text-sm text-slate-600 dark:text-slate-400 font-inter font-normal truncate max-w-[220px]">
+                          <span className="text-sm text-slate-600 font-inter font-normal truncate max-w-[220px]">
                             {invite.email}
                           </span>
                           <button
                             type="button"
                             onClick={() => handleCopyEmail(invite.email)}
-                            className="opacity-0 group-hover/email:opacity-100 p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-muted-foreground hover:text-foreground transition-opacity cursor-pointer"
+                            className="opacity-0 group-hover/email:opacity-100 p-1 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-opacity cursor-pointer"
                             title="Salin email"
                           >
                             <Copy className="w-3.5 h-3.5" />
@@ -932,12 +935,12 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
 
                       {/* POS PIN */}
                       <TableCell className="px-4">
-                        <span className="text-xs text-muted-foreground italic">-</span>
+                        <span className="text-xs text-slate-400 italic">-</span>
                       </TableCell>
 
                       {/* Date Added */}
                       <TableCell className="px-4">
-                        <span className="text-sm font-inter font-normal text-slate-600 dark:text-slate-400">
+                        <span className="text-sm font-inter font-normal text-slate-600">
                           {formatDateAdded(invite.createdAt)}
                         </span>
                       </TableCell>
@@ -954,41 +957,41 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
                             <Button 
                               variant="ghost" 
                               size="icon" 
-                              className="h-8 w-8 p-0 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                              className="h-8 w-8 p-0 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors cursor-pointer"
                             >
                               <span className="sr-only">Aksi</span>
                               <MoreVertical className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-[180px] p-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs">
+                          <DropdownMenuContent align="end" className="w-[180px] p-1.5 rounded-2xl border-none shadow-2xl bg-white text-xs">
                             <DropdownMenuItem 
                               onClick={() => handleResendInvite(invite)}
                               disabled={isResendingInvite === invite.id}
-                              className="py-1.5 px-2.5 rounded-lg cursor-pointer font-medium"
+                              className="py-2 px-2.5 rounded-xl cursor-pointer font-medium hover:bg-slate-100 text-slate-700"
                             >
                               {isResendingInvite === invite.id ? (
                                 <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                               ) : (
-                                <RotateCw className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+                                <RotateCw className="mr-2 h-3.5 w-3.5 text-slate-500" />
                               )}
                               Kirim Ulang Email
                             </DropdownMenuItem>
                             
                             <DropdownMenuItem 
                               onClick={() => handleCopyEmail(invite.email)}
-                              className="py-1.5 px-2.5 rounded-lg cursor-pointer font-medium"
+                              className="py-2 px-2.5 rounded-xl cursor-pointer font-medium hover:bg-slate-100 text-slate-700"
                             >
-                              <Copy className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+                              <Copy className="mr-2 h-3.5 w-3.5 text-slate-500" />
                               Salin Email
                             </DropdownMenuItem>
 
-                            <DropdownMenuSeparator className="my-1 border-slate-100 dark:border-slate-800" />
+                            <DropdownMenuSeparator className="my-1 border-slate-100" />
                             
                             <DropdownMenuItem 
                               onClick={() => openCancelInviteModal(invite)}
-                              className="py-1.5 px-2.5 rounded-lg cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/40 font-medium"
+                              className="py-2 px-2.5 rounded-xl cursor-pointer text-rose-600 focus:text-rose-600 focus:bg-rose-50 font-medium"
                             >
-                              <XCircle className="mr-2 h-3.5 w-3.5 text-red-600" />
+                              <XCircle className="mr-2 h-3.5 w-3.5 text-rose-600" />
                               Batalkan Undangan
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -1013,13 +1016,13 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 px-3 rounded-xl border-slate-200 dark:border-slate-800 text-xs font-medium gap-1.5 cursor-pointer"
+                    className="h-8 px-3 rounded-full border-none bg-white shadow-sm-md text-xs font-medium gap-1.5 cursor-pointer hover:bg-slate-100 text-slate-700"
                   >
                     <span>{itemsPerPage}</span>
                     <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-24 p-1 rounded-xl border-slate-200 dark:border-slate-800">
+                <DropdownMenuContent align="start" className="w-24 p-1.5 rounded-2xl border-none shadow-2xl bg-white">
                   {[10, 20, 50, 100].map((size) => (
                     <DropdownMenuItem
                       key={size}
@@ -1027,7 +1030,7 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
                         setItemsPerPage(size);
                         setCurrentPage(1);
                       }}
-                      className={cn("text-xs py-1.5 px-3 rounded-lg cursor-pointer", itemsPerPage === size && "font-semibold text-blue-600")}
+                      className={cn("text-xs py-1.5 px-3 rounded-xl cursor-pointer hover:bg-slate-100", itemsPerPage === size && "font-semibold text-[#0e59f9] bg-blue-50")}
                     >
                       {size}
                     </DropdownMenuItem>
@@ -1036,7 +1039,7 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
               </DropdownMenu>
             </div>
 
-            <span className="hidden sm:inline text-slate-300 dark:text-slate-700">&bull;</span>
+            <span className="hidden sm:inline text-slate-300">&bull;</span>
             <span className="hidden sm:inline">
               Menampilkan {allFilteredRows.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} - {Math.min(currentPage * itemsPerPage, allFilteredRows.length)} dari {allFilteredRows.length} anggota
             </span>
@@ -1050,7 +1053,7 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
                 size="icon"
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                className="h-8 w-8 rounded-full border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:text-blue-400 disabled:opacity-30 cursor-pointer flex items-center justify-center transition-all aspect-square"
+                className="h-8 w-8 rounded-full border-none bg-white shadow-sm-md text-slate-600 hover:text-[#0e59f9] hover:bg-slate-100 disabled:opacity-30 cursor-pointer flex items-center justify-center transition-all aspect-square"
                 aria-label="Halaman sebelumnya"
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -1074,8 +1077,8 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
                     className={cn(
                       "w-8 h-8 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center justify-center aspect-square",
                       isCurrent
-                        ? "bg-[#0e59f9] text-white shadow-xs hover:bg-[#0e59f9]/90"
-                        : "hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
+                        ? "bg-[#0e59f9] text-white shadow-md hover:bg-[#0b4de0]"
+                        : "hover:bg-slate-100 hover:text-slate-900 text-slate-600"
                     )}
                   >
                     {pageNum}
@@ -1088,7 +1091,7 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
                 size="icon"
                 disabled={currentPage === totalPages}
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                className="h-8 w-8 rounded-full border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:text-blue-400 disabled:opacity-30 cursor-pointer flex items-center justify-center transition-all aspect-square"
+                className="h-8 w-8 rounded-full border-none bg-white shadow-sm-md text-slate-600 hover:text-[#0e59f9] hover:bg-slate-100 disabled:opacity-30 cursor-pointer flex items-center justify-center transition-all aspect-square"
                 aria-label="Halaman berikutnya"
               >
                 <ChevronRight className="w-4 h-4" />
@@ -1099,14 +1102,14 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
       </div>
     ) : (
         /* Empty State */
-        <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-950 p-12 text-center space-y-3">
-          <div className="w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center mx-auto text-blue-600 dark:text-blue-400">
+        <div className="rounded-2xl border-none bg-white p-12 text-center space-y-3 shadow-sm-md">
+          <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center mx-auto text-[#0e59f9]">
             <Users className="w-6 h-6" />
           </div>
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+          <h3 className="text-sm font-semibold text-slate-900">
             {searchQuery ? 'Tidak ada anggota ditemukan' : 'Belum ada anggota tim'}
           </h3>
-          <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+          <p className="text-xs text-slate-500 max-w-sm mx-auto">
             {searchQuery 
               ? `Tidak ada hasil yang cocok dengan kata kunci "${searchQuery}". Coba kata kunci lain atau reset filter.`
               : 'Undang anggota tim pertama Anda untuk mulai mengatur hak akses dan kasir outlet.'}
@@ -1116,14 +1119,14 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
               <Button
                 variant="outline"
                 onClick={() => { setSearchQuery(''); setActiveTab('ALL'); }}
-                className="h-9 px-3.5 rounded-xl text-xs border-slate-200 dark:border-slate-800"
+                className="h-9 px-4 rounded-full text-xs font-semibold border-none bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer"
               >
                 Reset Pencarian
               </Button>
             ) : (
               <Button
                 onClick={() => setIsInviteOpen(true)}
-                className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white h-9 px-4 rounded-xl text-xs font-medium shadow-xs"
+                className="bg-[#0e59f9] hover:bg-[#0b4de0] text-white h-9 px-4 rounded-full text-xs font-semibold shadow-md cursor-pointer"
               >
                 <Plus className="w-4 h-4 mr-1.5" />
                 <span>Undang Anggota</span>
@@ -1134,52 +1137,50 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
       )}
 
       {/* ============================================================ */}
-      {/* MODALS SECTION (Auto-adjusting width, non-clipping text) */}
+      {/* MODALS SECTION (Standard Menuin rounded-3xl pure light) */}
       {/* ============================================================ */}
 
       {/* View PIN Modal */}
       <Dialog open={viewPinModalOpen} onOpenChange={setViewPinModalOpen}>
-        <DialogContent className="w-[calc(100vw-2rem)] max-w-md p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden">
-          <DialogHeader className="space-y-1.5 text-left">
-            <DialogTitle className="text-base font-semibold text-slate-900 dark:text-slate-100">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-md p-6 sm:p-7 bg-white border-none rounded-3xl shadow-2xl overflow-hidden">
+          <DialogHeader className="space-y-1.5 text-left pb-2 border-b border-slate-100">
+            <DialogTitle className="text-base font-semibold text-slate-900">
               POS PIN Kasir
             </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground break-words">
-              PIN aktif untuk <span className="font-medium text-slate-900 dark:text-slate-100 break-all">{selectedMember?.name || selectedMember?.email}</span> saat login ke terminal kasir POS.
+            <DialogDescription className="text-xs text-slate-500 break-words">
+              PIN aktif untuk <span className="font-semibold text-slate-900 break-all">{selectedMember?.name || selectedMember?.email}</span> saat login ke terminal kasir POS.
             </DialogDescription>
           </DialogHeader>
 
           <div className="py-5 flex flex-col items-center gap-3 w-full max-w-full overflow-hidden">
             {selectedMember?.pinHash ? (
-              // Check if PIN is a raw short number (e.g. 4-8 digits)
               /^\d{1,8}$/.test(selectedMember.pinHash) ? (
                 <div className="w-full max-w-full overflow-hidden flex flex-col items-center gap-2">
-                  <div className="w-full bg-slate-50 dark:bg-slate-800/60 px-6 py-4 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center justify-center">
-                    <span className="text-3xl font-mono tracking-[0.25em] font-semibold text-slate-900 dark:text-slate-100 select-all">
+                  <div className="w-full bg-slate-50 px-6 py-4 rounded-2xl border border-slate-100 flex items-center justify-center">
+                    <span className="text-3xl font-mono tracking-[0.25em] font-semibold text-slate-900 select-all">
                       {selectedMember.pinHash}
                     </span>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleCopyPin(selectedMember.pinHash || '')}
-                    className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-blue-600 mt-1 transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-[#0e59f9] mt-1 transition-colors cursor-pointer"
                   >
-                    {copiedPin ? <Check className="w-3.5 h-3.5 text-blue-600" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copiedPin ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                     <span>{copiedPin ? 'PIN disalin ke clipboard' : 'Salin PIN'}</span>
                   </button>
                 </div>
               ) : (
-                // Long string / bcrypt hash (length > 8 or contains non-digits)
                 <div className="w-full max-w-full overflow-hidden flex flex-col items-center gap-2.5">
-                  <div className="w-full bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 flex flex-col items-center text-center gap-2">
-                    <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
+                  <div className="w-full bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-col items-center text-center gap-2">
+                    <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-3 py-0.5 rounded-full inline-flex items-center gap-1 border-none">
                       <Check className="w-3 h-3" /> PIN Tersimpan & Terenkripsi
                     </span>
-                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    <p className="text-[11px] text-slate-500 leading-relaxed">
                       PIN kasir tersimpan dalam format hash kriptografi aman. Anda dapat menyalin nilai hash atau langsung mengatur ulang PIN 6 digit baru.
                     </p>
-                    <div className="w-full max-w-full bg-white dark:bg-slate-900/80 rounded-xl p-2.5 border border-slate-200/80 dark:border-slate-700/80 overflow-hidden">
-                      <p className="text-xs font-mono text-slate-600 dark:text-slate-300 break-all select-all leading-relaxed max-h-24 overflow-y-auto">
+                    <div className="w-full max-w-full bg-white rounded-xl p-2.5 border border-slate-100 overflow-hidden shadow-xs">
+                      <p className="text-xs font-mono text-slate-600 break-all select-all leading-relaxed max-h-24 overflow-y-auto">
                         {selectedMember.pinHash}
                       </p>
                     </div>
@@ -1187,28 +1188,28 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
                   <button
                     type="button"
                     onClick={() => handleCopyPin(selectedMember.pinHash || '')}
-                    className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-blue-600 transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-[#0e59f9] transition-colors cursor-pointer"
                   >
-                    {copiedPin ? <Check className="w-3.5 h-3.5 text-blue-600" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copiedPin ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                     <span>{copiedPin ? 'Hash PIN disalin' : 'Salin Nilai PIN'}</span>
                   </button>
                 </div>
               )
             ) : (
-              <div className="w-full bg-slate-50 dark:bg-slate-800/60 px-6 py-4 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center justify-center">
-                <span className="text-2xl font-mono tracking-[0.25em] text-muted-foreground">
+              <div className="w-full bg-slate-50 px-6 py-4 rounded-2xl border border-slate-100 flex items-center justify-center">
+                <span className="text-2xl font-mono tracking-[0.25em] text-slate-400">
                   ------
                 </span>
               </div>
             )}
           </div>
 
-          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 pt-2 border-t border-slate-100">
             <Button 
               type="button" 
               variant="outline" 
               onClick={() => setViewPinModalOpen(false)} 
-              className="w-full sm:flex-1 h-9 text-xs rounded-xl border-slate-200 dark:border-slate-700 cursor-pointer"
+              className="w-full sm:flex-1 h-9 text-xs font-semibold rounded-full border-none bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer"
             >
               Tutup
             </Button>
@@ -1219,7 +1220,7 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
                   setViewPinModalOpen(false);
                   openPinModal(selectedMember);
                 }}
-                className="w-full sm:flex-1 h-9 text-xs rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white cursor-pointer"
+                className="w-full sm:flex-1 h-9 text-xs font-semibold rounded-full bg-[#0e59f9] hover:bg-[#0b4de0] text-white shadow-md cursor-pointer"
               >
                 <Key className="w-3.5 h-3.5 mr-1.5" />
                 Ubah / Atur PIN
@@ -1231,20 +1232,20 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
       
       {/* Set / Edit PIN Modal */}
       <Dialog open={pinModalOpen} onOpenChange={setPinModalOpen}>
-        <DialogContent className="w-[calc(100vw-2rem)] max-w-md p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl">
-          <DialogHeader className="space-y-1.5 text-left">
-            <DialogTitle className="text-base font-semibold text-slate-900 dark:text-slate-100">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-md p-6 sm:p-7 bg-white border-none rounded-3xl shadow-2xl">
+          <DialogHeader className="space-y-1.5 text-left pb-2 border-b border-slate-100">
+            <DialogTitle className="text-base font-semibold text-slate-900">
               {selectedMember?.pinHash ? 'Ubah POS PIN Kasir' : 'Atur POS PIN Kasir'}
             </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground break-words">
-              Masukkan 6 digit angka untuk <span className="font-medium text-slate-900 dark:text-slate-100 break-all">{selectedMember?.name || selectedMember?.email}</span> agar dapat login ke tablet POS.
+            <DialogDescription className="text-xs text-slate-500 break-words">
+              Masukkan 6 digit angka untuk <span className="font-semibold text-slate-900 break-all">{selectedMember?.name || selectedMember?.email}</span> agar dapat login ke tablet POS.
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={onPinSubmit} className="space-y-4 pt-3">
             <div className="space-y-1.5 text-left">
-              <Label htmlFor="pin" className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                6 Digit PIN Angka <span className="text-blue-600">*</span>
+              <Label htmlFor="pin" className="text-xs font-medium text-slate-700">
+                6 Digit PIN Angka <span className="text-[#0e59f9]">*</span>
               </Label>
               <Input 
                 id="pin" 
@@ -1257,28 +1258,28 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
                 onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))}
                 required 
                 placeholder="••••••"
-                className="text-center text-2xl tracking-[0.35em] font-inter h-12 rounded-xl border-slate-200 dark:border-slate-700 focus-visible:ring-1 focus-visible:ring-[#2563EB]"
+                className="text-center text-2xl tracking-[0.35em] font-inter h-12 rounded-2xl border border-slate-200/80 bg-slate-50/50 focus:bg-white focus:border-[#0e59f9]"
                 autoFocus
               />
-              <p className="text-[11px] text-muted-foreground text-center">
+              <p className="text-[11px] text-slate-400 text-center">
                 Hanya angka (0-9) dengan panjang tepat 6 karakter.
               </p>
             </div>
             
-            <div className="flex items-center justify-end gap-2 pt-2">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
               <Button 
                 type="button" 
                 variant="outline" 
                 onClick={() => setPinModalOpen(false)}
                 disabled={isSubmittingPin}
-                className="h-9 px-3.5 text-xs rounded-xl border-slate-200 dark:border-slate-700"
+                className="h-9 px-4 text-xs font-semibold rounded-full border-none bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer"
               >
                 Batal
               </Button>
               <Button 
                 type="submit" 
                 disabled={isSubmittingPin || newPin.length !== 6}
-                className="h-9 px-4 text-xs font-medium rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white transition-colors"
+                className="h-9 px-5 text-xs font-semibold rounded-full bg-[#0e59f9] hover:bg-[#0b4de0] text-white shadow-md transition-colors cursor-pointer"
               >
                 {isSubmittingPin ? (
                   <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Menyimpan...</>
@@ -1293,57 +1294,57 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
 
       {/* Change Role Modal */}
       <Dialog open={roleModalOpen} onOpenChange={setRoleModalOpen}>
-        <DialogContent className="w-[calc(100vw-2rem)] max-w-lg p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl">
-          <DialogHeader className="space-y-1.5 text-left">
-            <DialogTitle className="text-base font-semibold text-slate-900 dark:text-slate-100">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-lg p-6 sm:p-7 bg-white border-none rounded-3xl shadow-2xl">
+          <DialogHeader className="space-y-1.5 text-left pb-2 border-b border-slate-100">
+            <DialogTitle className="text-base font-semibold text-slate-900">
               Ubah Role Anggota
             </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground break-words">
-              Perbarui izin hak akses untuk <span className="font-medium text-slate-900 dark:text-slate-100 break-all">{selectedMember?.name || selectedMember?.email}</span>.
+            <DialogDescription className="text-xs text-slate-500 break-words">
+              Perbarui izin hak akses untuk <span className="font-semibold text-slate-900 break-all">{selectedMember?.name || selectedMember?.email}</span>.
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={onRoleSubmit} className="space-y-4 pt-2">
             <RadioGroup value={newRole} onValueChange={(v: any) => setNewRole(v)} className="flex flex-col space-y-2">
-              <label htmlFor="cr-cashier" className="flex items-start space-x-3 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-blue-50/40 dark:hover:bg-blue-950/20 cursor-pointer transition-colors">
-                <RadioGroupItem value="CASHIER" id="cr-cashier" className="mt-0.5 text-[#2563EB]" />
+              <label htmlFor="cr-cashier" className="flex items-start space-x-3 p-3.5 rounded-2xl border border-slate-200/80 hover:bg-slate-50 cursor-pointer transition-colors">
+                <RadioGroupItem value="CASHIER" id="cr-cashier" className="mt-0.5 text-[#0e59f9]" />
                 <div className="flex flex-col text-xs min-w-0">
-                  <span className="font-medium text-slate-900 dark:text-slate-200">Kasir (POS Only)</span>
-                  <span className="text-[11px] text-muted-foreground break-words">Operasional kasir POS dan cetak struk</span>
+                  <span className="font-semibold text-slate-900">Kasir (POS Only)</span>
+                  <span className="text-[11px] text-slate-500 break-words">Operasional kasir POS dan cetak struk</span>
                 </div>
               </label>
 
-              <label htmlFor="cr-manager" className="flex items-start space-x-3 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-blue-50/40 dark:hover:bg-blue-950/20 cursor-pointer transition-colors">
-                <RadioGroupItem value="MANAGER" id="cr-manager" className="mt-0.5 text-[#2563EB]" />
+              <label htmlFor="cr-manager" className="flex items-start space-x-3 p-3.5 rounded-2xl border border-slate-200/80 hover:bg-slate-50 cursor-pointer transition-colors">
+                <RadioGroupItem value="MANAGER" id="cr-manager" className="mt-0.5 text-[#0e59f9]" />
                 <div className="flex flex-col text-xs min-w-0">
-                  <span className="font-medium text-slate-900 dark:text-slate-200">Manager</span>
-                  <span className="text-[11px] text-muted-foreground break-words">Akses dashboard, menu katalog, dan laporan omzet</span>
+                  <span className="font-semibold text-slate-900">Manager</span>
+                  <span className="text-[11px] text-slate-500 break-words">Akses dashboard, menu katalog, dan laporan omzet</span>
                 </div>
               </label>
 
-              <label htmlFor="cr-staff" className="flex items-start space-x-3 p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-blue-50/40 dark:hover:bg-blue-950/20 cursor-pointer transition-colors">
-                <RadioGroupItem value="STAFF" id="cr-staff" className="mt-0.5 text-[#2563EB]" />
+              <label htmlFor="cr-staff" className="flex items-start space-x-3 p-3.5 rounded-2xl border border-slate-200/80 hover:bg-slate-50 cursor-pointer transition-colors">
+                <RadioGroupItem value="STAFF" id="cr-staff" className="mt-0.5 text-[#0e59f9]" />
                 <div className="flex flex-col text-xs min-w-0">
-                  <span className="font-medium text-slate-900 dark:text-slate-200">Staff Dapur / Waiter</span>
-                  <span className="text-[11px] text-muted-foreground break-words">Akses layar display dapur</span>
+                  <span className="font-semibold text-slate-900">Staff Dapur / Waiter</span>
+                  <span className="text-[11px] text-slate-500 break-words">Akses layar display dapur</span>
                 </div>
               </label>
             </RadioGroup>
             
-            <div className="flex items-center justify-end gap-2 pt-2">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
               <Button 
                 type="button" 
                 variant="outline" 
                 onClick={() => setRoleModalOpen(false)}
                 disabled={isSubmittingRole}
-                className="h-9 px-3.5 text-xs rounded-xl border-slate-200 dark:border-slate-700"
+                className="h-9 px-4 text-xs font-semibold rounded-full border-none bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer"
               >
                 Batal
               </Button>
               <Button 
                 type="submit" 
                 disabled={isSubmittingRole}
-                className="h-9 px-4 text-xs font-medium rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white transition-colors"
+                className="h-9 px-5 text-xs font-semibold rounded-full bg-[#0e59f9] hover:bg-[#0b4de0] text-white shadow-md transition-colors cursor-pointer"
               >
                 {isSubmittingRole ? (
                   <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Menyimpan...</>
@@ -1358,16 +1359,16 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
 
       {/* Remove Member Modal */}
       <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
-        <DialogContent className="w-[calc(100vw-2rem)] max-w-lg p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl">
-          <DialogHeader className="space-y-1.5 text-left">
-            <div className="flex items-center gap-2 text-red-600">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-md p-6 sm:p-7 bg-white border-none rounded-3xl shadow-2xl">
+          <DialogHeader className="space-y-1.5 text-left pb-2 border-b border-slate-100">
+            <div className="flex items-center gap-2 text-rose-600">
               <AlertTriangle className="h-5 w-5 shrink-0" />
               <DialogTitle className="text-base font-semibold">
                 Hapus Anggota Tim
               </DialogTitle>
             </div>
-            <DialogDescription className="text-xs text-muted-foreground break-words pt-1">
-              Apakah Anda yakin ingin menghapus <span className="font-medium text-slate-900 dark:text-slate-100 break-all">{selectedMember?.name || selectedMember?.email}</span>? Akses mereka ke outlet ini akan dicabut seketika.
+            <DialogDescription className="text-xs text-slate-500 break-words pt-1">
+              Apakah Anda yakin ingin menghapus <span className="font-semibold text-slate-900 break-all">{selectedMember?.name || selectedMember?.email}</span>? Akses mereka ke outlet ini akan dicabut seketika.
             </DialogDescription>
           </DialogHeader>
 
@@ -1377,14 +1378,14 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
               variant="outline" 
               onClick={() => setDeleteModalOpen(false)} 
               disabled={isSubmittingDelete}
-              className="h-9 px-3.5 text-xs rounded-xl border-slate-200 dark:border-slate-700"
+              className="h-9 px-4 text-xs font-semibold rounded-full border-none bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer"
             >
               Batal
             </Button>
             <Button 
               type="submit" 
               disabled={isSubmittingDelete}
-              className="h-9 px-4 text-xs font-medium rounded-xl bg-red-600 hover:bg-red-700 text-white transition-colors"
+              className="h-9 px-5 text-xs font-semibold rounded-full bg-rose-600 hover:bg-rose-700 text-white shadow-md transition-colors cursor-pointer"
             >
               {isSubmittingDelete ? (
                 <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Menghapus...</>
@@ -1398,16 +1399,16 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
 
       {/* Cancel Invitation Modal */}
       <Dialog open={cancelInviteModalOpen} onOpenChange={setCancelInviteModalOpen}>
-        <DialogContent className="w-[calc(100vw-2rem)] max-w-lg p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl">
-          <DialogHeader className="space-y-1.5 text-left">
-            <div className="flex items-center gap-2 text-red-600">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-md p-6 sm:p-7 bg-white border-none rounded-3xl shadow-2xl">
+          <DialogHeader className="space-y-1.5 text-left pb-2 border-b border-slate-100">
+            <div className="flex items-center gap-2 text-rose-600">
               <AlertTriangle className="h-5 w-5 shrink-0" />
               <DialogTitle className="text-base font-semibold">
                 Batalkan Undangan
               </DialogTitle>
             </div>
-            <DialogDescription className="text-xs text-muted-foreground break-words pt-1">
-              Apakah Anda yakin ingin membatalkan undangan untuk <span className="font-medium text-slate-900 dark:text-slate-100 break-all">{selectedInvite?.email}</span>? Tautan yang telah dikirimkan tidak akan berlaku lagi.
+            <DialogDescription className="text-xs text-slate-500 break-words pt-1">
+              Apakah Anda yakin ingin membatalkan undangan untuk <span className="font-semibold text-slate-900 break-all">{selectedInvite?.email}</span>? Tautan yang telah dikirimkan tidak akan berlaku lagi.
             </DialogDescription>
           </DialogHeader>
 
@@ -1417,14 +1418,14 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
               variant="outline" 
               onClick={() => setCancelInviteModalOpen(false)} 
               disabled={isSubmittingCancelInvite}
-              className="h-9 px-3.5 text-xs rounded-xl border-slate-200 dark:border-slate-700"
+              className="h-9 px-4 text-xs font-semibold rounded-full border-none bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer"
             >
               Batal
             </Button>
             <Button 
               type="submit" 
               disabled={isSubmittingCancelInvite}
-              className="h-9 px-4 text-xs font-medium rounded-xl bg-red-600 hover:bg-red-700 text-white transition-colors"
+              className="h-9 px-5 text-xs font-semibold rounded-full bg-rose-600 hover:bg-rose-700 text-white shadow-md transition-colors cursor-pointer"
             >
               {isSubmittingCancelInvite ? (
                 <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Membatalkan...</>

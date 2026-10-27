@@ -145,14 +145,14 @@ export function QuickStockDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md p-6">
+      <DialogContent className="max-w-md p-6 rounded-3xl border-none bg-white shadow-2xl">
         <DialogHeader>
           <div className="flex items-center gap-2">
-            <div className="p-2 rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
+            <div className="p-2 rounded-full bg-emerald-50 text-emerald-700">
               <Boxes className="h-5 w-5" />
             </div>
             <div>
-              <DialogTitle className="text-lg font-semibold tracking-tight">
+              <DialogTitle className="text-lg font-semibold tracking-tight text-slate-900">
                 Penyesuaian Stok
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground">
@@ -164,12 +164,12 @@ export function QuickStockDialog({
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-1">
           {/* Status Sekarang & Type Switcher */}
-          <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+          <div className="flex items-center justify-between p-3.5 rounded-2xl shadow-sm-md bg-slate-50">
             <div>
               <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
                 Sisa Stok Saat Ini
               </p>
-              <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+              <p className="text-lg font-semibold text-slate-900">
                 {currentStock} <span className="text-xs font-normal text-muted-foreground">porsi</span>
               </p>
             </div>
@@ -186,15 +186,15 @@ export function QuickStockDialog({
           </div>
 
           {/* Segmented Switch IN vs OUT */}
-          <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-medium">
+          <div className="grid grid-cols-2 gap-1 p-1 rounded-full bg-slate-100 shadow-sm-md text-xs font-medium">
             <button
               type="button"
               onClick={() => handleTypeChange('IN')}
               className={cn(
-                "flex items-center justify-center gap-1.5 py-2 rounded-lg transition-all",
+                "flex items-center justify-center gap-1.5 py-2 rounded-full transition-all cursor-pointer",
                 adjustType === 'IN'
-                  ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-sm font-semibold"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                  ? "bg-white text-emerald-700 shadow-md font-semibold"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
               )}
             >
               <ArrowUpCircle className="h-4 w-4" />
@@ -204,10 +204,10 @@ export function QuickStockDialog({
               type="button"
               onClick={() => handleTypeChange('OUT')}
               className={cn(
-                "flex items-center justify-center gap-1.5 py-2 rounded-lg transition-all",
+                "flex items-center justify-center gap-1.5 py-2 rounded-full transition-all cursor-pointer",
                 adjustType === 'OUT'
-                  ? "bg-white dark:bg-slate-900 text-destructive dark:text-rose-400 shadow-sm font-semibold"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                  ? "bg-white text-destructive shadow-md font-semibold"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
               )}
             >
               <ArrowDownCircle className="h-4 w-4" />
@@ -226,8 +226,8 @@ export function QuickStockDialog({
                   variant="outline"
                   size="sm"
                   className={cn(
-                    "text-xs font-medium h-8 rounded-lg",
-                    Number(quantityWatch) === preset && "border-emerald-600 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
+                    "text-xs font-medium h-9 rounded-full border-none shadow-sm-md bg-white hover:bg-slate-100",
+                    Number(quantityWatch) === preset && "bg-emerald-50 text-emerald-700 shadow-md font-semibold"
                   )}
                   onClick={() => handleApplyPreset(preset)}
                 >
@@ -248,7 +248,7 @@ export function QuickStockDialog({
                 type="number"
                 min="1"
                 {...form.register('quantity')}
-                className="h-9 text-sm"
+                className="h-10 text-sm rounded-full border-none shadow-sm-md bg-white px-4 focus-visible:ring-2 focus-visible:ring-primary/20"
               />
               {form.formState.errors.quantity && (
                 <p className="text-[11px] text-destructive">
@@ -257,11 +257,11 @@ export function QuickStockDialog({
               )}
             </div>
 
-            <div className="p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 flex flex-col justify-center h-9">
+            <div className="p-2.5 px-4 rounded-full shadow-sm-md bg-slate-50 flex flex-col justify-center h-10">
               <span className="text-[10px] text-muted-foreground uppercase font-medium">
                 Estimasi Stok Baru
               </span>
-              <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+              <span className="text-xs font-semibold text-slate-900">
                 {projectedStock} porsi
               </span>
             </div>
@@ -274,12 +274,12 @@ export function QuickStockDialog({
               value={form.watch('reasonCategory') || (adjustType === 'IN' ? 'RESTOCK_BATCH' : 'WASTE_EXPIRED')}
               onValueChange={(val: any) => form.setValue('reasonCategory', val)}
             >
-              <SelectTrigger className="h-9 text-xs">
+              <SelectTrigger className="h-10 text-xs rounded-full border-none shadow-sm-md bg-white px-4 focus:outline-none focus:ring-2 focus:ring-primary/20">
                 <SelectValue placeholder="Pilih alasan..." />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-2xl border-none shadow-2xl bg-white p-1">
                 {(adjustType === 'IN' ? IN_REASONS : OUT_REASONS).map((item) => (
-                  <SelectItem key={item.value} value={item.value} className="text-xs">
+                  <SelectItem key={item.value} value={item.value} className="text-xs rounded-xl cursor-pointer hover:bg-slate-100">
                     {item.label}
                   </SelectItem>
                 ))}
@@ -296,7 +296,7 @@ export function QuickStockDialog({
               id="reason"
               placeholder="Contoh: Kiriman batch sore dari dapur"
               {...form.register('reason')}
-              className="h-9 text-xs"
+              className="h-10 text-xs rounded-full border-none shadow-sm-md bg-white px-4 focus-visible:ring-2 focus-visible:ring-primary/20"
             />
           </div>
 
@@ -305,7 +305,7 @@ export function QuickStockDialog({
               type="button"
               variant="outline"
               size="sm"
-              className="text-xs h-9"
+              className="rounded-full shadow-md bg-white hover:bg-slate-100 text-slate-700 border-none px-5 h-10 text-xs"
               onClick={() => onOpenChange(false)}
             >
               Batal
@@ -314,7 +314,7 @@ export function QuickStockDialog({
               type="submit"
               size="sm"
               disabled={isLoading}
-              className="text-xs h-9 bg-primary hover:bg-primary/90 text-white font-medium"
+              className="rounded-full shadow-md bg-primary hover:bg-primary/90 text-white border-none px-5 h-10 text-xs font-semibold"
             >
               {isLoading ? 'Menyimpan...' : `Simpan (${projectedStock} Porsi)`}
             </Button>

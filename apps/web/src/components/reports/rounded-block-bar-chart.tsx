@@ -73,7 +73,7 @@ export function RoundedBlockBarChart({
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-[#EAEFF8] p-5 sm:p-6 shadow-sm space-y-6">
+    <div className="bg-white rounded-2xl border-none p-5 sm:p-6 shadow-sm-md hover:shadow-md transition-all space-y-6">
       {/* Top Header & Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -88,14 +88,14 @@ export function RoundedBlockBarChart({
 
         <div className="flex items-center gap-2 flex-wrap">
           {/* Metric Selector Toggle */}
-          <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200/60 text-xs">
+          <div className="flex items-center bg-slate-100 p-0.5 rounded-full border-none shadow-xs text-xs">
             <button
               type="button"
               onClick={() => setSelectedMetric("sales")}
               className={cn(
-                "px-2.5 py-1 rounded-md font-medium transition-all",
+                "px-3 py-1 rounded-full font-medium transition-all",
                 selectedMetric === "sales"
-                  ? "bg-white text-slate-900 shadow-xs font-semibold"
+                  ? "bg-white text-slate-900 shadow-sm-md font-semibold"
                   : "text-slate-600 hover:text-slate-900"
               )}
             >
@@ -105,9 +105,9 @@ export function RoundedBlockBarChart({
               type="button"
               onClick={() => setSelectedMetric("orders")}
               className={cn(
-                "px-2.5 py-1 rounded-md font-medium transition-all",
+                "px-3 py-1 rounded-full font-medium transition-all",
                 selectedMetric === "orders"
-                  ? "bg-white text-slate-900 shadow-xs font-semibold"
+                  ? "bg-white text-slate-900 shadow-sm-md font-semibold"
                   : "text-slate-600 hover:text-slate-900"
               )}
             >
@@ -120,7 +120,7 @@ export function RoundedBlockBarChart({
               type="button"
               onClick={onExport}
               title="Export Data"
-              className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors"
+              className="h-8 w-8 inline-flex items-center justify-center rounded-full border-none bg-white shadow-sm-md text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
             >
               <Download className="h-4 w-4" />
             </button>

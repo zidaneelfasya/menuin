@@ -36,7 +36,7 @@ export function ReadOnlyField({
       ) : (
         <div
           className={cn(
-            'min-h-10 rounded-xl border border-[#EAEFF8] bg-slate-50/70 px-3.5 py-2 flex items-center text-xs sm:text-sm font-medium transition-colors select-text',
+            'min-h-10 rounded-xl border-none shadow-sm-md bg-slate-50 px-3.5 py-2 flex items-center text-xs sm:text-sm font-medium select-text',
             isPlaceholder ? 'text-slate-400 italic' : 'text-slate-800'
           )}
         >

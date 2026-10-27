@@ -77,7 +77,7 @@ export function ShiftDetailView({ outletKey, data }: ShiftDetailViewProps) {
             variant="outline"
             size="sm"
             onClick={() => router.push(`/outlet/${outletKey}/shifts?tab=history`)}
-            className="h-9 px-3 rounded-xl border-[#EAEFF8] bg-white text-slate-700 hover:bg-slate-50 gap-2 font-medium shadow-xs"
+            className="h-9 px-4 rounded-full border-none shadow-sm-md bg-white text-slate-700 hover:bg-slate-100 gap-2 font-semibold cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4 text-slate-500" />
             <span>Kembali ke Riwayat</span>
@@ -104,7 +104,7 @@ export function ShiftDetailView({ outletKey, data }: ShiftDetailViewProps) {
             variant="outline"
             size="sm"
             onClick={handlePrint}
-            className="text-xs font-semibold gap-2 h-9 px-3.5 rounded-xl border-[#EAEFF8] bg-white text-slate-700 hover:bg-slate-50 shadow-xs cursor-pointer"
+            className="text-xs font-semibold gap-2 h-9 px-4 rounded-full border-none shadow-sm-md bg-white text-slate-700 hover:bg-slate-100 cursor-pointer"
           >
             <Printer className="w-4 h-4 text-slate-500" />
             <span>Cetak Rekap</span>
@@ -113,7 +113,7 @@ export function ShiftDetailView({ outletKey, data }: ShiftDetailViewProps) {
       </div>
 
       {/* Main Shift Header Banner */}
-      <div className="bg-white rounded-2xl border border-[#EAEFF8] p-5 sm:p-6 shadow-xs relative overflow-hidden">
+      <div className="bg-white rounded-2xl border-none p-5 sm:p-6 shadow-sm-md relative overflow-hidden">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-3">
@@ -121,11 +121,11 @@ export function ShiftDetailView({ outletKey, data }: ShiftDetailViewProps) {
                 Rekap Sesi Shift #{shift?.id?.slice(0, 8).toUpperCase() || '...'}
               </h1>
               {shift?.status === 'ACTIVE' ? (
-                <span className="inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border-none dark:bg-emerald-950/40 dark:text-emerald-400">
+                <span className="inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border-none">
                   Sedang Berjalan
                 </span>
               ) : (
-                <span className="inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border-none dark:bg-slate-800 dark:text-slate-300">
+                <span className="inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border-none">
                   Shift Selesai
                 </span>
               )}
@@ -173,12 +173,12 @@ export function ShiftDetailView({ outletKey, data }: ShiftDetailViewProps) {
       {/* 3 Metric Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {/* KARTU 1: AKTIVITAS PENJUALAN */}
-        <Card className="border border-[#EAEFF8] shadow-sm rounded-2xl bg-white hover:border-[#d7e2f5] transition-all flex flex-col justify-between overflow-hidden">
+        <Card className="border-none shadow-sm-md rounded-2xl bg-white flex flex-col justify-between overflow-hidden">
           <CardContent className="p-5 flex flex-col justify-between flex-1 h-full">
             <div>
               <div className="flex items-center justify-between pb-3.5 border-b border-[#EAEFF8] mb-3.5">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-full bg-[#0e59f9] text-white flex items-center justify-center shadow-xs flex-shrink-0">
+                  <div className="w-9 h-9 rounded-full bg-[#0e59f9] text-white flex items-center justify-center flex-shrink-0">
                     <ShoppingBag className="w-4 h-4 text-white" />
                   </div>
                   <div>
@@ -218,12 +218,12 @@ export function ShiftDetailView({ outletKey, data }: ShiftDetailViewProps) {
         </Card>
 
         {/* KARTU 2: RINCIAN METODE BAYAR */}
-        <Card className="border border-[#EAEFF8] shadow-sm rounded-2xl bg-white hover:border-[#d7e2f5] transition-all flex flex-col justify-between overflow-hidden">
+        <Card className="border-none shadow-sm-md rounded-2xl bg-white flex flex-col justify-between overflow-hidden">
           <CardContent className="p-5 flex flex-col justify-between flex-1 h-full">
             <div>
               <div className="flex items-center justify-between pb-3.5 border-b border-[#EAEFF8] mb-3.5">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-full bg-[#0e59f9] text-white flex items-center justify-center shadow-xs flex-shrink-0">
+                  <div className="w-9 h-9 rounded-full bg-[#0e59f9] text-white flex items-center justify-center flex-shrink-0">
                     <CreditCard className="w-4 h-4 text-white" />
                   </div>
                   <div>
@@ -290,12 +290,12 @@ export function ShiftDetailView({ outletKey, data }: ShiftDetailViewProps) {
         </Card>
 
         {/* KARTU 3: REKONSILIASI KAS LACI */}
-        <Card className="border border-[#EAEFF8] shadow-sm rounded-2xl bg-white hover:border-[#d7e2f5] transition-all flex flex-col justify-between overflow-hidden">
+        <Card className="border-none shadow-sm-md rounded-2xl bg-white flex flex-col justify-between overflow-hidden">
           <CardContent className="p-5 flex flex-col justify-between flex-1 h-full">
             <div>
               <div className="flex items-center justify-between pb-3.5 border-b border-[#EAEFF8] mb-3.5">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-full bg-[#0e59f9] text-white flex items-center justify-center shadow-xs flex-shrink-0">
+                  <div className="w-9 h-9 rounded-full bg-[#0e59f9] text-white flex items-center justify-center flex-shrink-0">
                     <Banknote className="w-4 h-4 text-white" />
                   </div>
                   <div>
@@ -356,7 +356,7 @@ export function ShiftDetailView({ outletKey, data }: ShiftDetailViewProps) {
       </div>
 
       {/* Tabs Breakdown */}
-      <div className="bg-white rounded-2xl border border-[#EAEFF8] p-5 sm:p-6 shadow-xs space-y-5">
+      <div className="bg-white rounded-2xl border-none p-5 sm:p-6 shadow-sm-md space-y-5">
         <div className="flex items-center gap-6 border-b border-[#EAEFF8] pb-0 overflow-x-auto no-scrollbar">
           {[
             { key: 'transactions', label: 'Daftar Transaksi', count: transactions?.length || 0 },
@@ -379,7 +379,7 @@ export function ShiftDetailView({ outletKey, data }: ShiftDetailViewProps) {
                 <span>{tab.label}</span>
                 <span
                   className={cn(
-                    "text-xs px-2 py-0.5 rounded-lg font-semibold transition-colors font-financial tabular-nums",
+                    "text-xs px-2.5 py-0.5 rounded-full font-semibold transition-colors font-financial tabular-nums",
                     isActive
                       ? "bg-blue-50 text-[#0e59f9]"
                       : "text-slate-400 bg-slate-100"
@@ -514,11 +514,11 @@ export function ShiftDetailView({ outletKey, data }: ShiftDetailViewProps) {
                       </TableCell>
                       <TableCell className="py-3 px-4">
                         {move.type === 'IN' ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border-none">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border-none">
                             Kas Masuk
                           </span>
                         ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 border-none">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border-none">
                             Kas Keluar
                           </span>
                         )}

@@ -2,7 +2,7 @@ import { TransactionHistory } from '@/features/transactions/components/transacti
 import { Metadata } from 'next';
 import { Suspense } from 'react';
 import { getTransactions } from '@/lib/actions/transactions';
-import { TableSkeleton } from '@/components/ui/table-skeleton';
+import TransactionsLoading from './loading';
 
 export const metadata: Metadata = { title: 'Riwayat Transaksi - Menuin' };
 
@@ -21,7 +21,7 @@ async function TransactionDataWrapper() {
 
 export default function Page() {
   return (
-    <Suspense fallback={<div className="p-6"><TableSkeleton /></div>}>
+    <Suspense fallback={<TransactionsLoading />}>
       <TransactionDataWrapper />
     </Suspense>
   );

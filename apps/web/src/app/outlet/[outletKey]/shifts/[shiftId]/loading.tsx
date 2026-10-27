@@ -6,12 +6,12 @@ export default function ShiftDetailLoading() {
     <div className="space-y-6 pb-12 animate-in fade-in duration-200">
       {/* Top Bar Skeleton */}
       <div className="flex items-center justify-between">
-        <div className="h-9 w-36 bg-slate-200/70 rounded-xl animate-pulse" />
-        <div className="h-9 w-28 bg-slate-200/70 rounded-xl animate-pulse" />
+        <div className="h-9 w-36 bg-slate-200/70 rounded-full animate-pulse" />
+        <div className="h-9 w-28 bg-slate-200/70 rounded-full animate-pulse" />
       </div>
 
       {/* Main Banner Loader */}
-      <div className="bg-white rounded-2xl border border-[#EAEFF8] p-8 shadow-xs flex flex-col items-center justify-center text-center min-h-[200px] gap-3">
+      <div className="bg-white rounded-2xl border-none p-8 shadow-sm-md flex flex-col items-center justify-center text-center min-h-[200px] gap-3">
         <div className="w-12 h-12 rounded-full bg-blue-50 text-[#0e59f9] flex items-center justify-center shadow-xs">
           <Loader2 className="w-6 h-6 animate-spin text-[#0e59f9]" />
         </div>
@@ -30,7 +30,7 @@ export default function ShiftDetailLoading() {
         {[1, 2, 3].map((i) => (
           <div
             key={i}
-            className="h-52 bg-white rounded-2xl border border-[#EAEFF8] p-5 shadow-xs flex flex-col justify-between"
+            className="h-52 bg-white rounded-2xl border-none p-5 shadow-sm-md flex flex-col justify-between"
           >
             <div className="space-y-3">
               <div className="flex items-center gap-2.5 pb-3 border-b border-[#EAEFF8]">
@@ -55,7 +55,7 @@ export default function ShiftDetailLoading() {
       </div>
 
       {/* Table Skeleton */}
-      <div className="bg-white rounded-2xl border border-[#EAEFF8] p-6 shadow-xs space-y-4">
+      <div className="bg-white rounded-2xl border-none p-6 shadow-sm-md space-y-4">
         <div className="flex items-center gap-4 border-b border-[#EAEFF8] pb-3">
           <div className="h-5 w-28 bg-slate-200 rounded-md animate-pulse" />
           <div className="h-5 w-24 bg-slate-100 rounded-md animate-pulse" />

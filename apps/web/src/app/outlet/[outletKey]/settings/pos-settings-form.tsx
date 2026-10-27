@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { IconLoader2, IconDeviceFloppy } from "@tabler/icons-react";
+import { IconLoader2, IconDeviceFloppy, IconLayout } from "@tabler/icons-react";
 import { toast } from "sonner";
 
 export function PosSettingsForm({ initialData }: { initialData: any }) {
@@ -45,25 +45,30 @@ export function PosSettingsForm({ initialData }: { initialData: any }) {
   };
 
   return (
-    <div className="bg-card border border-border/70 rounded-2xl p-6 sm:p-8 shadow-xs">
+    <div className="bg-white border-none rounded-2xl p-6 sm:p-8 shadow-sm-md hover:shadow-md transition-all">
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="pb-5 border-b border-border/60">
-          <h2 className="text-lg font-semibold tracking-tight text-foreground">
-            Alur Kasir & Operasional POS
-          </h2>
-          <p className="text-xs text-muted-foreground mt-1">
-            Konfigurasi alur checkout kasir, pembulatan nominal, dan integrasi tiket pesanan dapur.
-          </p>
+        <div className="flex items-center gap-3.5 pb-5 border-b border-slate-100">
+          <div className="w-10 h-10 rounded-full bg-[#0e59f9] text-white flex items-center justify-center shrink-0">
+            <IconLayout className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold tracking-tight text-slate-900">
+              Alur Kasir & Operasional POS
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Konfigurasi alur checkout kasir, pembulatan nominal, dan integrasi tiket pesanan dapur.
+            </p>
+          </div>
         </div>
 
-        <div className="divide-y divide-border/60">
+        <div className="divide-y divide-slate-100">
           {/* ROW 1: SINKRONISASI DAPUR */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-center">
             <div className="md:col-span-8 space-y-0.5">
-              <Label htmlFor="posKitchenSync" className="text-sm font-semibold text-foreground">
+              <Label htmlFor="posKitchenSync" className="text-sm font-semibold text-slate-900">
                 Kirim Pesanan Kasir ke Layar Dapur
               </Label>
-              <p className="text-xs text-muted-foreground leading-relaxed">
+              <p className="text-xs text-slate-500 leading-relaxed">
                 Saat pesanan dibayar di kasir, otomatis masuk ke antrean dapur (Kanban Dapur).
               </p>
             </div>
@@ -79,22 +84,22 @@ export function PosSettingsForm({ initialData }: { initialData: any }) {
           {/* ROW 2: ORDER TYPE SELECTION */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-start">
             <div className="md:col-span-4 space-y-0.5">
-              <Label className="text-sm font-semibold text-foreground">
+              <Label className="text-sm font-semibold text-slate-900">
                 Pilihan Tipe Pesanan (Order Type)
               </Label>
-              <p className="text-xs text-muted-foreground leading-relaxed">
+              <p className="text-xs text-slate-500 leading-relaxed">
                 Aturan pemilihan Dine In / Take Away saat kasir checkout.
               </p>
             </div>
             <div className="md:col-span-8">
               <Select value={posOrderTypeSelection} onValueChange={setPosOrderTypeSelection}>
-                <SelectTrigger className="w-full h-11 bg-background/80 hover:bg-background border-border/80 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
+                <SelectTrigger className="w-full h-10 bg-slate-50 border-none shadow-sm-md rounded-full px-4 text-xs sm:text-sm font-medium focus:ring-2 focus:ring-[#0e59f9] focus:outline-none transition-all">
                   <SelectValue placeholder="Pilih aturan tipe pesanan" />
                 </SelectTrigger>
-                <SelectContent className="rounded-xl shadow-lg border-border/80">
-                  <SelectItem value="MANUAL" className="rounded-lg text-sm py-2">Wajib Pilih Manual (Kasir memilih Dine In / Take Away)</SelectItem>
-                  <SelectItem value="DINE_IN" className="rounded-lg text-sm py-2">Otomatis Default: Dine-In</SelectItem>
-                  <SelectItem value="TAKEAWAY" className="rounded-lg text-sm py-2">Otomatis Default: Take Away</SelectItem>
+                <SelectContent className="rounded-2xl shadow-2xl border-none bg-white p-1.5">
+                  <SelectItem value="MANUAL" className="rounded-xl text-xs py-2">Wajib Pilih Manual (Kasir memilih Dine In / Take Away)</SelectItem>
+                  <SelectItem value="DINE_IN" className="rounded-xl text-xs py-2">Otomatis Default: Dine-In</SelectItem>
+                  <SelectItem value="TAKEAWAY" className="rounded-xl text-xs py-2">Otomatis Default: Take Away</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -103,10 +108,10 @@ export function PosSettingsForm({ initialData }: { initialData: any }) {
           {/* ROW 3: PIN BEST SELLERS */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-center">
             <div className="md:col-span-8 space-y-0.5">
-              <Label htmlFor="posPinBestSellersForm" className="text-sm font-semibold text-foreground">
+              <Label htmlFor="posPinBestSellersForm" className="text-sm font-semibold text-slate-900">
                 Sematkan Best Seller di Posisi Teratas
               </Label>
-              <p className="text-xs text-muted-foreground leading-relaxed">
+              <p className="text-xs text-slate-500 leading-relaxed">
                 Produk unggulan / best seller otomatis ditampilkan di baris paling awal antarmuka kasir.
               </p>
             </div>
@@ -123,14 +128,14 @@ export function PosSettingsForm({ initialData }: { initialData: any }) {
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-8 py-5 items-center">
             <div className="md:col-span-8 space-y-0.5">
               <div className="flex items-center gap-2">
-                <Label htmlFor="posRoundingForm" className="text-sm font-semibold text-foreground">
+                <Label htmlFor="posRoundingForm" className="text-sm font-semibold text-slate-900">
                   Pembulatan Nominal ke Ratusan (Rounding 1–99)
                 </Label>
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-[#0e59f9] border border-blue-200/60 dark:bg-blue-950/50 dark:text-blue-300">
+                <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-blue-50 text-[#0e59f9] border-none">
                   Kasir POS & Struk
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">
+              <p className="text-xs text-slate-500 leading-relaxed">
                 Membulatkan total pembayaran ke atas (ceiling) ke ratusan rupiah terdekat jika terdapat pecahan 1–99 rupiah (contoh: Rp 49.950 digenapkan menjadi Rp 50.000) untuk mempermudah pembayaran tunai dan uang kembalian kasir.
               </p>
             </div>
@@ -144,11 +149,11 @@ export function PosSettingsForm({ initialData }: { initialData: any }) {
           </div>
         </div>
 
-        <div className="flex justify-end pt-5 border-t border-border/60">
+        <div className="flex justify-end pt-5 border-t border-slate-100">
           <Button 
             disabled={isSaving || !hasChanges} 
             type="submit" 
-            className="min-w-[150px] h-11 rounded-xl text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all cursor-pointer"
+            className="min-w-[150px] h-10 px-5 rounded-full text-xs font-semibold bg-[#0e59f9] hover:bg-[#0b4de0] text-white shadow-md transition-all cursor-pointer border-none"
           >
             {isSaving ? <><IconLoader2 className="mr-2 h-4 w-4 animate-spin" /> Menyimpan...</> : <><IconDeviceFloppy className="mr-2 h-4 w-4" /> Simpan Alur Kasir</>}
           </Button>

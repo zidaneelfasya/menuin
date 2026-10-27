@@ -70,7 +70,7 @@ export function RingkasanClient({ outletKey, data }: RingkasanClientProps) {
 
       {/* Non-Owner Manager Notice Banner */}
       {!isOwner && (
-        <div className="flex items-center gap-3 p-4 rounded-xl bg-blue-50/70 border border-blue-100 text-slate-700">
+        <div className="flex items-center gap-3 p-4 rounded-2xl bg-blue-50/60 border-none shadow-sm-md text-slate-700">
           <Info className="w-4 h-4 text-[#0e59f9] flex-shrink-0" />
           <p className="text-xs leading-relaxed text-slate-600">
             Peran Anda saat ini adalah <span className="font-semibold text-slate-800">{userRole || 'Pengelola'}</span> (Mode Lihat). Pendaftaran formulir, perubahan data profil usaha, dan penggantian rekening penampungan hanya dapat dilakukan oleh Pemilik (Owner) outlet.

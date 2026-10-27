@@ -26,7 +26,7 @@ export function StatusHeroCard({
   return (
     <div
       className={cn(
-        'border border-[#0e59f9] shadow-md shadow-blue-500/20 rounded-2xl bg-[#0e59f9] text-white transition-all flex flex-col justify-between overflow-hidden min-h-[220px] p-5 sm:p-6',
+        'border-none shadow-md hover:shadow-lg rounded-2xl bg-[#0e59f9] text-white transition-all flex flex-col justify-between overflow-hidden min-h-[220px] p-5 sm:p-6',
         className
       )}
     >
@@ -46,7 +46,7 @@ export function StatusHeroCard({
         <span className="text-xs font-semibold text-white/80 block">
           {summary.eyebrow}
         </span>
-        <h2 className="text-xl sm:text-2xl font-semibold text-white tracking-tight mt-1">
+        <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight mt-1">
           {summary.title}
         </h2>
         <p className="text-xs text-blue-100/90 mt-1 max-w-xl leading-relaxed">
@@ -57,7 +57,7 @@ export function StatusHeroCard({
       {/* Bottom Row: Actions */}
       <div className="flex items-center gap-2.5 flex-wrap pt-2 border-t border-white/10">
         {!isOwner ? (
-          <div className="h-9 px-3.5 rounded-xl bg-white/20 text-white text-xs font-medium inline-flex items-center gap-1.5 backdrop-blur-xs select-none">
+          <div className="h-9 px-4 rounded-full bg-white/20 text-white text-xs font-medium inline-flex items-center gap-1.5 backdrop-blur-xs select-none">
             <span>Akses Khusus Pemilik (Mode Lihat)</span>
           </div>
         ) : isDirectAction ? (
@@ -65,7 +65,7 @@ export function StatusHeroCard({
             type="button"
             onClick={onActivate}
             disabled={isActivating}
-            className="h-9 px-4 rounded-xl bg-white hover:bg-blue-50 text-[#0e59f9] text-xs font-semibold shadow-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-75"
+            className="h-9 px-4 rounded-full bg-white hover:bg-slate-100 text-[#0e59f9] text-xs font-semibold shadow-sm-md inline-flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-75"
           >
             {isActivating ? (
               <>
@@ -82,7 +82,7 @@ export function StatusHeroCard({
         ) : (
           <Link
             href={summary.primaryActionHref}
-            className="h-9 px-4 rounded-xl bg-white hover:bg-blue-50 text-[#0e59f9] text-xs font-semibold shadow-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="h-9 px-4 rounded-full bg-white hover:bg-slate-100 text-[#0e59f9] text-xs font-semibold shadow-sm-md inline-flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             <span>{summary.primaryActionLabel}</span>
             <ArrowRight className="w-3.5 h-3.5 text-[#0e59f9]" />
@@ -92,7 +92,7 @@ export function StatusHeroCard({
         {isOwner && summary.secondaryActionLabel && summary.secondaryActionHref && (
           <Link
             href={summary.secondaryActionHref}
-            className="h-9 px-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="h-9 px-4 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-md inline-flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             <span>{summary.secondaryActionLabel}</span>
           </Link>
@@ -101,3 +101,4 @@ export function StatusHeroCard({
     </div>
   );
 }
+

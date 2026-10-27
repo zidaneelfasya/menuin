@@ -138,6 +138,7 @@ export default async function StorePage({
         featuredProducts={recommendedProducts}
         modifierGroups={tenantModGroups}
         activePromotions={activePromos}
+        primaryColor={tenant.primaryColor}
       />
       <ActiveOrderBanner tenantSlug={tenant.slug!} />
     </div>

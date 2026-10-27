@@ -27,7 +27,7 @@ export default async function ShiftDetailPage({ params }: ShiftDetailPageProps) 
 
   if (!res.success || !res.data) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] text-center p-6 bg-white rounded-2xl border border-[#EAEFF8] shadow-xs space-y-4">
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-center p-6 bg-white rounded-2xl border-none shadow-sm-md space-y-4">
         <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center">
           <AlertCircle className="w-6 h-6" />
         </div>
@@ -38,7 +38,7 @@ export default async function ShiftDetailPage({ params }: ShiftDetailPageProps) 
           </p>
         </div>
         <Link href={`/outlet/${outletKey}/shifts`}>
-          <Button variant="outline" size="sm" className="gap-2 rounded-xl text-xs font-semibold">
+          <Button variant="outline" size="sm" className="gap-2 rounded-full text-xs font-semibold border-none shadow-sm-md bg-white hover:bg-slate-100 text-slate-700 cursor-pointer">
             <ArrowLeft className="w-4 h-4" />
             Kembali ke Shift Kasir
           </Button>
