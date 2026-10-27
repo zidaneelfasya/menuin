@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { MainLayout } from '@/components/layout/main-layout';
 import { PaymentGate } from '@/components/payment-gate';
-import { getCurrentUser, getAvailableTenants } from '@/lib/actions/auth';
+import { getCurrentUser, getAvailableTenantsLite } from '@/lib/actions/auth';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
@@ -9,7 +9,11 @@ import { connection } from 'next/server';
 
 async function AuthWrapper({ children }: { children: React.ReactNode }) {
   await connection();
-  const user = await getCurrentUser();
+  const [user, availableTenants] = await Promise.all([
+    getCurrentUser(),
+    getAvailableTenantsLite().catch(() => []),
+  ]);
+
   if (!user) {
     // Determine if they are globally logged in but missing a tenant context
     let account = null;
@@ -38,8 +42,6 @@ async function AuthWrapper({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const availableTenants = await getAvailableTenants();
-  
   // The dashboard structure is accessible even without a subscription,
   // individual features will be locked via requireFeature() guards and error boundaries.
   return <MainLayout user={user} availableTenants={availableTenants}>{children}</MainLayout>;

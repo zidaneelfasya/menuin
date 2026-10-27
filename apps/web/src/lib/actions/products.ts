@@ -1,5 +1,6 @@
 'use server';
 
+import { cache } from 'react';
 import { db } from '@/lib/db';
 import { products, categories, productModifierGroups, modifierGroups } from '@/lib/db/schema';
 import { eq, and, sql, desc, inArray } from 'drizzle-orm';
@@ -26,44 +27,59 @@ function generateBarcode() {
 
 import { ProductDto } from '@menuin/types';
 
-export async function getProducts(): Promise<{ success: boolean, data?: ProductDto[], error?: string }> {
+export const getProducts = cache(async (): Promise<{ success: boolean, data?: ProductDto[], error?: string }> => {
   try {
     const user = await getCurrentUser();
     if (!user || !user.tenantId) {
       return { success: false, error: 'Unauthorized or no dashboard' };
     }
 
-    const data = await db
-      .select({
-        id: products.id,
-        sku: products.sku,
-        name: products.name,
-        price: products.price,
-        costPrice: products.costPrice,
-        potongan: products.potongan,
-        stock: products.stock,
-        minStock: products.minStock,
-        trackStock: products.trackStock,
-        categoryName: categories.name,
-        categoryId: products.categoryId,
-        imageUrl: products.imageUrl,
-        description: products.description,
-        barcode: products.barcode,
-        isAvailableOnline: products.isAvailableOnline,
-        isFeatured: products.isFeatured,
-        isActive: products.isActive,
-        status: sql<string>`CASE WHEN ${products.isActive} = false THEN 'inactive' WHEN ${products.trackStock} = false THEN 'active' WHEN ${products.stock} > 0 THEN 'active' ELSE 'out_of_stock' END`,
-      })
-      .from(products)
-      .leftJoin(categories, eq(products.categoryId, categories.id))
-      .where(eq(products.tenantId, user.tenantId))
-      .orderBy(desc(products.isFeatured), products.name);
+    const [data, allProductModifiers] = await Promise.all([
+      db
+        .select({
+          id: products.id,
+          sku: products.sku,
+          name: products.name,
+          price: products.price,
+          costPrice: products.costPrice,
+          potongan: products.potongan,
+          stock: products.stock,
+          minStock: products.minStock,
+          trackStock: products.trackStock,
+          categoryName: categories.name,
+          categoryId: products.categoryId,
+          imageUrl: products.imageUrl,
+          description: products.description,
+          barcode: products.barcode,
+          isAvailableOnline: products.isAvailableOnline,
+          isFeatured: products.isFeatured,
+          isActive: products.isActive,
+          status: sql<string>`CASE WHEN ${products.isActive} = false THEN 'inactive' WHEN ${products.trackStock} = false THEN 'active' WHEN ${products.stock} > 0 THEN 'active' ELSE 'out_of_stock' END`,
+        })
+        .from(products)
+        .leftJoin(categories, eq(products.categoryId, categories.id))
+        .where(eq(products.tenantId, user.tenantId))
+        .orderBy(desc(products.isFeatured), products.name),
+      db
+        .select()
+        .from(productModifierGroups)
+        .where(eq(productModifierGroups.tenantId, user.tenantId)),
+    ]);
       
-    // Fetch product modifiers
-    const allProductModifiers = await db.select().from(productModifierGroups);
+    // Group modifiers by productId using a Map for O(1) lookups
+    const modifierMap = new Map<string, string[]>();
+    for (const pm of allProductModifiers) {
+      const list = modifierMap.get(pm.productId);
+      if (list) {
+        list.push(pm.modifierGroupId);
+      } else {
+        modifierMap.set(pm.productId, [pm.modifierGroupId]);
+      }
+    }
+
     const dataWithModifiers = data.map(p => ({
       ...p,
-      modifierGroupIds: allProductModifiers.filter(pm => pm.productId === p.id).map(pm => pm.modifierGroupId)
+      modifierGroupIds: modifierMap.get(p.id) || [],
     }));
       
     return { success: true, data: dataWithModifiers };
@@ -71,7 +87,7 @@ export async function getProducts(): Promise<{ success: boolean, data?: ProductD
     console.error('Error fetching products:', error);
     return { success: false, error: 'Gagal mengambil data produk' };
   }
-}
+});
 
 export async function toggleProductBestSeller(productId: string, isFeatured: boolean) {
   try {

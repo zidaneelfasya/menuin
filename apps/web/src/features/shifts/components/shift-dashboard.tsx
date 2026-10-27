@@ -20,6 +20,7 @@ import { startShift, endShift, addCashMovement } from "@/lib/actions/shifts";
 import { toast } from "sonner";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { usePageTransition } from "@/components/providers/page-transition-provider";
 import {
   Clock,
   ShoppingCart,
@@ -87,7 +88,24 @@ export function ShiftDashboard({
 }) {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const activeTab = searchParams.get("tab") || "active";
+  const { navigateWithTransition, prefetchRoute } = usePageTransition();
+  const [activeTab, setActiveTab] = React.useState(searchParams.get("tab") || "active");
+
+  React.useEffect(() => {
+    const tabFromUrl = searchParams.get("tab") || "active";
+    setActiveTab(tabFromUrl);
+  }, [searchParams]);
+
+  React.useEffect(() => {
+    const handleCustomTab = (e: Event) => {
+      const customEvent = e as CustomEvent<string>;
+      if (customEvent.detail) {
+        setActiveTab(customEvent.detail);
+      }
+    };
+    window.addEventListener("menuin:shift-tab", handleCustomTab);
+    return () => window.removeEventListener("menuin:shift-tab", handleCustomTab);
+  }, []);
 
   // Modal for past shift history
   const [modalShiftId, setModalShiftId] = React.useState<string | null>(null);
@@ -322,7 +340,7 @@ export function ShiftDashboard({
               e.stopPropagation();
               if (outletKey) {
                 setNavigatingShiftId(shift.id);
-                router.push(`/outlet/${outletKey}/shifts/${shift.id}`);
+                navigateWithTransition(`/outlet/${outletKey}/shifts/${shift.id}`);
               } else {
                 setModalShiftId(shift.id);
               }
@@ -340,7 +358,7 @@ export function ShiftDashboard({
         );
       },
     },
-  ], [outletKey, router, navigatingShiftId]);
+  ], [outletKey, router, navigateWithTransition, navigatingShiftId]);
 
   const transactionColumns = React.useMemo<AppTableColumn<any>[]>(() => [
     {
@@ -1108,7 +1126,7 @@ export function ShiftDashboard({
             searchPlaceholder="Cari kasir / ID shift..."
             onRowClick={(item) => {
               if (outletKey) {
-                router.push(`/outlet/${outletKey}/shifts/${item.id}`);
+                navigateWithTransition(`/outlet/${outletKey}/shifts/${item.id}`);
               } else {
                 setModalShiftId(item.id);
               }

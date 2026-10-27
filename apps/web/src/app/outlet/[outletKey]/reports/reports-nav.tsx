@@ -4,11 +4,13 @@ import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { LayoutDashboard, BarChart3, Clock, Wallet, FileSpreadsheet, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { usePageTransition } from "@/components/providers/page-transition-provider";
 
 export function ReportsNav() {
   const pathname = usePathname();
   const params = useParams();
   const outletKey = (params.outletKey as string) || "";
+  const { navigateWithTransition, prefetchRoute } = usePageTransition();
 
   const navItems = [
     {
@@ -58,6 +60,12 @@ export function ReportsNav() {
             <Link
               key={item.href}
               href={item.href}
+              prefetch={true}
+              onMouseEnter={() => prefetchRoute(item.href)}
+              onClick={(e) => {
+                e.preventDefault();
+                navigateWithTransition(item.href);
+              }}
               className={cn(
                 "flex items-center gap-2.5 rounded-full px-3.5 py-2.5 text-xs md:text-sm font-medium transition-all duration-150 whitespace-nowrap cursor-pointer",
                 isActive

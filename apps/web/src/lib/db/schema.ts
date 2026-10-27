@@ -394,6 +394,8 @@ export const shifts = pgTable('shifts', {
       foreignColumns: [posDevices.tenantId, posDevices.id]
     }),
     tenantIdUnique: unique('shifts_tenant_id_unique').on(table.tenantId, table.id),
+    tenantStatusCreatedIdx: index('shifts_tenant_status_created_idx').on(table.tenantId, table.status, table.createdAt),
+    tenantStartIdx: index('shifts_tenant_start_idx').on(table.tenantId, table.startTime),
   };
 });
 
@@ -410,8 +412,24 @@ export const cashMovements = pgTable('cash_movements', {
     shiftFk: foreignKey({
       columns: [table.tenantId, table.shiftId],
       foreignColumns: [shifts.tenantId, shifts.id]
-    })
+    }),
+    shiftIdx: index('cash_movements_shift_idx').on(table.shiftId),
+    tenantCreatedIdx: index('cash_movements_tenant_created_idx').on(table.tenantId, table.createdAt),
   };
+});
+
+export const stockMovements = pgTable('stock_movements', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  productId: uuid('product_id').references(() => products.id, { onDelete: 'cascade' }).notNull(),
+  type: text('type').notNull(),
+  quantity: integer('quantity').notNull(),
+  previousStock: integer('previous_stock').default(0).notNull(),
+  currentStock: integer('current_stock').default(0).notNull(),
+  reason: text('reason'),
+  referenceId: text('reference_id'),
+  actorName: text('actor_name'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
 export const transactions = pgTable('transactions', {
@@ -457,6 +475,8 @@ export const transactions = pgTable('transactions', {
     tenantCreatedIdx: index('transactions_tenant_created_idx').on(table.tenantId, table.createdAt),
     tenantStatusIdx: index('transactions_tenant_status_idx').on(table.tenantId, table.paymentStatus, table.createdAt),
     tenantStatusCreatedIdx: index('transactions_tenant_status_created_idx').on(table.tenantId, table.status, table.createdAt),
+    shiftIdx: index('transactions_shift_idx').on(table.shiftId),
+    promoIdx: index('transactions_tenant_promo_idx').on(table.tenantId, table.promotionId, table.promoCode),
     // Financial Idempotency Unique Constraint per tenant:
     tenantIdempotencyUnique: uniqueIndex('transactions_tenant_idempotency_unique').on(table.tenantId, table.idempotencyKey),
     posSessionFk: foreignKey({
@@ -492,6 +512,7 @@ export const transactionItems = pgTable('transaction_items', {
   return {
     tenantTrxIdx: index('trx_items_tenant_trx_idx').on(table.tenantId, table.transactionId),
     tenantCompletedIdx: index('trx_items_tenant_completed_idx').on(table.tenantId, table.isCompleted),
+    tenantCreatedIdx: index('trx_items_tenant_created_idx').on(table.tenantId, table.createdAt),
     transactionFk: foreignKey({
       columns: [table.tenantId, table.transactionId],
       foreignColumns: [transactions.tenantId, transactions.id]
@@ -790,6 +811,10 @@ export const expenses = pgTable('expenses', {
   createdByMembershipId: uuid('created_by_membership_id'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => {
+  return {
+    tenantDateIdx: index('expenses_tenant_date_idx').on(table.tenantId, table.date),
+  };
 });
 
 export const incomes = pgTable('incomes', {
@@ -804,6 +829,10 @@ export const incomes = pgTable('incomes', {
   createdByMembershipId: uuid('created_by_membership_id'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => {
+  return {
+    tenantDateIdx: index('incomes_tenant_date_idx').on(table.tenantId, table.date),
+  };
 });
 
 export const categoryBudgets = pgTable('category_budgets', {
@@ -931,6 +960,24 @@ export const verificationSectionReviews = pgTable('verification_section_reviews'
   index('verification_section_reviews_sub_idx').on(table.submissionId),
 ]);
 
+export const careTickets = pgTable('care_tickets', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  ticketNumber: text('ticket_number').unique().notNull(),
+  tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'set null' }),
+  accountId: uuid('account_id').references(() => accounts.id, { onDelete: 'set null' }),
+  verificationSubmissionId: uuid('verification_submission_id').references(() => verificationSubmissions.id, { onDelete: 'set null' }),
+  category: text('category').default('BUSINESS_VERIFICATION').notNull(),
+  subject: text('subject').notNull(),
+  description: text('description').notNull(),
+  priority: text('priority').default('NORMAL').notNull(),
+  status: text('status').default('open').notNull(),
+  assignedTo: uuid('assigned_to').references(() => accounts.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index('idx_care_tickets_verification').on(table.verificationSubmissionId),
+]);
+
 // ============================================================================
 // VERIFICATION RELATIONS
 // ============================================================================
@@ -1001,6 +1048,36 @@ export const verificationSectionReviewsRelations = relations(verificationSection
   }),
   reviewer: one(accounts, {
     fields: [verificationSectionReviews.reviewedBy],
+    references: [accounts.id],
+  }),
+}));
+
+export const stockMovementsRelations = relations(stockMovements, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [stockMovements.tenantId],
+    references: [tenants.id],
+  }),
+  product: one(products, {
+    fields: [stockMovements.productId],
+    references: [products.id],
+  }),
+}));
+
+export const careTicketsRelations = relations(careTickets, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [careTickets.tenantId],
+    references: [tenants.id],
+  }),
+  account: one(accounts, {
+    fields: [careTickets.accountId],
+    references: [accounts.id],
+  }),
+  verificationSubmission: one(verificationSubmissions, {
+    fields: [careTickets.verificationSubmissionId],
+    references: [verificationSubmissions.id],
+  }),
+  assignedToUser: one(accounts, {
+    fields: [careTickets.assignedTo],
     references: [accounts.id],
   }),
 }));

@@ -51,7 +51,6 @@ import {
 import { getSalesReport } from "@/lib/actions/reports";
 import { toast } from "sonner";
 import { formatPaymentMethodLabel } from "@/lib/utils/format";
-import * as XLSX from "xlsx";
 import { cn } from "@/lib/utils";
 
 type SalesReportData = NonNullable<Awaited<ReturnType<typeof getSalesReport>>["data"]>;
@@ -161,8 +160,9 @@ export function SalesDetailClient({ initialData, outletKey }: SalesDetailClientP
   }, [filteredTransactions]);
 
   // Export to Excel
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     try {
+      const XLSX = await import("xlsx");
       const exportRows = filteredTransactions.map((t, idx) => {
         const isCanceled = t.status === "CANCELLED" || t.status === "CANCELED" || t.paymentStatus === "CANCELED" || t.paymentStatus === "REFUNDED";
         const g = parseFloat(t.totalAmount || "0") || 0;

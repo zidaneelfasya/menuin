@@ -26,7 +26,6 @@ import { id as localeId } from "date-fns/locale";
 import { getOperationsReport, ReportPeriod } from "@/lib/actions/reports";
 import { PeakHoursHeatmap } from "./peak-hours-heatmap";
 import { toast } from "sonner";
-import * as XLSX from "xlsx";
 import { cn } from "@/lib/utils";
 
 type OperationsReportData = NonNullable<Awaited<ReturnType<typeof getOperationsReport>>["data"]>;
@@ -539,8 +538,9 @@ export function OperationsReportClient({ initialData, outletKey }: OperationsRep
   const hasCustomDate = Boolean(customRange?.from);
 
   // Export Excel Multi-sheet
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     try {
+      const XLSX = await import("xlsx");
       const workbook = XLSX.utils.book_new();
 
       // Sheet 1: Ringkasan Indikator

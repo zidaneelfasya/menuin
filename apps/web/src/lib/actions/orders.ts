@@ -82,7 +82,6 @@ export async function syncOrderPaymentStatus(orderId: string) {
 
     if (user?.outletKey) {
       revalidatePath(`/outlet/${user.outletKey}/orders`, "page");
-      revalidatePath(`/outlet/${user.outletKey}`, "layout");
     }
 
     return {
@@ -170,7 +169,6 @@ export async function confirmOrderPaymentAtCashier(
     if (user?.outletKey) {
       revalidatePath(`/outlet/${user.outletKey}/orders`, "page");
       revalidatePath(`/outlet/${user.outletKey}/reports`, "page");
-      revalidatePath(`/outlet/${user.outletKey}`, "layout");
     }
 
     return { 
@@ -211,7 +209,10 @@ export async function updateOrderStatus(transactionId: string, newStatus: string
         .where(eq(transactionItems.transactionId, transactionId));
     }
 
-    if (user?.outletKey) revalidatePath(`/outlet/${user.outletKey}`, "layout");
+    if (user?.outletKey) {
+      revalidatePath(`/outlet/${user.outletKey}/orders`, "page");
+      revalidatePath(`/outlet/${user.outletKey}/reports`, "page");
+    }
     return { success: true };
   } catch (error) {
     console.error("Failed to update order status:", error);
@@ -257,7 +258,10 @@ export async function bulkUpdateOrderStatus(orderIds: string[], newStatus: strin
         .where(inArray(transactionItems.transactionId, orderIds));
     }
 
-    if (user?.outletKey) revalidatePath(`/outlet/${user.outletKey}`, "layout");
+    if (user?.outletKey) {
+      revalidatePath(`/outlet/${user.outletKey}/orders`, "page");
+      revalidatePath(`/outlet/${user.outletKey}/reports`, "page");
+    }
     return { success: true, count: orderIds.length };
   } catch (error: any) {
     console.error("Failed to bulk update order status:", error);
@@ -274,7 +278,9 @@ export async function updateOrderItemStatus(itemId: string, isCompleted: boolean
       .set({ isCompleted })
       .where(eq(transactionItems.id, itemId));
     
-    if (user?.outletKey) revalidatePath(`/outlet/${user.outletKey}`, "layout");
+    if (user?.outletKey) {
+      revalidatePath(`/outlet/${user.outletKey}/orders`, "page");
+    }
     return { success: true };
   } catch (error) {
     console.error("Failed to update order item status:", error);

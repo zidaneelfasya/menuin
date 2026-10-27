@@ -25,7 +25,6 @@ async function requireRole(roles: string[]) {
 function revalidate(outletKey: string | undefined | null) {
   if (!outletKey) return;
   revalidatePath(`/outlet/${outletKey}/settings/online-payments`, 'page');
-  revalidatePath(`/outlet/${outletKey}`, 'layout');
 }
 
 export async function getOnlinePayments(filter: OnlinePaymentFilter) {

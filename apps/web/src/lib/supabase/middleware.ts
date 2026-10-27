@@ -68,5 +68,19 @@ export async function updateSession(request: NextRequest, customResponse?: NextR
     return NextResponse.redirect(url);
   }
 
+  if (user?.id) {
+    request.headers.set('x-menuin-auth-user-id', user.id);
+    if (user.email) {
+      request.headers.set('x-menuin-auth-email', user.email);
+    }
+    if (!customResponse) {
+      supabaseResponse = NextResponse.next({
+        request: {
+          headers: request.headers,
+        },
+      });
+    }
+  }
+
   return supabaseResponse;
 }

@@ -4,6 +4,9 @@ import { getOutletVerificationOverview } from '@/lib/actions/merchant-verificati
 import { getCurrentUser } from '@/lib/actions/auth';
 import { RepresentativeClient } from './representative-client';
 
+import { Suspense } from 'react';
+import VerificationLoading from '../loading';
+
 export const metadata: Metadata = {
   title: 'Perwakilan Bisnis - Verifikasi Bisnis - MENUIN',
   description: 'Data identitas penanggung jawab akun dan pencairan dana usaha.',
@@ -13,9 +16,7 @@ type Props = {
   params: Promise<{ outletKey: string }>;
 };
 
-export default async function Page({ params }: Props) {
-  const { outletKey } = await params;
-
+async function RepresentativeContent({ outletKey }: { outletKey: string }) {
   const user = await getCurrentUser();
   if (!user) redirect('/auth/login');
 
@@ -23,4 +24,14 @@ export default async function Page({ params }: Props) {
   if (!data) notFound();
 
   return <RepresentativeClient outletKey={outletKey} data={data} />;
+}
+
+export default async function Page({ params }: Props) {
+  const { outletKey } = await params;
+
+  return (
+    <Suspense fallback={<VerificationLoading />}>
+      <RepresentativeContent outletKey={outletKey} />
+    </Suspense>
+  );
 }

@@ -38,7 +38,6 @@ import { format, subMonths, addMonths } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { getReportsOverview, ReportPeriod } from "@/lib/actions/reports";
 import { toast } from "sonner";
-import * as XLSX from "xlsx";
 import { cn } from "@/lib/utils";
 
 type OverviewData = NonNullable<Awaited<ReturnType<typeof getReportsOverview>>["data"]>;
@@ -898,8 +897,9 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
     return "Semua Waktu";
   }, [currentTab, monthParam, yearParam, customRange, todayDateStr]);
 
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     try {
+      const XLSX = await import("xlsx");
       const workbook = XLSX.utils.book_new();
 
       // 1. Executive Summary Sheet

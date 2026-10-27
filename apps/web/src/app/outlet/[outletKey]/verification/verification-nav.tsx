@@ -12,11 +12,13 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { usePageTransition } from '@/components/providers/page-transition-provider';
 
 export function VerificationNav() {
   const pathname = usePathname();
   const params = useParams();
   const outletKey = (params.outletKey as string) || '';
+  const { navigateWithTransition, prefetchRoute } = usePageTransition();
 
   const navItems = [
     {
@@ -63,6 +65,12 @@ export function VerificationNav() {
       <div className="px-2 pt-1 pb-2">
         <Link
           href={`/outlet/${outletKey}/dashboard`}
+          prefetch={true}
+          onMouseEnter={() => prefetchRoute(`/outlet/${outletKey}/dashboard`)}
+          onClick={(e) => {
+            e.preventDefault();
+            navigateWithTransition(`/outlet/${outletKey}/dashboard`);
+          }}
           className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-900 transition-colors"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
@@ -93,6 +101,12 @@ export function VerificationNav() {
             <Link
               key={item.href}
               href={item.href}
+              prefetch={true}
+              onMouseEnter={() => prefetchRoute(item.href)}
+              onClick={(e) => {
+                e.preventDefault();
+                navigateWithTransition(item.href);
+              }}
               className={cn(
                 'flex items-center gap-2.5 rounded-full px-3.5 py-2.5 text-xs md:text-sm transition-all duration-150 whitespace-nowrap cursor-pointer',
                 isActive

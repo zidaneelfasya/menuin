@@ -21,6 +21,23 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { createAvatar } from '@dicebear/core';
 import { openPeeps } from '@dicebear/collection';
+import { usePageTransition } from '@/components/providers/page-transition-provider';
+
+function HeaderClock() {
+  const [time, setTime] = React.useState<Date | null>(null);
+
+  React.useEffect(() => {
+    setTime(new Date());
+    const timer = setInterval(() => setTime(new Date()), 15000); // 15s interval is optimal for HH:mm
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="hidden sm:block text-sm font-medium text-muted-foreground bg-muted/30 px-3 py-1.5 rounded-lg border border-border/30">
+      {time ? time.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '...'}
+    </div>
+  );
+}
 
 export function Header({ 
   collapsed,
@@ -33,8 +50,8 @@ export function Header({
   user: UserProfile;
   availableTenants?: any[];
 }) {
-  const [time, setTime] = React.useState<Date | null>(null);
   const [domain, setDomain] = React.useState('menuin.id');
+  const { navigateWithTransition, prefetchRoute } = usePageTransition();
 
   // Exact same doodle art avatar generator as in TeamClient
   const userAvatarUri = React.useMemo(() => {
@@ -52,14 +69,9 @@ export function Header({
   }, [user.email, user.name]);
 
   React.useEffect(() => {
-    setTime(new Date());
-    const timer = setInterval(() => setTime(new Date()), 1000);
-    
     if (typeof window !== 'undefined') {
       setDomain(window.location.host.includes('localhost') ? 'localhost:3000' : 'menuin.id');
     }
-    
-    return () => clearInterval(timer);
   }, []);
 
   const activeTenant = availableTenants.find(t => t.tenantId === user.tenantId);
@@ -105,15 +117,17 @@ export function Header({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="w-[220px]">
                     {availableTenants.map((t) => (
-                      <DropdownMenuItem key={t.outletKey} asChild>
-                        <a href={`/outlet/${t.outletKey}/dashboard`} className="cursor-pointer flex items-center gap-2">
-                          <img 
-                            src={t.storeLogoUrl || `https://api.dicebear.com/10.x/shapes/svg?seed=${encodeURIComponent(t.name || 'Menuin')}&radius=10`} 
-                            alt={t.name} 
-                            className="h-4 w-4 rounded-sm object-cover border border-border/50 bg-muted/30" 
-                          />
-                          <span className="truncate">{t.name}</span>
-                        </a>
+                      <DropdownMenuItem 
+                        key={t.outletKey} 
+                        onClick={() => navigateWithTransition(`/outlet/${t.outletKey}/dashboard`)}
+                        className="cursor-pointer flex items-center gap-2"
+                      >
+                        <img 
+                          src={t.storeLogoUrl || `https://api.dicebear.com/10.x/shapes/svg?seed=${encodeURIComponent(t.name || 'Menuin')}&radius=10`} 
+                          alt={t.name} 
+                          className="h-4 w-4 rounded-sm object-cover border border-border/50 bg-muted/30" 
+                        />
+                        <span className="truncate">{t.name}</span>
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuContent>
@@ -161,9 +175,7 @@ export function Header({
         </div>
 
         {/* Time */}
-        <div className="hidden sm:block text-sm font-medium text-muted-foreground bg-muted/30 px-3 py-1.5 rounded-lg border border-border/30">
-          {time ? time.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '...'}
-        </div>
+        <HeaderClock />
 
         {/* Network Status */}
         <div className="hidden sm:flex text-success items-center justify-center h-10 w-10 rounded-full hover:bg-success/10 transition-colors cursor-help" title="Online">

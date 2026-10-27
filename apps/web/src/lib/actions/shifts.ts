@@ -1,13 +1,14 @@
 'use server';
 
+import { cache } from 'react';
 import { db } from '@/lib/db';
 import { shifts, cashMovements, transactions, transactionItems, products, memberships, tenants } from '@/lib/db/schema';
-import { eq, desc, and, or, sql } from 'drizzle-orm';
+import { eq, desc, and, or, sql, inArray } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from './auth';
 
 // 1. Get active shift for current user (or any user in tenant if they have one)
-export async function getActiveShift() {
+export const getActiveShift = cache(async () => {
   try {
     const user = await getCurrentUser();
     if (!user || !user.tenantId) return { success: false, error: 'Unauthorized' };
@@ -46,33 +47,31 @@ export async function getActiveShift() {
 
     const shift = activeShifts[0];
     
-    // Fetch all transactions in this shift
-    const txs = await db
-      .select()
-      .from(transactions)
-      .where(eq(transactions.shiftId, shift.id))
-      .orderBy(desc(transactions.createdAt));
-
-    // Fetch sold items summary
-    const soldItemsSummary = await db
-      .select({
-        totalItemsSold: sql<number>`CAST(COALESCE(SUM(${transactionItems.quantity}), 0) AS INT)`
-      })
-      .from(transactionItems)
-      .innerJoin(transactions, eq(transactions.id, transactionItems.transactionId))
-      .where(
-        and(
-          eq(transactions.shiftId, shift.id),
-          eq(transactions.paymentStatus, 'PAID')
-        )
-      );
-
-    // Fetch cash movements
-    const movements = await db
-      .select()
-      .from(cashMovements)
-      .where(eq(cashMovements.shiftId, shift.id))
-      .orderBy(desc(cashMovements.createdAt));
+    // Fetch all transactions, sold items summary, and cash movements in parallel
+    const [txs, soldItemsSummary, movements] = await Promise.all([
+      db
+        .select()
+        .from(transactions)
+        .where(eq(transactions.shiftId, shift.id))
+        .orderBy(desc(transactions.createdAt)),
+      db
+        .select({
+          totalItemsSold: sql<number>`CAST(COALESCE(SUM(${transactionItems.quantity}), 0) AS INT)`
+        })
+        .from(transactionItems)
+        .innerJoin(transactions, eq(transactions.id, transactionItems.transactionId))
+        .where(
+          and(
+            eq(transactions.shiftId, shift.id),
+            eq(transactions.paymentStatus, 'PAID')
+          )
+        ),
+      db
+        .select()
+        .from(cashMovements)
+        .where(eq(cashMovements.shiftId, shift.id))
+        .orderBy(desc(cashMovements.createdAt)),
+    ]);
 
     // Calculate metrics
     const paidTxs = txs.filter(t => t.paymentStatus === 'PAID');
@@ -182,7 +181,7 @@ export async function getActiveShift() {
     console.error('Error fetching active shift:', error);
     return { success: false, error: 'Failed to fetch active shift' };
   }
-}
+});
 
 // 2. Start new shift
 export async function startShift(startingCash: number) {
@@ -202,7 +201,10 @@ export async function startShift(startingCash: number) {
       status: 'ACTIVE'
     }).returning();
 
-    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
+    if (user && typeof user === "object" && "outletKey" in user && user.outletKey) {
+      revalidatePath(`/outlet/${user.outletKey}/shifts`, "page");
+      revalidatePath(`/outlet/${user.outletKey}/pos`, "page");
+    }
     return { success: true, data: newShift };
   } catch (error) {
     console.error('Error starting shift:', error);
@@ -255,7 +257,10 @@ export async function endShift(shiftId: string, actualCash: number) {
       cashDifference: cashDifference.toString()
     }).where(eq(shifts.id, shiftId));
 
-    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
+    if (user && typeof user === "object" && "outletKey" in user && user.outletKey) {
+      revalidatePath(`/outlet/${user.outletKey}/shifts`, "page");
+      revalidatePath(`/outlet/${user.outletKey}/pos`, "page");
+    }
     return { success: true };
   } catch (error) {
     console.error('Error ending shift:', error);
@@ -277,7 +282,10 @@ export async function addCashMovement(shiftId: string, type: 'IN' | 'OUT', amoun
       description
     });
 
-    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
+    if (user && typeof user === "object" && "outletKey" in user && user.outletKey) {
+      revalidatePath(`/outlet/${user.outletKey}/shifts`, "page");
+      revalidatePath(`/outlet/${user.outletKey}/pos`, "page");
+    }
     return { success: true };
   } catch (error) {
     console.error('Error adding cash movement:', error);
@@ -286,7 +294,7 @@ export async function addCashMovement(shiftId: string, type: 'IN' | 'OUT', amoun
 }
 
 // 5. Get Shift History
-export async function getShiftHistory() {
+export const getShiftHistory = cache(async () => {
   try {
     const user = await getCurrentUser();
     if (!user || !user.tenantId) return { success: false, error: 'Unauthorized' };
@@ -310,36 +318,59 @@ export async function getShiftHistory() {
       .from(shifts)
       .leftJoin(memberships, eq(shifts.membershipId, memberships.id))
       .where(eq(shifts.tenantId, user.tenantId))
-      .orderBy(desc(shifts.createdAt));
+      .orderBy(desc(shifts.createdAt))
+      .limit(100);
 
-    // Also get transaction counts & sales summary for each shift
-    const enrichedHistory = await Promise.all(
-      historyRows.map(async (shift) => {
-        const txSummary = await db
-          .select({
-            count: sql<number>`CAST(COUNT(${transactions.id}) AS INT)`,
-            total: sql<number>`COALESCE(SUM(${transactions.grandTotal}), 0)`
-          })
-          .from(transactions)
-          .where(eq(transactions.shiftId, shift.id));
+    if (historyRows.length === 0) {
+      return { success: true, data: [] };
+    }
 
-        return {
-          ...shift,
-          totalTransactions: Number(txSummary[0]?.count || 0),
-          totalSales: Number(txSummary[0]?.total || 0),
-        };
+    const shiftIds = historyRows.map((s) => s.id);
+
+    // Single aggregated SQL query with GROUP BY shiftId instead of N+1 individual queries
+    const txSummaries = await db
+      .select({
+        shiftId: transactions.shiftId,
+        count: sql<number>`CAST(COUNT(${transactions.id}) AS INT)`,
+        total: sql<number>`COALESCE(SUM(${transactions.grandTotal}), 0)`
       })
-    );
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.tenantId, user.tenantId),
+          inArray(transactions.shiftId, shiftIds)
+        )
+      )
+      .groupBy(transactions.shiftId);
+
+    const summaryMap = new Map<string, { count: number; total: number }>();
+    for (const s of txSummaries) {
+      if (s.shiftId) {
+        summaryMap.set(s.shiftId, {
+          count: Number(s.count || 0),
+          total: Number(s.total || 0),
+        });
+      }
+    }
+
+    const enrichedHistory = historyRows.map((shift) => {
+      const summary = summaryMap.get(shift.id);
+      return {
+        ...shift,
+        totalTransactions: summary?.count || 0,
+        totalSales: summary?.total || 0,
+      };
+    });
 
     return { success: true, data: enrichedHistory };
   } catch (error) {
     console.error('Error fetching shift history:', error);
     return { success: false, error: 'Failed to fetch shift history' };
   }
-}
+});
 
 // 6. Get Shift Details
-export async function getShiftDetails(shiftId: string) {
+export const getShiftDetails = cache(async (shiftId: string) => {
   try {
     const user = await getCurrentUser();
     if (!user || !user.tenantId) return { success: false, error: 'Unauthorized' };
@@ -371,23 +402,32 @@ export async function getShiftDetails(shiftId: string) {
     }
 
     const shift = shiftRows[0];
-    const txs = await db.select().from(transactions).where(eq(transactions.shiftId, shiftId)).orderBy(desc(transactions.createdAt));
 
-    const soldItems = await db
-      .select({
-        productId: transactionItems.productId,
-        name: products.name,
-        totalQuantity: sql<number>`CAST(SUM(${transactionItems.quantity}) AS INT)`,
-        totalRevenue: sql<number>`SUM(${transactionItems.subtotal})`
-      })
-      .from(transactionItems)
-      .innerJoin(transactions, eq(transactions.id, transactionItems.transactionId))
-      .innerJoin(products, eq(products.id, transactionItems.productId))
-      .where(eq(transactions.shiftId, shiftId))
-      .groupBy(transactionItems.productId, products.name)
-      .orderBy(desc(sql`SUM(${transactionItems.quantity})`));
-
-    const movements = await db.select().from(cashMovements).where(eq(cashMovements.shiftId, shiftId)).orderBy(desc(cashMovements.createdAt));
+    const [txs, soldItems, movements] = await Promise.all([
+      db
+        .select()
+        .from(transactions)
+        .where(eq(transactions.shiftId, shiftId))
+        .orderBy(desc(transactions.createdAt)),
+      db
+        .select({
+          productId: transactionItems.productId,
+          name: products.name,
+          totalQuantity: sql<number>`CAST(SUM(${transactionItems.quantity}) AS INT)`,
+          totalRevenue: sql<number>`SUM(${transactionItems.subtotal})`
+        })
+        .from(transactionItems)
+        .innerJoin(transactions, eq(transactions.id, transactionItems.transactionId))
+        .innerJoin(products, eq(products.id, transactionItems.productId))
+        .where(eq(transactions.shiftId, shiftId))
+        .groupBy(transactionItems.productId, products.name)
+        .orderBy(desc(sql`SUM(${transactionItems.quantity})`)),
+      db
+        .select()
+        .from(cashMovements)
+        .where(eq(cashMovements.shiftId, shiftId))
+        .orderBy(desc(cashMovements.createdAt)),
+    ]);
 
     // Calculate detailed breakdown
     const paidTxs = txs.filter(t => t.paymentStatus === 'PAID');
@@ -485,4 +525,4 @@ export async function getShiftDetails(shiftId: string) {
     console.error('Error fetching shift details:', error);
     return { success: false, error: 'Failed to fetch shift details' };
   }
-}
+});

@@ -144,7 +144,7 @@ function SidebarContent({
 	const pathname = usePathname();
 	const router = useRouter();
 	const { incomingOrders } = useRealtimeOrder();
-	const { navigateWithTransition } = usePageTransition();
+	const { navigateWithTransition, prefetchRoute } = usePageTransition();
 
 	const handleLogout = async () => {
 		const supabase = createClient();
@@ -250,6 +250,8 @@ function SidebarContent({
 							<Link
 								key={item.name}
 								href={item.href}
+								prefetch={true}
+								onMouseEnter={() => prefetchRoute(item.href)}
 								onClick={(e) => {
 									e.preventDefault();
 									navigateWithTransition(item.href);

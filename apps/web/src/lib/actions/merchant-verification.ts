@@ -1,5 +1,6 @@
 'use server';
 
+import { cache } from 'react';
 import { db } from '@/lib/db';
 import {
   businessProfiles,
@@ -582,7 +583,7 @@ export async function submitOutletComplianceAction(
  * 5. Overall Payment Readiness Evaluation
  * 6. Available Business Profiles under account
  */
-export async function getOutletVerificationOverview(outletKey: string) {
+export const getOutletVerificationOverview = cache(async (outletKey: string) => {
   let account;
   try {
     account = await getAuthenticatedAccount();
@@ -873,7 +874,7 @@ export async function getOutletVerificationOverview(outletKey: string) {
     isOwner,
     userRole: membership?.role || 'VIEWER',
   };
-}
+});
 
 /**
  * Saves in-progress verification draft per step.

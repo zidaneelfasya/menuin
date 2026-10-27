@@ -115,7 +115,6 @@ import {
 	ReportPeriod,
 } from "@/lib/actions/reports";
 import { toast } from "sonner";
-import * as XLSX from "xlsx";
 import { cn } from "@/lib/utils";
 import { formatPaymentMethodLabel } from "@/lib/utils/format";
 
@@ -1296,8 +1295,9 @@ export function FinanceReportClient({
 	};
 
 	// Export Excel Multi-sheet
-	const handleExportExcel = () => {
+	const handleExportExcel = async () => {
 		try {
+			const XLSX = await import("xlsx");
 			const workbook = XLSX.utils.book_new();
 
 			// Summary Sheet

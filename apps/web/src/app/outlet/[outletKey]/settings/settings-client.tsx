@@ -69,9 +69,23 @@ export function SettingsClient({
     }
   }, [tabFromUrl]);
 
+  React.useEffect(() => {
+    const handleCustomTab = (e: Event) => {
+      const customEvent = e as CustomEvent<string>;
+      if (customEvent.detail) {
+        setActiveTab(customEvent.detail);
+      }
+    };
+    window.addEventListener('menuin:settings-tab', handleCustomTab);
+    return () => window.removeEventListener('menuin:settings-tab', handleCustomTab);
+  }, []);
+
   const handleTabChange = (val: string) => {
     setActiveTab(val);
-    router.replace(`${pathname}?tab=${val}`, { scroll: false });
+    if (typeof window !== 'undefined') {
+      window.history.replaceState(null, '', `${pathname}?tab=${val}`);
+      window.dispatchEvent(new CustomEvent('menuin:settings-tab', { detail: val }));
+    }
   };
 
   const [isSavingTax, setIsSavingTax] = React.useState(false);

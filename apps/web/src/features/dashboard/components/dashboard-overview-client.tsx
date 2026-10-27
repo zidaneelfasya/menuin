@@ -38,7 +38,6 @@ import { format, subMonths, addMonths } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { getReportsOverview, ReportPeriod } from "@/lib/actions/reports";
 import { toast } from "sonner";
-import * as XLSX from "xlsx";
 import { cn } from "@/lib/utils";
 
 type OverviewData = NonNullable<Awaited<ReturnType<typeof getReportsOverview>>["data"]>;
@@ -898,8 +897,9 @@ export function DashboardOverviewClient({ initialData, outletKey }: DashboardOve
     return "Semua Waktu";
   }, [currentTab, monthParam, yearParam, customRange, todayDateStr]);
 
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     try {
+      const XLSX = await import("xlsx");
       const workbook = XLSX.utils.book_new();
 
       // 1. Executive Summary Sheet
@@ -1998,9 +1998,9 @@ export function DashboardOverviewClient({ initialData, outletKey }: DashboardOve
           {/* Quick Metrics Strip: AOV & Top Transaksi (Fills empty space) */}
           <div className="pt-3 border-t border-slate-100">
             <div className="grid grid-cols-2 gap-2.5">
-              <div className="p-2.5 rounded-xl border border-slate-100 bg-[#F9FBFF]">
+              <div className="p-2.5 rounded-xl bg-white shadow-sm-md">
                 <div className="text-[10px] font-medium text-slate-400 uppercase tracking-wider truncate">
-                  Rata-Rata Order (AOV)
+                  Rata-Rata Order
                 </div>
                 <div className="text-xs sm:text-sm font-semibold text-slate-900 font-sans tracking-tight mt-0.5">
                   {formatRupiah(heroKpis.aov)}
@@ -2010,7 +2010,7 @@ export function DashboardOverviewClient({ initialData, outletKey }: DashboardOve
                 </div>
               </div>
 
-              <div className="p-2.5 rounded-xl border border-blue-100/70 bg-blue-50/30">
+              <div className="p-2.5 rounded-xl bg-white shadow-sm-md">
                 <div className="text-[10px] font-medium text-[#0e59f9] uppercase tracking-wider truncate">
                   Top Transaksi
                 </div>
@@ -2042,7 +2042,7 @@ export function DashboardOverviewClient({ initialData, outletKey }: DashboardOve
               Pola Jam & Hari Ramai
             </div>
             <h3 className="text-base font-semibold text-slate-900 tracking-tight mt-0.5">
-              Peak Hours Heatmap (24 Jam &times; 7 Hari)
+              Peak Hours Heatmap 
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
               Jam tersibuk: {heroKpis.busiestDayName} pukul {heroKpis.busiestHourLabel} ({heroKpis.busiestHourOrders} pesanan)

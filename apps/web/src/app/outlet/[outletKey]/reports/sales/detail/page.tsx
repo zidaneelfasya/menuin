@@ -3,21 +3,22 @@ import { requireFeature } from "@/lib/actions/auth-context";
 import { getSalesReport, ReportPeriod } from "@/lib/actions/reports";
 import { SalesDetailClient } from "@/components/reports/sales-detail-client";
 
+import { Suspense } from "react";
+import SalesDetailLoading from "./loading";
+
 export const metadata: Metadata = {
   title: "Rincian Penjualan (Sales Detail) - MENUIN",
   description: "Rincian perolehan transaksi penjualan, potongan diskon, biaya gateway, dan data item.",
 };
 
-export default async function Page({
-  params,
-  searchParams,
+async function SalesDetailContent({
+  outletKey,
+  search,
 }: {
-  params: Promise<{ outletKey: string }>;
-  searchParams?: Promise<{ period?: string; startDate?: string; endDate?: string }>;
+  outletKey: string;
+  search?: { period?: string; startDate?: string; endDate?: string };
 }) {
   await requireFeature("REPORTS");
-  const { outletKey } = await params;
-  const search = searchParams ? await searchParams : undefined;
 
   const res = await getSalesReport(outletKey, {
     period: (search?.period as ReportPeriod) || "this_month",
@@ -34,4 +35,21 @@ export default async function Page({
   }
 
   return <SalesDetailClient initialData={res.data} outletKey={outletKey} />;
+}
+
+export default async function Page({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ outletKey: string }>;
+  searchParams?: Promise<{ period?: string; startDate?: string; endDate?: string }>;
+}) {
+  const { outletKey } = await params;
+  const search = searchParams ? await searchParams : undefined;
+
+  return (
+    <Suspense fallback={<SalesDetailLoading />}>
+      <SalesDetailContent outletKey={outletKey} search={search} />
+    </Suspense>
+  );
 }

@@ -5,6 +5,9 @@ import { ShiftDetailView } from '@/features/shifts/components/shift-detail-view'
 import { ArrowLeft, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+import { Suspense } from 'react';
+import ShiftDetailLoading from './loading';
+
 interface ShiftDetailPageProps {
   params: Promise<{
     outletKey: string;
@@ -21,8 +24,13 @@ export async function generateMetadata({
   };
 }
 
-export default async function ShiftDetailPage({ params }: ShiftDetailPageProps) {
-  const { outletKey, shiftId } = await params;
+async function ShiftDetailContent({
+  outletKey,
+  shiftId,
+}: {
+  outletKey: string;
+  shiftId: string;
+}) {
   const res = await getShiftDetails(shiftId);
 
   if (!res.success || !res.data) {
@@ -48,4 +56,14 @@ export default async function ShiftDetailPage({ params }: ShiftDetailPageProps) 
   }
 
   return <ShiftDetailView outletKey={outletKey} data={res.data} />;
+}
+
+export default async function ShiftDetailPage({ params }: ShiftDetailPageProps) {
+  const { outletKey, shiftId } = await params;
+
+  return (
+    <Suspense fallback={<ShiftDetailLoading />}>
+      <ShiftDetailContent outletKey={outletKey} shiftId={shiftId} />
+    </Suspense>
+  );
 }

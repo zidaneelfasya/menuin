@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { usePageTransition } from '@/components/providers/page-transition-provider';
 import {
   Table,
   TableBody,
@@ -46,6 +47,7 @@ interface ShiftDetailViewProps {
 
 export function ShiftDetailView({ outletKey, data }: ShiftDetailViewProps) {
   const router = useRouter();
+  const { navigateWithTransition } = usePageTransition();
   const [activeTab, setActiveTab] = React.useState<'transactions' | 'products' | 'cash'>('transactions');
 
   const { shift, metrics, transactions, soldProducts, cashMovements } = data;
@@ -76,7 +78,7 @@ export function ShiftDetailView({ outletKey, data }: ShiftDetailViewProps) {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => router.push(`/outlet/${outletKey}/shifts?tab=history`)}
+            onClick={() => navigateWithTransition(`/outlet/${outletKey}/shifts?tab=history`)}
             className="h-9 px-4 rounded-full border-none shadow-sm-md bg-white text-slate-700 hover:bg-slate-100 gap-2 font-semibold cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4 text-slate-500" />
