@@ -48,7 +48,7 @@ export default async function StoreLayout({
     notFound();
   }
 
-  const primaryColor = tenant.primaryColor || "#f43f5e"; // Default to a nice rose red for food apps
+  const primaryColor = tenant.primaryColor || "#0e59f9";
 
   // Query total products sold, total product count, and active promotions
   const now = new Date();
@@ -95,7 +95,14 @@ export default async function StoreLayout({
   const homeLink = isSubdomain ? '/' : `/store/${tenant.slug}`;
 
   return (
-    <div className={inter.className} style={{ "--primary": primaryColor } as React.CSSProperties}>
+    <div
+      className={inter.className}
+      style={{
+        "--primary": primaryColor,
+        "--catalog-primary": primaryColor,
+        "--outlet-primary": primaryColor,
+      } as React.CSSProperties}
+    >
       <style dangerouslySetInnerHTML={{__html: `
         :root {
           --catalog-primary: ${primaryColor};

@@ -41,6 +41,7 @@ export default async function CheckoutPage({
     taxName: tenant.taxName || 'Pajak (PB1)',
     serviceChargeRate: parseFloat(tenant.serviceChargeRate || '0'),
     posRounding: tenant.posRounding ?? false,
+    primaryColor: tenant.primaryColor,
   };
 
   // Get products available online
@@ -91,6 +92,7 @@ export default async function CheckoutPage({
       settings={settings}
       products={productsWithMods}
       modifierGroups={tenantModGroups as any}
+      primaryColor={tenant.primaryColor}
     />
   );
 }

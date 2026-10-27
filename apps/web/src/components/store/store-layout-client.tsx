@@ -19,7 +19,7 @@ export function StoreLayoutClient({
   if (isCleanLayout) {
     return (
       <div className="min-h-screen bg-slate-100/60 font-sans text-gray-800 w-full flex justify-center">
-        <div className="w-full max-w-md min-h-screen bg-[#f8fafc] relative">
+        <div className="w-full max-w-md min-h-screen bg-white relative">
           {children}
         </div>
       </div>
@@ -28,9 +28,9 @@ export function StoreLayoutClient({
 
   return (
     <div className="min-h-screen bg-slate-100/60 font-sans text-gray-800 w-full flex justify-center">
-      <div className="w-full max-w-md min-h-screen bg-[#f8fafc] pb-24 relative overflow-x-clip">
+      <div className="w-full max-w-md min-h-screen bg-white pb-24 relative overflow-x-clip shadow-sm">
         <StoreHeroHeader {...headerProps} />
-        <main className="w-full px-3.5 sm:px-4 py-3 sm:py-4">
+        <main className="w-full">
           {children}
         </main>
       </div>

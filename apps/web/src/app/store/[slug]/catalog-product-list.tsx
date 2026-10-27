@@ -22,6 +22,7 @@ type CatalogProductListProps = {
   modifierGroups?: any[];
   tableParam?: string | null;
   activePromotions?: any[];
+  primaryColor?: string | null;
 };
 
 export function CatalogProductList({
@@ -34,7 +35,9 @@ export function CatalogProductList({
   modifierGroups = [],
   tableParam: initialTableParam,
   activePromotions = [],
+  primaryColor,
 }: CatalogProductListProps) {
+  const themePrimaryColor = primaryColor || "var(--catalog-primary, #0e59f9)";
   const searchParams = useSearchParams();
   const tableParam = initialTableParam || searchParams.get("table");
 
@@ -49,8 +52,13 @@ export function CatalogProductList({
     getTotalPrice,
   } = useCartStore();
 
+  const [isMounted, setIsMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategoryId, setActiveCategoryId] = useState<string>("");
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Product Detail & Modifier Sheet state
   const [selectedProductForSheet, setSelectedProductForSheet] = useState<Product | null>(null);
@@ -162,7 +170,7 @@ export function CatalogProductList({
 
     const handleScroll = () => {
       if (isUserScrollingRef.current) return;
-      const scrollY = window.scrollY + 140;
+      const scrollY = window.scrollY + 145;
       for (const cat of allCategories) {
         const el = document.getElementById(`category-${cat.id}`);
         if (el) {
@@ -191,7 +199,7 @@ export function CatalogProductList({
 
     const el = document.getElementById(`category-${id}`);
     if (el) {
-      const y = el.getBoundingClientRect().top + window.scrollY - 110;
+      const y = el.getBoundingClientRect().top + window.scrollY - 115;
       window.scrollTo({ top: y, behavior: "smooth" });
     }
   };
@@ -291,10 +299,11 @@ export function CatalogProductList({
     }
   };
 
-  // Render Horizontal Product Card (Gojek reference style for Best Seller & Rekomendasi Outlet)
+
+  // Render Horizontal Product Card (for Best Seller & Rekomendasi Outlet as shown in screenshot)
   const renderHorizontalProductCard = (product: Product) => {
     const hasModifiers = Boolean(product.modifierGroupIds && product.modifierGroupIds.length > 0);
-    const cartItemsForProduct = items.filter((i) => i.productId === product.id);
+    const cartItemsForProduct = isMounted ? items.filter((i) => i.productId === product.id) : [];
     const totalQty = cartItemsForProduct.reduce((sum, item) => sum + item.quantity, 0);
     const soldText = formatSoldCount(product.totalSold);
     const hasImageError = imageErrors[product.id];
@@ -313,7 +322,7 @@ export function CatalogProductList({
             handleOpenProductDetail(product);
           }
         }}
-        className="group py-2 sm:py-2 flex items-center justify-between gap-3.5 sm:gap-6 border-b border-gray-150 sm:border-gray-200 last:border-b-0 cursor-pointer transition-colors w-full"
+        className="group py-3.5 sm:py-4 flex items-center justify-between gap-3.5 sm:gap-6 border-b border-slate-200/80 last:border-b-0 cursor-pointer transition-colors w-full"
       >
         {/* Left Column: Title, Sold Count, Description, Price, Tambah Button */}
         <div className="flex-1 min-w-0 pr-2 sm:pr-3 flex flex-col justify-between py-1">
@@ -339,7 +348,7 @@ export function CatalogProductList({
           </div>
 
           {/* Bottom Area: Price & Tambah / Stepper Directly Below Price */}
-          <div className="pt-2 mt-auto space-y-1.5">
+          <div className="pt-2 mt-auto space-y-2">
             <div>
               {(() => {
                 const { origPrice, finalPrice, hasDiscount } = getProductPricing(product);
@@ -366,39 +375,41 @@ export function CatalogProductList({
             </div>
 
             {/* Action Button: Located below the price */}
-            <div className="py-1"> 
+            <div className="py-0.5">
               {totalQty === 0 ? (
                 <button
                   type="button"
                   onClick={(e) => handleAddButtonClick(e, product)}
-                  className="w-full h-8 sm:h-8.5 px-4 rounded-full border border-catalog-primary bg-white text-catalog-primary hover:bg-catalog-primary hover:text-white font-semibold text-xs flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-2xs"
+                  className="w-full h-10 py-2.5 px-4 rounded-full bg-catalog-primary hover:bg-catalog-primary/90 text-white font-semibold text-xs sm:text-sm shadow-sm-md active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center border-none"
+                  style={{ backgroundColor: themePrimaryColor }}
                 >
                   Tambah
                 </button>
               ) : (
-                /* Stepper without border */
+                /* Stepper with Menuin white button rule for minus & theme pill for plus */
                 <div
                   onClick={(e) => e.stopPropagation()}
-                  className="flex items-center justify-between gap-2"
+                  className="w-full h-10 flex items-center justify-between gap-2 px-1"
                 >
                   <button
                     type="button"
                     onClick={(e) => handleMinusClick(e, product)}
-                    className="w-7 h-7 rounded-full flex items-center justify-center bg-catalog-primary/10 text-catalog-primary hover:bg-catalog-primary/20 transition-colors cursor-pointer active:scale-90"
+                    className="w-8 h-8 rounded-full flex items-center justify-center bg-white text-slate-900 hover:bg-slate-50 border border-slate-700 shadow-sm-md transition-all cursor-pointer active:scale-90"
                     aria-label={`Kurangi ${product.name}`}
                   >
-                    <Minus className="w-3.5 h-3.5 stroke-[2.2]" />
+                    <Minus className="w-4 h-4 stroke-[2.2] text-slate-700" />
                   </button>
-                  <span className="text-sm font-semibold text-gray-900 min-w-[18px] text-center select-none font-sans">
+                  <span className="text-sm font-semibold text-slate-900 min-w-[20px] text-center select-none font-numeric tabular-nums">
                     {totalQty}
                   </span>
                   <button
                     type="button"
                     onClick={(e) => handlePlusClick(e, product)}
-                    className="w-7 h-7 rounded-full flex items-center justify-center bg-catalog-primary text-white hover:bg-catalog-primary/90 transition-colors cursor-pointer active:scale-90 shadow-2xs"
+                    className="w-8 h-8 rounded-full flex items-center justify-center bg-catalog-primary hover:bg-catalog-primary/90 text-white shadow-sm-md transition-all active:scale-90 cursor-pointer border-none"
+                    style={{ backgroundColor: themePrimaryColor }}
                     aria-label={`Tambah ${product.name}`}
                   >
-                    <Plus className="w-3.5 h-3.5 stroke-[2.2]" />
+                    <Plus className="w-4 h-4 stroke-[2.2]" />
                   </button>
                 </div>
               )}
@@ -429,7 +440,7 @@ export function CatalogProductList({
   // Render a Single Product Card (2-column mobile grid matching Mie Gacoan & Gojek)
   const renderProductCard = (product: Product) => {
     const hasModifiers = Boolean(product.modifierGroupIds && product.modifierGroupIds.length > 0);
-    const cartItemsForProduct = items.filter((i) => i.productId === product.id);
+    const cartItemsForProduct = isMounted ? items.filter((i) => i.productId === product.id) : [];
     const totalQty = cartItemsForProduct.reduce((sum, item) => sum + item.quantity, 0);
 
     return (
@@ -446,7 +457,7 @@ export function CatalogProductList({
             handleOpenProductDetail(product);
           }
         }}
-        className="group relative bg-white rounded-2xl border border-gray-200/90 shadow-2xs hover:shadow-md transition-all overflow-hidden flex flex-col justify-between cursor-pointer"
+        className="group relative bg-white rounded-2xl shadow-md hover:shadow-md transition-all overflow-hidden flex flex-col justify-between cursor-pointer border-none"
       >
         {/* Product Image Area */}
         <div className="relative w-full aspect-square bg-slate-50 overflow-hidden shrink-0">
@@ -518,30 +529,32 @@ export function CatalogProductList({
               <button
                 type="button"
                 onClick={(e) => handleAddButtonClick(e, product)}
-                className="w-full h-8 sm:h-9 rounded-full border border-catalog-primary text-catalog-primary hover:bg-catalog-primary hover:text-white font-semibold text-xs flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-2xs"
+                className="w-full h-9.5 py-2 rounded-full bg-catalog-primary hover:bg-catalog-primary/90 text-white font-semibold text-xs sm:text-sm shadow-sm-md flex items-center justify-center transition-all cursor-pointer active:scale-[0.98] border-none"
+                style={{ backgroundColor: themePrimaryColor }}
               >
                 Add
               </button>
             ) : (
               <div
-                className="w-full h-8 sm:h-9 flex items-center justify-between px-1"
+                className="w-full h-9.5 flex items-center justify-between px-1"
                 onClick={(e) => e.stopPropagation()}
               >
                 <button
                   type="button"
                   onClick={(e) => handleMinusClick(e, product)}
-                  className="w-7 h-7 rounded-full flex items-center justify-center bg-catalog-primary/10 text-catalog-primary hover:bg-catalog-primary/20 active:scale-90 transition-transform cursor-pointer"
+                  className="w-7 h-7 rounded-full flex items-center justify-center bg-white text-slate-900 hover:bg-slate-50 border border-slate-700 shadow-sm-md active:scale-90 transition-all cursor-pointer"
                   aria-label={`Kurangi ${product.name}`}
                 >
-                  <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
+                  <Minus className="w-3.5 h-3.5 stroke-[2.2] text-slate-700" />
                 </button>
-                <span className="font-semibold text-xs sm:text-sm text-gray-900 font-sans min-w-[20px] text-center">
+                <span className="font-semibold text-xs sm:text-sm text-slate-900 font-numeric tabular-nums min-w-[20px] text-center">
                   {totalQty}
                 </span>
                 <button
                   type="button"
                   onClick={(e) => handlePlusClick(e, product)}
-                  className="w-7 h-7 rounded-full flex items-center justify-center bg-catalog-primary text-white hover:bg-catalog-primary/90 active:scale-90 transition-transform cursor-pointer shadow-2xs"
+                  className="w-7 h-7 rounded-full flex items-center justify-center bg-catalog-primary hover:bg-catalog-primary/90 text-white shadow-sm-md active:scale-90 transition-all cursor-pointer border-none"
+                  style={{ backgroundColor: themePrimaryColor }}
                   aria-label={`Tambah ${product.name}`}
                 >
                   <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -555,79 +568,85 @@ export function CatalogProductList({
   };
 
   return (
-    <div className="pb-28 w-full">
-      {/* Sticky Combined Header: Search Bar + Horizontal Category Tabs */}
-      <div className="sticky top-0 z-30 bg-[#f8fafc]/95 backdrop-blur-md pt-2 pb-0 -mx-4 px-4 border-b border-gray-200 shadow-2xs space-y-2.5">
+    <div className="w-full">
+      {/* Unified Sticky Header: Search Bar + Horizontal Category Tabs */}
+      <div className="sticky top-0 z-30 bg-white border-none shadow-none transition-shadow">
         {/* Search Bar */}
-        <div className="relative w-full">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <Input
-            className="w-full pl-10 pr-9 h-11 bg-white rounded-2xl shadow-2xs border-gray-200 focus-visible:ring-catalog-primary text-sm placeholder:text-gray-400"
-            placeholder="Cari makanan atau minuman..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-full w-5 h-5 flex items-center justify-center transition-colors"
-            >
-              <X className="w-3 h-3" />
-            </button>
-          )}
+        <div className="relative w-full px-3.5 sm:px-4 pt-3.5 pb-2">
+          <div className="relative w-full">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4 pointer-events-none" />
+            <Input
+              className="w-full pl-10 pr-9 h-11 bg-white rounded-full shadow-md border-none focus-visible:ring-2 focus-visible:ring-catalog-primary text-sm placeholder:text-slate-400 text-slate-900"
+              placeholder="Cari makanan atau minuman..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-full w-5 h-5 flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Horizontal Category Navigation Bar with Active Underline Indicator */}
+        {/* Category Tabs (shown when not searching) */}
         {!searchQuery && (
-          <div
-            ref={categoryTabsRef}
-            className="overflow-x-auto whitespace-nowrap scrollbar-hide flex gap-4 border-t border-gray-100 pt-1 w-full"
-          >
-            {allCategories.map((cat) => {
-              const isActive = activeCategoryId === cat.id;
-              return (
-                <button
-                  key={cat.id}
-                  ref={(el) => {
-                    tabRefs.current[cat.id] = el;
-                  }}
-                  type="button"
-                  onClick={() => scrollToCategory(cat.id)}
-                  className={`pb-2 pt-1 px-1 text-xs sm:text-sm font-semibold uppercase tracking-wider transition-colors shrink-0 relative cursor-pointer ${
-                    isActive
-                      ? "text-catalog-primary"
-                      : "text-gray-500 hover:text-gray-800"
-                  }`}
-                >
-                  <span>{cat.name}</span>
-                  {isActive && (
-                    <motion.span
-                      layoutId="activeCategoryTabIndicator"
-                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-catalog-primary rounded-full z-10"
-                      transition={{
-                        type: "spring",
-                        stiffness: 380,
-                        damping: 32,
-                      }}
-                    />
-                  )}
-                </button>
-              );
-            })}
+          <div className="px-3.5 sm:px-4">
+            <div
+              ref={categoryTabsRef}
+              className="overflow-x-auto whitespace-nowrap scrollbar-hide flex gap-4 pt-1 pb-2.5 w-full"
+            >
+              {allCategories.map((cat) => {
+                const isActive = activeCategoryId === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    ref={(el) => {
+                      tabRefs.current[cat.id] = el;
+                    }}
+                    type="button"
+                    onClick={() => scrollToCategory(cat.id)}
+                    className={`pb-1.5 pt-0.5 px-1 text-xs sm:text-sm font-semibold uppercase tracking-wider transition-colors shrink-0 relative cursor-pointer ${
+                      isActive
+                        ? "text-catalog-primary"
+                        : "text-slate-500 hover:text-slate-800 font-medium"
+                    }`}
+                    style={isActive ? { color: themePrimaryColor } : undefined}
+                  >
+                    <span>{cat.name}</span>
+                    {isActive && (
+                      <motion.span
+                        layoutId="activeCategoryTabIndicator"
+                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-catalog-primary rounded-full z-10"
+                        style={{ backgroundColor: themePrimaryColor }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 380,
+                          damping: 32,
+                        }}
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
 
-      {/* Main Content Area */}
-      <div className="mt-5 space-y-9">
+      {/* Main Content Area - Pure White Background */}
+      <div className="bg-white px-3.5 sm:px-4 pt-4 pb-28 space-y-9 min-h-[70vh]">
         {searchQuery ? (
           /* Search Results Grid */
           <div>
             <h3 className="font-semibold text-base mb-4 text-gray-900 uppercase tracking-tight">
               Hasil Pencarian "{searchQuery}"
             </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 gap-3">
               {allCategories
                 .flatMap((cat) => productsByCategory[cat.id] || [])
                 .filter((p) => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -637,10 +656,10 @@ export function CatalogProductList({
         ) : (
           /* Regular Categories Showcase */
           <>
-            {/* 1. Best Seller Kami Section (Gojek Style 1 Row, Maksimal 5 Menu) */}
+            {/* 1. Best Seller Kami Section (Horizontal List Layout as in screenshot) */}
             {displayBestSellers.length > 0 && (
-              <div id="category-bestseller" className="scroll-mt-28 space-y-2 pt-2 pb-4">
-                <div className="flex items-center justify-between border-b border-gray-200 pb-2.5">
+              <div id="category-bestseller" className="scroll-mt-32 space-y-2 pt-2 pb-4">
+                <div className="flex items-center justify-between border-b border-slate-200/80 pb-2.5">
                   <h3 className="font-semibold text-base sm:text-lg text-gray-900 uppercase tracking-tight">
                     Best Seller Kami
                   </h3>
@@ -649,18 +668,17 @@ export function CatalogProductList({
                   </span>
                 </div>
 
-                <div className="divide-y divide-gray-150 sm:divide-gray-200">
+                <div className="flex flex-col">
                   {displayBestSellers.map((product) => renderHorizontalProductCard(product))}
                 </div>
               </div>
             )}
 
-            {/* 2. Rekomendasi Outlet Section (Gojek Style 1 Row) */}
+            {/* 2. Rekomendasi Outlet Section (Horizontal List Layout as in screenshot) */}
             {actualRecommended.length > 0 && (
-              <div id="category-recommended" className="scroll-mt-28 space-y-2 pt-4 pb-4">
-                <div className="flex items-center justify-between border-b border-gray-200 pb-2.5">
+              <div id="category-recommended" className="scroll-mt-32 space-y-2 pt-4 pb-4">
+                <div className="flex items-center justify-between border-b border-slate-200/80 pb-2.5">
                   <div className="flex items-center gap-1.5">
-                    
                     <h3 className="font-semibold text-base sm:text-lg text-gray-900 uppercase tracking-tight">
                       Rekomendasi Outlet
                     </h3>
@@ -670,7 +688,7 @@ export function CatalogProductList({
                   </span>
                 </div>
 
-                <div className="divide-y divide-gray-150 sm:divide-gray-200">
+                <div className="flex flex-col">
                   {actualRecommended.map((product) => renderHorizontalProductCard(product))}
                 </div>
               </div>
@@ -684,8 +702,8 @@ export function CatalogProductList({
                 if (!catProducts || catProducts.length === 0) return null;
 
                 return (
-                  <div key={cat.id} id={`category-${cat.id}`} className="scroll-mt-28 space-y-3">
-                    <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                  <div key={cat.id} id={`category-${cat.id}`} className="scroll-mt-32 space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-200/80 pb-2">
                       <h3 className="font-semibold text-base sm:text-lg text-gray-900 uppercase tracking-tight">
                         {cat.name}
                       </h3>
@@ -694,7 +712,7 @@ export function CatalogProductList({
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
+                    <div className="grid grid-cols-2 gap-3">
                       {catProducts.map((product) => renderProductCard(product))}
                     </div>
                   </div>
@@ -704,38 +722,42 @@ export function CatalogProductList({
         )}
       </div>
 
-      {/* Floating Cart Bar */}
-      {getTotalItems() > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 p-3 sm:p-4 z-40 bg-gradient-to-t from-[#f8fafc] via-[#f8fafc]/90 to-transparent pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <div className="max-w-md mx-auto">
+      {/* Floating Cart Bar - Full rounded Menuin Blue with shadow-md (No upward white shadow) */}
+      {isMounted && getTotalItems() > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 p-3 sm:p-4 z-40 pb-[max(0.75rem,env(safe-area-inset-bottom))] pointer-events-none">
+          <div className="max-w-md mx-auto pointer-events-auto">
             <Link
               href={`/store/${tenantSlug}/checkout${tableParam ? `?table=${tableParam}` : ""}`}
               className="block w-full"
             >
-              <div className="bg-catalog-primary text-white rounded-2xl px-3.5 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between shadow-lg hover:opacity-95 transition-transform active:scale-[0.99] gap-3">
+              <div
+                className="bg-catalog-primary text-white rounded-full px-4 py-3 flex items-center justify-between shadow-md hover:bg-catalog-primary/90 transition-all active:scale-[0.99] gap-3"
+                style={{ backgroundColor: themePrimaryColor }}
+              >
                 {/* Left: Bag icon with Badge & Total Price */}
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="relative shrink-0 flex items-center justify-center">
-                    <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
+                    <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">
                       <ShoppingBag className="h-4.5 w-4.5 text-white stroke-[2.2]" />
                     </div>
-                    
                   </div>
 
                   <div className="min-w-0 leading-tight">
                     <span className="text-[10px] text-white/80 block uppercase font-medium tracking-wider">
                       Total
                     </span>
-                    <span className=" text-sm sm:text-base font-semibold text-white">
+                    <span className="text-sm sm:text-base font-semibold text-white font-numeric tabular-nums">
                       {formatCurrency(getTotalPrice())}
                     </span>
                   </div>
                 </div>
 
-                {/* Right: Checkout Button */}
-                <div className="shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white text-catalog-primary text-xs sm:text-sm font-semibold tracking-wide shadow-xs">
+                {/* Right: Checkout Button (White pill on blue bar) */}
+                <div
+                  className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full bg-white text-catalog-primary text-xs sm:text-sm font-semibold tracking-wide shadow-sm-md hover:bg-slate-50 transition-colors"
+                  style={{ color: themePrimaryColor }}
+                >
                   <span>Checkout</span>
-                  
                 </div>
               </div>
             </Link>
@@ -760,6 +782,7 @@ export function CatalogProductList({
             : null
         }
         allModifierGroups={modifierGroups || []}
+        primaryColor={primaryColor || undefined}
         initialModifiers={editingCartItem?.modifiers}
         initialNotes={editingCartItem?.notes}
         initialQuantity={editingCartItem?.quantity}
@@ -801,6 +824,7 @@ export function CatalogProductList({
             ? items.filter((i) => i.productId === productForActionModal.id)
             : []
         }
+        primaryColor={primaryColor || undefined}
         onUpdateQuantity={(cartItemId, newQty) => {
           updateQuantity(cartItemId, newQty);
         }}

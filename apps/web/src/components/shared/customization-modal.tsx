@@ -351,17 +351,17 @@ export function CustomizationModal({
                           onClick={() => handleIncrement(group, mod)}
                           role="button"
                           tabIndex={0}
-                          className="min-h-[46px] sm:min-h-[48px] inline-flex items-center gap-2 bg-blue-50/70 dark:bg-blue-950/40 border-2 border-blue-600 dark:border-blue-500 rounded-xl sm:rounded-md pl-2 pr-4 py-1.5 transition-all select-none cursor-pointer active:scale-[0.98]"
+                          className="min-h-[46px] sm:min-h-[48px] inline-flex items-center gap-2 bg-blue-50/70 dark:bg-blue-950/40 border-2 border-blue-600 dark:border-blue-500 rounded-lg sm:rounded-md pl-2 pr-4 py-1.5 transition-all select-none cursor-pointer active:scale-[0.98]"
                           title="Klik tombol ini lagi untuk menambah kuantitas"
                         >
                           {/* Round Minus Button (Cart Style) */}
                           <button
                             type="button"
                             onClick={(e) => handleDecrement(group, mod, e)}
-                            className="w-7 h-7 sm:w-7.5 sm:h-7.5 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex items-center justify-center shadow-2xs active:scale-90 cursor-pointer shrink-0"
+                            className="w-7 h-7 sm:w-7.5 sm:h-7.5 rounded-full bg-white border border-slate-700 text-slate-900 hover:bg-slate-50 transition-all flex items-center justify-center shadow-sm-md active:scale-90 cursor-pointer shrink-0"
                             aria-label="Kurangi kuantitas"
                           >
-                            <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
+                            <Minus className="w-3.5 h-3.5 stroke-[2.2] text-slate-700" />
                           </button>
 
                           {/* Quantity Number */}
@@ -398,7 +398,7 @@ export function CustomizationModal({
                         disabled={!isAvailable}
                         onClick={() => handleIncrement(group, mod)}
                         className={cn(
-                          "min-h-[46px] sm:min-h-[48px] px-4 py-2.5 rounded-xl sm:rounded-md text-xs sm:text-sm transition-all select-none flex items-center gap-2 cursor-pointer active:scale-[0.98]",
+                          "min-h-[46px] sm:min-h-[48px] px-4 py-2.5 rounded-lg sm:rounded-md text-xs sm:text-sm transition-all select-none flex items-center gap-2 cursor-pointer active:scale-[0.98]",
                           !isAvailable
                             ? "opacity-40 bg-slate-100/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed pointer-events-none"
                             : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:border-blue-300 dark:hover:border-blue-800 font-medium"
@@ -463,10 +463,10 @@ export function CustomizationModal({
                 type="button"
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
                 disabled={quantity <= 1 || unavailableRequiredGroups.length > 0}
-                className="w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed active:scale-90 transition-all flex items-center justify-center shadow-2xs cursor-pointer"
+                className="w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-full bg-white border border-slate-700 text-slate-900 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed active:scale-90 transition-all flex items-center justify-center shadow-sm-md cursor-pointer"
                 aria-label="Kurangi jumlah pesanan"
               >
-                <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
+                <Minus className="w-3.5 h-3.5 stroke-[2.2] text-slate-700" />
               </button>
               <span className="min-w-6 text-center font-semibold text-sm sm:text-base text-foreground font-mono select-none px-1">
                 {quantity}

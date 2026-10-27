@@ -51,6 +51,11 @@ export default {
           "4": "hsl(var(--chart-4))",
           "5": "hsl(var(--chart-5))",
         },
+        catalog: {
+          primary: "var(--catalog-primary, #0e59f9)",
+          "primary-light": "var(--catalog-primary-light, #eff6ff)",
+          "primary-border": "var(--catalog-primary-border, #bfdbfe)",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

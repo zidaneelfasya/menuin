@@ -58,7 +58,7 @@ export function OrderQrModal({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
         style={dynamicThemeStyle}
-        className="max-w-xs sm:max-w-sm rounded-3xl p-5 sm:p-6 bg-white border border-gray-200/90 shadow-xl overflow-hidden select-none"
+        className="max-w-xs sm:max-w-sm rounded-3xl p-5 sm:p-6 bg-white border-none shadow-2xl overflow-hidden select-none"
       >
         <DialogHeader className="text-center sm:text-center space-y-1">
           <div
@@ -75,10 +75,10 @@ export function OrderQrModal({
               />
             )}
           </div>
-          <DialogTitle className="text-base sm:text-lg font-semibold text-gray-900 tracking-tight">
+          <DialogTitle className="text-base sm:text-lg font-semibold text-slate-900 tracking-tight">
             {isPaid ? "Pesanan Sudah Dibayar & Diterima" : "QR Pembayaran Kasir"}
           </DialogTitle>
-          <DialogDescription className="text-xs text-gray-500">
+          <DialogDescription className="text-xs text-slate-500">
             {isPaid
               ? "Pembayaran pesanan ini telah berhasil dan diverifikasi kasir."
               : "Tunjukkan kode QR ini ke kasir saat melakukan pembayaran."}
@@ -87,7 +87,7 @@ export function OrderQrModal({
 
         {/* QR Code Container */}
         <div className="flex flex-col items-center justify-center my-1 relative">
-          <div className="p-3 sm:p-3.5 bg-white rounded-2xl border border-gray-200/80 shadow-xs flex items-center justify-center relative overflow-hidden">
+          <div className="p-3 sm:p-3.5 bg-white rounded-2xl border border-slate-150 shadow-2xs flex items-center justify-center relative overflow-hidden">
             <QRCodeSVG
               value={orderNumber}
               size={185}
@@ -101,13 +101,13 @@ export function OrderQrModal({
             {/* Paid Verification Watermark Overlay */}
             {isPaid && (
               <div className="absolute inset-0 bg-white/90 backdrop-blur-[2px] rounded-2xl flex flex-col items-center justify-center p-3 text-center z-10 border border-emerald-300/80 shadow-inner animate-in fade-in duration-200">
-                <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-2 shadow-xs">
+                <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-2 shadow-2xs">
                   <Check className="w-6 h-6 stroke-[3]" />
                 </div>
-                <span className="font-bold text-xs uppercase tracking-wider text-emerald-800">
+                <span className="font-semibold text-xs uppercase tracking-wider text-emerald-800">
                   Sudah Dibayar & Diterima
                 </span>
-                <span className="text-[11px] text-gray-500 mt-1 max-w-[170px] leading-tight">
+                <span className="text-[11px] text-slate-500 mt-1 max-w-[170px] leading-tight">
                   Pesanan telah lunas & masuk antrean dapur.
                 </span>
               </div>
@@ -115,13 +115,13 @@ export function OrderQrModal({
           </div>
 
           {/* Order Number pill with Copy button */}
-          <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-50 border border-gray-200 text-xs">
-            <span className="text-gray-400 font-medium">No:</span>
-            <span className="font-mono font-semibold text-gray-900">{orderNumber}</span>
+          <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 shadow-2xs border-none text-xs">
+            <span className="text-slate-400 font-medium">No:</span>
+            <span className="font-numeric tabular-nums font-semibold text-slate-900">{orderNumber}</span>
             <button
               type="button"
               onClick={handleCopy}
-              className="p-1 rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-200/60 transition-colors ml-0.5 cursor-pointer"
+              className="p-1 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors ml-0.5 cursor-pointer"
               title="Salin nomor pesanan"
               aria-label="Salin nomor pesanan"
             >
@@ -135,29 +135,29 @@ export function OrderQrModal({
         </div>
 
         {/* Order Brief Info Card */}
-        <div className="bg-gray-50/80 rounded-xl p-3 border border-gray-150 text-xs space-y-1.5">
-          <div className="flex justify-between items-center text-gray-600">
+        <div className="bg-slate-50 rounded-2xl p-3.5 shadow-sm-md border-none text-xs space-y-1.5">
+          <div className="flex justify-between items-center text-slate-600">
             <span>Tipe Pesanan:</span>
-            <span className="font-semibold text-gray-900">
+            <span className="font-semibold text-slate-900">
               {orderType === "DINE_IN"
                 ? `Dine-In${tableNumber ? ` (Meja ${tableNumber})` : ""}`
                 : orderType === "TAKEAWAY"
-                ? "Pick Up"
+                ? "Bawa Pulang"
                 : "Delivery"}
             </span>
           </div>
           {customerName && (
-            <div className="flex justify-between items-center text-gray-600">
+            <div className="flex justify-between items-center text-slate-600">
               <span>Pelanggan:</span>
-              <span className="font-semibold text-gray-900">{customerName}</span>
+              <span className="font-semibold text-slate-900">{customerName}</span>
             </div>
           )}
-          <div className="flex justify-between items-center pt-1.5 border-t border-gray-200/60">
-            <span className="text-gray-700 font-medium">
+          <div className="flex justify-between items-center pt-1.5 border-t border-slate-200/70">
+            <span className="text-slate-700 font-medium">
               {isPaid ? "Status Pembayaran:" : "Total Tagihan Tunai:"}
             </span>
             <span
-              className={`font-semibold text-sm ${
+              className={`font-semibold text-sm font-numeric tabular-nums ${
                 isPaid ? "text-emerald-600" : ""
               }`}
               style={isPaid ? undefined : { color: "var(--outlet-primary, #0E59F9)" }}
@@ -171,7 +171,7 @@ export function OrderQrModal({
         <button
           type="button"
           onClick={onClose}
-          className="w-full h-10 rounded-xl bg-gray-900 hover:bg-gray-800 text-white text-xs sm:text-sm font-semibold transition-colors cursor-pointer active:scale-98 shadow-xs"
+          className="w-full h-11 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-semibold transition-all active:scale-[0.98] shadow-sm-md cursor-pointer border-none"
         >
           {isPaid ? "Tutup" : "Selesai / Tutup"}
         </button>
