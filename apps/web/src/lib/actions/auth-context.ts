@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { cookies, headers } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { db } from '@/lib/db';
@@ -31,9 +32,9 @@ export class FeatureLockedError extends Error {
   }
 }
 
-// --- Modular Resolvers ---
+// --- Modular Resolvers (Cached per request) ---
 
-export async function getAuthenticatedAccount() {
+export const getAuthenticatedAccount = cache(async () => {
   const supabase = await createClient();
   const { data: { user }, error } = await supabase.auth.getUser();
 
@@ -46,10 +47,9 @@ export async function getAuthenticatedAccount() {
 
   if (!account) throw new AuthError('Account not found.');
   return account;
-}
+});
 
-
-export async function getActiveTenant() {
+export const getActiveTenant = cache(async () => {
   const headersList = await headers();
   const routeOutletKey = headersList.get('x-menuin-outlet-key');
 
@@ -72,9 +72,9 @@ export async function getActiveTenant() {
     .limit(1);
     
   return tenant || null;
-}
+});
 
-export async function getMembership(accountId: string, tenantId: string) {
+export const getMembership = cache(async (accountId: string, tenantId: string) => {
   const [membership] = await db.select()
     .from(memberships)
     .where(
@@ -86,9 +86,9 @@ export async function getMembership(accountId: string, tenantId: string) {
     .limit(1);
 
   return membership || null;
-}
+});
 
-export async function getSubscription(tenantId: string) {
+export const getSubscription = cache(async (tenantId: string) => {
   // We guarantee only 1 active subscription exists due to unique conditional index,
   // but we also support TRIALING status.
   const [subscription] = await db.select()
@@ -103,7 +103,7 @@ export async function getSubscription(tenantId: string) {
     .limit(1);
 
   return subscription || null;
-}
+});
 
 export function getEntitlements(subscription: any, now: Date = new Date()) {
   let features: FeatureKey[] = [];
@@ -159,7 +159,7 @@ export type AuthContext = {
   };
 };
 
-export async function getCurrentContext(): Promise<AuthContext | null> {
+export const getCurrentContext = cache(async (): Promise<AuthContext | null> => {
   try {
     const account = await getAuthenticatedAccount();
     const tenant = await getActiveTenant();
@@ -204,7 +204,7 @@ export async function getCurrentContext(): Promise<AuthContext | null> {
     if (error instanceof AuthError) return null;
     throw error; // Let other unexpected errors bubble up
   }
-}
+});
 
 // --- Authorization Guards ---
 

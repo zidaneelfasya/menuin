@@ -55,8 +55,18 @@ export async function getActiveOrders(): Promise<OrderDto[]> {
     return acc;
   }, {} as Record<string, typeof items>);
 
+  // Fallback sequential numbering for legacy transactions without queueNumber
+  const sortedAsc = [...activeTransactions].sort((a, b) => 
+    new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  );
+  const fallbackQueueMap = new Map<string, number>();
+  sortedAsc.forEach((t, idx) => {
+    fallbackQueueMap.set(t.id, t.queueNumber || (idx + 1));
+  });
+
   return activeTransactions.map(tx => ({
     ...tx,
+    queueNumber: tx.queueNumber || fallbackQueueMap.get(tx.id) || 1,
     items: itemsByTx[tx.id] || []
   }));
 }

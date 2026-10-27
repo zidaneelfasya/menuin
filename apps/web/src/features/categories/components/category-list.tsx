@@ -197,7 +197,7 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
             form.reset({ name: '', icon: 'Utensils' });
             setIsAddOpen(true);
           }}
-          className="inline-flex items-center gap-1.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white h-9 px-4 rounded-xl text-xs font-medium transition-all duration-150 ease-out hover:-translate-y-px shadow-xs cursor-pointer shrink-0"
+          className="inline-flex items-center gap-1.5 bg-[#0e59f9] hover:bg-blue-600 text-white h-10 px-5 rounded-full text-xs sm:text-sm font-medium transition-all duration-150 shadow-md cursor-pointer shrink-0"
         >
           <Plus className="h-4 w-4" />
           <span>Tambah Kategori</span>
@@ -207,31 +207,31 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
       {/* Search & Meta Counts Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
         <div className="relative flex-1 max-w-full sm:max-w-xs md:max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/70" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <Input
             placeholder="Cari kategori atau slug..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 h-9 text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl shadow-xs focus-visible:ring-blue-600"
+            className="pl-10 h-10 text-xs sm:text-sm bg-white border-none rounded-full shadow-sm-md focus-visible:ring-2 focus-visible:ring-[#0e59f9]"
           />
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span>
-            Total: <span className="font-semibold text-foreground">{categories.length}</span> Kategori
-          </span>
-          {searchQuery && (
-            <span className="text-blue-600 dark:text-blue-400">
-              ({filteredCategories.length} hasil)
-            </span>
-          )}
+        <div className="flex items-center gap-2">
+          <div className="h-10 px-4 bg-white rounded-full shadow-sm-md flex items-center gap-1.5 text-xs text-slate-600 font-medium">
+            <span>Total:</span>
+            <span className="font-semibold text-slate-900">{categories.length}</span>
+            <span>Kategori</span>
+            {searchQuery && (
+              <span className="text-[#0e59f9] font-medium ml-1">({filteredCategories.length} hasil)</span>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Category Card Grid */}
       {filteredCategories.length === 0 ? (
-        <div className="flex flex-col items-center justify-center p-12 text-center bg-white dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
-          <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-3">
+        <div className="flex flex-col items-center justify-center p-12 text-center bg-white border-none shadow-sm-md rounded-3xl">
+          <div className="w-14 h-14 rounded-full bg-slate-50 flex items-center justify-center mb-3 text-slate-400 shadow-sm-md">
             <FolderOpen className="w-6 h-6 text-slate-400" />
           </div>
           <h3 className="font-semibold text-sm text-foreground">
@@ -248,9 +248,7 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
                 form.reset({ name: '', icon: 'Utensils' });
                 setIsAddOpen(true);
               }}
-              variant="outline"
-              size="sm"
-              className="mt-4 text-xs font-semibold cursor-pointer rounded-lg"
+              className="mt-4 text-xs font-medium cursor-pointer rounded-full h-10 px-5 bg-[#0e59f9] hover:bg-blue-600 text-white shadow-md"
             >
               <Plus className="mr-1.5 h-3.5 w-3.5" />
               Tambah Kategori Sekarang
@@ -258,7 +256,7 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
           {filteredCategories.map((category) => {
             const IconComponent = getCategoryIcon(category.icon);
 
@@ -266,13 +264,13 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
               <div
                 key={category.id}
                 onClick={() => handleCardClick(category)}
-                className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs hover:border-blue-400 dark:hover:border-blue-600 hover:shadow-sm transition-all duration-150 flex flex-col justify-between cursor-pointer"
+                className="group bg-white rounded-2xl p-5 border-none shadow-sm-md hover:shadow-md transition-all duration-200 flex flex-col justify-between cursor-pointer min-h-[148px]"
               >
                 {/* Card Top: Icon & 3-Dot Actions */}
                 <div>
                   <div className="flex items-start justify-between gap-2">
-                    <div className="w-11 h-11 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-blue-900/50 group-hover:scale-105 transition-transform shrink-0">
-                      <IconComponent className="w-5 h-5" />
+                    <div className="w-11 h-11 rounded-full bg-[#0e59f9] text-white flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
+                      <IconComponent className="w-5 h-5 text-white" />
                     </div>
 
                     <div onClick={(e) => e.stopPropagation()}>
@@ -281,25 +279,25 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 w-8 p-0 text-slate-400 hover:text-foreground cursor-pointer rounded-lg"
+                            className="h-8 w-8 p-0 text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer rounded-full transition-colors"
                           >
                             <span className="sr-only">Buka menu aksi</span>
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-36 rounded-xl p-1 shadow-lg border-slate-200 dark:border-slate-800">
+                        <DropdownMenuContent align="end" className="w-36 rounded-2xl p-1.5 shadow-2xl border-none bg-white">
                           <DropdownMenuLabel className="text-[11px] font-semibold text-muted-foreground px-2 py-1">
                             Aksi Kategori
                           </DropdownMenuLabel>
                           <DropdownMenuItem
-                            className="text-xs font-medium cursor-pointer rounded-lg text-slate-700 dark:text-slate-200"
+                            className="text-xs font-medium cursor-pointer rounded-xl text-slate-700 hover:bg-slate-100"
                             onClick={() => handleEditClick(category)}
                           >
                             <Pencil className="mr-2 h-3.5 w-3.5 text-blue-600" /> Edit
                           </DropdownMenuItem>
-                          <DropdownMenuSeparator className="my-1" />
+                          <DropdownMenuSeparator className="my-1 bg-slate-100" />
                           <DropdownMenuItem
-                            className="text-xs font-medium cursor-pointer rounded-lg text-red-600 dark:text-red-400 focus:bg-red-50 dark:focus:bg-red-950/40"
+                            className="text-xs font-medium cursor-pointer rounded-xl text-red-600 focus:bg-red-50 hover:bg-red-50"
                             onClick={() => handleDeleteClick(category)}
                           >
                             <Trash2 className="mr-2 h-3.5 w-3.5" /> Hapus
@@ -310,12 +308,12 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
                   </div>
 
                   {/* Category Name & Slug */}
-                  <div className="mt-3">
-                    <h3 className="font-semibold text-sm text-foreground tracking-tight line-clamp-1 group-hover:text-blue-600 transition-colors">
+                  <div className="mt-3.5">
+                    <h3 className="font-semibold text-base text-slate-900 tracking-tight line-clamp-1 group-hover:text-[#0e59f9] transition-colors">
                       {category.name}
                     </h3>
-                    <div className="mt-1">
-                      <span className="inline-block text-[11px] font-mono text-muted-foreground bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200/60 dark:border-slate-700/60">
+                    <div className="mt-0.5">
+                      <span className="inline-block text-[11px] font-mono text-slate-400 tracking-tight">
                         /{category.slug || category.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}
                       </span>
                     </div>
@@ -323,14 +321,14 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
                 </div>
 
                 {/* Card Bottom: Product Count & Created At Date */}
-                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs mt-3.5">
-                  <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md border-none">
-                    <Package className="w-3 h-3 text-slate-400" />
-                    <span className="font-semibold text-foreground">{category.productCount ?? 0}</span> Menu
+                <div className="pt-3 mt-4 border-t border-slate-100/80 flex items-center justify-between text-xs">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-700 bg-slate-50 px-2.5 py-1 rounded-full border-none">
+                    <Package className="w-3.5 h-3.5 text-slate-400" />
+                    <span className="font-semibold text-slate-900">{category.productCount ?? 0}</span> Menu
                   </span>
 
-                  <span className="text-[11px] text-muted-foreground flex items-center gap-1 font-normal">
-                    <Calendar className="w-3 h-3 opacity-50" />
+                  <span className="text-[11px] text-slate-400 flex items-center gap-1 font-normal">
+                    <Calendar className="w-3 h-3 text-slate-300" />
                     {category.createdAt
                       ? new Date(category.createdAt).toLocaleDateString('id-ID', {
                           day: 'numeric',
@@ -348,24 +346,24 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
 
       {/* Modal Tambah Kategori */}
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-        <DialogContent className="sm:max-w-md bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-2xl">
+        <DialogContent className="sm:max-w-md bg-white border-none rounded-3xl shadow-2xl p-6">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold">Tambah Kategori Baru</DialogTitle>
-            <DialogDescription className="text-xs">
+            <DialogDescription className="text-xs text-muted-foreground">
               Buat kategori produk baru lengkap dengan ikon representatif.
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={form.handleSubmit(onSubmitAdd)} className="space-y-4 pt-1">
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              <Label htmlFor="name" className="text-xs font-medium text-slate-700">
                 Nama Kategori <span className="text-blue-600">*</span>
               </Label>
               <Input
                 id="name"
                 {...form.register('name')}
                 placeholder="Contoh: Kopi, Makanan Berat, Dessert"
-                className="h-9 text-xs rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus-visible:ring-1 focus-visible:ring-[#2563EB]"
+                className="h-10 text-xs sm:text-sm rounded-full border-none bg-white shadow-sm-md focus-visible:ring-2 focus-visible:ring-[#0e59f9] px-4"
               />
               {form.formState.errors.name && (
                 <p className="text-[11px] text-destructive">{form.formState.errors.name.message}</p>
@@ -379,13 +377,14 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
             />
 
             {/* Live Preview Card Mini */}
-            <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
-              <span className="text-[11px] text-muted-foreground block mb-1.5 font-medium">
+            {/* Live Preview Card Mini */}
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+              <span className="text-[11px] text-muted-foreground block mb-2 font-medium">
                 Pratinjau Tampilan Card:
               </span>
-              <div className="bg-white dark:bg-slate-950 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-blue-900/40 shrink-0">
-                  {React.createElement(getCategoryIcon(selectedFormIcon), { className: 'w-4 h-4' })}
+              <div className="bg-white p-2.5 rounded-lg border border-slate-200 flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-full bg-[#0e59f9] text-white flex items-center justify-center shrink-0">
+                  {React.createElement(getCategoryIcon(selectedFormIcon), { className: 'w-4 h-4 text-white' })}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="font-semibold text-xs text-foreground truncate">
@@ -398,13 +397,13 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
               </div>
             </div>
 
-            <DialogFooter className="pt-2">
+            <DialogFooter className="pt-3 gap-2">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => setIsAddOpen(false)}
-                className="text-xs cursor-pointer rounded-xl h-9 px-3.5"
+                className="text-xs sm:text-sm cursor-pointer rounded-full h-10 px-5 border-none shadow-md bg-white hover:bg-slate-100 text-slate-700 font-medium"
               >
                 Batal
               </Button>
@@ -412,7 +411,7 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
                 type="submit"
                 size="sm"
                 disabled={isLoading}
-                className="text-xs bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-medium cursor-pointer rounded-xl h-9 px-4 shadow-xs"
+                className="text-xs sm:text-sm bg-[#0e59f9] hover:bg-blue-600 text-white font-medium cursor-pointer rounded-full h-10 px-5 shadow-md"
               >
                 {isLoading ? 'Menyimpan...' : 'Simpan Kategori'}
               </Button>
@@ -423,23 +422,23 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
 
       {/* Modal Edit Kategori */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="sm:max-w-md bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-2xl">
+        <DialogContent className="sm:max-w-md bg-white border-none rounded-3xl shadow-2xl p-6">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold">Edit Kategori</DialogTitle>
-            <DialogDescription className="text-xs">
+            <DialogDescription className="text-xs text-muted-foreground">
               Perbarui nama atau ikon kategori produk.
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={form.handleSubmit(onSubmitEdit)} className="space-y-4 pt-1">
             <div className="space-y-2">
-              <Label htmlFor="edit-name" className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              <Label htmlFor="edit-name" className="text-xs font-medium text-slate-700">
                 Nama Kategori <span className="text-blue-600">*</span>
               </Label>
               <Input
                 id="edit-name"
                 {...form.register('name')}
-                className="h-9 text-xs rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus-visible:ring-1 focus-visible:ring-[#2563EB]"
+                className="h-10 text-xs sm:text-sm rounded-full border-none bg-white shadow-sm-md focus-visible:ring-2 focus-visible:ring-[#0e59f9] px-4"
               />
               {form.formState.errors.name && (
                 <p className="text-[11px] text-destructive">{form.formState.errors.name.message}</p>
@@ -453,13 +452,13 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
             />
 
             {/* Live Preview Card Mini */}
-            <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800">
-              <span className="text-[11px] text-muted-foreground block mb-1.5 font-medium">
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+              <span className="text-[11px] text-muted-foreground block mb-2 font-medium">
                 Pratinjau Tampilan Card:
               </span>
-              <div className="bg-white dark:bg-slate-950 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-blue-900/40 shrink-0">
-                  {React.createElement(getCategoryIcon(selectedFormIcon), { className: 'w-4 h-4' })}
+              <div className="bg-white p-2.5 rounded-lg border border-slate-200 flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-full bg-[#0e59f9] text-white flex items-center justify-center shrink-0">
+                  {React.createElement(getCategoryIcon(selectedFormIcon), { className: 'w-4 h-4 text-white' })}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="font-semibold text-xs text-foreground truncate">
@@ -472,13 +471,13 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
               </div>
             </div>
 
-            <DialogFooter className="pt-2">
+            <DialogFooter className="pt-3 gap-2">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => setIsEditOpen(false)}
-                className="text-xs cursor-pointer rounded-xl h-9 px-3.5"
+                className="text-xs sm:text-sm cursor-pointer rounded-full h-10 px-5 border-none shadow-md bg-white hover:bg-slate-100 text-slate-700 font-medium"
               >
                 Batal
               </Button>
@@ -486,7 +485,7 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
                 type="submit"
                 size="sm"
                 disabled={isLoading}
-                className="text-xs bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-medium cursor-pointer rounded-xl h-9 px-4 shadow-xs"
+                className="text-xs sm:text-sm bg-[#0e59f9] hover:bg-blue-600 text-white font-medium cursor-pointer rounded-full h-10 px-5 shadow-md"
               >
                 {isLoading ? 'Menyimpan...' : 'Simpan Perubahan'}
               </Button>
@@ -497,16 +496,16 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
 
       {/* Modal Hapus Kategori */}
       <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-        <DialogContent className="sm:max-w-md bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-2xl">
+        <DialogContent className="sm:max-w-md bg-white border-none rounded-3xl shadow-2xl p-6">
           <DialogHeader>
-            <DialogTitle className="text-base font-semibold text-red-600 dark:text-red-400 flex items-center gap-2">
+            <DialogTitle className="text-base font-semibold text-red-600 flex items-center gap-2">
               <Trash2 className="w-4 h-4" />
               Hapus Kategori
             </DialogTitle>
             <DialogDescription className="text-xs pt-1">
-              Apakah Anda yakin ingin menghapus kategori <span className="font-semibold text-slate-900 dark:text-slate-100">{selectedCategory?.name}</span>?
+              Apakah Anda yakin ingin menghapus kategori <span className="font-semibold text-slate-900">{selectedCategory?.name}</span>?
               {selectedCategory?.productCount && selectedCategory.productCount > 0 ? (
-                <span className="block mt-2 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 p-2.5 rounded-xl border-none">
+                <span className="block mt-2 text-amber-700 bg-amber-50 p-3 rounded-2xl border-none shadow-sm-md">
                   Peringatan: Kategori ini memiliki <span className="font-semibold">{selectedCategory.productCount} menu</span>. Pastikan untuk memindahkan produk ke kategori lain terlebih dahulu.
                 </span>
               ) : (
@@ -515,13 +514,13 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
             </DialogDescription>
           </DialogHeader>
 
-          <DialogFooter className="pt-2">
+          <DialogFooter className="pt-3 gap-2">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={() => setIsDeleteOpen(false)}
-              className="text-xs cursor-pointer rounded-xl h-9 px-3.5"
+              className="text-xs sm:text-sm cursor-pointer rounded-full h-10 px-5 border-none shadow-md bg-white hover:bg-slate-100 text-slate-700 font-medium"
             >
               Batal
             </Button>
@@ -531,7 +530,7 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
               size="sm"
               onClick={onConfirmDelete}
               disabled={isLoading}
-              className="text-xs font-medium cursor-pointer rounded-xl h-9 px-4"
+              className="text-xs sm:text-sm font-medium cursor-pointer rounded-full h-10 px-5 shadow-md bg-red-600 hover:bg-red-700 text-white"
             >
               {isLoading ? 'Menghapus...' : 'Ya, Hapus Kategori'}
             </Button>
@@ -541,8 +540,8 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
 
       {/* Category Detail Modal */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-        <DialogContent className="sm:max-w-md md:max-w-lg bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 p-0 overflow-hidden rounded-2xl max-h-[90vh] flex flex-col shadow-xl">
-          <DialogHeader className="px-6 pt-5 pb-4 border-b border-slate-100 dark:border-slate-800 shrink-0">
+        <DialogContent className="sm:max-w-md md:max-w-lg bg-white border-none p-0 overflow-hidden rounded-3xl max-h-[90vh] flex flex-col shadow-2xl">
+          <DialogHeader className="px-6 pt-5 pb-4 border-b border-slate-100 shrink-0">
             <DialogTitle className="text-base font-semibold text-foreground flex items-center gap-2">
               Detail Kategori
             </DialogTitle>
@@ -554,13 +553,13 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
           {selectedCategory && (
             <div className="px-6 py-4 overflow-y-auto flex-1 space-y-4">
               {/* Hero Overview */}
-              <div className="flex items-center justify-between gap-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 p-3.5 rounded-xl">
+              <div className="flex items-center justify-between gap-3 bg-slate-50 border border-slate-200/80 p-3.5 rounded-xl">
                 <div className="flex items-center gap-3 min-w-0">
                   {(() => {
                     const DetailIcon = getCategoryIcon(selectedCategory.icon);
                     return (
-                      <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-blue-900/50 shadow-xs shrink-0">
-                        <DetailIcon className="w-6 h-6" />
+                      <div className="w-12 h-12 rounded-full bg-[#0e59f9] text-white flex items-center justify-center shrink-0">
+                        <DetailIcon className="w-6 h-6 text-white" />
                       </div>
                     );
                   })()}
@@ -569,7 +568,7 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
                       {selectedCategory.name}
                     </h2>
                     <div className="mt-0.5">
-                      <span className="inline-block text-[11px] font-mono text-muted-foreground bg-white dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200/80 dark:border-slate-700/80">
+                      <span className="inline-block text-[11px] font-mono text-muted-foreground bg-white px-1.5 py-0.5 rounded border border-slate-200/80">
                         /{selectedCategory.slug || selectedCategory.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}
                       </span>
                     </div>
@@ -577,16 +576,16 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
                 </div>
 
                 <div className="text-right shrink-0">
-                  <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/70 border-none px-2.5 py-1 rounded-md">
-                    <Package className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-blue-700 bg-blue-50 border-none px-3 py-1 rounded-full shadow-xs">
+                    <Package className="w-3.5 h-3.5 text-blue-600" />
                     <span>{selectedCategory.productCount ?? 0} Menu</span>
                   </span>
                 </div>
               </div>
 
               {/* Metadata Info Grid */}
-              <div className="grid grid-cols-2 gap-2.5">
-                <div className="p-3 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3.5 bg-white border-none shadow-sm-md rounded-2xl">
                   <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-1">
                     <Calendar className="w-3 h-3 text-slate-400" />
                     Dibuat Pada
@@ -602,13 +601,13 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
                   </p>
                 </div>
 
-                <div className="p-3 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl">
+                <div className="p-3.5 bg-white border-none shadow-sm-md rounded-2xl">
                   <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-1">
                     <Clock className="w-3 h-3 text-slate-400" />
                     Ikon Terpilih
                   </span>
                   <p className="text-xs font-semibold text-foreground mt-1 flex items-center gap-1.5">
-                    <span className="font-mono text-[11px] text-slate-600 dark:text-slate-300">
+                    <span className="font-mono text-[11px] text-slate-600">
                       {selectedCategory.icon || 'Utensils (Default)'}
                     </span>
                   </p>
@@ -632,12 +631,12 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
                     {[1, 2, 3].map((i) => (
                       <div
                         key={i}
-                        className="h-13 bg-slate-100/70 dark:bg-slate-800/50 rounded-xl animate-pulse"
+                        className="h-13 bg-slate-100/70 rounded-2xl animate-pulse"
                       />
                     ))}
                   </div>
                 ) : categoryProducts.length === 0 ? (
-                  <div className="p-5 text-center bg-slate-50/60 dark:bg-slate-900/40 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
+                  <div className="p-5 text-center bg-slate-50/60 border-none shadow-sm-md rounded-2xl">
                     <PackageOpen className="w-7 h-7 mx-auto text-slate-400 mb-1.5" />
                     <p className="text-xs font-semibold text-foreground">Belum ada menu di kategori ini</p>
                     <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -645,23 +644,23 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
                     </p>
                   </div>
                 ) : (
-                  <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+                  <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                     {categoryProducts.map((p) => {
                       const isOutOfStock = p.trackStock && p.stock <= 0;
                       return (
                         <div
                           key={p.id}
-                          className="flex items-center justify-between p-2 rounded-xl border border-slate-200/70 dark:border-slate-800/80 bg-white dark:bg-slate-900 hover:border-slate-300 transition-colors"
+                          className="flex items-center justify-between p-2.5 rounded-2xl border-none shadow-sm-md bg-white hover:bg-slate-50 transition-colors"
                         >
                           <div className="flex items-center gap-2.5 min-w-0">
                             {p.imageUrl ? (
                               <img
                                 src={p.imageUrl}
                                 alt={p.name}
-                                className="w-9 h-9 rounded-lg object-cover border border-slate-200/80 dark:border-slate-700 shrink-0"
+                                className="w-9 h-9 rounded-xl object-cover border-none shadow-xs shrink-0"
                               />
                             ) : (
-                              <div className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 border border-slate-200/60 dark:border-slate-700 shrink-0">
+                              <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 border-none shadow-xs shrink-0">
                                 <Utensils className="w-4 h-4" />
                               </div>
                             )}
@@ -671,7 +670,7 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
                                   {p.name}
                                 </p>
                                 {p.isFeatured && (
-                                  <span className="text-[10px] font-medium text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 border-none px-1.5 py-0.5 rounded-md shrink-0">
+                                  <span className="text-[10px] font-medium text-amber-700 bg-amber-50 border-none px-2 py-0.5 rounded-full shrink-0">
                                     Best Seller
                                   </span>
                                 )}
@@ -680,15 +679,15 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
                                 <span className="text-[10px] font-mono text-muted-foreground">
                                   SKU: {p.sku}
                                 </span>
-                                <span className="text-slate-300 dark:text-slate-700">•</span>
+                                <span className="text-slate-300">•</span>
                                 <span
                                   className={cn(
-                                    "text-[10px] font-medium px-1.5 py-0.5 rounded-md border-none",
+                                    "text-[10px] font-medium px-2 py-0.5 rounded-full border-none",
                                     !p.isActive
-                                      ? "text-rose-700 bg-rose-50 dark:bg-rose-950/50 dark:text-rose-300"
+                                      ? "text-rose-700 bg-rose-50"
                                       : isOutOfStock
-                                      ? "text-amber-700 bg-amber-50 dark:bg-amber-950/50 dark:text-amber-300"
-                                      : "text-emerald-700 bg-emerald-50 dark:bg-emerald-950/50 dark:text-emerald-300"
+                                      ? "text-amber-700 bg-amber-50"
+                                      : "text-emerald-700 bg-emerald-50"
                                   )}
                                 >
                                   {!p.isActive
@@ -717,13 +716,13 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
             </div>
           )}
 
-          <DialogFooter className="px-6 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex flex-row items-center justify-between sm:justify-between w-full shrink-0">
+          <DialogFooter className="px-6 py-3.5 border-t border-slate-100 bg-slate-50/50 flex flex-row items-center justify-between sm:justify-between w-full shrink-0">
             <Button
               type="button"
               variant="ghost"
               size="sm"
               onClick={handleDetailToDelete}
-              className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40 cursor-pointer rounded-xl h-9 px-3.5"
+              className="text-xs sm:text-sm text-red-600 hover:text-red-700 hover:bg-red-50 cursor-pointer rounded-full h-10 px-4"
             >
               <Trash2 className="mr-1.5 h-3.5 w-3.5" />
               Hapus
@@ -735,7 +734,7 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
                 variant="outline"
                 size="sm"
                 onClick={() => setIsDetailOpen(false)}
-                className="text-xs cursor-pointer rounded-xl h-9 px-3.5"
+                className="text-xs sm:text-sm cursor-pointer rounded-full h-10 px-5 border-none shadow-md bg-white hover:bg-slate-100 text-slate-700 font-medium"
               >
                 Tutup
               </Button>
@@ -743,7 +742,7 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
                 type="button"
                 size="sm"
                 onClick={handleDetailToEdit}
-                className="text-xs font-medium bg-[#2563EB] hover:bg-[#1D4ED8] text-white cursor-pointer rounded-xl h-9 px-4 flex items-center shadow-xs"
+                className="text-xs sm:text-sm font-medium bg-[#0e59f9] hover:bg-blue-600 text-white cursor-pointer rounded-full h-10 px-5 flex items-center shadow-md"
               >
                 <Pencil className="mr-2 h-3.5 w-3.5" />
                 Edit Kategori

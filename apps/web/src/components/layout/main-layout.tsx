@@ -13,6 +13,7 @@ export function MainLayout({ children, user, availableTenants }: { children: Rea
   const pathname = usePathname();
 
   const subSidebarSections = ['katalog', 'shifts', 'settings', 'reports', 'verification'];
+  const fixedHeightSections = ['orders', 'pos'];
   const getSection = (path: string) => {
     const match = path.match(/\/outlet\/[^\/]+\/([^\/\?#]+)/);
     return match ? match[1] : '';
@@ -20,6 +21,7 @@ export function MainLayout({ children, user, availableTenants }: { children: Rea
 
   const currentSection = getSection(pathname);
   const hasSubSidebar = subSidebarSections.includes(currentSection);
+  const isFixedHeight = fixedHeightSections.includes(currentSection);
 
   const [collapsed, setCollapsed] = React.useState(hasSubSidebar);
   const [mobileOpen, setMobileOpen] = React.useState(false);
@@ -58,6 +60,15 @@ export function MainLayout({ children, user, availableTenants }: { children: Rea
         >
           {hasSubSidebar ? (
             <div className="h-[calc(100vh-4rem)] overflow-hidden">
+              {children}
+            </div>
+          ) : isFixedHeight ? (
+            <div className={cn(
+              "h-[calc(100vh-4rem)] flex flex-col",
+              currentSection === 'orders' 
+                ? "px-4 pt-4 md:px-6 md:pt-6 pb-0 overflow-y-auto scrollbar-hide scroll-smooth" 
+                : "p-4 md:p-6 overflow-hidden"
+            )}>
               {children}
             </div>
           ) : (

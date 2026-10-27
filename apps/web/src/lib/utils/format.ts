@@ -35,7 +35,7 @@ export function formatPaymentMethodLabel(method?: string | null): string {
     case 'TUNAI':
       return 'Tunai';
     case 'QRIS_STATIC':
-      return 'QRIS Statis Toko';
+      return 'QRIS Statis';
     case 'QRIS_DYNAMIC':
       return 'QRIS Dinamis';
     case 'QRIS':
@@ -43,15 +43,62 @@ export function formatPaymentMethodLabel(method?: string | null): string {
     case 'CARD':
     case 'EDC':
     case 'DEBIT':
+    case 'DEBIT_CARD':
+      return 'Kartu Debit';
     case 'CREDIT':
-      return 'Kartu EDC';
+    case 'CREDIT_CARD':
+      return 'Kartu Kredit';
     case 'TRANSFER':
     case 'BANK_TRANSFER':
       return 'Transfer Bank';
     case 'ONLINE':
-      return 'Self QR Online';
+      return 'Online Payment';
     default:
-      return method;
+      return method.replace(/_/g, ' ');
+  }
+}
+
+export function formatOrderTypeLabel(orderType?: string | null): string {
+  if (!orderType) return 'Makan di Tempat';
+  const clean = orderType.trim().toUpperCase();
+  switch (clean) {
+    case 'DINE_IN':
+    case 'DINEIN':
+      return 'Makan di Tempat';
+    case 'TAKEAWAY':
+    case 'TAKE_AWAY':
+      return 'Bawa Pulang';
+    case 'DELIVERY':
+    case 'DELIV':
+      return 'Pesan Antar';
+    case 'GRABFOOD':
+    case 'GRAB_FOOD':
+      return 'GrabFood';
+    case 'GOFOOD':
+    case 'GO_FOOD':
+      return 'GoFood';
+    case 'SHOPEEFOOD':
+    case 'SHOPEE_FOOD':
+      return 'ShopeeFood';
+    default:
+      return orderType.replace(/_/g, ' ');
+  }
+}
+
+export function formatOrderSourceLabel(source?: string | null): string {
+  if (!source) return 'POS Kasir';
+  const clean = source.trim().toUpperCase();
+  switch (clean) {
+    case 'POS':
+    case 'POS_CASHIER':
+      return 'POS Kasir';
+    case 'ONLINE':
+    case 'WEB_ORDER':
+    case 'STOREFRONT':
+    case 'QR':
+      return 'Self Order QR';
+    default:
+      return source.replace(/_/g, ' ');
   }
 }
 

@@ -8,6 +8,7 @@ import { z } from "zod";
 import { generateOrderNumber } from "@/lib/utils/order-number";
 import { calculatePromoDiscount } from "@/lib/utils/promotions";
 import { cancelActivePayments, startOrderPayment, syncOrderPayment } from "@/lib/payments/payment.service";
+import { getNextQueueNumber } from "@/lib/orders/get-next-queue-number";
 
 const orderSchema = z.object({
   tenantSlug: z.string(),
@@ -159,6 +160,7 @@ export async function createOnlineOrder(formData: z.infer<typeof orderSchema>) {
     // until the customer pays at the counter or completes DOKU checkout.
     
     const orderNumber = generateOrderNumber(tenant);
+    const queueNumber = await getNextQueueNumber(tenant.id, shiftId);
 
     // Biaya gateway baru diketahui setelah pembayaran online sukses (diisi oleh
     // payment service). Saat order dibuat, belum ada potongan apa pun.
@@ -186,9 +188,10 @@ export async function createOnlineOrder(formData: z.infer<typeof orderSchema>) {
       orderType: data.orderType,
       customerName: data.customerName || null,
       customerPhone: data.customerPhone || null,
-      tableNumber: data.tableNumber || null,
+      tableNumber: data.tableNumber ? data.tableNumber.trim().replace(/\D/g, '') || data.tableNumber.trim() : null,
+      queueNumber,
       orderNumber,
-    }).returning({ id: transactions.id, publicToken: transactions.publicToken, orderNumber: transactions.orderNumber });
+    }).returning({ id: transactions.id, publicToken: transactions.publicToken, orderNumber: transactions.orderNumber, queueNumber: transactions.queueNumber });
 
     // 4. Create Transaction Items
     await db.insert(transactionItems).values(

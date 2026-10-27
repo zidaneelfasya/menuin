@@ -228,7 +228,7 @@ export function SalesDetailClient({ initialData, outletKey }: SalesDetailClientP
               variant="outline"
               size="sm"
               onClick={handleExportExcel}
-              className="h-8 px-3 rounded-xl border-[#EAEFF8] text-xs font-medium text-slate-700 hover:bg-slate-50 shadow-xs"
+              className="h-8 px-3.5 rounded-full border-none bg-white text-xs font-medium text-slate-700 hover:bg-slate-100 shadow-sm-md cursor-pointer"
             >
               <FileSpreadsheet className="h-3.5 w-3.5 mr-1.5 text-emerald-600" />
               Ekspor Excel
@@ -237,7 +237,7 @@ export function SalesDetailClient({ initialData, outletKey }: SalesDetailClientP
               variant="outline"
               size="sm"
               onClick={() => window.print()}
-              className="h-8 px-3 rounded-xl border-[#EAEFF8] text-xs font-medium text-slate-700 hover:bg-slate-50 shadow-xs"
+              className="h-8 px-3.5 rounded-full border-none bg-white text-xs font-medium text-slate-700 hover:bg-slate-100 shadow-sm-md cursor-pointer"
             >
               <Printer className="h-3.5 w-3.5 mr-1.5 text-slate-500" />
               Cetak
@@ -251,7 +251,7 @@ export function SalesDetailClient({ initialData, outletKey }: SalesDetailClientP
       {/* ==================================================== */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Metric 1: Penjualan Kotor */}
-        <Card className="border border-[#EAEFF8] shadow-sm rounded-2xl bg-white p-4">
+        <Card className="border-none shadow-sm-md hover:shadow-md rounded-2xl bg-white p-4 transition-all">
           <div className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">
             Penjualan Kotor
           </div>
@@ -264,7 +264,7 @@ export function SalesDetailClient({ initialData, outletKey }: SalesDetailClientP
         </Card>
 
         {/* Metric 2: Total Diskon & Fee */}
-        <Card className="border border-[#EAEFF8] shadow-sm rounded-2xl bg-white p-4">
+        <Card className="border-none shadow-sm-md hover:shadow-md rounded-2xl bg-white p-4 transition-all">
           <div className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">
             Potongan & Biaya
           </div>
@@ -277,7 +277,7 @@ export function SalesDetailClient({ initialData, outletKey }: SalesDetailClientP
         </Card>
 
         {/* Metric 3: Penjualan Bersih */}
-        <Card className="border border-[#0e59f9]/20 shadow-sm rounded-2xl bg-blue-50/20 p-4">
+        <Card className="border-none shadow-sm-md hover:shadow-md rounded-2xl bg-blue-50/40 p-4 transition-all">
           <div className="text-[11px] font-semibold text-[#0e59f9] uppercase tracking-wider">
             Net Sales
           </div>
@@ -290,7 +290,7 @@ export function SalesDetailClient({ initialData, outletKey }: SalesDetailClientP
         </Card>
 
         {/* Metric 4: Total Transaksi & AOV */}
-        <Card className="border border-[#EAEFF8] shadow-sm rounded-2xl bg-white p-4">
+        <Card className="border-none shadow-sm-md hover:shadow-md rounded-2xl bg-white p-4 transition-all">
           <div className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">
             Volume & AOV
           </div>
@@ -306,7 +306,7 @@ export function SalesDetailClient({ initialData, outletKey }: SalesDetailClientP
       {/* ==================================================== */}
       {/* 3. FILTER BAR (SEARCH, CHANNEL, METHOD, STATUS) */}
       {/* ==================================================== */}
-      <Card className="border border-[#EAEFF8] shadow-sm rounded-2xl bg-white p-3.5 print:hidden">
+      <Card className="border-none shadow-sm-md rounded-2xl bg-white p-4 print:hidden">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           {/* Search Box */}
           <div className="relative flex-1 max-w-sm">
@@ -319,7 +319,7 @@ export function SalesDetailClient({ initialData, outletKey }: SalesDetailClientP
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
-              className="pl-9 h-9 text-xs rounded-xl border-[#EAEFF8] focus-visible:ring-[#0e59f9]"
+              className="pl-9 h-9 text-xs rounded-full border-none shadow-sm-md bg-slate-50 focus-visible:ring-[#0e59f9]"
             />
           </div>
 
@@ -333,13 +333,13 @@ export function SalesDetailClient({ initialData, outletKey }: SalesDetailClientP
                 setCurrentPage(1);
               }}
             >
-              <SelectTrigger className="h-9 text-xs rounded-xl border-[#EAEFF8] min-w-[130px]">
+              <SelectTrigger className="h-9 text-xs rounded-full border-none shadow-sm-md bg-slate-50 min-w-[130px]">
                 <SelectValue placeholder="Semua Kanal" />
               </SelectTrigger>
-              <SelectContent className="rounded-xl border-[#EAEFF8]">
-                <SelectItem value="ALL">Semua Kanal</SelectItem>
-                <SelectItem value="POS">Kasir POS</SelectItem>
-                <SelectItem value="QR">Self QR Meja</SelectItem>
+              <SelectContent className="rounded-2xl border-none shadow-2xl bg-white p-1">
+                <SelectItem value="ALL" className="rounded-xl">Semua Kanal</SelectItem>
+                <SelectItem value="POS" className="rounded-xl">Kasir POS</SelectItem>
+                <SelectItem value="QR" className="rounded-xl">Self QR Meja</SelectItem>
               </SelectContent>
             </Select>
 
@@ -351,15 +351,15 @@ export function SalesDetailClient({ initialData, outletKey }: SalesDetailClientP
                 setCurrentPage(1);
               }}
             >
-              <SelectTrigger className="h-9 text-xs rounded-xl border-[#EAEFF8] min-w-[140px]">
+              <SelectTrigger className="h-9 text-xs rounded-full border-none shadow-sm-md bg-slate-50 min-w-[140px]">
                 <SelectValue placeholder="Metode Bayar" />
               </SelectTrigger>
-              <SelectContent className="rounded-xl border-[#EAEFF8]">
-                <SelectItem value="ALL">Semua Metode</SelectItem>
-                <SelectItem value="CASH">Tunai (Cash)</SelectItem>
-                <SelectItem value="QRIS">QRIS</SelectItem>
-                <SelectItem value="CARD">Kartu EDC / Debit</SelectItem>
-                <SelectItem value="ONLINE">Online Gateway</SelectItem>
+              <SelectContent className="rounded-2xl border-none shadow-2xl bg-white p-1">
+                <SelectItem value="ALL" className="rounded-xl">Semua Metode</SelectItem>
+                <SelectItem value="CASH" className="rounded-xl">Tunai (Cash)</SelectItem>
+                <SelectItem value="QRIS" className="rounded-xl">QRIS</SelectItem>
+                <SelectItem value="CARD" className="rounded-xl">Kartu EDC / Debit</SelectItem>
+                <SelectItem value="ONLINE" className="rounded-xl">Online Gateway</SelectItem>
               </SelectContent>
             </Select>
 
@@ -371,13 +371,13 @@ export function SalesDetailClient({ initialData, outletKey }: SalesDetailClientP
                 setCurrentPage(1);
               }}
             >
-              <SelectTrigger className="h-9 text-xs rounded-xl border-[#EAEFF8] min-w-[130px]">
+              <SelectTrigger className="h-9 text-xs rounded-full border-none shadow-sm-md bg-slate-50 min-w-[130px]">
                 <SelectValue placeholder="Semua Status" />
               </SelectTrigger>
-              <SelectContent className="rounded-xl border-[#EAEFF8]">
-                <SelectItem value="ALL">Semua Status</SelectItem>
-                <SelectItem value="SUCCESS">Selesai / Lunas</SelectItem>
-                <SelectItem value="CANCELED">Dibatalkan</SelectItem>
+              <SelectContent className="rounded-2xl border-none shadow-2xl bg-white p-1">
+                <SelectItem value="ALL" className="rounded-xl">Semua Status</SelectItem>
+                <SelectItem value="SUCCESS" className="rounded-xl">Selesai / Lunas</SelectItem>
+                <SelectItem value="CANCELED" className="rounded-xl">Dibatalkan</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -387,23 +387,23 @@ export function SalesDetailClient({ initialData, outletKey }: SalesDetailClientP
       {/* ==================================================== */}
       {/* 4. TRANSACTION DATA TABLE */}
       {/* ==================================================== */}
-      <Card className="border border-[#EAEFF8] shadow-sm rounded-2xl bg-white overflow-hidden">
+      <Card className="border-none shadow-sm-md rounded-2xl bg-white overflow-hidden">
         <Table className="w-full text-left text-xs">
           <TableHeader>
-            <TableRow className="border-none bg-transparent hover:bg-transparent">
-              <TableHead className="py-3 px-4">Waktu</TableHead>
-              <TableHead className="py-3 px-4">No. Transaksi</TableHead>
-              <TableHead className="py-3 px-4">Tipe & Meja</TableHead>
-              <TableHead className="py-3 px-4">Kanal</TableHead>
-              <TableHead className="py-3 px-4">Metode Bayar</TableHead>
-              <TableHead className="py-3 px-4 text-right">Kotor</TableHead>
-              <TableHead className="py-3 px-4 text-right">Diskon & Fee</TableHead>
-              <TableHead className="py-3 px-4 text-right">Bersih</TableHead>
-              <TableHead className="py-3 px-4 text-center">Status</TableHead>
-              <TableHead className="py-3 px-4 text-right">Aksi</TableHead>
+            <TableRow className="border-b border-slate-100 bg-slate-50/70 hover:bg-slate-50/70">
+              <TableHead className="py-3 px-4 font-semibold text-slate-700">Waktu</TableHead>
+              <TableHead className="py-3 px-4 font-semibold text-slate-700">No. Transaksi</TableHead>
+              <TableHead className="py-3 px-4 font-semibold text-slate-700">Tipe & Meja</TableHead>
+              <TableHead className="py-3 px-4 font-semibold text-slate-700">Kanal</TableHead>
+              <TableHead className="py-3 px-4 font-semibold text-slate-700">Metode Bayar</TableHead>
+              <TableHead className="py-3 px-4 text-right font-semibold text-slate-700">Kotor</TableHead>
+              <TableHead className="py-3 px-4 text-right font-semibold text-slate-700">Diskon & Fee</TableHead>
+              <TableHead className="py-3 px-4 text-right font-semibold text-slate-700">Bersih</TableHead>
+              <TableHead className="py-3 px-4 text-center font-semibold text-slate-700">Status</TableHead>
+              <TableHead className="py-3 px-4 text-right font-semibold text-slate-700">Aksi</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody className="divide-y divide-[#EAEFF8]">
+          <TableBody className="divide-y divide-slate-100">
             {paginatedTransactions.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={10} className="py-12 text-center text-slate-400">
@@ -422,7 +422,7 @@ export function SalesDetailClient({ initialData, outletKey }: SalesDetailClientP
                 return (
                   <TableRow
                     key={t.id}
-                    className="hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-colors group"
+                    className="hover:bg-slate-100/60 transition-colors group"
                   >
                       {/* Waktu */}
                       <TableCell className="py-3 px-4 whitespace-nowrap text-slate-600">
@@ -538,7 +538,7 @@ export function SalesDetailClient({ initialData, outletKey }: SalesDetailClientP
                           variant="ghost"
                           size="sm"
                           onClick={() => setSelectedTrx(t)}
-                          className="h-7 px-2 text-xs font-medium text-slate-600 hover:text-[#0e59f9] hover:bg-blue-50/60 rounded-lg"
+                          className="h-7 px-3 text-xs font-medium text-[#0e59f9] hover:bg-blue-50/80 rounded-full transition-colors"
                         >
                           <Eye className="w-3.5 h-3.5 mr-1" />
                           Rincian
@@ -552,19 +552,19 @@ export function SalesDetailClient({ initialData, outletKey }: SalesDetailClientP
           </Table>
 
         {/* Pagination Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 border-t border-[#EAEFF8] bg-slate-50/40">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border-t border-slate-100 bg-slate-50/40">
           <div className="text-xs text-slate-500">
             Menampilkan <span className="font-semibold text-slate-800">{paginatedTransactions.length}</span> dari{" "}
             <span className="font-semibold text-slate-800">{filteredTransactions.length}</span> transaksi
           </div>
 
-          <div className="flex items-center gap-1.5 self-end sm:self-auto">
+          <div className="flex items-center gap-2 self-end sm:self-auto">
             <Button
               variant="outline"
               size="sm"
               disabled={currentPage <= 1}
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              className="h-8 px-2.5 rounded-xl border-[#EAEFF8] text-xs font-medium text-slate-700 disabled:opacity-40"
+              className="h-8 px-3 rounded-full border-none shadow-sm-md bg-white hover:bg-slate-100 text-xs font-medium text-slate-700 disabled:opacity-40"
             >
               <ChevronLeft className="w-3.5 h-3.5 mr-1" />
               Sebelumnya
@@ -577,7 +577,7 @@ export function SalesDetailClient({ initialData, outletKey }: SalesDetailClientP
               size="sm"
               disabled={currentPage >= totalPages}
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              className="h-8 px-2.5 rounded-xl border-[#EAEFF8] text-xs font-medium text-slate-700 disabled:opacity-40"
+              className="h-8 px-3 rounded-full border-none shadow-sm-md bg-white hover:bg-slate-100 text-xs font-medium text-slate-700 disabled:opacity-40"
             >
               Berikutnya
               <ChevronRight className="w-3.5 h-3.5 ml-1" />
@@ -590,11 +590,11 @@ export function SalesDetailClient({ initialData, outletKey }: SalesDetailClientP
       {/* 5. TRANSACTION DETAIL MODAL */}
       {/* ==================================================== */}
       <Dialog open={!!selectedTrx} onOpenChange={(open) => !open && setSelectedTrx(null)}>
-        <DialogContent className="sm:max-w-md rounded-2xl border-[#EAEFF8] p-5">
+        <DialogContent className="sm:max-w-md rounded-3xl border-none shadow-2xl bg-white p-6">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold text-slate-900 flex items-center justify-between">
               <span>Detail Transaksi</span>
-              <span className="font-mono text-xs bg-slate-100 px-2 py-0.5 rounded-md text-slate-700">
+              <span className="font-mono text-xs bg-slate-100 px-2.5 py-1 rounded-full text-slate-700 font-medium">
                 {selectedTrx?.orderNumber || `#${selectedTrx?.id?.slice(0, 8)}`}
               </span>
             </DialogTitle>
@@ -605,7 +605,7 @@ export function SalesDetailClient({ initialData, outletKey }: SalesDetailClientP
 
           {selectedTrx && (
             <div className="space-y-4 pt-2 text-xs">
-              <div className="bg-slate-50/70 p-3.5 rounded-xl border border-slate-100 space-y-2">
+              <div className="bg-slate-50/70 p-4 rounded-2xl border-none shadow-xs space-y-2.5">
                 <div className="flex justify-between">
                   <span className="text-slate-500">Tanggal & Waktu</span>
                   <span className="font-medium text-slate-800">
@@ -686,7 +686,7 @@ export function SalesDetailClient({ initialData, outletKey }: SalesDetailClientP
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full text-xs rounded-xl border-[#EAEFF8]"
+                  className="w-full text-xs rounded-full border-none shadow-sm-md bg-white hover:bg-slate-100 text-slate-700 font-medium h-9"
                   onClick={() => setSelectedTrx(null)}
                 >
                   Tutup

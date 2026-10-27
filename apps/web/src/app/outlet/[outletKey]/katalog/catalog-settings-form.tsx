@@ -40,40 +40,41 @@ export function CatalogSettingsForm({ settings, domain, catalogUrl }: { settings
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
-      <Card className="rounded-xl shadow-sm border-border/50">
+      <Card className="rounded-2xl shadow-md border-none bg-white">
         <CardHeader>
-          <CardTitle className="text-lg">Status Website Katalog</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-lg font-semibold text-slate-900">Status Website Katalog</CardTitle>
+          <CardDescription className="text-xs text-slate-500">
             Jika dinonaktifkan, pelanggan tidak dapat mengakses katalog online Anda.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="storefrontEnabled" className="text-base">Aktifkan Katalog Publik</Label>
-              <p className="text-sm text-muted-foreground">Katalog dapat diakses melalui URL khusus Anda.</p>
+              <Label htmlFor="storefrontEnabled" className="text-sm font-medium text-slate-900 cursor-pointer">Aktifkan Katalog Publik</Label>
+              <p className="text-xs text-slate-500">Katalog dapat diakses melalui URL khusus Anda.</p>
             </div>
             <Switch 
               id="storefrontEnabled" 
               checked={storefrontEnabled}
               onCheckedChange={setStorefrontEnabled}
+              className="data-[state=checked]:bg-[#0e59f9]"
             />
           </div>
           
-          <div className="space-y-2 pt-4 border-t">
-            <Label htmlFor="slug">URL Katalog (Subdomain)</Label>
+          <div className="space-y-2 pt-4 border-t border-slate-100">
+            <Label htmlFor="slug" className="text-xs font-medium text-slate-700">URL Katalog (Subdomain)</Label>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground flex-shrink-0">https://</span>
+              <span className="text-xs text-slate-400 flex-shrink-0">https://</span>
               <Input 
                 id="slug" 
                 value={slug}
                 onChange={(e) => setSlug(e.target.value)}
                 placeholder="nama-restoran" 
-                className="max-w-[200px]"
+                className="max-w-[220px] h-9 text-xs rounded-full bg-white border-none shadow-sm-md px-3.5 focus-visible:ring-blue-600"
               />
-              <span className="text-sm text-muted-foreground flex-shrink-0">.{domain}</span>
+              <span className="text-xs text-slate-500 font-medium flex-shrink-0">.{domain}</span>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-[11px] text-slate-400">
               Gunakan huruf kecil, angka, dan tanda hubung (-). Contoh: kopi-kenangan
             </p>
           </div>
@@ -81,25 +82,31 @@ export function CatalogSettingsForm({ settings, domain, catalogUrl }: { settings
       </Card>
 
       {catalogUrl && (
-        <Card className="bg-primary/5 border-primary/20 rounded-xl shadow-sm">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-primary">Katalog Anda Live di:</p>
-              <a href={catalogUrl} target="_blank" rel="noopener noreferrer" className="text-lg font-semibold text-primary hover:underline flex items-center gap-2 mt-1">
-                {settings.slug}.{domain}
-                <ExternalLink className="h-4 w-4" />
-              </a>
-            </div>
-            <Button asChild variant="outline" className="bg-white shadow-sm rounded-xl">
-              <a href={catalogUrl} target="_blank" rel="noopener noreferrer">Buka Katalog</a>
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="bg-blue-50/70 rounded-2xl shadow-md p-5 flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold text-blue-700">Katalog Anda Live di:</p>
+            <a href={catalogUrl} target="_blank" rel="noopener noreferrer" className="text-base font-semibold text-[#0e59f9] hover:underline flex items-center gap-1.5 mt-0.5">
+              {settings.slug}.{domain}
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          </div>
+          <Button asChild variant="outline" className="h-9 px-4 rounded-full bg-white hover:bg-slate-100 text-[#0e59f9] border-none shadow-sm-md text-xs font-semibold cursor-pointer">
+            <a href={catalogUrl} target="_blank" rel="noopener noreferrer">Buka Katalog</a>
+          </Button>
+        </div>
       )}
 
       <div className="flex justify-end">
-        <Button disabled={isSaving || !hasChanges} type="submit" size="lg" className="min-w-[150px] shadow-sm">
-          {isSaving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Menyimpan...</> : <><Save className="mr-2 h-4 w-4" /> Simpan Perubahan</>}
+        <Button 
+          disabled={isSaving || !hasChanges} 
+          type="submit" 
+          className="h-11 px-6 rounded-full bg-[#0e59f9] hover:bg-[#0b4de0] text-white shadow-xs font-semibold text-xs min-w-[160px] cursor-pointer flex items-center justify-center gap-2"
+        >
+          {isSaving ? (
+            <><Loader2 className="h-4 w-4 animate-spin" /> Menyimpan...</>
+          ) : (
+            <><Save className="h-4 w-4" /> Simpan Perubahan</>
+          )}
         </Button>
       </div>
     </form>

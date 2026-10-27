@@ -181,15 +181,15 @@ export function ImportProductDialog() {
       if (!val) resetState();
     }}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2 rounded-xl font-medium shadow-xs">
+        <Button variant="outline" className="gap-2 rounded-full font-medium shadow-md bg-white hover:bg-slate-100 text-slate-700 border-none h-10 px-4">
           <Upload className="w-4 h-4 text-primary" />
           <span>Import Excel</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[560px] p-0 overflow-hidden rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl">
-        <DialogHeader className="p-6 pb-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50">
-          <DialogTitle className="text-xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+      <DialogContent className="sm:max-w-[560px] p-0 overflow-hidden rounded-3xl border-none bg-white shadow-2xl">
+        <DialogHeader className="p-6 pb-4 border-b border-slate-100 bg-slate-50/70">
+          <DialogTitle className="text-xl font-semibold tracking-tight text-slate-900 flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center">
               <FileSpreadsheet className="w-4 h-4" />
             </div>
             <span>Import Menu dari Excel / CSV</span>
@@ -201,11 +201,11 @@ export function ImportProductDialog() {
 
         <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
           {/* Template Download Banner */}
-          <div className="p-4 rounded-xl border border-primary/20 bg-primary/5 dark:bg-primary/10 space-y-2.5">
+          <div className="p-4 rounded-2xl shadow-sm-md bg-slate-50 space-y-2.5">
             <div className="flex items-start gap-2.5">
               <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
               <div className="space-y-1">
-                <span className="text-xs font-semibold text-slate-900 dark:text-slate-100 block">
+                <span className="text-xs font-semibold text-slate-900 block">
                   Gunakan Template Standar Menuin
                 </span>
                 <p className="text-[11px] text-muted-foreground leading-relaxed">
@@ -219,7 +219,7 @@ export function ImportProductDialog() {
                 variant="outline"
                 size="sm"
                 onClick={() => downloadMenuTemplate('xlsx')}
-                className="h-8 text-xs font-medium rounded-lg border-primary/30 hover:bg-primary/10 text-primary gap-1.5 shadow-2xs"
+                className="h-8 text-xs font-medium rounded-full bg-white hover:bg-slate-100 border-none shadow-sm-md text-primary gap-1.5 px-3"
               >
                 <Download className="w-3.5 h-3.5" />
                 Unduh Template Excel (.xlsx)
@@ -229,7 +229,7 @@ export function ImportProductDialog() {
                 variant="ghost"
                 size="sm"
                 onClick={() => downloadMenuTemplate('csv')}
-                className="h-8 text-xs font-medium rounded-lg text-slate-600 dark:text-slate-400 hover:text-foreground gap-1.5"
+                className="h-8 text-xs font-medium rounded-full hover:bg-slate-100 text-slate-600 gap-1.5 px-3"
               >
                 <FileText className="w-3.5 h-3.5" />
                 Format .CSV
@@ -239,10 +239,10 @@ export function ImportProductDialog() {
 
           {/* Upload Dropzone */}
           <div 
-            className={`border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all ${
+            className={`border-2 border-dashed rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all ${
               selectedFile 
-                ? 'border-primary bg-primary/5 dark:bg-primary/10' 
-                : 'border-slate-200 dark:border-slate-800 hover:border-primary/50 hover:bg-slate-50 dark:hover:bg-slate-900/50'
+                ? 'border-primary bg-primary/5' 
+                : 'border-slate-200 hover:border-primary/50 hover:bg-slate-50'
             }`}
             onClick={() => fileInputRef.current?.click()}
           >
@@ -255,10 +255,10 @@ export function ImportProductDialog() {
             />
             {selectedFile ? (
               <div className="flex flex-col items-center text-center space-y-1">
-                <div className="w-12 h-12 rounded-xl bg-primary/15 text-primary flex items-center justify-center mb-1">
+                <div className="w-12 h-12 rounded-full bg-primary/15 text-primary flex items-center justify-center mb-1">
                   <FileSpreadsheet className="w-6 h-6" />
                 </div>
-                <span className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate max-w-[340px]">
+                <span className="text-sm font-semibold text-slate-900 truncate max-w-[340px]">
                   {selectedFile.name}
                 </span>
                 <span className="text-xs text-muted-foreground font-medium">
@@ -270,10 +270,10 @@ export function ImportProductDialog() {
               </div>
             ) : (
               <div className="flex flex-col items-center text-center space-y-1">
-                <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center mb-1">
+                <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center mb-1">
                   <Upload className="w-6 h-6" />
                 </div>
-                <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                <span className="text-sm font-semibold text-slate-800">
                   Pilih atau Tarik File Excel / CSV ke Sini
                 </span>
                 <span className="text-xs text-muted-foreground">
@@ -285,37 +285,37 @@ export function ImportProductDialog() {
 
           {/* Pratinjau Data (Preview) */}
           {previewRows.length > 0 && (
-            <div className="space-y-2 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5 bg-slate-50/50 dark:bg-slate-900/40">
+            <div className="space-y-2 rounded-2xl p-3.5 bg-slate-50 shadow-sm-md">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                <span className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
                   <Eye className="w-3.5 h-3.5 text-slate-500" />
                   Pratinjau Data ({totalParsedRows} Menu Ditemukan)
                 </span>
                 <span className="text-[10px] text-muted-foreground">Menampilkan contoh 4 baris pertama</span>
               </div>
-              <div className="rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs">
+              <div className="rounded-xl overflow-hidden bg-white shadow-xs">
                 <Table className="w-full text-left text-xs">
                   <TableHeader>
-                    <TableRow className="border-none bg-transparent hover:bg-transparent">
+                    <TableRow className="border-none bg-slate-50 hover:bg-slate-50">
                       <TableHead className="py-2 px-3 font-semibold">Nama Menu</TableHead>
                       <TableHead className="py-2 px-3 font-semibold">Kategori</TableHead>
                       <TableHead className="py-2 px-3 font-semibold text-right">Harga Jual</TableHead>
                       <TableHead className="py-2 px-3 font-semibold text-right">Stok</TableHead>
                     </TableRow>
                   </TableHeader>
-                  <TableBody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                  <TableBody className="divide-y divide-slate-100">
                     {previewRows.map((row, idx) => (
-                      <TableRow key={idx} className="hover:bg-blue-50/40 dark:hover:bg-blue-950/20">
-                        <TableCell className="py-2 px-3 font-medium text-slate-900 dark:text-slate-100 truncate max-w-[160px]">
+                      <TableRow key={idx} className="hover:bg-blue-50/40">
+                        <TableCell className="py-2 px-3 font-medium text-slate-900 truncate max-w-[160px]">
                           {row.name}
                         </TableCell>
-                        <TableCell className="py-2 px-3 text-slate-600 dark:text-slate-400">
+                        <TableCell className="py-2 px-3 text-slate-600">
                           {row.category}
                         </TableCell>
-                        <TableCell className="py-2 px-3 font-mono text-right text-emerald-600 dark:text-emerald-400 font-medium">
+                        <TableCell className="py-2 px-3 font-mono text-right text-emerald-600 font-medium">
                           {formatCurrency(row.price || 0)}
                         </TableCell>
-                        <TableCell className="py-2 px-3 font-mono text-right text-slate-700 dark:text-slate-300">
+                        <TableCell className="py-2 px-3 font-mono text-right text-slate-700">
                           {row.stock ?? 0}
                         </TableCell>
                       </TableRow>
@@ -328,7 +328,7 @@ export function ImportProductDialog() {
 
           {/* Error Message */}
           {errorMsg && (
-            <div className="flex items-start gap-2.5 text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/40 p-3 rounded-xl border border-red-200 dark:border-red-900/50">
+            <div className="flex items-start gap-2.5 text-xs text-red-700 bg-red-50 p-3 rounded-xl border border-red-200">
               <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
               <span>{errorMsg}</span>
             </div>
@@ -336,27 +336,28 @@ export function ImportProductDialog() {
 
           {/* Success Message */}
           {successMsg && (
-            <div className="flex items-start gap-2.5 text-xs text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 p-3 rounded-xl border border-emerald-200 dark:border-emerald-900/50">
+            <div className="flex items-start gap-2.5 text-xs text-emerald-700 bg-emerald-50 p-3 rounded-xl border border-emerald-200">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
               <span className="font-medium">{successMsg}</span>
             </div>
           )}
         </div>
 
-        <DialogFooter className="p-4 px-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 flex items-center justify-between sm:justify-between">
+        <DialogFooter className="p-4 px-6 border-t border-slate-100 bg-slate-50/70 flex items-center justify-between sm:justify-between">
           <Button 
-            variant="ghost" 
+            type="button"
+            variant="outline" 
             size="sm"
             onClick={() => setOpen(false)} 
             disabled={isPending}
-            className="rounded-xl text-slate-600 hover:text-slate-900"
+            className="rounded-full shadow-md bg-white hover:bg-slate-100 text-slate-700 border-none px-5 h-10"
           >
             Batal
           </Button>
           <Button 
             onClick={handleImport} 
             disabled={!selectedFile || isPending}
-            className="rounded-xl px-5 bg-primary hover:bg-primary/90 text-primary-foreground font-medium shadow-xs"
+            className="rounded-full shadow-md bg-primary hover:bg-primary/90 text-white border-none px-5 h-10 font-semibold"
           >
             {isPending ? (
               <span className="flex items-center gap-2">

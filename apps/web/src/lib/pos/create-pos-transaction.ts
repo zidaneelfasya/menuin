@@ -2,6 +2,7 @@ import { and, eq, sql } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { products, shifts, tenants, transactionItems, transactions } from '@/lib/db/schema';
 import { generateOrderNumber } from '@/lib/utils/order-number';
+import { getNextQueueNumber } from '@/lib/orders/get-next-queue-number';
 
 export type PosCheckoutPayload = {
   totalAmount: number;
@@ -19,6 +20,7 @@ export type PosCheckoutPayload = {
   tableNumber?: string;
   orderType?: string;
   posKitchenSync?: boolean;
+  idempotencyKey?: string;
   items: Array<{
     productId: string;
     quantity: number;
@@ -45,6 +47,24 @@ export async function insertPosTransaction(params: {
   const { tenantId, payload, mode } = params;
 
   return db.transaction(async (tx) => {
+    // 1. Idempotency Check: Return existing transaction if duplicate request
+    if (payload.idempotencyKey) {
+      const [existingTx] = await tx
+        .select({ id: transactions.id, orderNumber: transactions.orderNumber })
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.tenantId, tenantId),
+            eq(transactions.idempotencyKey, payload.idempotencyKey)
+          )
+        )
+        .limit(1);
+
+      if (existingTx) {
+        return existingTx;
+      }
+    }
+
     const [currentTenant] = await tx
       .select({ name: tenants.name, orderPrefix: tenants.orderPrefix })
       .from(tenants)
@@ -59,6 +79,8 @@ export async function insertPosTransaction(params: {
       .where(and(eq(shifts.tenantId, tenantId), eq(shifts.status, 'ACTIVE')))
       .limit(1);
     const shiftId = activeShifts.length > 0 ? activeShifts[0].id : null;
+
+    const queueNumber = await getNextQueueNumber(tenantId, shiftId, tx);
 
     const gTotal = parseFloat(payload.grandTotal.toString()) || 0;
     const payMethod = (payload.paymentMethod || 'CASH').toUpperCase();
@@ -86,9 +108,11 @@ export async function insertPosTransaction(params: {
       orderType: payload.orderType || 'DINE_IN',
       customerName: payload.customerName || null,
       customerPhone: payload.customerPhone || null,
-      tableNumber: payload.tableNumber || null,
+      tableNumber: payload.tableNumber ? payload.tableNumber.trim().replace(/\D/g, '') || payload.tableNumber.trim() : null,
+      queueNumber,
       orderNumber,
-    }).returning({ id: transactions.id, orderNumber: transactions.orderNumber });
+      idempotencyKey: payload.idempotencyKey || null,
+    }).returning({ id: transactions.id, orderNumber: transactions.orderNumber, queueNumber: transactions.queueNumber });
 
     for (const item of payload.items) {
       await tx.insert(transactionItems).values({

@@ -2,10 +2,23 @@
 
 import { db } from '@/lib/db';
 import { transactions, transactionItems, products, shifts, tenants, memberships } from '@/lib/db/schema';
-import { eq, desc, sql, and } from 'drizzle-orm';
+import { eq, desc, asc, sql, and, or, ilike, inArray, gte, lte, lt } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from './auth';
 import { insertPosTransaction, type PosCheckoutPayload } from '@/lib/pos/create-pos-transaction';
+
+export type GetTransactionsParams = {
+  search?: string;
+  status?: string; // 'all' | 'on_process' | 'completed' | 'pending_payment' | 'cancelled'
+  timeRange?: string; // 'all' | 'today' | 'yesterday' | '7days' | 'this_month' | 'custom'
+  startDate?: string;
+  endDate?: string;
+  orderType?: string; // 'all' | 'dine_in' | 'takeaway' | 'delivery'
+  source?: string; // 'all' | 'pos' | 'storefront'
+  sortBy?: string; // 'newest' | 'oldest' | 'amount_high' | 'amount_low'
+  page?: number;
+  limit?: number;
+};
 
 export async function createTransaction(payload: PosCheckoutPayload) {
   try {
@@ -32,21 +45,227 @@ export async function createTransaction(payload: PosCheckoutPayload) {
   }
 }
 
-export async function getTransactions() {
+export async function getTransactions(params?: GetTransactionsParams) {
   try {
     const user = await getCurrentUser();
     if (!user || !user.tenantId) {
       return { success: false, error: 'Unauthorized or no dashboard' };
     }
 
-    // This fetches the list of transactions for this specific store
-    const data = await db
+    const tenantId = user.tenantId;
+    const page = Math.max(1, Number(params?.page || 1));
+    const limit = Math.max(1, Math.min(100, Number(params?.limit || 25)));
+    const offset = (page - 1) * limit;
+
+    // 1. Time-window conditions (tenantId + time filter) - PURE EXECUTIVE PERIOD
+    const timeConditions: any[] = [eq(transactions.tenantId, tenantId)];
+
+    const selectedTimeRange = params?.timeRange || 'this_month';
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfYesterday = new Date(startOfToday);
+    startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    if (selectedTimeRange !== 'all') {
+      if (selectedTimeRange === 'today') {
+        timeConditions.push(gte(transactions.createdAt, startOfToday));
+      } else if (selectedTimeRange === 'yesterday') {
+        timeConditions.push(
+          and(gte(transactions.createdAt, startOfYesterday), lt(transactions.createdAt, startOfToday))
+        );
+      } else if (selectedTimeRange === '7days') {
+        timeConditions.push(gte(transactions.createdAt, sevenDaysAgo));
+      } else if (selectedTimeRange === 'this_month') {
+        timeConditions.push(gte(transactions.createdAt, startOfMonth));
+      } else if (selectedTimeRange === 'custom' && params?.startDate) {
+        const start = new Date(params.startDate);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(params.endDate || params.startDate);
+        end.setHours(23, 59, 59, 999);
+        timeConditions.push(and(gte(transactions.createdAt, start), lte(transactions.createdAt, end)));
+      }
+    }
+
+    // 2. Table-specific conditions (timeConditions + search + status + orderType + source)
+    const tableConditions: any[] = [...timeConditions];
+
+    // 2A. Search Query (ILIKE across orderNumber, customerName, tableNumber, paymentMethod, id)
+    if (params?.search && params.search.trim().length > 0) {
+      const q = `%${params.search.trim()}%`;
+      tableConditions.push(
+        or(
+          ilike(transactions.orderNumber, q),
+          ilike(transactions.customerName, q),
+          ilike(transactions.tableNumber, q),
+          ilike(transactions.paymentMethod, q),
+          sql`CAST(${transactions.id} AS TEXT) ILIKE ${q}`
+        )
+      );
+    }
+
+    // 2B. Status Condition
+    if (params?.status && params.status !== 'all') {
+      if (params.status === 'completed') {
+        tableConditions.push(
+          or(eq(transactions.status, 'COMPLETED'), eq(transactions.paymentStatus, 'PAID'))
+        );
+      } else if (params.status === 'on_process') {
+        tableConditions.push(
+          and(
+            inArray(transactions.status, ['PROCESSING', 'NEW', 'READY']),
+            sql`${transactions.paymentStatus} != 'PAID'`
+          )
+        );
+      } else if (params.status === 'pending_payment') {
+        tableConditions.push(inArray(transactions.paymentStatus, ['PENDING', 'UNPAID']));
+      } else if (params.status === 'cancelled') {
+        tableConditions.push(
+          or(
+            inArray(transactions.status, ['CANCELLED', 'CANCELED']),
+            inArray(transactions.paymentStatus, ['CANCELED', 'REFUNDED'])
+          )
+        );
+      }
+    }
+
+    // 2C. Order Type Filter
+    if (params?.orderType && params.orderType !== 'all') {
+      if (params.orderType === 'dine_in') {
+        tableConditions.push(eq(transactions.orderType, 'DINE_IN'));
+      } else if (params.orderType === 'takeaway') {
+        tableConditions.push(
+          or(ilike(transactions.orderType, '%TAKE%'), ilike(transactions.orderType, '%BUNGKUS%'))
+        );
+      } else if (params.orderType === 'delivery') {
+        tableConditions.push(
+          or(
+            ilike(transactions.orderType, '%DELIV%'),
+            ilike(transactions.orderType, '%GRAB%'),
+            ilike(transactions.orderType, '%GOFOOD%'),
+            ilike(transactions.orderType, '%SHOPEE%')
+          )
+        );
+      }
+    }
+
+    // 2D. Source Filter
+    if (params?.source && params.source !== 'all') {
+      if (params.source === 'pos') {
+        tableConditions.push(eq(transactions.source, 'POS'));
+      } else if (params.source === 'storefront') {
+        tableConditions.push(
+          inArray(transactions.source, ['ONLINE', 'WEB_ORDER', 'STOREFRONT', 'QR', 'DELIVERY'])
+        );
+      }
+    }
+
+    // 3. Sorting
+    let sortOrder = desc(transactions.createdAt);
+    if (params?.sortBy === 'oldest') {
+      sortOrder = asc(transactions.createdAt);
+    } else if (params?.sortBy === 'amount_high') {
+      sortOrder = desc(transactions.grandTotal);
+    } else if (params?.sortBy === 'amount_low') {
+      sortOrder = asc(transactions.grandTotal);
+    }
+
+    // 4. Parallel Queries via Promise.allSettled:
+    // - rowsQuery: Fetches active page rows matching tableConditions
+    // - countFilteredQuery: Counts total rows matching tableConditions for pagination
+    // - periodStatsQuery: Computes KPI summary and tab counts based ONLY on timeConditions (decoupled from search/status filters)
+    const rowsQuery = db
       .select()
       .from(transactions)
-      .where(eq(transactions.tenantId, user.tenantId))
-      .orderBy(desc(transactions.createdAt));
-      
-    return { success: true, data };
+      .where(and(...tableConditions))
+      .orderBy(sortOrder)
+      .limit(limit)
+      .offset(offset);
+
+    const countFilteredQuery = db
+      .select({
+        count: sql<number>`CAST(COUNT(*) AS INTEGER)`,
+      })
+      .from(transactions)
+      .where(and(...tableConditions));
+
+    const periodStatsQuery = db
+      .select({
+        totalOrders: sql<number>`CAST(COUNT(*) AS INTEGER)`,
+        totalRevenue: sql<number>`COALESCE(SUM(CASE WHEN ${transactions.paymentStatus} = 'PAID' OR ${transactions.status} = 'COMPLETED' THEN CAST(${transactions.grandTotal} AS NUMERIC) ELSE 0 END), 0)`,
+        countCompleted: sql<number>`CAST(COUNT(*) FILTER (WHERE ${transactions.status} = 'COMPLETED' OR ${transactions.paymentStatus} = 'PAID') AS INTEGER)`,
+        countOnProcess: sql<number>`CAST(COUNT(*) FILTER (WHERE ${transactions.status} IN ('PROCESSING', 'NEW', 'READY') AND ${transactions.paymentStatus} != 'PAID') AS INTEGER)`,
+        countPending: sql<number>`CAST(COUNT(*) FILTER (WHERE ${transactions.paymentStatus} IN ('PENDING', 'UNPAID')) AS INTEGER)`,
+        countCancelled: sql<number>`CAST(COUNT(*) FILTER (WHERE ${transactions.status} IN ('CANCELLED', 'CANCELED') OR ${transactions.paymentStatus} IN ('CANCELED', 'REFUNDED')) AS INTEGER)`,
+      })
+      .from(transactions)
+      .where(and(...timeConditions));
+
+    const [rowsResult, countResult, statsResult] = await Promise.allSettled([
+      rowsQuery,
+      countFilteredQuery,
+      periodStatsQuery,
+    ]);
+
+    // Handle data rows
+    const data = rowsResult.status === 'fulfilled' ? rowsResult.value : [];
+
+    // Handle total filtered count for pagination
+    let totalMatchingItems = data.length;
+    if (countResult.status === 'fulfilled' && countResult.value.length > 0) {
+      totalMatchingItems = Number(countResult.value[0].count) || 0;
+    }
+
+    // Handle period stats with resilient fallback
+    let stats = {
+      totalOrders: totalMatchingItems,
+      totalRevenue: data
+        .filter((r) => r.paymentStatus === 'PAID' || r.status === 'COMPLETED')
+        .reduce((sum, r) => sum + parseFloat(r.grandTotal || '0'), 0),
+      countCompleted: data.filter((r) => r.paymentStatus === 'PAID' || r.status === 'COMPLETED').length,
+      countOnProcess: data.filter((r) => ['PROCESSING', 'NEW', 'READY'].includes(r.status) && r.paymentStatus !== 'PAID').length,
+      countPending: data.filter((r) => ['PENDING', 'UNPAID'].includes(r.paymentStatus || '')).length,
+      countCancelled: data.filter((r) => ['CANCELLED', 'CANCELED'].includes(r.status) || ['CANCELED', 'REFUNDED'].includes(r.paymentStatus || '')).length,
+    };
+
+    if (statsResult.status === 'fulfilled' && statsResult.value.length > 0) {
+      const s = statsResult.value[0];
+      stats = {
+        totalOrders: Number(s.totalOrders) || 0,
+        totalRevenue: parseFloat(String(s.totalRevenue || 0)),
+        countCompleted: Number(s.countCompleted) || 0,
+        countOnProcess: Number(s.countOnProcess) || 0,
+        countPending: Number(s.countPending) || 0,
+        countCancelled: Number(s.countCancelled) || 0,
+      };
+    }
+
+    const totalPages = Math.max(1, Math.ceil(totalMatchingItems / limit));
+    const aov = stats.totalOrders > 0 ? Math.round(stats.totalRevenue / stats.totalOrders) : 0;
+
+    return {
+      success: true,
+      data,
+      summary: {
+        totalRevenue: stats.totalRevenue,
+        totalOrders: stats.totalOrders,
+        aov,
+      },
+      statusCounts: {
+        all: stats.totalOrders,
+        completed: stats.countCompleted,
+        onProcess: stats.countOnProcess,
+        pendingPayment: stats.countPending,
+        cancelled: stats.countCancelled,
+      },
+      pagination: {
+        page,
+        limit,
+        totalItems: totalMatchingItems,
+        totalPages,
+      },
+    };
   } catch (error) {
     console.error('Error fetching transactions:', error);
     return { success: false, error: 'Gagal mengambil data transaksi.' };
@@ -165,26 +384,31 @@ export async function voidTransaction(payload: { transactionId: string; reason: 
       return { success: false, error: 'Wajib menyertakan alasan pembatalan transaksi secara jelas.' };
     }
 
-    const [trx] = await db
-      .select()
-      .from(transactions)
-      .where(
-        and(
-          eq(transactions.id, payload.transactionId),
-          eq(transactions.tenantId, tenantId)
-        )
-      )
-      .limit(1);
-
-    if (!trx) {
-      return { success: false, error: 'Transaksi tidak ditemukan.' };
-    }
-
-    if (trx.status === 'CANCELLED' || trx.paymentStatus === 'CANCELED') {
-      return { success: false, error: 'Transaksi ini sudah pernah dibatalkan sebelumnya.' };
-    }
+    let orderNumberDisplay = '';
 
     await db.transaction(async (tx) => {
+      // Row-Level Lock: Lock this transaction row so no concurrent void can proceed
+      const [lockedTrx] = await tx
+        .select()
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.id, payload.transactionId),
+            eq(transactions.tenantId, tenantId)
+          )
+        )
+        .for('update');
+
+      if (!lockedTrx) {
+        throw new Error('Transaksi tidak ditemukan.');
+      }
+
+      if (lockedTrx.status === 'CANCELLED' || lockedTrx.paymentStatus === 'CANCELED') {
+        throw new Error('Transaksi ini sudah pernah dibatalkan sebelumnya.');
+      }
+
+      orderNumberDisplay = lockedTrx.orderNumber || lockedTrx.id.slice(0, 8);
+
       // 1. Update status to CANCELLED with immutable audit fields
       await tx
         .update(transactions)
@@ -195,14 +419,14 @@ export async function voidTransaction(payload: { transactionId: string; reason: 
           voidedAt: new Date(),
           voidedByMembershipId: user.id,
         })
-        .where(eq(transactions.id, trx.id));
+        .where(eq(transactions.id, lockedTrx.id));
 
       // 2. Optional restock of items
       if (payload.restock !== false) {
         const items = await tx
           .select()
           .from(transactionItems)
-          .where(eq(transactionItems.transactionId, trx.id));
+          .where(eq(transactionItems.transactionId, lockedTrx.id));
 
         for (const item of items) {
           await tx
@@ -230,7 +454,7 @@ export async function voidTransaction(payload: { transactionId: string; reason: 
 
     return {
       success: true,
-      message: `Transaksi ${trx.orderNumber || trx.id.slice(0, 8)} berhasil dibatalkan dan tercatat dalam log audit anti-fraud.`,
+      message: `Transaksi ${orderNumberDisplay} berhasil dibatalkan dan tercatat dalam log audit anti-fraud.`,
     };
   } catch (error: any) {
     console.error('Error voiding transaction:', error);

@@ -210,25 +210,25 @@ export function PaymentModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !isProcessing && !open && onClose()}>
-      <DialogContent showCloseButton={false} className="max-w-[460px] p-0 overflow-hidden rounded-2xl bg-white dark:bg-slate-950 border border-border/80 shadow-xl">
-        <DialogHeader className="p-4 pb-3 border-b bg-slate-50/70 dark:bg-slate-900/50">
+      <DialogContent showCloseButton={false} className="max-w-[460px] p-0 overflow-hidden rounded-2xl bg-white border border-[#EAEFF8] shadow-xl">
+        <DialogHeader className="p-4 pb-3">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <DialogTitle className="text-base font-semibold text-foreground truncate">
+              <DialogTitle className="text-base font-semibold text-slate-900 truncate">
                 Pembayaran Kasir
               </DialogTitle>
-              <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground">
-                <span className="font-medium text-slate-700 dark:text-slate-300 shrink-0">{orderTypeLabel}</span>
+              <div className="flex items-center gap-1.5 mt-0.5 text-xs text-slate-500">
+                <span className="font-medium text-slate-700 shrink-0">{orderTypeLabel}</span>
                 {tableNumber && (
                   <>
                     <span className="shrink-0">•</span>
-                    <span className="shrink-0 font-medium">Meja {tableNumber}</span>
+                    <span className="shrink-0 font-medium text-slate-600">Meja {tableNumber}</span>
                   </>
                 )}
                 {customerName && (
                   <>
                     <span className="shrink-0">•</span>
-                    <span className="truncate">{customerName}</span>
+                    <span className="truncate text-slate-600">{customerName}</span>
                   </>
                 )}
               </div>
@@ -237,8 +237,8 @@ export function PaymentModal({
             <div className="flex items-center gap-3 shrink-0">
               {/* Grand Total Badge */}
               <div className="text-right">
-                <span className="text-[10px] text-muted-foreground block font-medium leading-none mb-0.5">Total Tagihan</span>
-                <span className="text-lg font-semibold text-blue-600 dark:text-blue-400 leading-tight">
+                <span className="text-[10px] text-slate-400 block font-semibold uppercase leading-none mb-0.5">Total Tagihan</span>
+                <span className="text-xl font-semibold text-[#0e59f9] leading-tight font-financial tabular-nums">
                   {formatCurrency(grandTotal)}
                 </span>
               </div>
@@ -248,7 +248,7 @@ export function PaymentModal({
                 type="button"
                 onClick={onClose}
                 disabled={isProcessing}
-                className="w-7 h-7 rounded-full bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-all flex items-center justify-center cursor-pointer shadow-2xs active:scale-95 disabled:opacity-50"
+                className="w-7 h-7 rounded-full hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center cursor-pointer shadow-2xs active:scale-95 disabled:opacity-50"
                 aria-label="Tutup"
                 title="Tutup"
               >
@@ -260,32 +260,32 @@ export function PaymentModal({
 
         <div className="p-4 space-y-3.5">
           {/* Payment Method Selector Tabs (5 Options: Tunai, QRIS Toko, QR Dinamis, EDC, Transfer) */}
-          <div className="grid grid-cols-5 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl gap-1">
+          <div className="grid grid-cols-5 p-1 bg-white dark:bg-slate-900 rounded-full gap-1 shadow-md">
             <button
               type="button"
               onClick={() => setPaymentMethod('cash')}
               className={cn(
-                "py-2 px-1 rounded-lg text-xs font-semibold flex flex-col items-center gap-1 transition-all cursor-pointer text-center",
+                "py-2 px-1 rounded-full text-xs font-semibold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer text-center",
                 paymentMethod === 'cash'
-                  ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-2xs"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-[#0e59f9] text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/60 font-medium"
               )}
             >
-              <Banknote className="w-4 h-4 shrink-0" />
+              <Banknote className={cn("w-4 h-4 shrink-0", paymentMethod === 'cash' ? "text-white" : "text-slate-500")} />
               <span className="truncate w-full text-[11px] leading-tight">Tunai</span>
             </button>
             <button
               type="button"
               onClick={() => setPaymentMethod('qris_static')}
               className={cn(
-                "py-2 px-1 rounded-lg text-xs font-semibold flex flex-col items-center gap-1 transition-all cursor-pointer text-center",
+                "py-2 px-1 rounded-full text-xs font-semibold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer text-center",
                 paymentMethod === 'qris_static'
-                  ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-2xs"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-[#0e59f9] text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/60 font-medium"
               )}
               title="QRIS Statis Toko (Stiker fisik merchant, bebas fee MDR)"
             >
-              <QrCode className="w-4 h-4 shrink-0" />
+              <QrCode className={cn("w-4 h-4 shrink-0", paymentMethod === 'qris_static' ? "text-white" : "text-slate-500")} />
               <span className="truncate w-full text-[11px] leading-tight">QRIS Toko</span>
             </button>
             <button
@@ -293,42 +293,42 @@ export function PaymentModal({
               onClick={() => qrisDynamicEnabled && setPaymentMethod('qris_dynamic')}
               disabled={!qrisDynamicEnabled}
               className={cn(
-                "py-2 px-1 rounded-lg text-xs font-semibold flex flex-col items-center gap-1 transition-all cursor-pointer text-center disabled:opacity-40 disabled:cursor-not-allowed",
+                "py-2 px-1 rounded-full text-xs font-semibold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer text-center disabled:opacity-40 disabled:cursor-not-allowed",
                 paymentMethod === 'qris_dynamic'
-                  ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-2xs"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-[#0e59f9] text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/60 font-medium"
               )}
               title={qrisDynamicEnabled
                 ? "QRIS Dinamis (nominal terkunci otomatis, dikonfirmasi DOKU)"
                 : "QRIS Dinamis belum aktif untuk outlet ini"}
             >
-              <QrCode className="w-4 h-4 shrink-0 text-blue-600" />
+              <QrCode className={cn("w-4 h-4 shrink-0", paymentMethod === 'qris_dynamic' ? "text-white" : "text-[#0e59f9]")} />
               <span className="truncate w-full text-[11px] leading-tight">QR Dinamis</span>
             </button>
             <button
               type="button"
               onClick={() => setPaymentMethod('card')}
               className={cn(
-                "py-2 px-1 rounded-lg text-xs font-semibold flex flex-col items-center gap-1 transition-all cursor-pointer text-center",
+                "py-2 px-1 rounded-full text-xs font-semibold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer text-center",
                 paymentMethod === 'card'
-                  ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-2xs"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-[#0e59f9] text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/60 font-medium"
               )}
             >
-              <CreditCard className="w-4 h-4 shrink-0" />
+              <CreditCard className={cn("w-4 h-4 shrink-0", paymentMethod === 'card' ? "text-white" : "text-slate-500")} />
               <span className="truncate w-full text-[11px] leading-tight">Kartu EDC</span>
             </button>
             <button
               type="button"
               onClick={() => setPaymentMethod('transfer')}
               className={cn(
-                "py-2 px-1 rounded-lg text-xs font-semibold flex flex-col items-center gap-1 transition-all cursor-pointer text-center",
+                "py-2 px-1 rounded-full text-xs font-semibold flex flex-col items-center justify-center gap-1 transition-all cursor-pointer text-center",
                 paymentMethod === 'transfer'
-                  ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-2xs"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-[#0e59f9] text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/60 font-medium"
               )}
             >
-              <ArrowRightLeft className="w-4 h-4 shrink-0" />
+              <ArrowRightLeft className={cn("w-4 h-4 shrink-0", paymentMethod === 'transfer' ? "text-white" : "text-slate-500")} />
               <span className="truncate w-full text-[11px] leading-tight">Transfer</span>
             </button>
           </div>
@@ -337,18 +337,18 @@ export function PaymentModal({
           {paymentMethod === 'cash' ? (
             <div className="space-y-3">
               {/* Cash Display & Change Status */}
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 space-y-2">
+              <div className="p-3 rounded-xl space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground font-medium">Uang Diterima</span>
+                  <span className="text-xs text-slate-600 font-medium">Uang Diterima</span>
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-xl font-semibold text-slate-900 dark:text-slate-100">
+                    <span className="font-financial tabular-nums text-2xl font-semibold text-slate-900">
                       {cashReceived > 0 ? formatCurrency(cashReceived) : 'Rp 0'}
                     </span>
                     {cashReceivedStr && (
                       <button
                         type="button"
                         onClick={() => setCashReceivedStr('')}
-                        className="text-[11px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-muted-foreground hover:text-foreground"
+                        className="text-[11px] px-2 py-0.5 rounded-md bg-slate-200/80 text-slate-700 hover:bg-slate-300 transition-colors font-medium cursor-pointer"
                       >
                         Reset
                       </button>
@@ -360,16 +360,16 @@ export function PaymentModal({
                 {cashReceived > 0 && (
                   <div
                     className={cn(
-                      "flex items-center justify-between text-xs px-2.5 py-1.5 rounded-lg transition-colors",
+                      "flex items-center justify-between text-xs text-slate-600  py-1.5 rounded-lg transition-colors",
                       change >= 0
-                        ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
-                        : "bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800"
+                        ? ""
+                        : "bg-rose-50 text-rose-800 "
                     )}
                   >
                     <span className="font-medium">
                       {change >= 0 ? 'Kembalian Pelanggan' : 'Uang Kurang'}
                     </span>
-                    <span className="font-semibold text-sm">
+                    <span className="font-semibold text-sm font-financial tabular-nums">
                       {formatCurrency(Math.abs(change))}
                     </span>
                   </div>
@@ -377,24 +377,37 @@ export function PaymentModal({
               </div>
 
               {/* Quick Preset Chips */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-hide text-xs">
+              <div className="flex items-center gap-1.5 overflow-x-auto  scrollbar-hide text-xs py-2">
                 <button
                   type="button"
                   onClick={() => handlePresetAmount(grandTotal)}
-                  className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 font-semibold text-blue-600 dark:text-blue-400 shrink-0 transition-colors cursor-pointer"
+                  className={cn(
+                    "px-3 py-1.5 rounded-full font-semibold shrink-0 transition-all cursor-pointer font-financial tabular-nums text-xs",
+                    cashReceived === grandTotal
+                      ? "bg-[#0e59f9] text-white shadow-xs"
+                      : "bg-white text-slate-700 hover:text-slate-900 hover:bg-slate-100 shadow-sm-md font-medium"
+                  )}
                 >
                   Uang Pas
                 </button>
-                {suggestedAmounts.map((amt) => (
-                  <button
-                    key={amt}
-                    type="button"
-                    onClick={() => handlePresetAmount(amt)}
-                    className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 font-medium text-foreground shrink-0 transition-colors cursor-pointer"
-                  >
-                    {formatCurrency(amt)}
-                  </button>
-                ))}
+                {suggestedAmounts.map((amt) => {
+                  const isSelected = cashReceived === amt;
+                  return (
+                    <button
+                      key={amt}
+                      type="button"
+                      onClick={() => handlePresetAmount(amt)}
+                      className={cn(
+                        "px-3 py-1.5 rounded-full shrink-0 transition-all cursor-pointer font-financial tabular-nums text-xs",
+                        isSelected
+                          ? "bg-[#0e59f9] text-white shadow-xs font-semibold"
+                          : "bg-white text-slate-700 hover:text-slate-900 hover:bg-slate-100 shadow-sm-md font-medium"
+                      )}
+                    >
+                      {formatCurrency(amt)}
+                    </button>
+                  );
+                })}
               </div>
 
               {/* 3x4 Touch Numpad */}
@@ -405,10 +418,10 @@ export function PaymentModal({
                     type="button"
                     onClick={() => handleNumpadInput(btn)}
                     className={cn(
-                      "h-11 rounded-xl text-base font-medium flex items-center justify-center border transition-all active:scale-[0.97] cursor-pointer select-none",
+                      "h-11 rounded-xl text-base font-medium flex items-center justify-center transition-all active:scale-[0.97] cursor-pointer select-none font-financial tabular-nums",
                       btn === 'BACKSPACE'
-                        ? "bg-slate-100 dark:bg-slate-800/80 text-muted-foreground border-slate-200 dark:border-slate-700 hover:bg-slate-200"
-                        : "bg-white dark:bg-slate-900 text-foreground border-slate-200/90 dark:border-slate-800 hover:bg-slate-50 shadow-2xs"
+                        ? "bg-slate-100 text-slate-600 hover:bg-slate-200 active:bg-slate-300"
+                        : "text-slate-900 hover:bg-slate-100 active:bg-slate-200 font-semibold"
                     )}
                   >
                     {btn === 'BACKSPACE' ? <Delete className="w-5 h-5" /> : btn}
@@ -420,66 +433,62 @@ export function PaymentModal({
             /* Non-cash Payment Guidance */
             <div className="space-y-3">
               {paymentMethod === 'qris_static' && (
-                <div className="py-5 px-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/70 dark:border-slate-800 text-center space-y-2">
-                  <div className="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 mx-auto flex items-center justify-center">
+                <div className="py-5 px-4 rounded-xl   text-center space-y-2">
+                  <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600  mx-auto shadow-sm flex items-center justify-center">
                     <QrCode className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-foreground">
-                      QRIS Statis Toko (Stiker Merchant)
+                    <p className="text-xs font-semibold text-slate-900">
+                      QRIS Statis Toko
                     </p>
-                    <span className="inline-block px-2 py-0.5 mt-1 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
-                      100% Utuh Masuk Rekening Toko • Bebas Potongan MDR
-                    </span>
+                    
                   </div>
-                  <p className="text-[11px] text-muted-foreground max-w-sm mx-auto leading-relaxed">
-                    Arahkan pelanggan memindai stiker QRIS fisik toko Anda dan mengetik nominal <span className="font-semibold text-foreground">{formatCurrency(grandTotal)}</span>. Setelah kasir memverifikasi dana masuk di notifikasi/mutasi m-banking toko, klik Selesaikan.
+                  <p className="text-[11px] text-slate-500 max-w-sm mx-auto leading-relaxed font-normal">
+                    Arahkan pelanggan memindai stiker QRIS fisik toko Anda dan mengetik nominal <span className="font-semibold text-slate-900 font-financial tabular-nums">{formatCurrency(grandTotal)}</span>. Setelah kasir memverifikasi dana masuk di notifikasi/mutasi m-banking toko, klik Selesaikan.
                   </p>
                 </div>
               )}
 
               {paymentMethod === 'qris_dynamic' && (
-                <div className="py-5 px-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/70 dark:border-slate-800 text-center space-y-2">
-                  <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 mx-auto flex items-center justify-center">
+                <div className="py-5 px-4 rounded-xl text-center space-y-2">
+                  <div className="w-10 h-10 rounded-full bg-[#0e59f9]/10 text-[#0e59f9] mx-auto shadow-sm flex items-center justify-center">
                     <QrCode className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-foreground">
-                      QRIS Dinamis Menuin (Payment Gateway)
+                    <p className="text-xs font-semibold text-slate-900">
+                      QRIS Dinamis Menuin
                     </p>
-                    <span className="inline-block px-2 py-0.5 mt-1 rounded text-[10px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
-                      Nominal Terkunci Otomatis • MDR DOKU 0.7%
-                    </span>
+                    
                   </div>
-                  <p className="text-[11px] text-muted-foreground max-w-sm mx-auto leading-relaxed">
-                    Kode QR akan tampil dengan nominal terkunci <span className="font-semibold text-foreground">{formatCurrency(grandTotal)}</span>. Transaksi otomatis lunas setelah pembayaran dikonfirmasi DOKU. Kasir tidak perlu memeriksa mutasi.
+                  <p className="text-[11px] text-slate-500 max-w-sm mx-auto leading-relaxed font-normal">
+                    Kode QR akan tampil dengan nominal terkunci <span className="font-semibold text-slate-900 font-financial tabular-nums">{formatCurrency(grandTotal)}</span>. Transaksi otomatis lunas setelah pembayaran dikonfirmasi DOKU. Kasir tidak perlu memeriksa mutasi.
                   </p>
                 </div>
               )}
 
               {paymentMethod === 'card' && (
-                <div className="py-5 px-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/70 dark:border-slate-800 text-center space-y-2">
-                  <div className="w-10 h-10 rounded-full bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 mx-auto flex items-center justify-center">
+                <div className="py-5 px-4 rounded-xl text-center space-y-2">
+                  <div className="w-10 h-10 rounded-full bg-amber-50 text-amber-600 mx-auto shadow-sm flex items-center justify-center">
                     <CreditCard className="w-5 h-5" />
                   </div>
-                  <p className="text-xs font-semibold text-foreground">
+                  <p className="text-xs font-semibold text-slate-900">
                     Instruksi Mesin EDC Toko
                   </p>
-                  <p className="text-[11px] text-muted-foreground max-w-xs mx-auto leading-relaxed">
+                  <p className="text-[11px] text-slate-500 max-w-xs mx-auto leading-relaxed font-normal">
                     Gesek atau tap kartu pelanggan pada terminal EDC kasir toko Anda. Pastikan struk transaksi EDC fisik telah berhasil keluar dari mesin.
                   </p>
                 </div>
               )}
 
               {paymentMethod === 'transfer' && (
-                <div className="py-5 px-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/70 dark:border-slate-800 text-center space-y-2">
-                  <div className="w-10 h-10 rounded-full bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 mx-auto flex items-center justify-center">
+                <div className="py-5 px-4 rounded-xl text-center space-y-2">
+                  <div className="w-10 h-10 rounded-full bg-purple-50 text-purple-600 mx-auto flex shadow-sm items-center justify-center">
                     <ArrowRightLeft className="w-5 h-5" />
                   </div>
-                  <p className="text-xs font-semibold text-foreground">
+                  <p className="text-xs font-semibold text-slate-900">
                     Instruksi Transfer Bank Manual
                   </p>
-                  <p className="text-[11px] text-muted-foreground max-w-xs mx-auto leading-relaxed">
+                  <p className="text-[11px] text-slate-500 max-w-xs mx-auto leading-relaxed font-normal">
                     Verifikasi dana transfer pelanggan di mutasi rekening bank toko Anda sebelum menyelesaikan transaksi ini.
                   </p>
                 </div>
@@ -489,13 +498,13 @@ export function PaymentModal({
         </div>
 
         {/* Modal Footer Actions */}
-        <div className="p-4 pt-3 border-t bg-slate-50/70 dark:bg-slate-900/50 flex gap-2.5">
+        <div className="p-4 pt-3 flex gap-2.5">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
             disabled={isProcessing}
-            className="flex-1 h-11 text-xs rounded-xl font-medium"
+            className="flex-1 h-11 text-xs border-none shadow-md rounded-full font-medium bg-white hover:bg-slate-100 text-slate-700 cursor-pointer transition-all"
           >
             Batal
           </Button>
@@ -503,7 +512,7 @@ export function PaymentModal({
             type="button"
             onClick={handleSubmit}
             disabled={!isCashSufficient || isProcessing}
-            className="flex-[2] h-11 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5"
+            className="flex-[2] h-11 bg-[#0e59f9] hover:bg-[#0b4de0] text-white rounded-full text-xs font-semibold shadow-xs transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5"
           >
             {isProcessing ? (
               <>
@@ -513,7 +522,7 @@ export function PaymentModal({
             ) : (
               <>
                 <Check className="w-4 h-4 stroke-[2.5]" />
-                <span>{paymentMethod === 'qris_dynamic' ? 'Tampilkan QR (Enter)' : 'Selesaikan & Cetak Struk (Enter)'}</span>
+                <span>{paymentMethod === 'qris_dynamic' ? 'Tampilkan QR (Enter)' : 'Selesaikan & Cetak Struk'}</span>
               </>
             )}
           </Button>

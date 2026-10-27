@@ -534,10 +534,10 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
       {/* 1. TOP HEADER (Exact match with Transaction History & Product List) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 flex items-center gap-2">
             Diskon & Potongan
           </h1>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             Kelola seluruh diskon promo, aturan potongan harga, dan pantau penghematan pelanggan outlet Anda.
           </p>
         </div>
@@ -547,7 +547,7 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
             variant="outline"
             size="sm"
             onClick={() => setViewMode('list')}
-            className="h-9 px-3.5 text-xs font-medium rounded-xl border-slate-200 dark:border-slate-800"
+            className="h-9 px-4 text-xs font-medium rounded-full border-none bg-white shadow-sm-md hover:bg-slate-100 text-slate-700"
           >
             <ArrowLeft className="w-3.5 h-3.5 mr-1.5" />
             Kembali ke Daftar
@@ -561,7 +561,7 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
           {/* 2. TOP 3 METRIC CARDS */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* KPI 1: TOTAL POTONGAN DIBERIKAN - Solid Royal Blue Hero Card */}
-            <div className="relative overflow-hidden rounded-2xl bg-[#0e59f9] text-white p-5 sm:p-6 shadow-sm shadow-blue-500/20 hover:shadow-md hover:shadow-blue-500/30 transition-all flex flex-col justify-between min-h-[148px]">
+            <div className="relative overflow-hidden rounded-2xl bg-[#0e59f9] text-white p-5 sm:p-6 shadow-md hover:shadow-lg transition-all flex flex-col justify-between min-h-[148px]">
               <div className="w-10 h-10 rounded-full bg-white text-[#0e59f9] flex items-center justify-center shadow-xs flex-shrink-0">
                 <Percent className="w-5 h-5 text-[#0e59f9]" />
               </div>
@@ -580,42 +580,42 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
             </div>
 
             {/* KPI 2: PROMO AKTIF - Clean White Card */}
-            <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md transition-all flex flex-col justify-between min-h-[148px]">
+            <div className="relative overflow-hidden rounded-2xl bg-white border-none p-5 sm:p-6 shadow-sm-md hover:shadow-md transition-all flex flex-col justify-between min-h-[148px]">
               <div className="w-10 h-10 rounded-full bg-[#0e59f9] text-white flex items-center justify-center shadow-xs flex-shrink-0">
                 <CheckCircle2 className="w-5 h-5 text-white" />
               </div>
 
               <div className="mt-5 min-w-0">
-                <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-400 uppercase tracking-wider block mb-1">
+                <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">
                   PROMO AKTIF
                 </span>
-                <div className="text-2xl sm:text-[26px] font-semibold text-slate-900 dark:text-white tracking-tight leading-none whitespace-nowrap flex items-baseline gap-1.5">
+                <div className="text-2xl sm:text-[26px] font-semibold text-slate-900 tracking-tight leading-none whitespace-nowrap flex items-baseline gap-1.5">
                   <span>{activePromos}</span>
-                  <span className="text-xs sm:text-sm font-normal text-slate-400 dark:text-slate-400">/ {totalPromos} Promo</span>
+                  <span className="text-xs sm:text-sm font-normal text-slate-400">/ {totalPromos} Promo</span>
                 </div>
               </div>
             </div>
 
             {/* KPI 3: TOTAL PENGGUNAAN - Clean White Card */}
-            <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md transition-all flex flex-col justify-between min-h-[148px]">
+            <div className="relative overflow-hidden rounded-2xl bg-white border-none p-5 sm:p-6 shadow-sm-md hover:shadow-md transition-all flex flex-col justify-between min-h-[148px]">
               <div className="w-10 h-10 rounded-full bg-[#0e59f9] text-white flex items-center justify-center shadow-xs flex-shrink-0">
                 <ReceiptText className="w-5 h-5 text-white" />
               </div>
 
               <div className="mt-5 min-w-0">
-                <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-400 uppercase tracking-wider block mb-1">
+                <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">
                   TOTAL PENGGUNAAN
                 </span>
-                <div className="text-2xl sm:text-[26px] font-semibold text-slate-900 dark:text-white tracking-tight leading-none whitespace-nowrap flex items-baseline gap-1.5">
+                <div className="text-2xl sm:text-[26px] font-semibold text-slate-900 tracking-tight leading-none whitespace-nowrap flex items-baseline gap-1.5">
                   <span>{grandTotalUsage.toLocaleString('id-ID')}</span>
-                  <span className="text-xs sm:text-sm font-normal text-slate-400 dark:text-slate-400">Kali</span>
+                  <span className="text-xs sm:text-sm font-normal text-slate-400">Kali</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* 3. TABS & TOOLBAR ROW (Exact match with Transaction History) */}
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between border-b border-slate-200 dark:border-slate-800 gap-4">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between border-b border-slate-200 gap-4">
             {/* Left: Underline Tabs */}
             <div className="flex items-center gap-6 overflow-x-auto no-scrollbar pt-1">
               {statusTabs.map((tab) => {
@@ -631,23 +631,23 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                     className={cn(
                       "relative pb-3 text-xs sm:text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer whitespace-nowrap",
                       isActive
-                        ? "text-blue-600 dark:text-blue-400 font-semibold"
-                        : "text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
+                        ? "text-[#0e59f9] font-semibold"
+                        : "text-slate-500 hover:text-slate-900"
                     )}
                   >
                     <span>{tab.label}</span>
                     <span className={cn(
-                      "text-xs px-2 py-0.5 rounded-lg font-medium transition-colors",
+                      "text-xs px-2.5 py-0.5 rounded-full font-medium transition-colors",
                       isActive
-                        ? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300"
-                        : "text-slate-400 dark:text-slate-500"
+                        ? "bg-blue-50 text-[#0e59f9]"
+                        : "text-slate-500 bg-slate-100"
                     )}>
                       {tab.count}
                     </span>
                     {isActive && (
                       <motion.div
                         layoutId="activePromoTabUnderline"
-                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-500 rounded-full"
+                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#0e59f9] rounded-full"
                         transition={{ type: "spring", stiffness: 450, damping: 35 }}
                       />
                     )}
@@ -669,7 +669,7 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                     setSearchQuery(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="pl-9 pr-8 h-9 text-xs rounded-xl bg-slate-50/70 dark:bg-slate-800/60 border-slate-200/90 dark:border-slate-800 focus:bg-white dark:focus:bg-slate-900 transition-all placeholder:text-slate-400"
+                  className="pl-9 pr-8 h-9 text-xs rounded-full bg-white border-none shadow-sm-md focus:bg-white focus:ring-2 focus:ring-[#0e59f9]/20 transition-all placeholder:text-slate-400 text-slate-900"
                 />
                 {searchQuery && (
                   <button
@@ -678,7 +678,7 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                       setSearchQuery('');
                       setCurrentPage(1);
                     }}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -690,16 +690,16 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
-                    className="h-9 px-3 rounded-xl border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer shadow-xs"
+                    className="h-9 px-3.5 rounded-full border-none bg-white text-xs font-medium text-slate-700 hover:bg-slate-100 flex items-center gap-2 cursor-pointer shadow-sm-md"
                   >
                     <Filter className="w-3.5 h-3.5 text-slate-400" />
                     <span>Filter</span>
                     {scopeFilter !== 'all' && (
-                      <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400 shrink-0" />
+                      <span className="w-2 h-2 rounded-full bg-[#0e59f9] shrink-0" />
                     )}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48 p-1.5 rounded-2xl border-slate-200 dark:border-slate-800 shadow-lg bg-white dark:bg-slate-900">
+                <DropdownMenuContent align="end" className="w-48 p-1.5 rounded-2xl border-none shadow-2xl bg-white text-slate-800">
                   <div className="px-2.5 py-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                     Cakupan Promo
                   </div>
@@ -708,40 +708,40 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                     className={cn(
                       "flex items-center justify-between text-xs rounded-xl px-2.5 py-1.5 cursor-pointer transition-colors",
                       scopeFilter === 'all'
-                        ? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 font-medium"
-                        : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                        ? "bg-blue-50 text-[#0e59f9] font-medium"
+                        : "text-slate-700 hover:bg-slate-100"
                     )}
                   >
                     <span>Semua Target</span>
-                    {scopeFilter === 'all' && <Check className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />}
+                    {scopeFilter === 'all' && <Check className="w-3.5 h-3.5 text-[#0e59f9]" />}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => { setScopeFilter('cart'); setCurrentPage(1); }}
                     className={cn(
                       "flex items-center justify-between text-xs rounded-xl px-2.5 py-1.5 cursor-pointer transition-colors",
                       scopeFilter === 'cart'
-                        ? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 font-medium"
-                        : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                        ? "bg-blue-50 text-[#0e59f9] font-medium"
+                        : "text-slate-700 hover:bg-slate-100"
                     )}
                   >
                     <span>Semua Menu</span>
-                    {scopeFilter === 'cart' && <Check className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />}
+                    {scopeFilter === 'cart' && <Check className="w-3.5 h-3.5 text-[#0e59f9]" />}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => { setScopeFilter('specific'); setCurrentPage(1); }}
                     className={cn(
                       "flex items-center justify-between text-xs rounded-xl px-2.5 py-1.5 cursor-pointer transition-colors",
                       scopeFilter === 'specific'
-                        ? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 font-medium"
-                        : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                        ? "bg-blue-50 text-[#0e59f9] font-medium"
+                        : "text-slate-700 hover:bg-slate-100"
                     )}
                   >
                     <span>Khusus Produk</span>
-                    {scopeFilter === 'specific' && <Check className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />}
+                    {scopeFilter === 'specific' && <Check className="w-3.5 h-3.5 text-[#0e59f9]" />}
                   </DropdownMenuItem>
                   {scopeFilter !== 'all' && (
                     <>
-                      <DropdownMenuSeparator className="my-1 bg-slate-100 dark:bg-slate-800" />
+                      <DropdownMenuSeparator className="my-1 bg-slate-100" />
                       <button
                         type="button"
                         onClick={() => { setScopeFilter('all'); setCurrentPage(1); }}
@@ -759,60 +759,60 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
-                    className="h-9 px-3 rounded-xl border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer shadow-xs"
+                    className="h-9 px-3.5 rounded-full border-none bg-white text-xs font-medium text-slate-700 hover:bg-slate-100 flex items-center gap-2 cursor-pointer shadow-sm-md"
                   >
                     <SlidersHorizontal className="w-3.5 h-3.5 text-slate-400" />
                     <span>Urutan</span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48 p-1.5 rounded-2xl border-slate-200 dark:border-slate-800 shadow-lg bg-white dark:bg-slate-900">
+                <DropdownMenuContent align="end" className="w-48 p-1.5 rounded-2xl border-none shadow-2xl bg-white text-slate-800">
                   <DropdownMenuItem
                     onClick={() => { setSortBy('newest'); setCurrentPage(1); }}
                     className={cn(
                       "flex items-center justify-between text-xs rounded-xl px-2.5 py-1.5 cursor-pointer transition-colors",
                       sortBy === 'newest'
-                        ? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 font-medium"
-                        : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                        ? "bg-blue-50 text-[#0e59f9] font-medium"
+                        : "text-slate-700 hover:bg-slate-100"
                     )}
                   >
                     <span>Terbaru</span>
-                    {sortBy === 'newest' && <Check className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />}
+                    {sortBy === 'newest' && <Check className="w-3.5 h-3.5 text-[#0e59f9]" />}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => { setSortBy('usage'); setCurrentPage(1); }}
                     className={cn(
                       "flex items-center justify-between text-xs rounded-xl px-2.5 py-1.5 cursor-pointer transition-colors",
                       sortBy === 'usage'
-                        ? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 font-medium"
-                        : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                        ? "bg-blue-50 text-[#0e59f9] font-medium"
+                        : "text-slate-700 hover:bg-slate-100"
                     )}
                   >
                     <span>Penggunaan Terbanyak</span>
-                    {sortBy === 'usage' && <Check className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />}
+                    {sortBy === 'usage' && <Check className="w-3.5 h-3.5 text-[#0e59f9]" />}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => { setSortBy('discount_val'); setCurrentPage(1); }}
                     className={cn(
                       "flex items-center justify-between text-xs rounded-xl px-2.5 py-1.5 cursor-pointer transition-colors",
                       sortBy === 'discount_val'
-                        ? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 font-medium"
-                        : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                        ? "bg-blue-50 text-[#0e59f9] font-medium"
+                        : "text-slate-700 hover:bg-slate-100"
                     )}
                   >
                     <span>Diskon Terbesar</span>
-                    {sortBy === 'discount_val' && <Check className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />}
+                    {sortBy === 'discount_val' && <Check className="w-3.5 h-3.5 text-[#0e59f9]" />}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => { setSortBy('name'); setCurrentPage(1); }}
                     className={cn(
                       "flex items-center justify-between text-xs rounded-xl px-2.5 py-1.5 cursor-pointer transition-colors",
                       sortBy === 'name'
-                        ? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 font-medium"
-                        : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                        ? "bg-blue-50 text-[#0e59f9] font-medium"
+                        : "text-slate-700 hover:bg-slate-100"
                     )}
                   >
                     <span>Nama Promo (A-Z)</span>
-                    {sortBy === 'name' && <Check className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />}
+                    {sortBy === 'name' && <Check className="w-3.5 h-3.5 text-[#0e59f9]" />}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -821,7 +821,7 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
               <Button
                 size="sm"
                 onClick={handleOpenCreate}
-                className="h-9 px-3.5 text-xs font-semibold rounded-xl bg-[#0e59f9] hover:bg-blue-600 text-white shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                className="h-9 px-4 text-xs font-semibold rounded-full bg-[#0e59f9] hover:bg-[#0b4de0] text-white shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 <span>Buat Promo</span>
@@ -830,11 +830,11 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
           </div>
 
           {/* 4. MODERN SAAS PROMOTION TABLE */}
-          <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-xs overflow-hidden">
+          <div className="rounded-2xl bg-white border-none shadow-sm-md overflow-hidden">
             <div className="overflow-x-auto">
               <Table className="w-full text-left text-xs min-w-[760px]">
                 <TableHeader>
-                  <TableRow className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 hover:bg-slate-50/70 text-slate-500 dark:text-slate-400">
+                  <TableRow className="border-b border-slate-100 bg-slate-50/70 hover:bg-slate-50/70 text-slate-500">
                     <TableHead className="py-3 px-4 text-xs font-semibold whitespace-nowrap">Promo & Kode</TableHead>
                     <TableHead className="py-3 px-4 text-xs font-semibold whitespace-nowrap">Besar Diskon</TableHead>
                     <TableHead className="py-3 px-4 text-xs font-semibold whitespace-nowrap">Syarat & Cakupan</TableHead>
@@ -843,16 +843,16 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                     <TableHead className="py-3 px-4 text-xs font-semibold whitespace-nowrap text-right">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                <TableBody className="divide-y divide-slate-100">
                   {paginatedPromos.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="py-16 text-center text-muted-foreground">
+                      <TableCell colSpan={6} className="py-16 text-center text-slate-500">
                         <div className="flex flex-col items-center justify-center gap-2">
-                          <Tag className="w-8 h-8 text-slate-300 dark:text-slate-600" />
-                          <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                          <Tag className="w-8 h-8 text-slate-300" />
+                          <p className="text-sm font-semibold text-slate-800">
                             Tidak ada diskon atau promo ditemukan
                           </p>
-                          <p className="text-xs text-muted-foreground max-w-sm">
+                          <p className="text-xs text-slate-500 max-w-sm">
                             {searchQuery || scopeFilter !== 'all' || activeTab !== 'all'
                               ? 'Coba ubah kata kunci pencarian atau sesuaikan filter Anda.'
                               : 'Mulai buat promo diskon pertama Anda untuk memikat pelanggan outlet.'}
@@ -861,7 +861,7 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                             <Button
                               size="sm"
                               onClick={handleOpenCreate}
-                              className="mt-2 h-8 px-3 rounded-lg bg-[#0e59f9] text-white text-xs font-semibold"
+                              className="mt-2 h-9 px-4 rounded-full bg-[#0e59f9] text-white text-xs font-semibold shadow-md hover:bg-[#0b4de0] cursor-pointer"
                             >
                               <Plus className="w-3.5 h-3.5 mr-1" /> Buat Promo Baru
                             </Button>
@@ -879,25 +879,25 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                       return (
                         <TableRow
                           key={promo.id}
-                          className="hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-colors group cursor-pointer"
+                          className="hover:bg-slate-100/60 transition-colors group cursor-pointer border-b border-slate-100"
                           onClick={() => handleOpenDetailModal(promo, 'products')}
                         >
                           {/* Promo & Kode */}
                           <TableCell className="py-3 px-4">
                             <div className="flex flex-col gap-0.5">
-                              <span className="font-semibold text-xs text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                              <span className="font-semibold text-xs text-slate-900 group-hover:text-[#0e59f9] transition-colors">
                                 {promo.name}
                               </span>
                               {promo.code ? (
                                 <div className="flex items-center gap-1.5 mt-0.5" onClick={(e) => e.stopPropagation()}>
-                                  <span className="text-[11px] text-slate-400 dark:text-slate-500 font-normal">
-                                    Kode: <span className="font-mono text-slate-500 dark:text-slate-400 font-medium">{promo.code}</span>
+                                  <span className="text-[11px] text-slate-400 font-normal">
+                                    Kode: <span className="font-mono text-slate-600 font-medium">{promo.code}</span>
                                   </span>
                                   <button
                                     type="button"
                                     onClick={() => handleCopyCode(promo.code!)}
                                     title="Salin kode promo"
-                                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 rounded transition-colors cursor-pointer"
+                                    className="text-slate-400 hover:text-slate-600 p-0.5 rounded-full transition-colors cursor-pointer"
                                   >
                                     {copiedCode === promo.code ? (
                                       <Check className="w-3 h-3 text-emerald-500" />
@@ -907,7 +907,7 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                                   </button>
                                 </div>
                               ) : (
-                                <span className="text-[11px] text-slate-400 dark:text-slate-500 font-normal">
+                                <span className="text-[11px] text-slate-400 font-normal">
                                   Otomatis / Tanpa Kode
                                 </span>
                               )}
@@ -917,7 +917,7 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                           {/* Besar Diskon */}
                           <TableCell className="py-3 px-4 whitespace-nowrap">
                             <div className="flex flex-col">
-                              <span className="font-semibold text-xs text-slate-900 dark:text-slate-100">
+                              <span className="font-semibold text-xs text-slate-900">
                                 {promo.type === 'PERCENTAGE' ? `${promoVal}%` : formatCurrency(promoVal)}
                               </span>
                               {promo.type === 'PERCENTAGE' && promo.maxDiscount ? (
@@ -940,12 +940,12 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                                   <button
                                     type="button"
                                     onClick={() => handleOpenDetailModal(promo, 'products')}
-                                    className="text-xs font-medium text-amber-700 dark:text-amber-400 hover:underline"
+                                    className="text-xs font-medium text-amber-700 hover:underline cursor-pointer"
                                   >
                                     Khusus {appProductIds.length} Menu
                                   </button>
                                 ) : (
-                                  <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                                  <span className="text-xs font-medium text-slate-600">
                                     Semua Menu Outlet
                                   </span>
                                 )}
@@ -959,10 +959,10 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                           {/* Penggunaan */}
                           <TableCell className="py-3 px-4 whitespace-nowrap">
                             <div className="flex flex-col">
-                              <span className="font-semibold text-xs text-slate-900 dark:text-slate-100">
+                              <span className="font-semibold text-xs text-slate-900">
                                 {(promo.totalUsage || 0).toLocaleString('id-ID')}x dipakai
                               </span>
-                              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                              <span className="text-[10px] text-emerald-600 font-medium">
                                 Hemat {formatCurrency(promo.totalDiscountValue || 0)}
                               </span>
                             </div>
@@ -976,12 +976,12 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                                 onCheckedChange={() => handleToggleStatus(promo, promo.isActive)}
                               />
                               <span className={cn(
-                                "text-[11px] font-medium px-2 py-0.5 rounded-md border-none inline-flex items-center",
+                                "text-[11px] font-medium px-2.5 py-0.5 rounded-full border-none inline-flex items-center",
                                 promo.isActive
-                                  ? "bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300"
-                                  : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                                  ? "bg-emerald-50 text-emerald-600"
+                                  : "bg-slate-100 text-slate-500"
                               )}>
-                                {promo.isActive ? 'Aktif' : 'Off'}
+                                {promo.isActive ? 'Aktif' : 'Nonaktif'}
                               </span>
                             </div>
                           </TableCell>
@@ -993,34 +993,34 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-8 w-8 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg cursor-pointer"
+                                  className="h-8 w-8 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full cursor-pointer"
                                 >
                                   <MoreVertical className="h-4 w-4" />
                                   <span className="sr-only">Menu aksi</span>
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-40 rounded-xl p-1 shadow-lg border-slate-200 dark:border-slate-800">
+                              <DropdownMenuContent align="end" className="w-40 rounded-2xl p-1.5 shadow-2xl border-none bg-white">
                                 <DropdownMenuItem
                                   onClick={() => handleOpenDetailModal(promo, 'products')}
-                                  className="text-xs cursor-pointer gap-2 py-2 px-2.5 rounded-lg"
+                                  className="text-xs cursor-pointer gap-2 py-2 px-2.5 rounded-xl hover:bg-slate-100 text-slate-700"
                                 >
                                   <Eye className="w-3.5 h-3.5 text-slate-500" />
                                   <span>Lihat Detail</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => handleOpenEdit(promo)}
-                                  className="text-xs cursor-pointer gap-2 py-2 px-2.5 rounded-lg"
+                                  className="text-xs cursor-pointer gap-2 py-2 px-2.5 rounded-xl hover:bg-slate-100 text-slate-700"
                                 >
                                   <Pencil className="w-3.5 h-3.5 text-slate-500" />
                                   <span>Edit Promo</span>
                                 </DropdownMenuItem>
-                                <DropdownMenuSeparator className="my-1 border-slate-100 dark:border-slate-800" />
+                                <DropdownMenuSeparator className="my-1 border-slate-100" />
                                 <DropdownMenuItem
                                   onClick={() => {
                                     setSelectedPromoForDelete(promo);
                                     setIsDeleteOpen(true);
                                   }}
-                                  className="text-xs cursor-pointer gap-2 py-2 px-2.5 rounded-lg text-rose-600 focus:text-rose-600 focus:bg-rose-50 dark:focus:bg-rose-950/40"
+                                  className="text-xs cursor-pointer gap-2 py-2 px-2.5 rounded-xl text-rose-600 focus:text-rose-600 focus:bg-rose-50"
                                 >
                                   <Trash2 className="w-3.5 h-3.5 text-rose-500" />
                                   <span>Hapus Promo</span>
@@ -1037,7 +1037,7 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
             </div>
           </div>
 
-          {/* Zone 3: Footer Pagination Bar (Exact match with Transaction History SSOT) */}
+          {/* Zone 3: Footer Pagination Bar */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-1">
             {/* Left: Items Per Page Selector */}
             <div className="flex items-center gap-3 text-xs text-slate-500">
@@ -1048,13 +1048,13 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                     <Button
                       variant="outline"
                       size="sm"
-                      className="h-8 px-3 rounded-xl border-slate-200 dark:border-slate-800 text-xs font-medium gap-1.5 cursor-pointer"
+                      className="h-8 px-3 rounded-full border-none bg-white shadow-sm-md text-xs font-medium gap-1.5 cursor-pointer hover:bg-slate-100 text-slate-700"
                     >
                       <span>{itemsPerPage}</span>
                       <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-24 p-1 rounded-xl shadow-lg border-slate-200 dark:border-slate-800">
+                  <DropdownMenuContent align="start" className="w-24 p-1.5 rounded-2xl shadow-2xl border-none bg-white">
                     {[10, 20, 50, 100].map((size) => (
                       <DropdownMenuItem
                         key={size}
@@ -1062,7 +1062,7 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                           setItemsPerPage(size);
                           setCurrentPage(1);
                         }}
-                        className={cn("text-xs py-1.5 px-3 rounded-lg cursor-pointer", itemsPerPage === size && "font-semibold text-blue-600")}
+                        className={cn("text-xs py-1.5 px-3 rounded-xl cursor-pointer hover:bg-slate-100", itemsPerPage === size && "font-semibold text-[#0e59f9] bg-blue-50")}
                       >
                         {size}
                       </DropdownMenuItem>
@@ -1071,7 +1071,7 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                 </DropdownMenu>
               </div>
 
-              <span className="hidden sm:inline text-slate-300 dark:text-slate-700">&bull;</span>
+              <span className="hidden sm:inline text-slate-300">&bull;</span>
               <span className="hidden sm:inline">
                 Menampilkan {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, filteredPromos.length)} dari {filteredPromos.length} promo
               </span>
@@ -1085,7 +1085,7 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                   size="icon"
                   disabled={currentPage === 1}
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  className="h-8 w-8 rounded-lg border-slate-200 dark:border-slate-800 text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:text-blue-400 disabled:opacity-40 cursor-pointer"
+                  className="h-8 w-8 rounded-full border-none bg-white shadow-sm-md text-slate-600 hover:text-[#0e59f9] hover:bg-slate-100 disabled:opacity-30 cursor-pointer flex items-center justify-center transition-all aspect-square"
                   aria-label="Halaman sebelumnya"
                 >
                   <ChevronLeft className="w-4 h-4" />
@@ -1094,7 +1094,7 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                 {getPaginationNumbers().map((pageItem, index) => {
                   if (pageItem === '...') {
                     return (
-                      <span key={`ellipsis-${index}`} className="px-1.5 text-xs text-slate-400">
+                      <span key={`ellipsis-${index}`} className="w-6 text-center text-xs text-slate-400 select-none">
                         ...
                       </span>
                     );
@@ -1107,10 +1107,10 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                       type="button"
                       onClick={() => setCurrentPage(pageNum)}
                       className={cn(
-                        "w-8 h-8 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center justify-center",
+                        "w-8 h-8 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center justify-center aspect-square",
                         isCurrent
-                          ? "bg-[#0e59f9] text-white shadow-xs"
-                          : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
+                          ? "bg-[#0e59f9] text-white shadow-md hover:bg-[#0b4de0]"
+                          : "hover:bg-slate-100 hover:text-slate-900 text-slate-600"
                       )}
                     >
                       {pageNum}
@@ -1123,7 +1123,7 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                   size="icon"
                   disabled={currentPage === totalPages}
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  className="h-8 w-8 rounded-lg border-slate-200 dark:border-slate-800 text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:text-blue-400 disabled:opacity-40 cursor-pointer"
+                  className="h-8 w-8 rounded-full border-none bg-white shadow-sm-md text-slate-600 hover:text-[#0e59f9] hover:bg-slate-100 disabled:opacity-30 cursor-pointer flex items-center justify-center transition-all aspect-square"
                   aria-label="Halaman selanjutnya"
                 >
                   <ChevronRight className="w-4 h-4" />
@@ -1138,62 +1138,62 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
       {viewMode === 'editor' && (
         <div className="space-y-6">
           {/* STEPPER BREADCRUMB ATAS */}
-          <div className="flex items-center gap-2 sm:gap-3 py-2 px-1 overflow-x-auto select-none border-b border-border/60 pb-4">
+          <div className="flex items-center gap-2 sm:gap-3 py-2 px-1 overflow-x-auto select-none border-b border-slate-100 pb-4">
             <button
               type="button"
               onClick={() => setCurrentStep(1)}
               className={cn(
-                "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-colors shrink-0",
+                "flex items-center gap-2 px-4 py-2 rounded-full text-xs transition-all shrink-0 cursor-pointer",
                 currentStep === 1
-                  ? "bg-muted text-foreground font-semibold"
-                  : "text-muted-foreground hover:text-foreground font-medium"
+                  ? "bg-[#0e59f9] text-white font-semibold shadow-md"
+                  : "bg-white text-slate-600 font-medium shadow-sm-md hover:bg-slate-50"
               )}
             >
               <span className={cn(
-                "w-5 h-5 rounded-full flex items-center justify-center text-[11px]",
-                currentStep === 1 ? "bg-foreground text-background" : "bg-muted text-muted-foreground"
+                "w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold",
+                currentStep === 1 ? "bg-white text-[#0e59f9]" : "bg-slate-100 text-slate-500"
               )}>
                 1
               </span>
               <span>Informasi Promo</span>
             </button>
 
-            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            <ChevronRight className="w-3.5 h-3.5 text-slate-300 shrink-0" />
 
             <button
               type="button"
               onClick={() => setCurrentStep(2)}
               className={cn(
-                "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-colors shrink-0",
+                "flex items-center gap-2 px-4 py-2 rounded-full text-xs transition-all shrink-0 cursor-pointer",
                 currentStep === 2
-                  ? "bg-muted text-foreground font-semibold"
-                  : "text-muted-foreground hover:text-foreground font-medium"
+                  ? "bg-[#0e59f9] text-white font-semibold shadow-md"
+                  : "bg-white text-slate-600 font-medium shadow-sm-md hover:bg-slate-50"
               )}
             >
               <span className={cn(
-                "w-5 h-5 rounded-full flex items-center justify-center text-[11px]",
-                currentStep === 2 ? "bg-foreground text-background" : "bg-muted text-muted-foreground"
+                "w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold",
+                currentStep === 2 ? "bg-white text-[#0e59f9]" : "bg-slate-100 text-slate-500"
               )}>
                 2
               </span>
               <span>Cakupan & Syarat Produk</span>
             </button>
 
-            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            <ChevronRight className="w-3.5 h-3.5 text-slate-300 shrink-0" />
 
             <button
               type="button"
               onClick={() => setCurrentStep(3)}
               className={cn(
-                "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-colors shrink-0",
+                "flex items-center gap-2 px-4 py-2 rounded-full text-xs transition-all shrink-0 cursor-pointer",
                 currentStep === 3
-                  ? "bg-muted text-foreground font-semibold"
-                  : "text-muted-foreground hover:text-foreground font-medium"
+                  ? "bg-[#0e59f9] text-white font-semibold shadow-md"
+                  : "bg-white text-slate-600 font-medium shadow-sm-md hover:bg-slate-50"
               )}
             >
               <span className={cn(
-                "w-5 h-5 rounded-full flex items-center justify-center text-[11px]",
-                currentStep === 3 ? "bg-foreground text-background" : "bg-muted text-muted-foreground"
+                "w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold",
+                currentStep === 3 ? "bg-white text-[#0e59f9]" : "bg-slate-100 text-slate-500"
               )}>
                 3
               </span>
@@ -1207,16 +1207,16 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
             {/* LEFT: FORM CARD (8 COLS) */}
             <div className="lg:col-span-8">
               <form onSubmit={form.handleSubmit(handleSubmitForm)} className="space-y-6">
-                <div className="rounded-xl border border-border bg-background p-5 sm:p-6 space-y-6">
+                <div className="rounded-2xl border-none shadow-sm-md bg-white p-6 sm:p-7 space-y-6">
                   
                   {/* STEP 1: INFORMASI PROMO */}
                   {currentStep === 1 && (
                     <div className="space-y-5">
                       <div>
-                        <h2 className="text-base font-semibold text-foreground">
+                        <h2 className="text-base font-semibold text-slate-900">
                           Informasi Dasar Promo
                         </h2>
-                        <p className="text-xs text-muted-foreground mt-0.5">
+                        <p className="text-xs text-slate-500 mt-0.5">
                           Tentukan nama dan tipe potongan harga yang akan diberikan ke pelanggan.
                         </p>
                       </div>
@@ -1224,10 +1224,10 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                       <div className="space-y-4 pt-2">
                         <div className="space-y-1.5">
                           <div className="flex items-center justify-between">
-                            <Label htmlFor="code" className="text-xs font-medium text-foreground">
-                              Kode Promo <span className="text-destructive">*</span>
+                            <Label htmlFor="code" className="text-xs font-medium text-slate-700">
+                              Kode Promo <span className="text-rose-500">*</span>
                             </Label>
-                            <span className="text-[10px] text-muted-foreground font-normal">Karakter kapital & angka tanpa spasi</span>
+                            <span className="text-[10px] text-slate-400 font-normal">Karakter kapital & angka tanpa spasi</span>
                           </div>
                           <Input
                             id="code"
@@ -1237,45 +1237,45 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                               }
                             })}
                             placeholder="Contoh: HEMAT50, DISKONKOPI, MERDEKA17"
-                            className="rounded-lg h-10 bg-background border-input text-sm font-sans tracking-wide uppercase"
+                            className="rounded-xl h-10 bg-slate-50/50 border border-slate-200/80 text-sm font-sans tracking-wide uppercase focus:bg-white focus:border-[#0e59f9]"
                           />
                           {form.formState.errors.code ? (
-                            <p className="text-xs text-destructive">{form.formState.errors.code.message}</p>
+                            <p className="text-xs text-rose-500">{form.formState.errors.code.message}</p>
                           ) : (
-                            <p className="text-[11px] text-muted-foreground">Pelanggan akan memasukkan kode ini saat checkout untuk mendapatkan potongan.</p>
+                            <p className="text-[11px] text-slate-400">Pelanggan akan memasukkan kode ini saat checkout untuk mendapatkan potongan.</p>
                           )}
                         </div>
 
                         <div className="space-y-1.5">
-                          <Label htmlFor="name" className="text-xs font-medium text-foreground">
-                            Nama Promo <span className="text-destructive">*</span>
+                          <Label htmlFor="name" className="text-xs font-medium text-slate-700">
+                            Nama Promo <span className="text-rose-500">*</span>
                           </Label>
                           <Input
                             id="name"
                             {...form.register('name')}
                             placeholder="Contoh: Promo Spesifik Kopi Susu, Diskon Merdeka 17%"
-                            className="rounded-lg h-10 bg-background border-input text-sm"
+                            className="rounded-xl h-10 bg-slate-50/50 border border-slate-200/80 text-sm focus:bg-white focus:border-[#0e59f9]"
                           />
                           {form.formState.errors.name && (
-                            <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>
+                            <p className="text-xs text-rose-500">{form.formState.errors.name.message}</p>
                           )}
                         </div>
 
                         <div className="space-y-1.5">
-                          <Label className="text-xs font-medium text-foreground">
-                            Tipe Diskon <span className="text-destructive">*</span>
+                          <Label className="text-xs font-medium text-slate-700">
+                            Tipe Diskon <span className="text-rose-500">*</span>
                           </Label>
                           <Controller
                             control={form.control}
                             name="type"
                             render={({ field }) => (
                               <Select onValueChange={field.onChange} value={field.value}>
-                                <SelectTrigger className="w-full h-10 bg-background border-input rounded-lg text-sm">
+                                <SelectTrigger className="w-full h-10 bg-slate-50/50 border border-slate-200/80 rounded-xl text-sm focus:bg-white">
                                   <SelectValue placeholder="Pilih Tipe Diskon" />
                                 </SelectTrigger>
-                                <SelectContent className="rounded-lg font-sans">
-                                  <SelectItem value="PERCENTAGE">Persentase (%)</SelectItem>
-                                  <SelectItem value="FIXED">Potongan Tetap (Rp)</SelectItem>
+                                <SelectContent className="rounded-2xl border-none shadow-2xl bg-white p-1.5 font-sans">
+                                  <SelectItem value="PERCENTAGE" className="rounded-xl cursor-pointer">Persentase (%)</SelectItem>
+                                  <SelectItem value="FIXED" className="rounded-xl cursor-pointer">Potongan Tetap (Rp)</SelectItem>
                                 </SelectContent>
                               </Select>
                             )}
@@ -1283,8 +1283,8 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                         </div>
 
                         <div className="space-y-1.5">
-                          <Label htmlFor="value" className="text-xs font-medium text-foreground">
-                            {activePromoType === 'PERCENTAGE' ? 'Besar Potongan (%)' : 'Besar Potongan (Rp)'} <span className="text-destructive">*</span>
+                          <Label htmlFor="value" className="text-xs font-medium text-slate-700">
+                            {activePromoType === 'PERCENTAGE' ? 'Besar Potongan (%)' : 'Besar Potongan (Rp)'} <span className="text-rose-500">*</span>
                           </Label>
                           <div className="relative">
                             <Input
@@ -1294,23 +1294,23 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                               min="0"
                               {...form.register('value')}
                               placeholder={activePromoType === 'PERCENTAGE' ? '10' : '10000'}
-                              className="rounded-lg h-10 bg-background border-input text-sm pr-12"
+                              className="rounded-xl h-10 bg-slate-50/50 border border-slate-200/80 text-sm pr-12 focus:bg-white focus:border-[#0e59f9]"
                             />
-                            <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">
+                            <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-400">
                               {activePromoType === 'PERCENTAGE' ? '%' : 'Rp'}
                             </span>
                           </div>
                           {form.formState.errors.value && (
-                            <p className="text-xs text-destructive">{form.formState.errors.value.message}</p>
+                            <p className="text-xs text-rose-500">{form.formState.errors.value.message}</p>
                           )}
                         </div>
                       </div>
 
-                      <div className="flex justify-end pt-4 border-t border-border">
+                      <div className="flex justify-end pt-4 border-t border-slate-100">
                         <Button
                           type="button"
                           onClick={() => setCurrentStep(2)}
-                          className="h-9 px-4 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                          className="h-9 px-5 text-xs font-semibold rounded-full bg-[#0e59f9] hover:bg-[#0b4de0] text-white shadow-md transition-colors cursor-pointer"
                         >
                           Lanjut ke Cakupan & Syarat Produk
                           <ChevronRight className="w-3.5 h-3.5 ml-1" />
@@ -1323,10 +1323,10 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                   {currentStep === 2 && (
                     <div className="space-y-5">
                       <div>
-                        <h2 className="text-base font-semibold text-foreground">
+                        <h2 className="text-base font-semibold text-slate-900">
                           Cakupan & Syarat Produk
                         </h2>
-                        <p className="text-xs text-muted-foreground mt-0.5">
+                        <p className="text-xs text-slate-500 mt-0.5">
                           Atur apakah diskon berlaku untuk seluruh toko atau hanya untuk produk tertentu dengan syarat jumlah minimal.
                         </p>
                       </div>
@@ -1334,7 +1334,7 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                       <div className="space-y-4 pt-1">
                         {/* SELECT TARGET TYPE */}
                         <div className="space-y-2">
-                          <Label className="text-xs font-medium text-foreground">
+                          <Label className="text-xs font-medium text-slate-700">
                             Cakupan Berlaku Promo
                           </Label>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1342,14 +1342,14 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                               type="button"
                               onClick={() => form.setValue('targetType', 'ALL')}
                               className={cn(
-                                "p-3.5 rounded-lg border text-left transition-all",
+                                "p-4 rounded-xl border text-left transition-all cursor-pointer",
                                 targetType === 'ALL'
-                                  ? "border-primary bg-muted/40 text-foreground ring-1 ring-primary"
-                                  : "border-border hover:border-muted-foreground/30 bg-background"
+                                  ? "border-[#0e59f9] bg-blue-50/50 ring-1 ring-[#0e59f9]"
+                                  : "border-slate-200/80 hover:bg-slate-50 bg-white"
                               )}
                             >
-                              <p className="text-xs font-semibold text-foreground">Semua Produk (Global)</p>
-                              <p className="text-[11px] text-muted-foreground mt-0.5">
+                              <p className="text-xs font-semibold text-slate-900">Semua Produk (Global)</p>
+                              <p className="text-[11px] text-slate-500 mt-0.5">
                                 Diskon berlaku untuk seluruh keranjang tanpa membatasi jenis produk.
                               </p>
                             </button>
@@ -1358,14 +1358,14 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                               type="button"
                               onClick={() => form.setValue('targetType', 'SPECIFIC_PRODUCTS')}
                               className={cn(
-                                "p-3.5 rounded-lg border text-left transition-all",
+                                "p-4 rounded-xl border text-left transition-all cursor-pointer",
                                 targetType === 'SPECIFIC_PRODUCTS'
-                                  ? "border-primary bg-muted/40 text-foreground ring-1 ring-primary"
-                                  : "border-border hover:border-muted-foreground/30 bg-background"
+                                  ? "border-[#0e59f9] bg-blue-50/50 ring-1 ring-[#0e59f9]"
+                                  : "border-slate-200/80 hover:bg-slate-50 bg-white"
                               )}
                             >
-                              <p className="text-xs font-semibold text-foreground">Khusus Produk Tertentu</p>
-                              <p className="text-[11px] text-muted-foreground mt-0.5">
+                              <p className="text-xs font-semibold text-slate-900">Khusus Produk Tertentu</p>
+                              <p className="text-[11px] text-slate-500 mt-0.5">
                                 Pilih produk mana saja yang mendapatkan promo / menjadi syarat belanja.
                               </p>
                             </button>
@@ -1374,13 +1374,13 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
 
                         {/* PRODUCT SELECTOR LIST */}
                         {targetType === 'SPECIFIC_PRODUCTS' && (
-                          <div className="p-4 rounded-xl border border-border bg-muted/20 space-y-4">
+                          <div className="p-4 rounded-2xl border border-slate-200/80 bg-slate-50/40 space-y-4">
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                               <div>
-                                <h3 className="text-xs font-semibold text-foreground">
+                                <h3 className="text-xs font-semibold text-slate-900">
                                   Pilih Produk ({selectedProductIds.length} terpilih)
                                 </h3>
-                                <p className="text-[11px] text-muted-foreground">
+                                <p className="text-[11px] text-slate-500">
                                   Pelanggan harus memesan produk yang dicentang di bawah untuk menikmati diskon.
                                 </p>
                               </div>
@@ -1390,7 +1390,7 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                                 variant="outline"
                                 size="sm"
                                 onClick={toggleSelectAllProducts}
-                                className="h-7 px-2.5 text-[11px] font-medium rounded-lg"
+                                className="h-7 px-3 text-[11px] font-medium rounded-full border-none bg-white shadow-sm-md hover:bg-slate-100 text-slate-700 cursor-pointer"
                               >
                                 {selectedProductIds.length === productsList.length ? 'Batal Pilih Semua' : 'Pilih Semua Produk'}
                               </Button>
@@ -1398,23 +1398,23 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
 
                             {/* SEARCH PRODUCTS INPUT */}
                             <div className="relative">
-                              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                               <Input
                                 value={productSearchQuery}
                                 onChange={(e) => setProductSearchQuery(e.target.value)}
                                 placeholder="Cari nama produk..."
-                                className="pl-9 h-8 text-xs bg-background rounded-lg border-input"
+                                className="pl-9 h-8 text-xs bg-white rounded-xl border-slate-200/80 focus:border-[#0e59f9]"
                               />
                             </div>
 
                             {/* PRODUCT CHECKBOX LIST */}
                             {isLoadingProducts ? (
-                              <div className="h-36 flex items-center justify-center text-xs text-muted-foreground">
-                                <Loader2 className="w-4 h-4 mr-2 animate-spin text-muted-foreground" />
+                              <div className="h-36 flex items-center justify-center text-xs text-slate-400">
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin text-slate-400" />
                                 Memuat daftar produk...
                               </div>
                             ) : filteredProductsForPicker.length === 0 ? (
-                              <div className="p-4 text-center text-xs text-muted-foreground border border-dashed rounded-lg bg-background">
+                              <div className="p-4 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-xl bg-white">
                                 Tidak ada produk yang ditemukan.
                               </div>
                             ) : (
@@ -1426,24 +1426,24 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                                       key={product.id}
                                       onClick={() => toggleSelectProduct(product.id)}
                                       className={cn(
-                                        "p-2.5 rounded-lg border flex items-center justify-between cursor-pointer transition-colors text-xs select-none",
+                                        "p-2.5 rounded-xl border flex items-center justify-between cursor-pointer transition-colors text-xs select-none",
                                         isSelected
-                                          ? "border-primary bg-muted/60 text-foreground font-medium"
-                                          : "border-border bg-background hover:bg-muted/40 text-muted-foreground"
+                                          ? "border-[#0e59f9] bg-blue-50/50 text-slate-900 font-medium"
+                                          : "border-slate-200/80 bg-white hover:bg-slate-50 text-slate-600"
                                       )}
                                     >
                                       <div className="flex items-center gap-2.5">
                                         {isSelected ? (
-                                          <CheckSquare className="w-4 h-4 text-primary shrink-0" />
+                                          <CheckSquare className="w-4 h-4 text-[#0e59f9] shrink-0" />
                                         ) : (
-                                          <Square className="w-4 h-4 text-muted-foreground shrink-0" />
+                                          <Square className="w-4 h-4 text-slate-300 shrink-0" />
                                         )}
                                         <div>
-                                          <p className="font-medium text-foreground text-xs">{product.name}</p>
-                                          {product.sku && <span className="text-[10px] text-muted-foreground font-normal">SKU: {product.sku}</span>}
+                                          <p className="font-medium text-slate-900 text-xs">{product.name}</p>
+                                          {product.sku && <span className="text-[10px] text-slate-400 font-normal">SKU: {product.sku}</span>}
                                         </div>
                                       </div>
-                                      <span className="font-medium text-foreground text-xs shrink-0">
+                                      <span className="font-medium text-slate-900 text-xs shrink-0">
                                         {formatCurrency(parseFloat(product.price))}
                                       </span>
                                     </div>
@@ -1453,8 +1453,8 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                             )}
 
                             {/* MINIMAL QTY INPUT */}
-                            <div className="pt-2 border-t border-border space-y-1.5">
-                              <Label htmlFor="minProductQty" className="text-xs font-medium text-foreground">
+                            <div className="pt-2 border-t border-slate-200/60 space-y-1.5">
+                              <Label htmlFor="minProductQty" className="text-xs font-medium text-slate-700">
                                 Minimal Jumlah Produk Syarat (Pcs)
                               </Label>
                               <Input
@@ -1463,9 +1463,9 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                                 min="1"
                                 {...form.register('minProductQty')}
                                 placeholder="1"
-                                className="h-9 text-xs bg-background rounded-lg max-w-xs"
+                                className="h-9 text-xs bg-white rounded-xl border-slate-200/80 max-w-xs focus:border-[#0e59f9]"
                               />
-                              <p className="text-[11px] text-muted-foreground">
+                              <p className="text-[11px] text-slate-400">
                                 Minimal jumlah pcs produk eligible yang harus dibeli di keranjang untuk membuka diskon ini.
                               </p>
                             </div>
@@ -1475,7 +1475,7 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                         {/* MINIMAL BELANJA GENERAL */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                           <div className="space-y-1.5">
-                            <Label htmlFor="minOrder" className="text-xs font-medium text-foreground">
+                            <Label htmlFor="minOrder" className="text-xs font-medium text-slate-700">
                               Minimal Total Belanja (Rp)
                             </Label>
                             <Input
@@ -1483,14 +1483,14 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                               type="number"
                               {...form.register('minOrder')}
                               placeholder="0 (Tanpa minimal)"
-                              className="rounded-lg h-10 bg-background border-input text-sm"
+                              className="rounded-xl h-10 bg-slate-50/50 border border-slate-200/80 text-sm focus:bg-white focus:border-[#0e59f9]"
                             />
-                            <p className="text-[11px] text-muted-foreground">Isi 0 jika tidak ada syarat minimum total uang belanja.</p>
+                            <p className="text-[11px] text-slate-400">Isi 0 jika tidak ada syarat minimum total uang belanja.</p>
                           </div>
 
                           {activePromoType === 'PERCENTAGE' && (
                             <div className="space-y-1.5">
-                              <Label htmlFor="maxDiscount" className="text-xs font-medium text-foreground">
+                              <Label htmlFor="maxDiscount" className="text-xs font-medium text-slate-700">
                                 Maksimal Potongan Diskon (Rp)
                               </Label>
                               <Input
@@ -1498,28 +1498,28 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                                 type="number"
                                 {...form.register('maxDiscount')}
                                 placeholder="Contoh: 25000"
-                                className="rounded-lg h-10 bg-background border-input text-sm"
+                                className="rounded-xl h-10 bg-slate-50/50 border border-slate-200/80 text-sm focus:bg-white focus:border-[#0e59f9]"
                               />
-                              <p className="text-[11px] text-muted-foreground">Batas maksimal nominal potongan persen yang diberikan.</p>
+                              <p className="text-[11px] text-slate-400">Batas maksimal nominal potongan persen yang diberikan.</p>
                             </div>
                           )}
                         </div>
 
                       </div>
 
-                      <div className="flex items-center justify-between pt-4 border-t border-border">
+                      <div className="flex items-center justify-between pt-4 border-t border-slate-100">
                         <Button
                           type="button"
                           variant="outline"
                           onClick={() => setCurrentStep(1)}
-                          className="h-9 px-3 text-xs font-medium rounded-lg"
+                          className="h-9 px-4 text-xs font-semibold rounded-full border-none bg-white shadow-sm-md text-slate-700 hover:bg-slate-100 cursor-pointer"
                         >
                           Sebelumnya
                         </Button>
                         <Button
                           type="button"
                           onClick={() => setCurrentStep(3)}
-                          className="h-9 px-4 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                          className="h-9 px-5 text-xs font-semibold rounded-full bg-[#0e59f9] hover:bg-[#0b4de0] text-white shadow-md transition-colors cursor-pointer"
                         >
                           Lanjut ke Masa Berlaku
                           <ChevronRight className="w-3.5 h-3.5 ml-1" />
@@ -1532,46 +1532,46 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                   {currentStep === 3 && (
                     <div className="space-y-5">
                       <div>
-                        <h2 className="text-base font-semibold text-foreground">
+                        <h2 className="text-base font-semibold text-slate-900">
                           Masa Berlaku & Status
                         </h2>
-                        <p className="text-xs text-muted-foreground mt-0.5">
+                        <p className="text-xs text-slate-500 mt-0.5">
                           Tentukan periode tanggal aktif promo dan status ketersediaannya.
                         </p>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                         <div className="space-y-1.5">
-                          <Label htmlFor="startDate" className="text-xs font-medium text-foreground">
+                          <Label htmlFor="startDate" className="text-xs font-medium text-slate-700">
                             Tanggal Mulai
                           </Label>
                           <Input
                             id="startDate"
                             type="date"
                             {...form.register('startDate')}
-                            className="rounded-lg h-10 bg-background border-input text-sm"
+                            className="rounded-xl h-10 bg-slate-50/50 border border-slate-200/80 text-sm focus:bg-white focus:border-[#0e59f9]"
                           />
                         </div>
 
                         <div className="space-y-1.5">
-                          <Label htmlFor="endDate" className="text-xs font-medium text-foreground">
+                          <Label htmlFor="endDate" className="text-xs font-medium text-slate-700">
                             Tanggal Selesai
                           </Label>
                           <Input
                             id="endDate"
                             type="date"
                             {...form.register('endDate')}
-                            className="rounded-lg h-10 bg-background border-input text-sm"
+                            className="rounded-xl h-10 bg-slate-50/50 border border-slate-200/80 text-sm focus:bg-white focus:border-[#0e59f9]"
                           />
                         </div>
                       </div>
 
-                      <div className="p-3.5 rounded-lg border border-input bg-muted/20 flex items-center justify-between">
+                      <div className="p-4 rounded-xl border border-slate-200/80 bg-slate-50/40 flex items-center justify-between">
                         <div className="space-y-0.5">
-                          <Label htmlFor="isActivePromo" className="text-xs font-medium">
+                          <Label htmlFor="isActivePromo" className="text-xs font-medium text-slate-900">
                             Aktifkan Promo Sekarang
                           </Label>
-                          <p className="text-[11px] text-muted-foreground">
+                          <p className="text-[11px] text-slate-500">
                             Promo akan langsung dapat dipilih kasir POS dan diklaim pelanggan toko online.
                           </p>
                         </div>
@@ -1584,19 +1584,19 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                         />
                       </div>
 
-                      <div className="flex items-center justify-between pt-4 border-t border-border">
+                      <div className="flex items-center justify-between pt-4 border-t border-slate-100">
                         <Button
                           type="button"
                           variant="outline"
                           onClick={() => setCurrentStep(2)}
-                          className="h-9 px-3 text-xs font-medium rounded-lg"
+                          className="h-9 px-4 text-xs font-semibold rounded-full border-none bg-white shadow-sm-md text-slate-700 hover:bg-slate-100 cursor-pointer"
                         >
                           Sebelumnya
                         </Button>
                         <Button
                           type="submit"
                           disabled={isLoading}
-                          className="h-9 px-5 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                          className="h-9 px-5 text-xs font-semibold rounded-full bg-[#0e59f9] hover:bg-[#0b4de0] text-white shadow-md transition-colors cursor-pointer"
                         >
                           {isLoading ? (
                             <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Menyimpan...</>
@@ -1615,58 +1615,58 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
             {/* RIGHT: LIVE PROMO SUMMARY CARD */}
             <div className="lg:col-span-4">
               <div className="sticky top-6 space-y-4">
-                <div className="rounded-xl border border-border bg-background p-5 space-y-4">
+                <div className="rounded-2xl border-none shadow-sm-md bg-white p-6 space-y-4">
                   
                   {/* SUMMARY HEADER */}
                   <div>
-                    <h3 className="text-sm font-semibold text-foreground">
+                    <h3 className="text-sm font-semibold text-slate-900">
                       Ringkasan Aturan Promo
                     </h3>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                    <p className="text-[11px] text-slate-500 mt-0.5">
                       Pratinjau aturan diskon yang dibuat
                     </p>
                   </div>
 
                   {/* PROMO TITLE */}
-                  <div className="p-3 rounded-lg border border-border bg-muted/30 space-y-1.5">
+                  <div className="p-3.5 rounded-xl border border-slate-100 bg-slate-50/70 space-y-1.5">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-xs font-semibold text-foreground truncate">
+                      <p className="text-xs font-semibold text-slate-900 truncate">
                         {formValues.name || 'Nama Promo'}
                       </p>
                       {formValues.code && (
-                        <span className="shrink-0 px-2 py-0.5 rounded bg-muted text-foreground border border-border text-[10px] font-medium">
+                        <span className="shrink-0 px-2 py-0.5 rounded-full bg-blue-50 text-[#0e59f9] text-[10px] font-medium font-mono">
                           {formValues.code}
                         </span>
                       )}
                     </div>
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="text-[11px] text-slate-500">
                       {formValues.type === 'PERCENTAGE' ? 'Diskon Persentase' : 'Potongan Tetap'}
                     </p>
                   </div>
 
                   {/* DETAILS ROWS */}
-                  <div className="space-y-2 text-xs">
-                    <div className="flex justify-between py-1 border-b border-border/50">
-                      <span className="text-muted-foreground">Nilai Potongan</span>
-                      <span className="font-semibold text-foreground">
+                  <div className="space-y-2.5 text-xs">
+                    <div className="flex justify-between py-1 border-b border-slate-100">
+                      <span className="text-slate-500">Nilai Potongan</span>
+                      <span className="font-semibold text-slate-900">
                         {formValues.type === 'PERCENTAGE' 
                           ? `${formValues.value || 0}%` 
                           : formatCurrency(formValues.value || 0)}
                       </span>
                     </div>
 
-                    <div className="flex justify-between py-1 border-b border-border/50">
-                      <span className="text-muted-foreground">Cakupan Produk</span>
-                      <span className="font-medium text-foreground">
+                    <div className="flex justify-between py-1 border-b border-slate-100">
+                      <span className="text-slate-500">Cakupan Produk</span>
+                      <span className="font-medium text-slate-900">
                         {targetType === 'SPECIFIC_PRODUCTS'
                           ? `Khusus ${selectedProductIds.length} Produk (Min ${formValues.minProductQty || 1} pcs)`
                           : 'Semua Produk'}
                       </span>
                     </div>
 
-                    <div className="flex justify-between py-1 border-b border-border/50">
-                      <span className="text-muted-foreground">Minimal Belanja</span>
-                      <span className="font-medium text-foreground">
+                    <div className="flex justify-between py-1 border-b border-slate-100">
+                      <span className="text-slate-500">Minimal Belanja</span>
+                      <span className="font-medium text-slate-900">
                         {formValues.minOrder && Number(formValues.minOrder) > 0 
                           ? formatCurrency(Number(formValues.minOrder)) 
                           : 'Tanpa Minimum'}
@@ -1674,9 +1674,9 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                     </div>
 
                     {formValues.type === 'PERCENTAGE' && (
-                      <div className="flex justify-between py-1 border-b border-border/50">
-                        <span className="text-muted-foreground">Maks. Potongan</span>
-                        <span className="font-medium text-foreground">
+                      <div className="flex justify-between py-1 border-b border-slate-100">
+                        <span className="text-slate-500">Maks. Potongan</span>
+                        <span className="font-medium text-slate-900">
                           {formValues.maxDiscount && Number(formValues.maxDiscount) > 0
                             ? formatCurrency(Number(formValues.maxDiscount))
                             : 'Tanpa Batas'}
@@ -1695,51 +1695,51 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
 
       {/* MODAL DETAIL DISKON, PRODUK & TRANSAKSI */}
       <Dialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
-        <DialogContent className="sm:max-w-4xl md:max-w-5xl w-[94vw] max-w-5xl max-h-[88vh] overflow-y-auto rounded-2xl p-5 sm:p-6 border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl">
-          <DialogHeader className="pr-8 pb-3.5 border-b border-slate-100 dark:border-slate-800">
+        <DialogContent className="sm:max-w-4xl md:max-w-5xl w-[94vw] max-w-5xl max-h-[88vh] overflow-y-auto rounded-3xl p-6 sm:p-7 border-none bg-white shadow-2xl">
+          <DialogHeader className="pr-8 pb-3.5 border-b border-slate-100">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="space-y-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <DialogTitle className="text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+                  <DialogTitle className="text-lg font-semibold tracking-tight text-slate-900">
                     {selectedPromoForHistory?.name}
                   </DialogTitle>
                   {selectedPromoForHistory?.code && (
-                    <span className="text-xs text-slate-400 dark:text-slate-500 font-normal">
-                      Kode: <span className="font-mono text-slate-600 dark:text-slate-300 font-medium">{selectedPromoForHistory.code}</span>
+                    <span className="text-xs text-slate-400 font-normal">
+                      Kode: <span className="font-mono text-slate-700 font-medium">{selectedPromoForHistory.code}</span>
                     </span>
                   )}
                   <span className={cn(
-                    "px-2 py-0.5 rounded-md text-[11px] font-medium border-none inline-flex items-center",
+                    "px-2.5 py-0.5 rounded-full text-[11px] font-medium border-none inline-flex items-center",
                     selectedPromoForHistory?.isActive
-                      ? "bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300"
-                      : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                      ? "bg-emerald-50 text-emerald-600"
+                      : "bg-slate-100 text-slate-500"
                   )}>
                     {selectedPromoForHistory?.isActive ? 'Aktif' : 'Nonaktif'}
                   </span>
                 </div>
-                <DialogDescription className="text-xs text-slate-500 dark:text-slate-400">
+                <DialogDescription className="text-xs text-slate-500">
                   Ringkasan aturan diskon, cakupan produk berlaku, dan riwayat pesanan yang menggunakan promo ini.
                 </DialogDescription>
               </div>
             </div>
 
             {/* TAB SELECTOR */}
-            <div className="flex items-center gap-1 p-1 bg-slate-100/80 dark:bg-slate-800/60 rounded-xl w-fit mt-3">
+            <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-full w-fit mt-3">
               <button
                 type="button"
                 onClick={() => setModalActiveTab('products')}
                 className={cn(
-                  "px-3 py-1.5 rounded-lg text-xs transition-all font-medium flex items-center gap-2 cursor-pointer",
+                  "px-3.5 py-1.5 rounded-full text-xs transition-all flex items-center gap-2 cursor-pointer",
                   modalActiveTab === 'products'
-                    ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs font-semibold"
-                    : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                    ? "bg-white text-slate-900 shadow-sm font-semibold"
+                    : "text-slate-600 hover:text-slate-900 font-medium"
                 )}
               >
                 <span>Produk & Aturan Diskon</span>
                 <span className={cn(
-                  "px-1.5 py-0.5 rounded-md text-[10px] font-medium",
+                  "px-1.5 py-0.5 rounded-full text-[10px] font-medium",
                   modalActiveTab === 'products'
-                    ? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300"
+                    ? "bg-blue-50 text-[#0e59f9]"
                     : "text-slate-400"
                 )}>
                   {selectedPromoForHistory?.targetType === 'SPECIFIC_PRODUCTS'
@@ -1752,17 +1752,17 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                 type="button"
                 onClick={() => setModalActiveTab('transactions')}
                 className={cn(
-                  "px-3 py-1.5 rounded-lg text-xs transition-all font-medium flex items-center gap-2 cursor-pointer",
+                  "px-3.5 py-1.5 rounded-full text-xs transition-all flex items-center gap-2 cursor-pointer",
                   modalActiveTab === 'transactions'
-                    ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs font-semibold"
-                    : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                    ? "bg-white text-slate-900 shadow-sm font-semibold"
+                    : "text-slate-600 hover:text-slate-900 font-medium"
                 )}
               >
                 <span>Riwayat Transaksi</span>
                 <span className={cn(
-                  "px-1.5 py-0.5 rounded-md text-[10px] font-medium",
+                  "px-1.5 py-0.5 rounded-full text-[10px] font-medium",
                   modalActiveTab === 'transactions'
-                    ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"
+                    ? "bg-emerald-50 text-emerald-700"
                     : "text-slate-400"
                 )}>
                   {historyStats.totalUsage}
@@ -1776,9 +1776,9 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
             <div className="space-y-4 pt-2">
               {/* SUMMARY GRID CARDS */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+                <div className="p-4 rounded-2xl border-none bg-slate-50/70 shadow-sm-md">
                   <span className="text-[11px] font-medium text-slate-400 block mb-1">Besar Potongan</span>
-                  <span className="text-base font-semibold text-slate-900 dark:text-white block leading-tight">
+                  <span className="text-base font-semibold text-slate-900 block leading-tight">
                     {selectedPromoForHistory?.type === 'PERCENTAGE'
                       ? `${parseFloat(selectedPromoForHistory?.value || '0')}%`
                       : formatCurrency(parseFloat(selectedPromoForHistory?.value || '0'))}
@@ -1790,9 +1790,9 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                   </span>
                 </div>
 
-                <div className="p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+                <div className="p-4 rounded-2xl border-none bg-slate-50/70 shadow-sm-md">
                   <span className="text-[11px] font-medium text-slate-400 block mb-1">Cakupan Menu</span>
-                  <span className="text-base font-semibold text-slate-900 dark:text-white block leading-tight">
+                  <span className="text-base font-semibold text-slate-900 block leading-tight">
                     {selectedPromoForHistory?.targetType === 'SPECIFIC_PRODUCTS'
                       ? `Khusus ${eligibleProductsForDetail.length} Menu`
                       : 'Semua Menu'}
@@ -1804,9 +1804,9 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                   </span>
                 </div>
 
-                <div className="p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+                <div className="p-4 rounded-2xl border-none bg-slate-50/70 shadow-sm-md">
                   <span className="text-[11px] font-medium text-slate-400 block mb-1">Min. Belanja</span>
-                  <span className="text-base font-semibold text-slate-900 dark:text-white block leading-tight">
+                  <span className="text-base font-semibold text-slate-900 block leading-tight">
                     {selectedPromoForHistory?.minOrder && parseFloat(selectedPromoForHistory.minOrder) > 0
                       ? formatCurrency(parseFloat(selectedPromoForHistory.minOrder))
                       : 'Tanpa Min.'}
@@ -1816,9 +1816,9 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                   </span>
                 </div>
 
-                <div className="p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+                <div className="p-4 rounded-2xl border-none bg-slate-50/70 shadow-sm-md">
                   <span className="text-[11px] font-medium text-slate-400 block mb-1">Masa Berlaku</span>
-                  <span className="text-xs font-semibold text-slate-900 dark:text-white block leading-tight truncate">
+                  <span className="text-xs font-semibold text-slate-900 block leading-tight truncate">
                     {selectedPromoForHistory?.startDate || selectedPromoForHistory?.endDate ? (
                       <>
                         {selectedPromoForHistory.startDate ? new Date(selectedPromoForHistory.startDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : 'Kapan saja'}
@@ -1839,12 +1839,12 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
               <div className="space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <h3 className="text-xs font-semibold text-slate-900 dark:text-white">
+                    <h3 className="text-xs font-semibold text-slate-900">
                       {selectedPromoForHistory?.targetType === 'SPECIFIC_PRODUCTS'
                         ? `Daftar Produk yang Terdaftar (${eligibleProductsForDetail.length})`
                         : `Daftar Produk yang Memenuhi Syarat (${productsList.length})`}
                     </h3>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    <p className="text-[11px] text-slate-500">
                       {selectedPromoForHistory?.targetType === 'SPECIFIC_PRODUCTS'
                         ? `Pelanggan berhak diskon jika memesan produk berikut (min. ${selectedPromoForHistory?.minProductQty || 1} pcs).`
                         : 'Diskon berlaku untuk semua produk katalog outlet.'}
@@ -1857,18 +1857,18 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                       value={productDetailSearch}
                       onChange={(e) => setProductDetailSearch(e.target.value)}
                       placeholder="Cari produk / SKU..."
-                      className="pl-8 h-8 text-xs rounded-xl border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 text-slate-900 dark:text-white placeholder:text-slate-400 font-sans focus:bg-white dark:focus:bg-slate-900"
+                      className="pl-8 h-8 text-xs rounded-full border-none bg-slate-100/80 text-slate-900 placeholder:text-slate-400 font-sans focus:bg-white focus:ring-1 focus:ring-[#0e59f9]"
                     />
                   </div>
                 </div>
 
                 {/* EMPTY PRODUCT STATE */}
                 {filteredEligibleProducts.length === 0 ? (
-                  <div className="p-8 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl space-y-1 bg-slate-50/30 dark:bg-slate-800/10">
-                    <p className="text-xs font-medium text-slate-900 dark:text-white">
+                  <div className="p-8 text-center border border-dashed border-slate-200 rounded-2xl space-y-1 bg-slate-50/50">
+                    <p className="text-xs font-medium text-slate-900">
                       {productDetailSearch ? 'Produk tidak ditemukan' : 'Belum ada produk yang terdaftar'}
                     </p>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    <p className="text-[11px] text-slate-500">
                       {productDetailSearch
                         ? `Tidak ada produk yang cocok dengan "${productDetailSearch}"`
                         : 'Promo ini belum memilih produk manapun.'}
@@ -1876,9 +1876,9 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                   </div>
                 ) : (
                   /* PRODUCT TABLE */
-                  <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900 shadow-xs">
+                  <div className="rounded-2xl border-none overflow-hidden bg-white shadow-sm-md">
                     <Table className="w-full text-left text-xs min-w-[620px]">
-                      <TableHeader className="bg-slate-50/70 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800/80">
+                      <TableHeader className="bg-slate-50/70 border-b border-slate-100">
                         <TableRow className="border-none hover:bg-transparent">
                           <TableHead className="py-2.5 px-3.5 text-[11px] font-medium text-slate-400">Nama Produk</TableHead>
                           <TableHead className="py-2.5 px-3.5 text-right text-[11px] font-medium text-slate-400">Harga Asli</TableHead>
@@ -1887,28 +1887,28 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                           <TableHead className="py-2.5 px-3.5 text-center text-[11px] font-medium text-slate-400">Status</TableHead>
                         </TableRow>
                       </TableHeader>
-                      <TableBody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                      <TableBody className="divide-y divide-slate-100">
                         {filteredEligibleProducts.map((prod) => {
                           const { discountAmount, finalPrice } = calculateDiscountedPrice(prod.price, selectedPromoForHistory);
                           const origPrice = parseFloat(prod.price || '0');
 
                           return (
-                            <TableRow key={prod.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 border-none transition-colors">
+                            <TableRow key={prod.id} className="hover:bg-slate-100/60 border-none transition-colors">
                               <TableCell className="py-2.5 px-3.5">
                                 <div className="flex items-center gap-2.5">
                                   {prod.imageUrl ? (
                                     <img
                                       src={prod.imageUrl}
                                       alt={prod.name}
-                                      className="w-8 h-8 rounded-lg object-cover border border-slate-200/80 dark:border-slate-800 shrink-0"
+                                      className="w-8 h-8 rounded-lg object-cover border border-slate-100 shrink-0"
                                     />
                                   ) : (
-                                    <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[10px] font-medium text-slate-400 border border-slate-200/80 dark:border-slate-800 shrink-0">
+                                    <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-[10px] font-medium text-slate-400 border border-slate-100 shrink-0">
                                       P
                                     </div>
                                   )}
                                   <div>
-                                    <span className="text-xs font-medium text-slate-900 dark:text-white block">{prod.name}</span>
+                                    <span className="text-xs font-medium text-slate-900 block">{prod.name}</span>
                                     {prod.sku && (
                                       <span className="text-[10px] text-slate-400 font-mono">SKU: {prod.sku}</span>
                                     )}
@@ -1920,7 +1920,7 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                                 {formatCurrency(origPrice)}
                               </TableCell>
 
-                              <TableCell className="py-2.5 px-3.5 text-right text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                              <TableCell className="py-2.5 px-3.5 text-right text-xs font-medium text-emerald-600">
                                 -{formatCurrency(discountAmount)}
                                 {selectedPromoForHistory?.type === 'PERCENTAGE' && (
                                   <span className="text-[10px] text-slate-400 ml-1 font-normal">
@@ -1929,16 +1929,16 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                                 )}
                               </TableCell>
 
-                              <TableCell className="py-2.5 px-3.5 text-right text-xs font-semibold text-slate-900 dark:text-white">
+                              <TableCell className="py-2.5 px-3.5 text-right text-xs font-semibold text-slate-900">
                                 {formatCurrency(finalPrice)}
                               </TableCell>
 
                               <TableCell className="py-2.5 px-3.5 text-center">
                                 <span className={cn(
-                                  "px-2 py-0.5 rounded-md text-[10px] font-medium border-none inline-block",
+                                  "px-2.5 py-0.5 rounded-full text-[10px] font-medium border-none inline-block",
                                   prod.isActive
-                                    ? "bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300"
-                                    : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                                    ? "bg-emerald-50 text-emerald-600"
+                                    : "bg-slate-100 text-slate-500"
                                 )}>
                                   {prod.isActive ? 'Tersedia' : 'Nonaktif'}
                                 </span>
@@ -1949,7 +1949,7 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                       </TableBody>
                     </Table>
 
-                    <div className="py-2 px-3.5 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+                    <div className="py-2 px-3.5 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
                       <span>Menampilkan {filteredEligibleProducts.length} dari {eligibleProductsForDetail.length} produk</span>
                       {selectedPromoForHistory?.targetType === 'SPECIFIC_PRODUCTS' && (
                         <span>Min. beli: {selectedPromoForHistory.minProductQty || 1} pcs</span>
@@ -1966,16 +1966,16 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
             <div className="space-y-4 pt-3">
               {/* STATS HEADER CARDS */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+                <div className="p-4 rounded-2xl border-none bg-slate-50/70 shadow-sm-md">
                   <span className="text-[11px] font-medium text-slate-400 block mb-1">Total Penggunaan</span>
-                  <p className="text-base font-semibold text-slate-900 dark:text-white">
+                  <p className="text-base font-semibold text-slate-900">
                     {historyStats.totalUsage} <span className="text-xs font-normal text-slate-400">Transaksi</span>
                   </p>
                 </div>
 
-                <div className="p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+                <div className="p-4 rounded-2xl border-none bg-slate-50/70 shadow-sm-md">
                   <span className="text-[11px] font-medium text-slate-400 block mb-1">Total Potongan Diberikan</span>
-                  <p className="text-base font-semibold text-emerald-600 dark:text-emerald-400">
+                  <p className="text-base font-semibold text-emerald-600">
                     {formatCurrency(historyStats.totalDiscountValue)}
                   </p>
                 </div>
@@ -1988,7 +1988,7 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                   value={historySearchQuery}
                   onChange={(e) => setHistorySearchQuery(e.target.value)}
                   placeholder="Cari no. order atau nama pelanggan..."
-                  className="pl-8 h-8 text-xs rounded-xl border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 text-slate-900 dark:text-white placeholder:text-slate-400 font-sans focus:bg-white dark:focus:bg-slate-900"
+                  className="pl-8 h-8 text-xs rounded-full border-none bg-slate-100/80 text-slate-900 placeholder:text-slate-400 font-sans focus:bg-white focus:ring-1 focus:ring-[#0e59f9]"
                 />
               </div>
 
@@ -1999,16 +1999,16 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                   Memuat riwayat transaksi...
                 </div>
               ) : filteredHistory.length === 0 ? (
-                <div className="p-8 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl space-y-1 bg-slate-50/30 dark:bg-slate-800/10">
-                  <p className="text-xs font-medium text-slate-900 dark:text-white">Belum ada transaksi</p>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                <div className="p-8 text-center border border-dashed border-slate-200 rounded-2xl space-y-1 bg-slate-50/50">
+                  <p className="text-xs font-medium text-slate-900">Belum ada transaksi</p>
+                  <p className="text-[11px] text-slate-500">
                     Diskon ini belum pernah digunakan pada transaksi yang tercatat.
                   </p>
                 </div>
               ) : (
-                <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900 shadow-xs">
+                <div className="rounded-2xl border-none overflow-hidden bg-white shadow-sm-md">
                   <Table className="w-full text-left text-xs min-w-[620px]">
-                    <TableHeader className="bg-slate-50/70 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800/80">
+                    <TableHeader className="bg-slate-50/70 border-b border-slate-100">
                       <TableRow className="border-none hover:bg-transparent">
                         <TableHead className="py-2.5 px-3.5 text-[11px] font-medium text-slate-400">No. Order</TableHead>
                         <TableHead className="py-2.5 px-3.5 text-[11px] font-medium text-slate-400">Waktu</TableHead>
@@ -2018,7 +2018,7 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                         <TableHead className="py-2.5 px-3.5 text-center text-[11px] font-medium text-slate-400">Status</TableHead>
                       </TableRow>
                     </TableHeader>
-                    <TableBody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                    <TableBody className="divide-y divide-slate-100">
                       {filteredHistory.map((tx) => {
                         const discountAmount = parseFloat(tx.discount || '0');
                         const grandTotal = parseFloat(tx.grandTotal || '0');
@@ -2031,31 +2031,31 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                         }) : '-';
 
                         return (
-                          <TableRow key={tx.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 border-none transition-colors">
-                            <TableCell className="py-2.5 px-3.5 font-mono text-xs font-medium text-slate-900 dark:text-white">
+                          <TableRow key={tx.id} className="hover:bg-slate-100/60 border-none transition-colors">
+                            <TableCell className="py-2.5 px-3.5 font-mono text-xs font-medium text-slate-900">
                               {tx.orderNumber || tx.id.substring(0, 8)}
                             </TableCell>
                             <TableCell className="py-2.5 px-3.5 text-xs text-slate-400 font-normal">
                               {dateStr}
                             </TableCell>
                             <TableCell className="py-2.5 px-3.5">
-                              <span className="text-xs font-medium text-slate-900 dark:text-white block">{tx.customerName || 'Pelanggan POS'}</span>
+                              <span className="text-xs font-medium text-slate-900 block">{tx.customerName || 'Pelanggan POS'}</span>
                               <span className="text-[10px] text-slate-400 uppercase tracking-wider">{tx.orderType || 'DINE_IN'}</span>
                             </TableCell>
-                            <TableCell className="py-2.5 px-3.5 text-right text-xs font-medium text-slate-900 dark:text-white">
+                            <TableCell className="py-2.5 px-3.5 text-right text-xs font-medium text-slate-900">
                               {formatCurrency(grandTotal)}
                             </TableCell>
-                            <TableCell className="py-2.5 px-3.5 text-right text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                            <TableCell className="py-2.5 px-3.5 text-right text-xs font-semibold text-emerald-600">
                               -{formatCurrency(discountAmount)}
                             </TableCell>
                             <TableCell className="py-2.5 px-3.5 text-center">
                               <span className={cn(
-                                "px-2 py-0.5 rounded-md text-[10px] font-medium border-none inline-block",
+                                "px-2.5 py-0.5 rounded-full text-[10px] font-medium border-none inline-block",
                                 tx.status === 'COMPLETED'
-                                  ? "bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300"
+                                  ? "bg-emerald-50 text-emerald-600"
                                   : tx.status === 'CANCELED'
-                                  ? "bg-rose-100/80 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300"
-                                  : "bg-blue-100/80 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300"
+                                  ? "bg-rose-50 text-rose-600"
+                                  : "bg-blue-50 text-[#0e59f9]"
                               )}>
                                 {tx.status || 'PAID'}
                               </span>
@@ -2070,11 +2070,11 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
             </div>
           )}
 
-          <DialogFooter className="pt-3 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-between sm:justify-between w-full">
+          <DialogFooter className="pt-3 border-t border-slate-100 flex items-center justify-between sm:justify-between w-full">
             <span className="text-xs text-slate-400 font-normal">
-              ID Promo: <code className="font-mono text-[11px] text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-md">{selectedPromoForHistory?.id.substring(0, 8)}...</code>
+              ID Promo: <code className="font-mono text-[11px] text-slate-700 bg-slate-100 px-2 py-0.5 rounded-full">{selectedPromoForHistory?.id.substring(0, 8)}...</code>
             </span>
-            <Button variant="outline" size="sm" onClick={() => setIsHistoryOpen(false)} className="h-8 text-xs font-medium rounded-xl border-slate-200/80 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800">
+            <Button variant="outline" size="sm" onClick={() => setIsHistoryOpen(false)} className="h-8 px-4 text-xs font-semibold rounded-full border-none bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer">
               Tutup
             </Button>
           </DialogFooter>
@@ -2083,18 +2083,18 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
 
       {/* MODAL DIALOG KONFIRMASI HAPUS PROMO */}
       <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-        <DialogContent className="max-w-md rounded-xl">
+        <DialogContent className="max-w-md rounded-3xl border-none bg-white shadow-2xl p-6">
           <DialogHeader>
-            <DialogTitle className="text-base font-semibold text-destructive">
+            <DialogTitle className="text-base font-semibold text-rose-600">
               Hapus Promo
             </DialogTitle>
-            <DialogDescription className="text-xs">
+            <DialogDescription className="text-xs text-slate-500">
               Apakah Anda yakin ingin menghapus promo{' '}
-              <span className="font-semibold text-foreground">{selectedPromoForDelete?.name}</span>? Tindakan ini tidak dapat dibatalkan.
+              <span className="font-semibold text-slate-900">{selectedPromoForDelete?.name}</span>? Tindakan ini tidak dapat dibatalkan.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="gap-2 pt-2">
-            <Button variant="outline" size="sm" onClick={() => setIsDeleteOpen(false)} className="h-8 text-xs font-medium">
+          <DialogFooter className="gap-2 pt-3">
+            <Button variant="outline" size="sm" onClick={() => setIsDeleteOpen(false)} className="h-9 px-4 text-xs font-semibold rounded-full border-none bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer">
               Batal
             </Button>
             <Button
@@ -2102,7 +2102,7 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
               size="sm"
               onClick={onConfirmDelete}
               disabled={isLoading}
-              className="h-8 text-xs font-medium"
+              className="h-9 px-5 text-xs font-semibold rounded-full bg-rose-600 hover:bg-rose-700 text-white shadow-md cursor-pointer"
             >
               {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Ya, Hapus'}
             </Button>

@@ -7,40 +7,27 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { AppTable, type AppTableColumn } from "@/components/ui/app-table";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { formatCurrency, formatNumber, parseCurrencyInput } from "@/lib/utils/format";
+  formatCurrency,
+  formatNumber,
+  parseCurrencyInput,
+  formatPaymentMethodLabel,
+  formatOrderTypeLabel,
+} from "@/lib/utils/format";
 import { startShift, endShift, addCashMovement } from "@/lib/actions/shifts";
 import { toast } from "sonner";
 import Link from "next/link";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import {
   Clock,
-  User,
-  History,
   ShoppingCart,
-  CreditCard,
-  Plus,
   Calendar,
   Receipt,
-  Search,
   Check,
   AlertTriangle,
   Calculator,
-  Printer,
   ArrowLeftRight,
   ArrowDownLeft,
   ArrowUpRight,
@@ -48,11 +35,16 @@ import {
   X,
   Coins,
   Banknote,
-  FileText,
-  ChevronLeft,
-  ChevronRight,
-  ChevronDown,
+  Plus,
+  Loader2,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { ShiftDetailModal } from "./shift-detail-modal";
 
 const QUICK_DENOMINATIONS = [0, 50000, 100000, 200000, 300000, 500000, 1000000];
@@ -86,7 +78,6 @@ const BILL_VALUES = [
 export function ShiftDashboard({
   activeShift,
   shiftHistory = [],
-  userRole = "CASHIER",
   outletKey = "",
 }: {
   activeShift: any;
@@ -100,9 +91,13 @@ export function ShiftDashboard({
 
   // Modal for past shift history
   const [modalShiftId, setModalShiftId] = React.useState<string | null>(null);
+  const [navigatingShiftId, setNavigatingShiftId] = React.useState<string | null>(null);
 
   // In-page actions for today's active shift: 'NONE' | 'END_SHIFT'
   const [activePanel, setActivePanel] = React.useState<"NONE" | "END_SHIFT">("NONE");
+
+  // Cash movement modal dialog
+  const [isMovementModalOpen, setIsMovementModalOpen] = React.useState(false);
 
   // Form inputs state
   const [rawAmount, setRawAmount] = React.useState("");
@@ -122,11 +117,6 @@ export function ShiftDashboard({
     1000: 0,
   });
   const [coinAmount, setCoinAmount] = React.useState("");
-
-  // Search & Filter state
-  const [historySearch, setHistorySearch] = React.useState("");
-  const [historyPage, setHistoryPage] = React.useState(1);
-  const [historyItemsPerPage, setHistoryItemsPerPage] = React.useState(10);
 
   // Calculate total from denomination calculator
   const calculatorTotal = React.useMemo(() => {
@@ -234,44 +224,287 @@ export function ShiftDashboard({
       toast.success(`Kas ${movementType === "IN" ? "masuk" : "keluar"} berhasil dicatat`);
       setRawAmount("");
       setDescInput("");
+      setIsMovementModalOpen(false);
       router.refresh();
     } else {
       toast.error(res.error || "Gagal mencatat pergerakan kas");
     }
   };
 
-  const filteredHistory = React.useMemo(() => {
-    if (!historySearch.trim()) return shiftHistory;
-    const q = historySearch.toLowerCase();
-    return shiftHistory.filter(
-      (s: any) =>
-        (s.cashierName && s.cashierName.toLowerCase().includes(q)) ||
-        (s.id && s.id.toLowerCase().includes(q))
-    );
-  }, [shiftHistory, historySearch]);
+  // Column definitions for AppTable
+  const historyColumns = React.useMemo<AppTableColumn<any>[]>(() => [
+    {
+      key: "cashier",
+      header: "Kasir & Tanggal",
+      render: (shift) => (
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-700 font-semibold flex items-center justify-center text-xs shrink-0">
+            {shift.cashierName ? shift.cashierName.charAt(0).toUpperCase() : "K"}
+          </div>
+          <div>
+            <div className="font-semibold text-slate-900">
+              {shift.cashierName || "Kasir"}
+            </div>
+            <div className="text-[11px] text-slate-400 mt-0.5">
+              {format(new Date(shift.startTime), "dd MMMM yyyy", { locale: id })}
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "time",
+      header: "Waktu & Durasi",
+      render: (shift) => (
+        <div>
+          <div className="font-medium text-slate-800">
+            {format(new Date(shift.startTime), "HH:mm")} - {shift.endTime ? format(new Date(shift.endTime), "HH:mm") : "Selesai"}
+          </div>
+          <div className="text-[11px] text-slate-400">
+            {shift.endTime ? formatDistanceStrict(new Date(shift.startTime), new Date(shift.endTime), { locale: id }) : "-"}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "totalSales",
+      header: "Total Omzet",
+      render: (shift) => (
+        <div>
+          <div className="font-semibold text-slate-900 font-financial tabular-nums">
+            {formatCurrency(Number(shift.totalSales) || 0)}
+          </div>
+          <div className="text-[11px] text-slate-400 font-financial tabular-nums">
+            {shift.totalTransactions || 0} transaksi
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "difference",
+      header: "Selisih Kas",
+      render: (shift) => {
+        const diff = Number(shift.cashDifference || 0);
+        if (diff === 0) {
+          return (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border-none font-financial tabular-nums">
+              Pas
+            </span>
+          );
+        }
+        if (diff < 0) {
+          return (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border-none font-financial tabular-nums">
+              Kurang {formatCurrency(Math.abs(diff))}
+            </span>
+          );
+        }
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-[#0e59f9] border-none font-financial tabular-nums">
+            Lebih {formatCurrency(diff)}
+          </span>
+        );
+      },
+    },
+    {
+      key: "action",
+      header: "Aksi",
+      align: "right",
+      render: (shift) => {
+        const isNavigating = navigatingShiftId === shift.id;
+        return (
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={isNavigating}
+            className="h-8 px-3.5 text-xs font-semibold rounded-full border-none shadow-sm-md bg-white hover:bg-slate-100 text-slate-700 cursor-pointer disabled:opacity-50"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (outletKey) {
+                setNavigatingShiftId(shift.id);
+                router.push(`/outlet/${outletKey}/shifts/${shift.id}`);
+              } else {
+                setModalShiftId(shift.id);
+              }
+            }}
+          >
+            {isNavigating ? (
+              <span className="flex items-center gap-1.5">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                <span>Memuat...</span>
+              </span>
+            ) : (
+              "Detail"
+            )}
+          </Button>
+        );
+      },
+    },
+  ], [outletKey, router, navigatingShiftId]);
 
-  const totalHistoryPages = Math.max(1, Math.ceil(filteredHistory.length / historyItemsPerPage));
+  const transactionColumns = React.useMemo<AppTableColumn<any>[]>(() => [
+    {
+      key: "time",
+      header: "Waktu",
+      render: (tx) => (
+        <span className="text-slate-500 font-financial tabular-nums">
+          {format(new Date(tx.createdAt), "HH:mm")}
+        </span>
+      ),
+    },
+    {
+      key: "orderNumber",
+      header: "No. Order",
+      render: (tx) => (
+        <span className="font-mono font-semibold text-slate-900">
+          {tx.orderNumber ? `#${tx.orderNumber}` : "#-"}
+        </span>
+      ),
+    },
+    {
+      key: "orderType",
+      header: "Tipe Pesanan",
+      render: (tx) => (
+        <span className="font-medium text-slate-800">
+          {formatOrderTypeLabel(tx.orderType)}
+        </span>
+      ),
+    },
+    {
+      key: "tableNumber",
+      header: "Meja",
+      render: (tx) => (
+        <span className="text-slate-600">
+          {tx.tableNumber ? `Meja ${tx.tableNumber}` : "-"}
+        </span>
+      ),
+    },
+    {
+      key: "paymentMethod",
+      header: "Metode Bayar",
+      render: (tx) => (
+        <span className="font-semibold text-xs text-slate-800">
+          {formatPaymentMethodLabel(tx.paymentMethod)}
+        </span>
+      ),
+    },
+    {
+      key: "total",
+      header: "Total Belanja",
+      align: "right",
+      render: (tx) => (
+        <span className="font-financial font-semibold text-slate-900 tabular-nums">
+          {formatCurrency(Number(tx.grandTotal || tx.totalAmount || 0))}
+        </span>
+      ),
+    },
+  ], []);
 
-  const paginatedHistory = React.useMemo(() => {
-    const start = (historyPage - 1) * historyItemsPerPage;
-    return filteredHistory.slice(start, start + historyItemsPerPage);
-  }, [filteredHistory, historyPage, historyItemsPerPage]);
+  const movementColumns = React.useMemo<AppTableColumn<any>[]>(() => [
+    {
+      key: "time",
+      header: "Waktu",
+      render: (m) => (
+        <span className="text-slate-500 font-financial tabular-nums">
+          {format(new Date(m.createdAt), "HH:mm")}
+        </span>
+      ),
+    },
+    {
+      key: "type",
+      header: "Jenis",
+      render: (m) =>
+        m.type === "IN" ? (
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
+            <ArrowDownLeft className="w-3.5 h-3.5" /> Masuk
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-rose-600">
+            <ArrowUpRight className="w-3.5 h-3.5" /> Keluar
+          </span>
+        ),
+    },
+    {
+      key: "description",
+      header: "Keterangan / Keperluan",
+      render: (m) => (
+        <span className="text-slate-900 font-medium">
+          {m.description}
+        </span>
+      ),
+    },
+    {
+      key: "amount",
+      header: "Nominal",
+      align: "right",
+      render: (m) => (
+        <span
+          className={cn(
+            "font-financial font-semibold tabular-nums",
+            m.type === "IN" ? "text-emerald-600" : "text-rose-600"
+          )}
+        >
+          {m.type === "IN" ? "+" : "-"}{formatCurrency(Number(m.amount))}
+        </span>
+      ),
+    },
+  ], []);
 
-  const getHistoryPaginationNumbers = () => {
-    const pages: (number | string)[] = [];
-    if (totalHistoryPages <= 7) {
-      for (let i = 1; i <= totalHistoryPages; i++) pages.push(i);
-    } else {
-      if (historyPage <= 4) {
-        pages.push(1, 2, 3, 4, '...', totalHistoryPages);
-      } else if (historyPage >= totalHistoryPages - 3) {
-        pages.push(1, '...', totalHistoryPages - 3, totalHistoryPages - 2, totalHistoryPages - 1, totalHistoryPages);
-      } else {
-        pages.push(1, '...', historyPage - 1, historyPage, historyPage + 1, '...', totalHistoryPages);
-      }
-    }
-    return pages;
-  };
+  const activityColumns = React.useMemo<AppTableColumn<any>[]>(() => [
+    {
+      key: "time",
+      header: "Waktu",
+      render: (act) => (
+        <span className="text-slate-500 font-financial tabular-nums">
+          {format(act.time, "HH:mm")}
+        </span>
+      ),
+    },
+    {
+      key: "title",
+      header: "Aktivitas",
+      render: (act) => (
+        <div>
+          <div className="font-semibold text-slate-900">
+            {act.title}
+          </div>
+          {act.details && (
+            <div className="text-[11px] text-slate-400 mt-0.5">
+              {act.details}
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: "paymentMethod",
+      header: "Metode",
+      render: (act) => (
+        <span className="font-semibold text-xs text-slate-800">
+          {act.paymentMethod}
+        </span>
+      ),
+    },
+    {
+      key: "amount",
+      header: "Nominal",
+      align: "right",
+      render: (act) => (
+        <span
+          className={cn(
+            "font-financial font-semibold tabular-nums",
+            act.type === "CASH_IN"
+              ? "text-emerald-600"
+              : act.type === "CASH_OUT"
+              ? "text-rose-600"
+              : "text-slate-900"
+          )}
+        >
+          {act.type === "CASH_OUT" ? "-" : "+"}{formatCurrency(act.amount)}
+        </span>
+      ),
+    },
+  ], []);
 
   const shiftDuration = React.useMemo(() => {
     if (!activeShift?.startTime) return "";
@@ -295,7 +528,9 @@ export function ShiftDashboard({
           id: m.id,
           type: m.type === "IN" ? "CASH_IN" : "CASH_OUT",
           title: m.type === "IN" ? "Kas Masuk" : "Kas Keluar",
+          details: m.description,
           subtitle: m.description,
+          paymentMethod: "Kas Laci",
           amount: Number(m.amount),
           time: new Date(m.createdAt),
           badgeColor: m.type === "IN" ? "border-l-blue-500" : "border-l-rose-500",
@@ -309,7 +544,9 @@ export function ShiftDashboard({
           id: t.id,
           type: "SALE",
           title: `Pesanan ${t.orderNumber || "#-"}`,
-          subtitle: `${t.paymentMethod || "CASH"} • ${t.tableNumber ? `Meja ${t.tableNumber}` : t.orderType || "Takeaway"}`,
+          details: t.tableNumber ? `${formatOrderTypeLabel(t.orderType)} (Meja ${t.tableNumber})` : formatOrderTypeLabel(t.orderType),
+          subtitle: t.tableNumber ? `${formatOrderTypeLabel(t.orderType)} (Meja ${t.tableNumber})` : formatOrderTypeLabel(t.orderType),
+          paymentMethod: formatPaymentMethodLabel(t.paymentMethod),
           amount: Number(t.grandTotal || t.totalAmount || 0),
           time: new Date(t.createdAt),
           badgeColor: "border-l-emerald-500",
@@ -359,24 +596,27 @@ export function ShiftDashboard({
       {activeTab === "active" && (
         <div className="space-y-6">
           {activeShift ? (
-            <div className="bg-card rounded-2xl border border-border/70 p-6 sm:p-8 shadow-xs space-y-6">
+            <div className="space-y-6">
               {/* Header Status & Quick Actions */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-border/60">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-semibold">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-1">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-11 h-11 rounded-full bg-[#0e59f9] text-white flex items-center justify-center font-semibold shadow-xs shrink-0">
                     <Clock className="w-5 h-5" />
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-lg font-semibold text-foreground tracking-tight">
-                        Sesi Shift Sedang Berjalan
-                      </h2>
-                      <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-md bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border-none">
-                        Aktif
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Kasir: <strong className="text-foreground">{activeShift.cashierName || "Kasir"}</strong> • Dimulai pukul {format(new Date(activeShift.startTime), "HH:mm")} ({shiftDuration || "Berjalan"})
+                    <h2 className="text-lg font-semibold text-slate-900 tracking-tight">
+                      Sesi Shift Aktif
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5 flex-wrap font-medium">
+                      <span>Kasir: <strong className="text-slate-900 font-semibold">{activeShift.cashierName || "Kasir"}</strong></span>
+                      <span>•</span>
+                      <span>Mulai {format(new Date(activeShift.startTime), "HH:mm")}</span>
+                      {shiftDuration && (
+                        <>
+                          <span>•</span>
+                          <span>Berjalan {shiftDuration}</span>
+                        </>
+                      )}
                     </p>
                   </div>
                 </div>
@@ -384,101 +624,158 @@ export function ShiftDashboard({
                 <div className="flex items-center gap-2 flex-wrap">
                   {outletKey && (
                     <Link href={`/outlet/${outletKey}/pos`}>
-                      <Button variant="outline" className="rounded-xl border-border/80 text-xs font-semibold h-9 gap-1.5 shadow-2xs">
-                        <ShoppingCart className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                      <Button className="rounded-full bg-[#0e59f9] hover:bg-blue-600 text-white text-xs font-semibold h-10 px-5 gap-2 shadow-md border-none cursor-pointer">
+                        <ShoppingCart className="w-4 h-4" />
                         Buka POS
                       </Button>
                     </Link>
                   )}
 
                   <Button
-                    variant={activePanel === "END_SHIFT" ? "default" : "destructive"}
+                    variant={activePanel === "END_SHIFT" ? "default" : "outline"}
                     onClick={() => {
                       resetCalculator();
                       setRawAmount(activeShift?.metrics?.expectedCash?.toString() || "");
                       setActivePanel(activePanel === "END_SHIFT" ? "NONE" : "END_SHIFT");
                     }}
-                    className="rounded-xl text-xs font-semibold h-9 gap-1.5 shadow-xs"
+                    className={cn(
+                      "rounded-full text-xs font-semibold h-10 px-5 gap-2 transition-all cursor-pointer border-none",
+                      activePanel === "END_SHIFT"
+                        ? "bg-slate-900 text-white hover:bg-slate-800 shadow-md"
+                        : "bg-white text-slate-700 hover:bg-slate-100 shadow-sm-md"
+                    )}
                   >
-                    <LogOut className="w-3.5 h-3.5" />
-                    Tutup Shift & Rekonsiliasi
+                    <LogOut className="w-4 h-4" />
+                    Tutup Shift
                   </Button>
                 </div>
               </div>
 
-              {/* 4 Financial Breakdown Stat Cards */}
+              {/* 4 Top KPI Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* 1. Modal Awal */}
-                <div className="bg-muted/30 border border-border/60 rounded-xl p-4 space-y-1">
-                  <span className="text-muted-foreground text-xs font-medium block">Modal Awal Kasir</span>
-                  <div className="text-lg font-semibold font-financial tabular-nums text-foreground">
-                    {formatCurrency(Number(activeShift.startingCash || 0))}
-                  </div>
-                  <span className="text-[11px] text-muted-foreground block">Uang kembalian awal laci</span>
-                </div>
+                {/* KPI 1: Modal Awal Kasir */}
+                <Card className="border-none shadow-sm-md hover:shadow-md rounded-2xl bg-white transition-all flex flex-col justify-between overflow-hidden min-h-[170px]">
+                  <CardContent className="p-5 sm:p-6 flex flex-col justify-between flex-1 h-full">
+                    <div className="flex items-center justify-between">
+                      <div className="w-10 h-10 rounded-full bg-[#0e59f9] text-white flex items-center justify-center flex-shrink-0">
+                        <Banknote className="w-5 h-5 text-white" />
+                      </div>
+                      <span className="text-[11px] font-normal text-slate-400">Modal Laci</span>
+                    </div>
+                    <div className="mt-6">
+                      <span className="text-[11px] font-medium text-slate-500 block">
+                        Modal Awal Kas
+                      </span>
+                      <div className="text-xl sm:text-2xl font-semibold text-slate-900 tracking-tight whitespace-nowrap mt-1 font-financial tabular-nums">
+                        {formatCurrency(Number(activeShift.startingCash || 0))}
+                      </div>
+                      <span className="text-[11px] text-slate-400 font-normal block mt-1">Uang kembalian awal di laci</span>
+                    </div>
+                  </CardContent>
+                </Card>
 
-                {/* 2. Total Penjualan & Breakdown */}
-                <div className="bg-muted/30 border border-border/60 rounded-xl p-4 space-y-1">
-                  <span className="text-muted-foreground text-xs font-medium block">Total Penjualan (Omzet)</span>
-                  <div className="text-lg font-semibold font-financial tabular-nums text-foreground">
-                    {formatCurrency(totalSalesAmount)}
-                  </div>
-                  <div className="text-[11px] text-muted-foreground flex items-center justify-between font-financial tabular-nums">
-                    <span>Tunai: {formatCurrency(totalCashSales)}</span>
-                    <span>Non-Tunai: {formatCurrency(totalNonCashSales)}</span>
-                  </div>
-                </div>
+                {/* KPI 2: Total Penjualan & Breakdown */}
+                <Card className="border-none shadow-sm-md hover:shadow-md rounded-2xl bg-white transition-all flex flex-col justify-between overflow-hidden min-h-[170px]">
+                  <CardContent className="p-5 sm:p-6 flex flex-col justify-between flex-1 h-full">
+                    <div className="flex items-center justify-between">
+                      <div className="w-10 h-10 rounded-full bg-[#0e59f9] text-white flex items-center justify-center flex-shrink-0">
+                        <Receipt className="w-5 h-5 text-white" />
+                      </div>
+                      <span className="text-[11px] font-normal text-slate-400 font-financial tabular-nums">
+                        {totalCompletedTx} Transaksi
+                      </span>
+                    </div>
+                    <div className="mt-6">
+                      <span className="text-[11px] font-medium text-slate-500 block">
+                        Total Penjualan
+                      </span>
+                      <div className="text-xl sm:text-2xl font-semibold text-slate-900 tracking-tight whitespace-nowrap mt-1 font-financial tabular-nums">
+                        {formatCurrency(totalSalesAmount)}
+                      </div>
+                      <div className="text-[11px] text-slate-400 font-normal mt-1 flex items-center justify-between font-financial tabular-nums">
+                        <span>Tunai: {formatCurrency(totalCashSales)}</span>
+                        <span>Non-Tunai: {formatCurrency(totalNonCashSales)}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
 
-                {/* 3. Pergerakan Kas */}
-                <div className="bg-muted/30 border border-border/60 rounded-xl p-4 space-y-1">
-                  <span className="text-muted-foreground text-xs font-medium block">Pergerakan Kas Laci</span>
-                  <div className="text-lg font-semibold font-financial tabular-nums text-foreground flex items-center gap-1.5">
-                    <span className="text-emerald-600">+{formatCurrency(totalCashIn)}</span>
-                    <span className="text-muted-foreground text-xs font-normal">/</span>
-                    <span className="text-rose-600">-{formatCurrency(totalCashOut)}</span>
-                  </div>
-                  <span className="text-[11px] text-muted-foreground block">
-                    {activeShift.cashMovements?.length || 0} mutasi dicatat
-                  </span>
-                </div>
+                {/* KPI 3: Pergerakan Kas */}
+                <Card className="border-none shadow-sm-md hover:shadow-md rounded-2xl bg-white transition-all flex flex-col justify-between overflow-hidden min-h-[170px]">
+                  <CardContent className="p-5 sm:p-6 flex flex-col justify-between flex-1 h-full">
+                    <div className="flex items-center justify-between">
+                      <div className="w-10 h-10 rounded-full bg-[#0e59f9] text-white flex items-center justify-center flex-shrink-0">
+                        <ArrowLeftRight className="w-5 h-5 text-white" />
+                      </div>
+                      <span className="text-[11px] font-normal text-slate-400 font-financial tabular-nums">
+                        {activeShift.cashMovements?.length || 0} Mutasi
+                      </span>
+                    </div>
+                    <div className="mt-6">
+                      <span className="text-[11px] font-medium text-slate-500 block">
+                        Pergerakan Kas
+                      </span>
+                      <div className="text-xl sm:text-2xl font-semibold text-slate-900 tracking-tight whitespace-nowrap mt-1 font-financial tabular-nums flex items-center gap-1.5">
+                        <span className="text-emerald-600">+{formatCurrency(totalCashIn)}</span>
+                        <span className="text-slate-300 font-normal text-sm">/</span>
+                        <span className="text-rose-600">-{formatCurrency(totalCashOut)}</span>
+                      </div>
+                      <span className="text-[11px] text-slate-400 font-normal block mt-1">
+                        Kas masuk & keluar darurat
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
 
-                {/* 4. Estimasi Kas Laci Saat Ini */}
-                <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-4 space-y-1">
-                  <span className="text-blue-600 dark:text-blue-400 text-xs font-semibold block">Estimasi Kas di Laci</span>
-                  <div className="text-lg font-semibold font-financial tabular-nums text-blue-600 dark:text-blue-400">
-                    {formatCurrency(currentCashInDrawer)}
-                  </div>
-                  <span className="text-[11px] text-muted-foreground block">
-                    Modal + Tunai + Kas Masuk - Keluar
-                  </span>
-                </div>
+                {/* KPI 4: Estimasi Kas di Laci */}
+                <Card className="border-none shadow-sm-md hover:shadow-md rounded-2xl bg-white transition-all flex flex-col justify-between overflow-hidden min-h-[170px]">
+                  <CardContent className="p-5 sm:p-6 flex flex-col justify-between flex-1 h-full">
+                    <div className="flex items-center justify-between">
+                      <div className="w-10 h-10 rounded-full bg-[#0e59f9] text-white flex items-center justify-center flex-shrink-0">
+                        <Coins className="w-5 h-5 text-white" />
+                      </div>
+                      <span className="text-[11px] font-normal text-slate-400">Wajib di Laci</span>
+                    </div>
+                    <div className="mt-6">
+                      <span className="text-[11px] font-medium text-slate-500 block">
+                        Estimasi Kas di Laci
+                      </span>
+                      <div className="text-xl sm:text-2xl font-semibold text-slate-900 tracking-tight whitespace-nowrap mt-1 font-financial tabular-nums">
+                        {formatCurrency(currentCashInDrawer)}
+                      </div>
+                      <span className="text-[11px] text-slate-400 font-normal block mt-1">
+                        Total fisik wajib ada di kasir
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
 
               {/* Tutup Shift Form Panel */}
               {activePanel === "END_SHIFT" && (
-                <div className="bg-muted/20 rounded-2xl border border-destructive/40 p-5 space-y-4 animate-in fade-in duration-200">
-                  <div className="flex items-center justify-between pb-3 border-b border-border/60">
-                    <div className="flex items-center gap-2 text-destructive">
+                <div className="bg-white rounded-2xl border-none shadow-sm-md p-5 sm:p-6 space-y-4 animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                    <div className="flex items-center gap-2 text-rose-600">
                       <LogOut className="w-5 h-5" />
                       <h3 className="font-semibold text-sm">Rekonsiliasi Kas & Konfirmasi Tutup Shift</h3>
                     </div>
-                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-full" onClick={() => setActivePanel("NONE")}>
-                      <X className="w-4 h-4" />
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 rounded-full hover:bg-slate-100 cursor-pointer" onClick={() => setActivePanel("NONE")}>
+                      <X className="w-4 h-4 text-slate-500" />
                     </Button>
                   </div>
 
                   <form onSubmit={handleEndShift} className="space-y-4 max-w-xl">
-                    <div className="p-3 bg-card rounded-xl border text-xs flex justify-between items-center font-financial tabular-nums">
-                      <span className="text-muted-foreground font-sans">Ekspektasi Kas Laci Sistem:</span>
-                      <span className="font-semibold text-foreground text-sm">
+                    <div className="p-3.5 bg-slate-50 rounded-2xl border-none text-xs flex justify-between items-center font-financial tabular-nums">
+                      <span className="text-slate-500 font-sans">Ekspektasi Kas Laci Sistem:</span>
+                      <span className="font-semibold text-slate-900 text-sm">
                         {formatCurrency(currentCashInDrawer)}
                       </span>
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label htmlFor="actualCash" className="text-xs font-semibold">Uang Fisik Aktual di Laci Kasir (Rp)</Label>
+                      <Label htmlFor="actualCash" className="text-xs font-semibold text-slate-700">Uang Fisik Aktual di Laci Kasir (Rp)</Label>
                       <div className="relative">
-                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-semibold text-muted-foreground text-xs">Rp</span>
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-semibold text-slate-400 text-xs">Rp</span>
                         <Input
                           id="actualCash"
                           type="text"
@@ -488,7 +785,7 @@ export function ShiftDashboard({
                           onChange={handleAmountChange}
                           autoFocus
                           required
-                          className="pl-10 font-financial text-base font-semibold h-10 bg-background tabular-nums"
+                          className="pl-10 pr-4 font-financial text-base font-semibold h-11 bg-white tabular-nums border-none shadow-sm-md rounded-full focus-visible:ring-2 focus-visible:ring-[#0e59f9]"
                         />
                       </div>
                     </div>
@@ -500,7 +797,7 @@ export function ShiftDashboard({
 
                         if (diff === 0) {
                           return (
-                            <div className="text-xs p-3 rounded-xl border bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300 flex items-center justify-between font-financial tabular-nums">
+                            <div className="text-xs p-3.5 rounded-2xl border-none bg-emerald-50 text-emerald-700 flex items-center justify-between font-financial tabular-nums">
                               <span className="flex items-center gap-1.5 font-semibold font-sans">
                                 <Check className="w-4 h-4 text-emerald-600" /> Kas Sesuai (Pas)
                               </span>
@@ -510,7 +807,7 @@ export function ShiftDashboard({
                         }
                         if (diff < 0) {
                           return (
-                            <div className="text-xs p-3 rounded-xl border bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300 flex items-center justify-between font-financial tabular-nums">
+                            <div className="text-xs p-3.5 rounded-2xl border-none bg-rose-50 text-rose-700 flex items-center justify-between font-financial tabular-nums">
                               <span className="flex items-center gap-1.5 font-semibold font-sans">
                                 <AlertTriangle className="w-4 h-4 text-rose-600" /> Kas Kurang (Minus)
                               </span>
@@ -519,9 +816,9 @@ export function ShiftDashboard({
                           );
                         }
                         return (
-                          <div className="text-xs p-3 rounded-xl border bg-blue-500/10 border-blue-500/30 text-blue-700 dark:text-blue-300 flex items-center justify-between font-financial tabular-nums">
+                          <div className="text-xs p-3.5 rounded-2xl border-none bg-blue-50 text-blue-700 flex items-center justify-between font-financial tabular-nums">
                             <span className="flex items-center gap-1.5 font-semibold font-sans">
-                              <Check className="w-4 h-4 text-blue-600" /> Kas Lebih (Plus)
+                              <Check className="w-4 h-4 text-[#0e59f9]" /> Kas Lebih (Plus)
                             </span>
                             <span className="font-semibold">+{formatCurrency(diff)}</span>
                           </div>
@@ -530,30 +827,79 @@ export function ShiftDashboard({
                     )}
 
                     <div className="flex items-center gap-2 pt-2">
-                      <Button type="submit" variant="destructive" disabled={isSubmitting} className="font-semibold h-9 text-xs px-4">
+                      <Button type="submit" disabled={isSubmitting} className="font-semibold h-10 text-xs px-6 rounded-full cursor-pointer bg-rose-600 hover:bg-rose-700 text-white shadow-md border-none">
                         {isSubmitting ? "Menutup Shift..." : "Konfirmasi & Tutup Shift"}
                       </Button>
-                      <Button type="button" variant="outline" size="sm" className="h-9 text-xs px-4" onClick={() => setActivePanel("NONE")}>
+                      <Button type="button" variant="outline" size="sm" className="h-10 text-xs px-6 rounded-full border-none shadow-md bg-white hover:bg-slate-100 text-slate-700 cursor-pointer" onClick={() => setActivePanel("NONE")}>
                         Batal
                       </Button>
                     </div>
                   </form>
                 </div>
               )}
+
+              {/* Tabel Aktivitas Terkini Shift Ini */}
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <h3 className="text-base font-semibold text-slate-900 tracking-tight">
+                      Aktivitas Terkini Shift Ini
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5 font-medium">
+                      Transaksi kasir dan mutasi arus kas yang baru saja berlangsung
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setRawAmount("");
+                        setDescInput("");
+                        setMovementType("IN");
+                        setIsMovementModalOpen(true);
+                      }}
+                      className="text-xs font-semibold text-[#0e59f9] bg-white hover:bg-slate-100 shadow-sm-md px-3.5 py-1.5 rounded-full transition-all cursor-pointer border-none"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Catat Kas Laci
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => router.replace(`/outlet/${outletKey}/shifts?tab=transactions`, { scroll: false })}
+                      className="text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-100 shadow-sm-md px-3.5 py-1.5 rounded-full transition-all cursor-pointer border-none"
+                    >
+                      Semua Transaksi
+                    </Button>
+                  </div>
+                </div>
+
+                <AppTable
+                  columns={activityColumns}
+                  data={timelineActivities}
+                  keyExtractor={(act) => act.id}
+                  pageSize={5}
+                  emptyTitle="Belum ada aktivitas"
+                  emptyDescription="Belum ada aktivitas kas atau transaksi pada sesi shift ini."
+                />
+              </div>
             </div>
           ) : (
             /* Form Buka Shift jika belum ada shift aktif */
-            <div className="bg-card rounded-2xl border border-border/70 p-6 sm:p-8 shadow-xs space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-border/60">
+            <div className="bg-white rounded-2xl border-none shadow-sm-md p-6 sm:p-8 space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-100">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-semibold">
+                  <div className="w-10 h-10 rounded-full bg-[#0e59f9] text-white flex items-center justify-center font-semibold shrink-0">
                     <Banknote className="w-5 h-5" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-semibold text-foreground tracking-tight">
+                    <h2 className="text-lg font-semibold text-slate-900 tracking-tight">
                       Buka Shift Kasir Baru
                     </h2>
-                    <p className="text-xs text-muted-foreground mt-0.5">
+                    <p className="text-xs text-slate-500 mt-0.5">
                       Masukkan modal awal kas (uang kembalian) di laci untuk memulai transaksi.
                     </p>
                   </div>
@@ -563,7 +909,7 @@ export function ShiftDashboard({
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="h-9 text-xs gap-1.5 rounded-xl"
+                  className="h-10 text-xs gap-1.5 rounded-full border-none shadow-sm-md bg-white hover:bg-slate-100 text-slate-700 cursor-pointer"
                   onClick={() => setUseCalculator(!useCalculator)}
                 >
                   <Calculator className="w-4 h-4" />
@@ -574,11 +920,11 @@ export function ShiftDashboard({
               <form onSubmit={handleStartShift} className="space-y-5 max-w-xl">
                 {!useCalculator ? (
                   <div className="space-y-3">
-                    <Label htmlFor="startingCash" className="text-xs font-semibold">
+                    <Label htmlFor="startingCash" className="text-xs font-semibold text-slate-700">
                       Modal Awal Kasir (Rp)
                     </Label>
                     <div className="relative">
-                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-semibold text-muted-foreground text-sm">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-semibold text-slate-400 text-sm">
                         Rp
                       </span>
                       <Input
@@ -589,7 +935,7 @@ export function ShiftDashboard({
                         value={formattedDisplayAmount}
                         onChange={handleAmountChange}
                         autoFocus
-                        className="pl-11 font-financial text-lg font-semibold h-11 bg-background tabular-nums rounded-xl"
+                        className="pl-11 pr-4 font-financial text-base font-semibold h-11 bg-white tabular-nums border-none shadow-sm-md rounded-full focus-visible:ring-2 focus-visible:ring-[#0e59f9]"
                       />
                     </div>
                     <div className="flex flex-wrap gap-1.5 pt-1">
@@ -597,7 +943,7 @@ export function ShiftDashboard({
                         <button
                           key={num}
                           type="button"
-                          className="text-[11px] px-3 py-1 rounded-lg border bg-muted/50 hover:bg-muted font-financial font-medium transition-colors tabular-nums"
+                          className="text-[11px] px-3.5 py-1.5 rounded-full border-none bg-white hover:bg-slate-100 text-slate-700 shadow-sm-md font-financial font-medium transition-all tabular-nums cursor-pointer"
                           onClick={() => setAmountValue(num)}
                         >
                           {num === 0 ? "Rp 0 (Tanpa Modal)" : formatCurrency(num)}
@@ -606,14 +952,14 @@ export function ShiftDashboard({
                     </div>
                   </div>
                 ) : (
-                  <div className="p-5 bg-muted/30 rounded-2xl border space-y-3 font-financial tabular-nums">
+                  <div className="p-5 bg-slate-50/80 rounded-2xl border-none shadow-sm-md space-y-3 font-financial tabular-nums">
                     <div className="space-y-2.5">
                       {BILL_VALUES.map((bill) => (
                         <div key={bill.value} className="flex items-center justify-between text-xs">
-                          <span className="font-semibold text-foreground w-24">
+                          <span className="font-semibold text-slate-800 w-24">
                             {bill.label}
                           </span>
-                          <span className="text-muted-foreground font-sans">×</span>
+                          <span className="text-slate-400 font-sans">×</span>
                           <div className="flex items-center gap-1.5">
                             <Input
                               type="number"
@@ -624,26 +970,26 @@ export function ShiftDashboard({
                                 const val = parseInt(e.target.value, 10) || 0;
                                 setBillCounts(prev => ({ ...prev, [bill.value]: val }));
                               }}
-                              className="w-20 h-8 text-xs text-center font-semibold bg-background rounded-lg"
+                              className="w-20 h-8 text-xs text-center font-semibold bg-white border-none shadow-sm-md rounded-full focus-visible:ring-2 focus-visible:ring-[#0e59f9]"
                             />
-                            <span className="text-[11px] text-muted-foreground font-sans">lbr</span>
+                            <span className="text-[11px] text-slate-400 font-sans">lbr</span>
                           </div>
-                          <span className="font-semibold w-24 text-right">
+                          <span className="font-semibold w-24 text-right text-slate-900">
                             {formatCurrency((billCounts[bill.value] || 0) * bill.value)}
                           </span>
                         </div>
                       ))}
                     </div>
-                    <div className="pt-3 border-t border-border/60 flex justify-between items-center text-xs font-semibold">
-                      <span className="font-sans">Total Modal Kas:</span>
-                      <span className="text-blue-600 dark:text-blue-400 text-lg">
+                    <div className="pt-3 border-t border-slate-200/80 flex justify-between items-center text-xs font-semibold">
+                      <span className="font-sans text-slate-700">Total Modal Kas:</span>
+                      <span className="text-[#0e59f9] text-lg font-semibold">
                         {formatCurrency(calculatorTotal)}
                       </span>
                     </div>
                   </div>
                 )}
 
-                <Button type="submit" disabled={isSubmitting} className="h-11 px-6 font-semibold shadow-xs bg-blue-600 hover:bg-blue-700 text-white rounded-xl">
+                <Button type="submit" disabled={isSubmitting} className="h-11 px-6 font-semibold shadow-md bg-[#0e59f9] hover:bg-blue-600 text-white rounded-full cursor-pointer border-none">
                   {isSubmitting ? "Membuka Shift..." : "Konfirmasi & Buka Shift"}
                 </Button>
               </form>
@@ -657,151 +1003,56 @@ export function ShiftDashboard({
       {/* ========================================================================= */}
       {activeTab === "movements" && (
         <div className="space-y-6">
-          {/* Form Input Kas Masuk / Keluar */}
-          <div className="bg-card rounded-2xl border border-border/70 p-6 shadow-xs space-y-5">
-            <div className="pb-4 border-b border-border/60">
-              <h2 className="text-base font-semibold text-foreground tracking-tight">
-                Catat Kas Masuk / Kas Keluar Laci
-              </h2>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Catat pengeluaran operasional darurat (beli es, gas, dll) atau penambahan modal uang kembalian.
+          {/* Header & Quick Summary */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-xl font-semibold text-slate-900 tracking-tight">
+                Arus Kas Laci
+              </h1>
+              <p className="text-xs text-slate-500 mt-0.5 font-medium">
+                Catatan mutasi kas masuk (in) dan kas keluar (out) darurat pada sesi shift aktif
               </p>
             </div>
 
-            <form onSubmit={handleMovement} className="space-y-4 max-w-xl">
-              <div className="grid grid-cols-2 gap-2 p-1 bg-muted/60 rounded-xl">
-                <Button
-                  type="button"
-                  variant={movementType === "IN" ? "default" : "ghost"}
-                  size="sm"
-                  className={movementType === "IN" ? "bg-emerald-600 text-white hover:bg-emerald-700 text-xs font-semibold rounded-lg" : "text-xs rounded-lg"}
-                  onClick={() => setMovementType("IN")}
-                >
-                  <ArrowDownLeft className="w-4 h-4 mr-1.5" />
-                  Kas Masuk (In)
-                </Button>
-                <Button
-                  type="button"
-                  variant={movementType === "OUT" ? "default" : "ghost"}
-                  size="sm"
-                  className={movementType === "OUT" ? "bg-rose-600 text-white hover:bg-rose-700 text-xs font-semibold rounded-lg" : "text-xs rounded-lg"}
-                  onClick={() => setMovementType("OUT")}
-                >
-                  <ArrowUpRight className="w-4 h-4 mr-1.5" />
-                  Kas Keluar (Out)
-                </Button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div className="space-y-1.5">
-                  <Label htmlFor="movementAmount" className="text-xs font-semibold">Nominal Uang (Rp)</Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 font-semibold text-muted-foreground text-xs">Rp</span>
-                    <Input
-                      id="movementAmount"
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="0"
-                      value={formattedDisplayAmount}
-                      onChange={handleAmountChange}
-                      required
-                      className="pl-9 font-financial text-sm font-semibold h-9 bg-background tabular-nums rounded-xl"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="movementDesc" className="text-xs font-semibold">Keterangan / Keperluan</Label>
-                  <Input
-                    id="movementDesc"
-                    type="text"
-                    value={descInput}
-                    onChange={(e) => setDescInput(e.target.value)}
-                    required
-                    placeholder={movementType === "IN" ? "Cth: Tambah uang kembalian" : "Cth: Beli gas LPG / es batu"}
-                    className="h-9 text-xs bg-background rounded-xl"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <span className="text-[10px] text-muted-foreground font-medium">Pilihan Cepat Keterangan:</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {(movementType === "IN" ? CASH_IN_PRESETS : CASH_OUT_PRESETS).map((preset) => (
-                    <button
-                      key={preset}
-                      type="button"
-                      className="text-[11px] px-2.5 py-1 rounded-lg border bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground font-medium transition-colors"
-                      onClick={() => setDescInput(preset)}
-                    >
-                      {preset}
-                    </button>
-                  ))}
-                </div>
+            <div className="flex items-center gap-3 flex-wrap">
+              {/* Quick Balance Indicators - Borderless */}
+              <div className="flex items-center gap-2 text-xs font-financial tabular-nums">
+                <span className="px-3.5 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border-none flex items-center gap-1.5 font-semibold">
+                  <ArrowDownLeft className="w-3.5 h-3.5" />
+                  +{formatCurrency(totalCashIn)}
+                </span>
+                <span className="px-3.5 py-1.5 rounded-full bg-rose-50 text-rose-700 border-none flex items-center gap-1.5 font-semibold">
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                  -{formatCurrency(totalCashOut)}
+                </span>
               </div>
 
               <Button
-                type="submit"
-                disabled={isSubmitting}
-                className={movementType === "IN" ? "bg-emerald-600 hover:bg-emerald-700 text-white font-semibold h-9 text-xs px-4 rounded-xl" : "bg-rose-600 hover:bg-rose-700 text-white font-semibold h-9 text-xs px-4 rounded-xl"}
+                onClick={() => {
+                  setRawAmount("");
+                  setDescInput("");
+                  setMovementType("IN");
+                  setIsMovementModalOpen(true);
+                }}
+                disabled={!activeShift}
+                className="rounded-full bg-[#0e59f9] hover:bg-blue-600 text-white text-xs font-semibold h-10 px-5 gap-2 shadow-md border-none cursor-pointer disabled:opacity-50"
               >
-                {isSubmitting ? "Menyimpan..." : "Simpan Pergerakan Kas"}
+                <Plus className="w-4 h-4" />
+                Catat Kas Laci
               </Button>
-            </form>
+            </div>
           </div>
 
           {/* Tabel Log Mutasi Kas */}
-          <div className="bg-white dark:bg-slate-950 rounded-2xl border border-slate-200/90 dark:border-slate-800 overflow-hidden shadow-xs">
-            <div className="p-4 md:px-6 border-b border-slate-200/80 dark:border-slate-800">
-              <h3 className="font-semibold text-sm text-foreground">Log Mutasi Kas Laci Shift Ini</h3>
-            </div>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[100px]">Waktu</TableHead>
-                    <TableHead className="w-[140px]">Jenis</TableHead>
-                    <TableHead>Keterangan / Keperluan</TableHead>
-                    <TableHead className="text-right w-[150px]">Nominal</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {!activeShift?.cashMovements || activeShift.cashMovements.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-center py-10 text-xs text-muted-foreground">
-                        Belum ada catatan pergerakan kas masuk atau keluar pada shift ini.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    activeShift.cashMovements.map((m: any) => (
-                      <TableRow key={m.id} className="text-xs hover:bg-blue-50/50 dark:hover:bg-blue-950/25 transition-colors">
-                        <TableCell className="text-muted-foreground font-financial tabular-nums">
-                          {format(new Date(m.createdAt), "HH:mm")}
-                        </TableCell>
-                        <TableCell>
-                          {m.type === "IN" ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md border-none bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
-                              <ArrowDownLeft className="w-3.5 h-3.5" /> Kas Masuk
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md border-none bg-rose-100/80 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300">
-                              <ArrowUpRight className="w-3.5 h-3.5" /> Kas Keluar
-                            </span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-foreground font-medium">
-                          {m.description}
-                        </TableCell>
-                        <TableCell className={`text-right font-financial font-semibold tabular-nums ${m.type === "IN" ? "text-emerald-600" : "text-rose-600"}`}>
-                          {m.type === "IN" ? "+" : "-"}{formatCurrency(Number(m.amount))}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
+          <AppTable
+            columns={movementColumns}
+            data={activeShift?.cashMovements || []}
+            keyExtractor={(item) => item.id}
+            searchKey="description"
+            searchPlaceholder="Cari mutasi kas..."
+            emptyTitle="Belum ada mutasi kas"
+            emptyDescription="Belum ada catatan pergerakan kas masuk atau keluar pada shift ini."
+          />
         </div>
       )}
 
@@ -809,71 +1060,27 @@ export function ShiftDashboard({
       {/* TAB 3: TRANSAKSI SHIFT BERJALAN */}
       {/* ========================================================================= */}
       {activeTab === "transactions" && (
-        <div className="bg-card rounded-2xl border border-border/70 overflow-hidden shadow-xs space-y-0">
-          <div className="p-4 md:px-6 border-b border-border/60 flex items-center justify-between">
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 className="font-semibold text-sm md:text-base text-foreground">
-                Transaksi Pada Shift Aktif ({activeShift?.transactions?.length || 0})
-              </h2>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Daftar seluruh pesanan yang berhasil diproses pada sesi shift ini.
+              <h1 className="text-xl font-semibold text-slate-900 tracking-tight">
+                Transaksi Shift Aktif
+              </h1>
+              <p className="text-xs text-slate-500 mt-0.5 font-medium">
+                Daftar seluruh pesanan yang berhasil diproses pada sesi shift ini
               </p>
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[140px]">No. Order</TableHead>
-                  <TableHead className="w-[100px]">Waktu</TableHead>
-                  <TableHead className="w-[160px]">Tipe & Meja</TableHead>
-                  <TableHead className="w-[130px]">Pembayaran</TableHead>
-                  <TableHead className="text-right w-[150px]">Total</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {!activeShift?.transactions || activeShift.transactions.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-12 text-xs text-muted-foreground">
-                      Belum ada transaksi pada shift ini.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  activeShift.transactions.map((tx: any) => (
-                    <TableRow key={tx.id} className="text-xs hover:bg-blue-50/50 dark:hover:bg-blue-950/25 transition-colors">
-                      <TableCell className="font-mono font-semibold text-foreground">
-                        {tx.orderNumber || "#-"}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground font-financial tabular-nums">
-                        {format(new Date(tx.createdAt), "HH:mm")}
-                      </TableCell>
-                      <TableCell className="text-foreground">
-                        {tx.tableNumber ? `Meja ${tx.tableNumber}` : tx.orderType || "Takeaway"}
-                      </TableCell>
-                      <TableCell>
-                        <span className={cn(
-                          "text-[10px] font-medium px-2 py-0.5 rounded-md border-none inline-block",
-                          tx.paymentMethod === "CASH"
-                            ? "bg-amber-100/70 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300"
-                            : tx.paymentMethod === "QRIS"
-                            ? "bg-blue-100/70 text-blue-800 dark:bg-blue-950/50 dark:text-blue-300"
-                            : tx.paymentMethod === "TRANSFER"
-                            ? "bg-purple-100/70 text-purple-800 dark:bg-purple-950/50 dark:text-purple-300"
-                            : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                        )}>
-                          {tx.paymentMethod || "CASH"}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right font-financial font-semibold text-foreground tabular-nums">
-                        {formatCurrency(Number(tx.grandTotal || tx.totalAmount || 0))}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+          <AppTable
+            columns={transactionColumns}
+            data={activeShift?.transactions || []}
+            keyExtractor={(item) => item.id}
+            searchKey="orderNumber"
+            searchPlaceholder="Cari nomor pesanan..."
+            emptyTitle="Belum ada transaksi"
+            emptyDescription="Belum ada transaksi yang diproses pada sesi shift ini."
+          />
         </div>
       )}
 
@@ -881,238 +1088,34 @@ export function ShiftDashboard({
       {/* TAB 4: RIWAYAT & REKAP SHIFT (AUDIT) */}
       {/* ========================================================================= */}
       {activeTab === "history" && (
-        <div className="space-y-4">
-          {/* Zone 1: Toolbar Row */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-2 sm:p-2.5 rounded-2xl border border-slate-200/90 shadow-xs">
-            <div className="flex items-center gap-2 px-2">
-              <History className="h-4 w-4 text-slate-400" />
-              <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
-                {shiftHistory.length} Riwayat Shift
-              </span>
-              {historySearch && (
-                <span className="text-xs text-slate-400">
-                  ({filteredHistory.length} ditemukan)
-                </span>
-              )}
-            </div>
-
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
-              <Input
-                placeholder="Cari kasir / ID shift..."
-                value={historySearch}
-                onChange={(e) => {
-                  setHistorySearch(e.target.value);
-                  setHistoryPage(1);
-                }}
-                className="h-9 pl-9 pr-8 text-xs rounded-xl bg-slate-50/70 dark:bg-slate-800/60 border-slate-200/90 focus:bg-white transition-all"
-              />
-              {historySearch && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setHistorySearch("");
-                    setHistoryPage(1);
-                  }}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              )}
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-xl font-semibold text-slate-900 tracking-tight">
+                Riwayat Shift
+              </h1>
+              <p className="text-xs text-slate-500 mt-0.5 font-medium">
+                Arsip rekapitulasi sesi kasir dan rekonsiliasi kas
+              </p>
             </div>
           </div>
 
-          {/* Zone 2: Modern Table Container */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs overflow-hidden">
-            <div className="overflow-x-auto">
-              <Table className="w-full text-left text-xs min-w-[760px]">
-                <TableHeader>
-                  <TableRow className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 hover:bg-slate-50/70 text-slate-500 dark:text-slate-400">
-                    <TableHead className="py-3 px-4 text-xs font-semibold whitespace-nowrap">Kasir & Tanggal</TableHead>
-                    <TableHead className="py-3 px-4 text-xs font-semibold whitespace-nowrap">Waktu & Durasi</TableHead>
-                    <TableHead className="py-3 px-4 text-xs font-semibold whitespace-nowrap">Total Omzet</TableHead>
-                    <TableHead className="py-3 px-4 text-xs font-semibold whitespace-nowrap">Selisih Kas</TableHead>
-                    <TableHead className="py-3 px-4 text-xs font-semibold whitespace-nowrap text-center">Status</TableHead>
-                    <TableHead className="py-3 px-4 text-xs font-semibold whitespace-nowrap text-right">Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody className="divide-y divide-slate-100 dark:divide-slate-800/80">
-                  {paginatedHistory.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-12 text-xs text-muted-foreground">
-                        Belum ada riwayat shift yang sesuai dengan pencarian.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    paginatedHistory.map((shift) => {
-                      const diff = Number(shift.cashDifference || 0);
-
-                      return (
-                        <TableRow
-                          key={shift.id}
-                          className="text-xs hover:bg-blue-50/50 dark:hover:bg-blue-950/25 transition-colors cursor-pointer"
-                          onClick={() => setModalShiftId(shift.id)}
-                        >
-                          <TableCell className="py-3 px-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold flex items-center justify-center text-xs shrink-0">
-                                {shift.cashierName ? shift.cashierName.charAt(0).toUpperCase() : "K"}
-                              </div>
-                              <div>
-                                <div className="font-semibold text-slate-900 dark:text-slate-100">
-                                  {shift.cashierName || "Kasir"}
-                                </div>
-                                <div className="text-[11px] text-slate-400 mt-0.5">
-                                  {format(new Date(shift.startTime), "dd MMMM yyyy", { locale: id })}
-                                </div>
-                              </div>
-                            </div>
-                          </TableCell>
-
-                          <TableCell className="py-3 px-4 whitespace-nowrap">
-                            <div className="font-medium text-slate-800 dark:text-slate-200">
-                              {format(new Date(shift.startTime), "HH:mm")} - {shift.endTime ? format(new Date(shift.endTime), "HH:mm") : "Selesai"}
-                            </div>
-                            <div className="text-[11px] text-slate-400">
-                              {shift.endTime ? formatDistanceStrict(new Date(shift.startTime), new Date(shift.endTime), { locale: id }) : "-"}
-                            </div>
-                          </TableCell>
-
-                          <TableCell className="py-3 px-4 whitespace-nowrap">
-                            <div className="font-semibold text-slate-900 dark:text-white font-financial tabular-nums">
-                              {formatCurrency(Number(shift.totalSales) || 0)}
-                            </div>
-                            <div className="text-[11px] text-slate-400 font-financial tabular-nums">
-                              {shift.totalTransactions || 0} transaksi
-                            </div>
-                          </TableCell>
-
-                          <TableCell className="py-3 px-4 whitespace-nowrap">
-                            {diff === 0 ? (
-                              <span className="font-financial tabular-nums text-emerald-600 font-semibold">Pas (Rp 0)</span>
-                            ) : diff < 0 ? (
-                              <span className="font-financial tabular-nums text-rose-600 font-semibold">Kurang {formatCurrency(Math.abs(diff))}</span>
-                            ) : (
-                              <span className="font-financial tabular-nums text-blue-600 font-semibold">Lebih {formatCurrency(diff)}</span>
-                            )}
-                          </TableCell>
-
-                          <TableCell className="py-3 px-4 whitespace-nowrap text-center">
-                            <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-md border-none bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
-                              Selesai
-                            </span>
-                          </TableCell>
-
-                          <TableCell className="py-3 px-4 text-right whitespace-nowrap">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 px-2.5 text-xs font-medium rounded-lg text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/40"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setModalShiftId(shift.id);
-                              }}
-                            >
-                              Detail
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-
-          {/* Zone 3: Footer Pagination Bar */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-1">
-            <div className="flex items-center gap-3 text-xs text-slate-500">
-              <div className="flex items-center gap-2">
-                <span>Items Per Page</span>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 px-3 rounded-xl border-slate-200 dark:border-slate-800 text-xs font-medium gap-1.5 cursor-pointer"
-                    >
-                      <span>{historyItemsPerPage}</span>
-                      <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-24 p-1 rounded-xl shadow-lg border-slate-200 dark:border-slate-800">
-                    {[10, 20, 50].map((size) => (
-                      <DropdownMenuItem
-                        key={size}
-                        onClick={() => {
-                          setHistoryItemsPerPage(size);
-                          setHistoryPage(1);
-                        }}
-                        className={cn("text-xs py-1.5 px-3 rounded-lg cursor-pointer", historyItemsPerPage === size && "font-semibold text-blue-600")}
-                      >
-                        {size}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-
-              <span className="hidden sm:inline text-slate-300 dark:text-slate-700">&bull;</span>
-              <span className="hidden sm:inline">
-                Menampilkan {(historyPage - 1) * historyItemsPerPage + 1} - {Math.min(historyPage * historyItemsPerPage, filteredHistory.length)} dari {filteredHistory.length} shift
-              </span>
-            </div>
-
-            {totalHistoryPages > 1 && (
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  disabled={historyPage === 1}
-                  onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
-                  className="h-8 w-8 rounded-lg border-slate-200 dark:border-slate-800 text-slate-500 hover:text-blue-600 disabled:opacity-40 cursor-pointer"
-                  aria-label="Halaman sebelumnya"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </Button>
-
-                {getHistoryPaginationNumbers().map((pageItem, index) => {
-                  if (pageItem === '...') {
-                    return <span key={`h-ellipsis-${index}`} className="px-1.5 text-xs text-slate-400">...</span>;
-                  }
-                  const pageNum = pageItem as number;
-                  const isCurrent = pageNum === historyPage;
-                  return (
-                    <button
-                      key={`h-page-${pageNum}`}
-                      type="button"
-                      onClick={() => setHistoryPage(pageNum)}
-                      className={cn(
-                        "w-8 h-8 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center justify-center",
-                        isCurrent
-                          ? "bg-[#0e59f9] text-white shadow-xs"
-                          : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
-                      )}
-                    >
-                      {pageNum}
-                    </button>
-                  );
-                })}
-
-                <Button
-                  variant="outline"
-                  size="icon"
-                  disabled={historyPage === totalHistoryPages}
-                  onClick={() => setHistoryPage((p) => Math.min(totalHistoryPages, p + 1))}
-                  className="h-8 w-8 rounded-lg border-slate-200 dark:border-slate-800 text-slate-500 hover:text-blue-600 disabled:opacity-40 cursor-pointer"
-                  aria-label="Halaman selanjutnya"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
-            )}
-          </div>
+          <AppTable
+            columns={historyColumns}
+            data={shiftHistory}
+            keyExtractor={(item) => item.id}
+            searchKey={(item) => `${item.cashierName || ''} ${item.id || ''}`}
+            searchPlaceholder="Cari kasir / ID shift..."
+            onRowClick={(item) => {
+              if (outletKey) {
+                router.push(`/outlet/${outletKey}/shifts/${item.id}`);
+              } else {
+                setModalShiftId(item.id);
+              }
+            }}
+            emptyTitle="Belum ada riwayat shift"
+            emptyDescription="Tidak ada data riwayat shift yang sesuai dengan pencarian."
+          />
         </div>
       )}
 
@@ -1120,17 +1123,17 @@ export function ShiftDashboard({
       {/* TAB 5: JADWAL & LOG AKTIVITAS */}
       {/* ========================================================================= */}
       {activeTab === "schedule" && (
-        <div className="bg-card rounded-2xl border border-border/70 p-6 shadow-xs space-y-6">
-          <div className="flex items-center justify-between pb-4 border-b border-border/60">
+        <div className="bg-white rounded-2xl border-none shadow-sm-md p-6 space-y-6">
+          <div className="flex items-center justify-between pb-4 border-b border-slate-100">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-semibold">
+              <div className="w-10 h-10 rounded-full bg-[#0e59f9] text-white flex items-center justify-center font-semibold shrink-0">
                 <Calendar className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="font-semibold text-base text-foreground tracking-tight">
+                <h2 className="font-semibold text-base text-slate-900 tracking-tight">
                   Jadwal & Log Kronologis Hari Ini
                 </h2>
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <p className="text-xs text-slate-500 mt-0.5">
                   {timelineActivities.length} aktivitas transaksi dan mutasi kas tercatat hari ini
                 </p>
               </div>
@@ -1138,14 +1141,14 @@ export function ShiftDashboard({
           </div>
 
           {/* 7-Day Weekday Strip with Blue Highlight for Today */}
-          <div className="grid grid-cols-7 gap-2 py-2 text-center border-b border-border/40 pb-4">
+          <div className="grid grid-cols-7 gap-2 py-2 text-center border-b border-slate-100 pb-4">
             {daysOfWeek.map((day, idx) => (
               <div
                 key={idx}
-                className={`flex flex-col items-center py-2.5 rounded-xl transition-all ${
+                className={`flex flex-col items-center py-2.5 rounded-2xl transition-all ${
                   day.isToday
-                    ? "bg-blue-600 text-white font-semibold shadow-xs scale-105"
-                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                    ? "bg-[#0e59f9] text-white font-semibold shadow-md scale-105"
+                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
                 }`}
               >
                 <span className="text-[11px] font-medium">{day.name}</span>
@@ -1157,25 +1160,25 @@ export function ShiftDashboard({
           {/* Timeline Activities List */}
           <div className="space-y-3 pt-1 max-h-96 overflow-y-auto pr-1">
             {timelineActivities.length === 0 ? (
-              <div className="py-8 text-center text-xs text-muted-foreground">
+              <div className="py-8 text-center text-xs text-slate-400">
                 Belum ada aktivitas kas atau transaksi pada shift ini.
               </div>
             ) : (
               timelineActivities.map((act) => (
                 <div
                   key={act.id}
-                  className={`pl-3.5 py-2 border-l-2 ${act.badgeColor} flex items-center justify-between text-xs hover:bg-muted/30 rounded-r-xl transition-colors px-3`}
+                  className={`pl-3.5 py-2.5 border-l-2 ${act.badgeColor} flex items-center justify-between text-xs hover:bg-slate-50/80 rounded-r-xl transition-colors px-3`}
                 >
                   <div>
-                    <div className="font-semibold text-foreground leading-snug">
+                    <div className="font-semibold text-slate-900 leading-snug">
                       {act.title}
                     </div>
-                    <div className="text-[11px] text-muted-foreground font-financial tabular-nums">
+                    <div className="text-[11px] text-slate-400 font-financial tabular-nums">
                       {format(act.time, "HH:mm")} • {act.subtitle}
                     </div>
                   </div>
 
-                  <div className="font-financial font-semibold text-foreground text-right shrink-0 tabular-nums">
+                  <div className="font-financial font-semibold text-slate-900 text-right shrink-0 tabular-nums">
                     {formatCurrency(act.amount)}
                   </div>
                 </div>
@@ -1184,6 +1187,128 @@ export function ShiftDashboard({
           </div>
         </div>
       )}
+
+      {/* MODAL CATAT ARUS KAS LACI (IN / OUT) */}
+      <Dialog open={isMovementModalOpen} onOpenChange={setIsMovementModalOpen}>
+        <DialogContent className="sm:max-w-md p-6 rounded-3xl border-none bg-white shadow-2xl">
+          <DialogHeader className="space-y-1">
+            <DialogTitle className="text-base font-semibold text-slate-900 tracking-tight">
+              Catat Kas Masuk / Keluar Laci
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500 font-medium">
+              Catat pengeluaran operasional darurat atau penambahan modal uang kembalian.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleMovement} className="space-y-4 pt-2">
+            {/* Toggle Type - Segmented Pill Switcher per SSOT 11.2 */}
+            <div className="grid grid-cols-2 gap-1 p-1 bg-white rounded-full shadow-md">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  "h-9 text-xs font-semibold rounded-full border-none cursor-pointer transition-all",
+                  movementType === "IN"
+                    ? "bg-emerald-600 text-white shadow-xs hover:bg-emerald-700"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium"
+                )}
+                onClick={() => setMovementType("IN")}
+              >
+                <ArrowDownLeft className="w-4 h-4 mr-1.5" />
+                Kas Masuk (In)
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  "h-9 text-xs font-semibold rounded-full border-none cursor-pointer transition-all",
+                  movementType === "OUT"
+                    ? "bg-rose-600 text-white shadow-xs hover:bg-rose-700"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium"
+                )}
+                onClick={() => setMovementType("OUT")}
+              >
+                <ArrowUpRight className="w-4 h-4 mr-1.5" />
+                Kas Keluar (Out)
+              </Button>
+            </div>
+
+            {/* Nominal Input */}
+            <div className="space-y-1.5">
+              <Label htmlFor="modalMovementAmount" className="text-xs font-semibold text-slate-700">Nominal Uang (Rp)</Label>
+              <div className="relative">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-semibold text-slate-400 text-xs">Rp</span>
+                <Input
+                  id="modalMovementAmount"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="0"
+                  value={formattedDisplayAmount}
+                  onChange={handleAmountChange}
+                  required
+                  autoFocus
+                  className="pl-9 pr-4 font-financial text-sm font-semibold h-10 bg-white tabular-nums border-none shadow-sm-md rounded-full focus-visible:ring-2 focus-visible:ring-[#0e59f9]"
+                />
+              </div>
+            </div>
+
+            {/* Description Input */}
+            <div className="space-y-1.5">
+              <Label htmlFor="modalMovementDesc" className="text-xs font-semibold text-slate-700">Keterangan / Keperluan</Label>
+              <Input
+                id="modalMovementDesc"
+                type="text"
+                value={descInput}
+                onChange={(e) => setDescInput(e.target.value)}
+                required
+                placeholder={movementType === "IN" ? "Cth: Tambah uang kembalian" : "Cth: Beli gas LPG / es batu"}
+                className="h-10 px-4 text-xs bg-white border-none shadow-sm-md rounded-full focus-visible:ring-2 focus-visible:ring-[#0e59f9]"
+              />
+            </div>
+
+            {/* Quick presets */}
+            <div className="space-y-1.5">
+              <span className="text-[10px] text-slate-400 font-medium">Pilihan Cepat Keterangan:</span>
+              <div className="flex flex-wrap gap-1.5">
+                {(movementType === "IN" ? CASH_IN_PRESETS : CASH_OUT_PRESETS).map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    className="text-[11px] px-3 py-1.5 rounded-full border-none bg-white hover:bg-slate-100 text-slate-700 shadow-sm-md font-medium transition-all cursor-pointer"
+                    onClick={() => setDescInput(preset)}
+                  >
+                    {preset}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-10 text-xs px-5 rounded-full border-none shadow-md bg-white hover:bg-slate-100 text-slate-700 font-medium cursor-pointer"
+                onClick={() => setIsMovementModalOpen(false)}
+              >
+                Batal
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className={cn(
+                  "h-10 text-xs px-6 font-semibold text-white rounded-full shadow-md border-none cursor-pointer",
+                  movementType === "IN" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700"
+                )}
+              >
+                {isSubmitting ? "Menyimpan..." : "Simpan Mutasi Kas"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* MODAL DETAIL AUDIT UNTUK RIWAYAT KEMARIN & SEBELUMNYA */}
       {modalShiftId && (

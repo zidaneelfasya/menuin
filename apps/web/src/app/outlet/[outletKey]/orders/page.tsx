@@ -7,12 +7,14 @@ import { Metadata } from "next";
 import { db } from "@/lib/db";
 import { tenants } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { Suspense } from "react";
+import OrdersLoading from "./loading";
 
 export const metadata: Metadata = {
   title: 'Pesanan Masuk - Menuin',
 };
 
-export default async function OrdersPage() {
+async function OrdersDataWrapper() {
   await requireFeature('POS');
   const user = await getCurrentUser();
   if (!user || !user.tenantId) {
@@ -27,25 +29,32 @@ export default async function OrdersPage() {
   const tenant = tenantRows[0] || {};
 
   return (
-    <div className="h-[calc(100vh-80px)] p-4 md:p-6 overflow-hidden flex flex-col space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 shrink-0">
-        <div>
-          <h1 className="text-xl md:text-2xl font-semibold font-sans tracking-tight text-foreground">Pesanan Masuk</h1>
-          <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
-            Pantau dan proses antrean pesanan kasir & online secara langsung.
-          </p>
-        </div>
-      </div>
-
-      <div className="flex-1 min-h-0">
-        {/* We need to pass JSON-serializable object to client component */}
-        <KanbanBoard 
-          initialOrders={JSON.parse(JSON.stringify(initialOrders))} 
-          tenantId={user.tenantId} 
-          cashierName={user.name || "Kasir"}
-          receiptSettings={JSON.parse(JSON.stringify(tenant))}
-        />
-      </div>
+    <div className="flex-1 flex flex-col min-h-0">
+      <KanbanBoard 
+        initialOrders={JSON.parse(JSON.stringify(initialOrders))} 
+        tenantId={user.tenantId} 
+        cashierName={user.name || "Kasir"}
+        receiptSettings={JSON.parse(JSON.stringify(tenant))}
+      />
     </div>
+  );
+}
+
+export default function OrdersPage() {
+  return (
+    <Suspense fallback={<OrdersLoading />}>
+      <div className="flex-1 flex flex-col min-h-full">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 shrink-0">
+          <div>
+            <h1 className="text-xl md:text-2xl font-semibold font-sans tracking-tight text-foreground">Pesanan Masuk</h1>
+            <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
+              Pantau dan proses antrean pesanan kasir & online secara langsung.
+            </p>
+          </div>
+        </div>
+
+        <OrdersDataWrapper />
+      </div>
+    </Suspense>
   );
 }

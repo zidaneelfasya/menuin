@@ -4,7 +4,7 @@ import * as React from 'react';
 import { Dialog, DialogOverlay, DialogPortal, DialogTitle } from '@/components/ui/dialog';
 import { Dialog as DialogPrimitive } from 'radix-ui';
 import {
-  X,
+  ArrowLeft,
   MapPin,
   Clock,
   BadgeCheck,
@@ -53,6 +53,7 @@ export function OutletDetailModal({
   totalSold = 0,
   totalProducts = 0,
 }: OutletDetailModalProps) {
+  const themeColor = tenant.primaryColor || 'var(--catalog-primary, #0e59f9)';
   // Format total sold
   const formatTotalSold = (sold: number) => {
     if (sold >= 1000) {
@@ -152,91 +153,95 @@ export function OutletDetailModal({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogPortal>
-        <DialogOverlay className="fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
+        <DialogOverlay className="fixed inset-0 z-50 bg-black/40 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
         <DialogPrimitive.Content
           data-slot="dialog-content"
-          className="fixed bottom-0 left-0 right-0 z-50 w-full sm:left-1/2 sm:-translate-x-1/2 sm:max-w-md h-[90vh] max-h-[90vh] rounded-t-2xl p-0 m-0 flex flex-col bg-slate-50 shadow-xl overflow-hidden outline-none border-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom duration-300"
+          className="fixed inset-0 z-50 w-full sm:left-1/2 sm:-translate-x-1/2 sm:max-w-md h-full min-h-screen h-[100dvh] p-0 m-0 flex flex-col bg-white overflow-hidden outline-none border-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom duration-300"
         >
-          <DialogTitle className="sr-only">Informasi Outlet {tenant.name}</DialogTitle>
+          <DialogTitle className="sr-only">Informasi Resto {tenant.name}</DialogTitle>
 
-          {/* Header Nav */}
-          <div className="bg-white px-4 py-3 flex items-center justify-between border-b border-slate-150 shrink-0">
-            <button
-              type="button"
-              onClick={onClose}
-              className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
-              aria-label="Tutup"
-            >
-              <X className="w-4 h-4 stroke-[2]" />
-            </button>
+          {/* LAYER BAWAH (Grey Background Area with Navigation & Profile) */}
+          <div className="shrink-0 flex flex-col">
+            {/* Top Navigation Bar on Grey Layer */}
+            <div className="px-4 pt-3.5 pb-2 flex items-center justify-between shrink-0">
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-8 h-8 rounded-full bg-white text-slate-800 shadow-sm-md flex items-center justify-center transition-all cursor-pointer active:scale-95 border border-slate-200/80"
+                aria-label="Kembali ke menu"
+              >
+                <ArrowLeft className="w-4 h-4 stroke-[2.2]" />
+              </button>
 
-            <span className="text-xs font-semibold text-slate-800 tracking-tight">
-              Informasi Resto
-            </span>
+              <span className="text-xs font-semibold text-slate-800">
+                Informasi Resto
+              </span>
 
-            <button
-              type="button"
-              onClick={handleShare}
-              className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
-              aria-label="Bagikan"
-            >
-              <Share2 className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          {/* Scrollable Content Container */}
-          <div className="flex-1 overflow-y-auto overscroll-contain pb-6 space-y-4">
-            {/* Header Profile Section */}
-            <div className="bg-white pb-5 pt-3 px-4 border-b border-slate-150">
-              <div className="flex flex-col items-center text-center">
-                {/* Round Logo */}
-                <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-full border-2 border-white shadow-sm bg-white overflow-hidden shrink-0 flex items-center justify-center mb-2 ring-1 ring-slate-150">
-                  {tenant.storeLogoUrl ? (
-                    <img
-                      src={tenant.storeLogoUrl}
-                      alt={tenant.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-catalog-primary text-white font-semibold text-xl flex items-center justify-center">
-                      {tenant.name.charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                </div>
-
-                {/* Name */}
-                <h2 className="text-base sm:text-lg font-semibold text-slate-900 tracking-tight leading-snug">
-                  {tenant.name}
-                </h2>
-
-                {/* Cuisine Subtitle */}
-                <p className="text-xs text-slate-500 font-normal mt-0.5 max-w-xs">
-                  {cuisineCategory}
-                </p>
-
-                {/* Mitra Resmi Tag */}
-                <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-medium mt-2">
-                  <BadgeCheck className="w-3.5 h-3.5 stroke-[2.2]" />
-                  <span>Mitra Terverifikasi Menuin</span>
-                </div>
-              </div>
+              <button
+                type="button"
+                onClick={handleShare}
+                className="w-8 h-8 rounded-full bg-white text-slate-800 shadow-sm-md flex items-center justify-center transition-all cursor-pointer active:scale-95 border border-slate-200/80"
+                aria-label="Bagikan informasi resto"
+              >
+                <Share2 className="w-3.5 h-3.5 stroke-[2.2]" />
+              </button>
             </div>
 
-            {/* Card Info Resto */}
-            <div className="px-4">
-              <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5 px-1">
-                Lokasi & Jam Buka
+            {/* Profile Section on Grey Layer */}
+            <div className="flex flex-col items-center px-4 pt-2 pb-4 text-center shrink-0">
+              {/* Round Profile Logo */}
+              <div className="w-20 h-20 rounded-full border-4 border-white shadow-md bg-white overflow-hidden shrink-0 flex items-center justify-center">
+                {tenant.storeLogoUrl ? (
+                  <img
+                    src={tenant.storeLogoUrl}
+                    alt={tenant.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div
+                    className="w-full h-full bg-catalog-primary text-white font-semibold text-2xl flex items-center justify-center"
+                    style={{ backgroundColor: themeColor }}
+                  >
+                    {tenant.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
               </div>
 
-              <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
-                {/* Top Part: Alamat (Kiri) + Mini Map (Kanan) */}
-                <div className="p-4 flex items-start gap-3 justify-between">
+              {/* Resto Name */}
+              <h2 className="text-base sm:text-lg font-semibold text-slate-900 tracking-tight leading-snug mt-2.5">
+                {tenant.name}
+              </h2>
+
+              {/* Cuisine Subtitle */}
+              <p className="text-xs text-slate-500 font-normal mt-0.5 max-w-xs">
+                {cuisineCategory}
+              </p>
+
+              {/* Mitra Terverifikasi Badge */}
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white shadow-xs text-emerald-700 text-xs font-medium mt-2 border border-emerald-100">
+                <BadgeCheck className="w-3.5 h-3.5 text-emerald-600 stroke-[2.2]" />
+                <span>Mitra Terverifikasi Menuin</span>
+              </div>
+            </div>
+          </div>
+
+          {/* LAYER ATAS (White Sheet with rounded-t-[32px] containing Detail Info) */}
+          <div className="relative flex-1 bg-white rounded-t-[32px] shadow-[0_-8px_30px_rgba(0,0,0,0.06)] flex flex-col overflow-hidden">
+            {/* Scrollable Content inside Layer Atas (Zero Cards, Clean Hairlines) */}
+            <div className="flex-1 overflow-y-auto overscroll-contain px-5 pt-5 pb-4 space-y-4">
+              {/* 1. Lokasi & Jam Buka */}
+              <div>
+                <h3 className="text-xs font-semibold text-slate-900 mb-2">
+                  Lokasi & Jam Buka
+                </h3>
+
+                <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0 pr-1">
-                    <p className="text-xs sm:text-sm font-medium text-slate-800 leading-relaxed line-clamp-3">
+                    <p className="text-xs sm:text-sm font-medium text-slate-800 leading-relaxed">
                       {fullAddress}
                     </p>
-                    <div className="flex items-center gap-1.5 mt-2 text-[11px] font-medium text-slate-500">
-                      <MapPin className="w-3.5 h-3.5 text-catalog-primary shrink-0" />
+                    <div className="flex items-center gap-1.5 mt-2 text-xs font-medium text-slate-500">
+                      <MapPin className="w-3.5 h-3.5 text-catalog-primary shrink-0" style={{ color: themeColor }} />
                       <span>{tenant.city || 'Banyuwangi'}</span>
                     </div>
                   </div>
@@ -244,7 +249,7 @@ export function OutletDetailModal({
                   {/* Stylized Mini Map Thumbnail */}
                   <div
                     onClick={openGoogleMaps}
-                    className="w-24 h-24 rounded-xl border border-slate-200 shadow-2xs overflow-hidden relative shrink-0 cursor-pointer group hover:scale-[1.02] transition-transform"
+                    className="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl border border-slate-150 shadow-sm-md overflow-hidden relative shrink-0 cursor-pointer group hover:scale-[1.02] transition-transform"
                     title="Buka rute di Google Maps"
                   >
                     <svg
@@ -262,14 +267,12 @@ export function OutletDetailModal({
                       <line x1="50" y1="0" x2="50" y2="100" stroke="#ffde9e" strokeWidth="3" />
                     </svg>
 
-                    {/* Red Round Pin in Center */}
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-7 h-7 rounded-full bg-rose-600 text-white shadow-xs flex items-center justify-center border-2 border-white group-hover:scale-110 transition-transform">
-                        <Utensils className="w-3 h-3 stroke-[2.2]" />
+                      <div className="w-6 h-6 rounded-full bg-rose-600 text-white shadow-xs flex items-center justify-center border-2 border-white group-hover:scale-110 transition-transform">
+                        <Utensils className="w-2.5 h-2.5 stroke-[2.2]" />
                       </div>
                     </div>
 
-                    {/* Bottom Overlay Label */}
                     <div className="absolute bottom-0 inset-x-0 bg-black/60 py-0.5 text-center">
                       <span className="text-[9px] font-semibold text-white flex items-center justify-center gap-0.5">
                         <span>Buka Peta</span>
@@ -279,107 +282,111 @@ export function OutletDetailModal({
                   </div>
                 </div>
 
-                {/* Jam Operasional Bar */}
-                <div className="border-t border-slate-100 px-4 py-2.5 flex items-center justify-between bg-slate-50/50">
-                  <div className="flex items-center gap-2 min-w-0">
+                <div className="flex items-center justify-between pt-3 text-xs">
+                  <div className="flex items-center gap-2">
                     <Clock className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span className="text-xs font-medium text-slate-800 truncate">
+                    <span className="font-medium text-slate-800">
                       Jam Buka: {openHoursText}
                     </span>
                   </div>
-                  <span className="text-[11px] font-semibold text-emerald-600">
+                  <span className="text-xs font-semibold text-emerald-600">
                     Aktif
                   </span>
                 </div>
               </div>
-            </div>
 
-            {/* Card Layanan & Fasilitas (Diperkaya dengan Icon Fill Check Warna Hijau) */}
-            <div className="px-4">
-              <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5 px-1">
-                Layanan & Fasilitas
-              </div>
+              <div className="border-b border-slate-100" />
 
-              <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-4 space-y-6 overflow-hidden">
-                {facilitiesList.map((item, index) => (
-                  <div key={index} className="flex items-center justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs font-semibold text-slate-800 leading-snug">
-                        {item.title}
+              {/* 2. Layanan & Fasilitas */}
+              <div>
+                <h3 className="text-xs font-semibold text-slate-900 mb-3">
+                  Layanan & Fasilitas
+                </h3>
+
+                <div className="space-y-3.5">
+                  {facilitiesList.map((item, index) => (
+                    <div key={index} className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-semibold text-slate-800 leading-snug">
+                          {item.title}
+                        </div>
+                        <div className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                          {item.desc}
+                        </div>
                       </div>
-                      <div className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
-                        {item.desc}
+
+                      <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-2xs mt-0.5">
+                        <Check className="w-3 h-3 stroke-[3]" />
                       </div>
                     </div>
+                  ))}
+                </div>
+              </div>
 
-                    {/* Icon Fill Check Hijau */}
-                    <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-2xs">
-                      <Check className="w-3 h-3 stroke-[3]" />
+              <div className="border-b border-slate-100" />
+
+              {/* 3. Aktivitas Resto */}
+              <div>
+                <h3 className="text-xs font-semibold text-slate-900 mb-2.5">
+                  Aktivitas Resto
+                </h3>
+
+                <div className="grid grid-cols-2 gap-3 py-1">
+                  <div className="text-left">
+                    <div className="text-base font-semibold text-slate-900 font-numeric tabular-nums">
+                      {formatTotalSold(totalSold)}
+                    </div>
+                    <div className="text-[11px] font-normal text-slate-500 mt-0.5">
+                      Total Produk Terjual
                     </div>
                   </div>
-                ))}
+
+                  <div className="text-left border-l border-slate-100 pl-4">
+                    <div className="text-base font-semibold text-slate-900 font-numeric tabular-nums">
+                      {totalProducts > 0 ? `${totalProducts}` : '18+'}
+                    </div>
+                    <div className="text-[11px] font-normal text-slate-500 mt-0.5">
+                      Pilihan Menu Aktif
+                    </div>
+                  </div>
+                </div>
               </div>
+
+              {/* 4. Deskripsi Tentang Toko */}
+              {tenant.storeDescription && (
+                <>
+                  <div className="border-b border-slate-100" />
+                  <div>
+                    <h3 className="text-xs font-semibold text-slate-900 mb-1.5">
+                      Tentang Toko
+                    </h3>
+                    <p className="text-xs text-slate-600 leading-relaxed font-normal">
+                      {tenant.storeDescription}
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
 
-            {/* Card Aktivitas Resto */}
-            <div className="px-4">
-              <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5 px-1">
-                Aktivitas Resto
-              </div>
-
-              <div className="grid grid-cols-2 gap-2.5">
-                <div className="bg-white rounded-2xl border border-slate-200/90 p-3 shadow-2xs text-center">
-                  <div className="text-base font-semibold text-slate-900 font-numeric">
-                    {formatTotalSold(totalSold)}
-                  </div>
-                  <div className="text-[11px] font-normal text-slate-500 mt-0.5">
-                    Total Produk Terjual
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-2xl border border-slate-200/90 p-3 shadow-2xs text-center">
-                  <div className="text-base font-semibold text-slate-900 font-numeric">
-                    {totalProducts > 0 ? `${totalProducts}` : '18+'}
-                  </div>
-                  <div className="text-[11px] font-normal text-slate-500 mt-0.5">
-                    Pilihan Menu Aktif
-                  </div>
-                </div>
-              </div>
+            {/* Bottom Action Footer */}
+            <div className="p-3.5 bg-white border-t border-slate-100 flex items-center gap-2.5 shrink-0 pb-[max(0.875rem,env(safe-area-inset-bottom))]">
+              <button
+                type="button"
+                onClick={openGoogleMaps}
+                className="flex-1 h-11 rounded-full bg-catalog-primary text-white hover:bg-catalog-primary/90 font-semibold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-sm-md"
+                style={{ backgroundColor: themeColor }}
+              >
+                <Navigation className="w-3.5 h-3.5" />
+                <span>Rute Google Maps</span>
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 h-11 rounded-full border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 font-semibold text-xs flex items-center justify-center transition-all cursor-pointer active:scale-98"
+              >
+                Kembali ke Menu
+              </button>
             </div>
-
-            {/* Deskripsi */}
-            {tenant.storeDescription && (
-              <div className="px-4">
-                <div className="bg-white rounded-2xl border border-slate-200/90 p-3.5 shadow-2xs">
-                  <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                    Tentang Toko
-                  </div>
-                  <p className="text-xs text-slate-600 leading-relaxed font-normal">
-                    {tenant.storeDescription}
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Bottom Action Footer */}
-          <div className="p-3.5 bg-white border-t border-slate-150 flex items-center gap-2.5 shrink-0">
-            <button
-              type="button"
-              onClick={openGoogleMaps}
-              className="flex-1 h-10 rounded-xl bg-catalog-primary text-white hover:bg-catalog-primary/90 font-semibold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs"
-            >
-              <Navigation className="w-3.5 h-3.5" />
-              <span>Rute Google Maps</span>
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 h-10 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 font-semibold text-xs flex items-center justify-center transition-all cursor-pointer active:scale-98"
-            >
-              Kembali ke Menu
-            </button>
           </div>
         </DialogPrimitive.Content>
       </DialogPortal>

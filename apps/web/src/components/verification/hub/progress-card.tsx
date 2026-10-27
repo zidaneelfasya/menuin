@@ -94,7 +94,7 @@ export function ProgressCard({
   return (
     <div
       className={cn(
-        'bg-white rounded-2xl border border-[#EAEFF8] p-5 sm:p-6 shadow-sm flex flex-col justify-between space-y-5',
+        'bg-white rounded-2xl border-none p-5 sm:p-6 shadow-sm-md hover:shadow-md transition-all flex flex-col justify-between space-y-5',
         className
       )}
     >
@@ -104,11 +104,11 @@ export function ProgressCard({
           <span className="text-xs font-semibold text-slate-500 block">
             Tahapan Verifikasi
           </span>
-          <h3 className="text-base font-semibold text-slate-900 tracking-tight mt-0.5">
+          <h3 className="text-base font-bold text-slate-900 tracking-tight mt-0.5">
             Progres Verifikasi Bisnis
           </h3>
         </div>
-        <span className="inline-flex items-center text-xs font-medium text-[#0e59f9] bg-blue-50 px-2 py-0.5 rounded-xl">
+        <span className="inline-flex items-center text-xs font-semibold text-[#0e59f9] bg-blue-50 px-2.5 py-0.5 rounded-full">
           {completedCount} dari 4 data terverifikasi
         </span>
       </div>

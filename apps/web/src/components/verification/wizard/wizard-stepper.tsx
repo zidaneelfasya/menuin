@@ -51,7 +51,7 @@ export function WizardStepper({
   return (
     <aside
       className={cn(
-        'w-72 flex-shrink-0 bg-white border-r border-[#EAEFF8] p-5 flex flex-col justify-between select-none',
+        'w-72 flex-shrink-0 bg-white border-r border-slate-100 shadow-[4px_0_16px_rgba(0,0,0,0.03)] p-5 flex flex-col justify-between select-none',
         className
       )}
     >
@@ -60,13 +60,13 @@ export function WizardStepper({
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div>
             <span className="text-[11px] font-medium text-slate-400 block">
-              Tahapan Verifikasi
+               Tahapan Verifikasi
             </span>
             <h3 className="text-sm font-semibold text-slate-900 tracking-tight mt-0.5">
               Progres Verifikasi Bisnis
             </h3>
           </div>
-          <span className="text-[11px] font-medium text-[#0e59f9] bg-blue-50 px-2.5 py-1 rounded-lg whitespace-nowrap">
+          <span className="text-[11px] font-semibold text-[#0e59f9] bg-blue-50 px-2.5 py-1 rounded-full whitespace-nowrap">
             {finishedCount} dari 5 selesai
           </span>
         </div>
@@ -158,7 +158,7 @@ export function WizardStepper({
                       {step.title}
                     </p>
                     {status === 'approved' && (
-                      <span className="text-[10px] font-semibold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-xl">
+                      <span className="text-[11px] font-semibold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full">
                         Disetujui
                       </span>
                     )}

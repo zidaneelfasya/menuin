@@ -84,13 +84,13 @@ export function ExportMenuDropdown({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant={variant} size={size} className={className || "rounded-xl gap-2 font-medium shadow-xs"}>
-          <Download className="w-4 h-4 text-slate-600 dark:text-slate-300" />
+        <Button variant={variant} size={size} className={className || "rounded-full gap-2 font-medium shadow-md bg-white hover:bg-slate-100 text-slate-700 border-none h-10 px-4"}>
+          <Download className="w-4 h-4 text-slate-600" />
           <span>Export Menu</span>
           <ChevronDown className="w-3.5 h-3.5 opacity-60 ml-0.5" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56 p-1.5 rounded-xl border-slate-200 dark:border-slate-800 shadow-xl">
+      <DropdownMenuContent align="end" className="w-60 p-1.5 rounded-2xl border-none shadow-2xl bg-white">
         {hasSelection && (
           <>
             <DropdownMenuLabel className="text-[11px] font-semibold text-muted-foreground px-2 py-1 uppercase tracking-wider">
@@ -98,19 +98,19 @@ export function ExportMenuDropdown({
             </DropdownMenuLabel>
             <DropdownMenuItem 
               onClick={() => handleExportSelected('xlsx')}
-              className="rounded-lg cursor-pointer flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-200"
+              className="rounded-xl cursor-pointer flex items-center gap-2 text-xs font-medium text-slate-700 hover:bg-slate-100"
             >
-              <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
               <span>Export Terpilih ke Excel (.xlsx)</span>
             </DropdownMenuItem>
             <DropdownMenuItem 
               onClick={() => handleExportSelected('csv')}
-              className="rounded-lg cursor-pointer flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-200"
+              className="rounded-xl cursor-pointer flex items-center gap-2 text-xs font-medium text-slate-700 hover:bg-slate-100"
             >
-              <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <FileText className="w-4 h-4 text-blue-600" />
               <span>Export Terpilih ke CSV (.csv)</span>
             </DropdownMenuItem>
-            <DropdownMenuSeparator className="my-1 bg-slate-100 dark:bg-slate-800" />
+            <DropdownMenuSeparator className="my-1 bg-slate-100" />
           </>
         )}
 
@@ -119,34 +119,34 @@ export function ExportMenuDropdown({
         </DropdownMenuLabel>
         <DropdownMenuItem 
           onClick={() => handleExportAll('xlsx')}
-          className="rounded-lg cursor-pointer flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-200"
+          className="rounded-xl cursor-pointer flex items-center gap-2 text-xs font-medium text-slate-700 hover:bg-slate-100"
         >
-          <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
           <span>Export Semua ke Excel (.xlsx)</span>
         </DropdownMenuItem>
         <DropdownMenuItem 
           onClick={() => handleExportAll('csv')}
-          className="rounded-lg cursor-pointer flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-200"
+          className="rounded-xl cursor-pointer flex items-center gap-2 text-xs font-medium text-slate-700 hover:bg-slate-100"
         >
-          <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+          <FileText className="w-4 h-4 text-blue-600" />
           <span>Export Semua ke CSV (.csv)</span>
         </DropdownMenuItem>
 
-        <DropdownMenuSeparator className="my-1 bg-slate-100 dark:bg-slate-800" />
+        <DropdownMenuSeparator className="my-1 bg-slate-100" />
 
         <DropdownMenuLabel className="text-[11px] font-semibold text-muted-foreground px-2 py-1 uppercase tracking-wider">
           Template Import
         </DropdownMenuLabel>
         <DropdownMenuItem 
           onClick={() => handleDownloadTemplate('xlsx')}
-          className="rounded-lg cursor-pointer flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300"
+          className="rounded-xl cursor-pointer flex items-center gap-2 text-xs font-medium text-slate-600 hover:bg-slate-100"
         >
           <Download className="w-4 h-4 text-slate-500" />
           <span>Unduh Template Excel (.xlsx)</span>
         </DropdownMenuItem>
         <DropdownMenuItem 
           onClick={() => handleDownloadTemplate('csv')}
-          className="rounded-lg cursor-pointer flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300"
+          className="rounded-xl cursor-pointer flex items-center gap-2 text-xs font-medium text-slate-600 hover:bg-slate-100"
         >
           <Download className="w-4 h-4 text-slate-500" />
           <span>Unduh Template CSV (.csv)</span>

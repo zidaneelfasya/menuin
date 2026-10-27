@@ -1,14 +1,15 @@
 import { Metadata } from 'next';
+import { Suspense } from 'react';
 import { getDevicesAction } from '@/lib/actions/devices';
 import { DevicesClient } from './devices-client';
 import { requireTenantAccess } from '@/lib/actions/auth-context';
+import DevicesLoading from './loading';
 
 export const metadata: Metadata = {
   title: 'Perangkat Kasir - Menuin',
 };
 
-export default async function DevicesPage({ params }: { params: Promise<{ outletKey: string }> }) {
-  const { outletKey } = await params;
+async function DevicesDataWrapper({ outletKey }: { outletKey: string }) {
   const context = await requireTenantAccess();
   const res = await getDevicesAction();
   
@@ -26,5 +27,14 @@ export default async function DevicesPage({ params }: { params: Promise<{ outlet
       canManage={context.membership.role === 'OWNER' || context.membership.role === 'MANAGER'} 
       outletKey={outletKey}
     />
+  );
+}
+
+export default async function DevicesPage({ params }: { params: Promise<{ outletKey: string }> }) {
+  const { outletKey } = await params;
+  return (
+    <Suspense fallback={<DevicesLoading />}>
+      <DevicesDataWrapper outletKey={outletKey} />
+    </Suspense>
   );
 }

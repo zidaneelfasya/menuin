@@ -66,7 +66,8 @@ import {
 } from '@/components/ui/table';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { voidTransaction, getTransactionDetails } from '@/lib/actions/transactions';
+import { Skeleton } from '@/components/ui/skeleton';
+import { voidTransaction, getTransactionDetails, getTransactions, type GetTransactionsParams } from '@/lib/actions/transactions';
 import { updateOrderStatus, syncOrderPaymentStatus } from '@/lib/actions/orders';
 import { ReceiptPrinter, ReceiptData, TenantReceiptSettings } from '@/features/pos/components/receipt-printer';
 import { toast } from 'sonner';
@@ -112,13 +113,13 @@ export function getTransactionStatusDetails(status?: string | null, paymentStatu
   const s = (status || '').toUpperCase();
   const ps = (paymentStatus || '').toUpperCase();
 
-  // 1. Canceled / Void (Past Due style in screenshot)
+  // 1. Canceled / Void
   if (s === 'CANCELLED' || s === 'CANCELED' || ps === 'CANCELED' || ps === 'REFUNDED') {
     return {
       key: 'cancelled' as TransactionStatusKey,
       label: 'Batal',
-      badgeClass: 'bg-rose-100/70 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 font-medium',
-      iconBoxClass: 'bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 border border-rose-200/60 dark:border-rose-900/40',
+      badgeClass: 'bg-rose-100/70 text-rose-700 font-medium border-none',
+      iconBoxClass: 'bg-rose-50 text-rose-600 border-none',
       dotClass: 'bg-rose-500',
       description: 'Dibatalkan (Void)',
     };
@@ -129,26 +130,26 @@ export function getTransactionStatusDetails(status?: string | null, paymentStatu
     return {
       key: 'failed' as TransactionStatusKey,
       label: 'Gagal',
-      badgeClass: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 font-medium',
-      iconBoxClass: 'bg-slate-50 text-slate-500 dark:bg-slate-900 dark:text-slate-400 border border-slate-200 dark:border-slate-800',
+      badgeClass: 'bg-slate-100 text-slate-700 font-medium border-none',
+      iconBoxClass: 'bg-slate-50 text-slate-500 border-none',
       dotClass: 'bg-slate-400',
       description: 'Transaksi Gagal / Expired',
     };
   }
 
-  // 3. Pending Payment (Draft style in screenshot)
+  // 3. Pending Payment
   if (ps === 'PENDING' || ps === 'UNPAID' || s === 'PENDING') {
     return {
       key: 'pending_payment' as TransactionStatusKey,
       label: 'Menunggu Bayar',
-      badgeClass: 'bg-sky-100/80 text-sky-700 dark:bg-sky-950/70 dark:text-sky-300 font-medium',
-      iconBoxClass: 'bg-sky-50 text-sky-600 dark:bg-sky-950/50 dark:text-sky-400 border border-sky-200/60 dark:border-sky-900/40',
+      badgeClass: 'bg-sky-100/80 text-sky-700 font-medium border-none',
+      iconBoxClass: 'bg-sky-50 text-sky-600 border-none',
       dotClass: 'bg-sky-500 animate-pulse',
       description: 'Menunggu Pembayaran',
     };
   }
 
-  // 4. On Process (Open style in screenshot - purple/blue)
+  // 4. On Process
   if (s === 'PROCESSING' || s === 'NEW' || s === 'READY') {
     const isReady = s === 'READY';
     const isNew = s === 'NEW';
@@ -156,19 +157,19 @@ export function getTransactionStatusDetails(status?: string | null, paymentStatu
     return {
       key: 'on_process' as TransactionStatusKey,
       label,
-      badgeClass: 'bg-purple-100/80 text-purple-700 dark:bg-purple-950/70 dark:text-purple-300 font-medium',
-      iconBoxClass: 'bg-purple-50 text-purple-600 dark:bg-purple-950/50 dark:text-purple-400 border border-purple-200/60 dark:border-purple-900/40',
+      badgeClass: 'bg-purple-100/80 text-purple-700 font-medium border-none',
+      iconBoxClass: 'bg-purple-50 text-purple-600 border-none',
       dotClass: 'bg-purple-500 animate-pulse',
       description: isReady ? 'Siap Disajikan' : isNew ? 'Pesanan Baru' : 'Sedang Diproses Dapur',
     };
   }
 
-  // 5. Default: Sukses (Paid style in screenshot - green)
+  // 5. Default: Sukses
   return {
     key: 'completed' as TransactionStatusKey,
     label: 'Sukses',
-    badgeClass: 'bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300 font-medium',
-    iconBoxClass: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/40',
+    badgeClass: 'bg-emerald-100/80 text-emerald-700 font-medium border-none',
+    iconBoxClass: 'bg-emerald-50 text-emerald-600 border-none',
     dotClass: 'bg-emerald-500',
     description: 'Selesai & Lunas',
   };
@@ -210,7 +211,7 @@ const getOrderSourceInfo = (source?: string | null) => {
     return {
       label: 'Self Order',
       shortLabel: 'Self Order',
-      badgeClass: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20',
+      badgeClass: 'bg-blue-50 text-blue-700 border-none font-medium',
       isStorefront: true,
     };
   }
@@ -218,14 +219,14 @@ const getOrderSourceInfo = (source?: string | null) => {
     return {
       label: 'Delivery Online',
       shortLabel: 'Delivery',
-      badgeClass: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20',
+      badgeClass: 'bg-amber-50 text-amber-700 border-none font-medium',
       isStorefront: true,
     };
   }
   return {
     label: 'Kasir Manual (POS)',
     shortLabel: 'Kasir Manual',
-    badgeClass: 'bg-slate-500/10 text-slate-700 dark:text-slate-300 border border-slate-500/20',
+    badgeClass: 'bg-slate-100 text-slate-700 border-none font-medium',
     isStorefront: false,
   };
 };
@@ -250,12 +251,12 @@ function getInitials(name?: string | null): string {
 }
 
 const avatarColorPalette = [
-  'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300',
-  'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300',
-  'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300',
-  'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300',
-  'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300',
-  'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300',
+  'bg-amber-100 text-amber-800',
+  'bg-blue-100 text-blue-800',
+  'bg-purple-100 text-purple-800',
+  'bg-emerald-100 text-emerald-800',
+  'bg-rose-100 text-rose-800',
+  'bg-indigo-100 text-indigo-800',
 ];
 
 function getAvatarColor(seed: string): string {
@@ -534,14 +535,47 @@ function formatKpiCurrency(val: number): string {
   return formatCurrency(val);
 }
 
-export function TransactionHistory({ initialData }: { initialData: Transaction[] }) {
+export interface TransactionHistoryProps {
+  initialData: Transaction[];
+  initialSummary?: {
+    totalRevenue: number;
+    totalOrders: number;
+    aov: number;
+  };
+  initialStatusCounts?: {
+    all: number;
+    completed: number;
+    onProcess: number;
+    pendingPayment: number;
+    cancelled: number;
+  };
+  initialPagination?: {
+    page: number;
+    limit: number;
+    totalItems: number;
+    totalPages: number;
+  };
+}
+
+export function TransactionHistory({
+  initialData,
+  initialSummary,
+  initialStatusCounts,
+  initialPagination,
+}: TransactionHistoryProps) {
   const params = useParams();
   const outletKey = (params?.outletKey as string) || '';
 
   const [data, setData] = React.useState<Transaction[]>(initialData);
+  const [serverSummary, setServerSummary] = React.useState(initialSummary);
+  const [serverStatusCounts, setServerStatusCounts] = React.useState(initialStatusCounts);
+  const [serverPagination, setServerPagination] = React.useState(initialPagination);
+  const [isServerLoading, setIsServerLoading] = React.useState(false);
+
   const [searchQuery, setSearchQuery] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState<StatusFilter>('all');
-  const [timeRangeFilter, setTimeRangeFilter] = React.useState<TimeFilter>('all');
+  const [timeRangeFilter, setTimeRangeFilter] = React.useState<TimeFilter>('this_month');
+  const [periodTransactions, setPeriodTransactions] = React.useState<Transaction[]>(initialData);
   const [customDateRange, setCustomDateRange] = React.useState<DateRange | undefined>(undefined);
   const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
   const [isFilterPopoverOpen, setIsFilterPopoverOpen] = React.useState(false);
@@ -549,9 +583,9 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
   const [sourceFilter, setSourceFilter] = React.useState<SourceFilter>('all');
   const [sortBy, setSortBy] = React.useState<SortOption>('newest');
 
-  // Pagination state
+  // Pagination state (default: 25 items per page)
   const [currentPage, setCurrentPage] = React.useState(1);
-  const [itemsPerPage, setItemsPerPage] = React.useState(10);
+  const [itemsPerPage, setItemsPerPage] = React.useState(25);
 
   // Void modal state
   const [selectedTxForVoid, setSelectedTxForVoid] = React.useState<Transaction | null>(null);
@@ -574,14 +608,91 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
   const [loadingPrintId, setLoadingPrintId] = React.useState<string | null>(null);
   const [copiedId, setCopiedId] = React.useState<string | null>(null);
 
+  // Debounced search query (300ms) for global historical search
+  const [debouncedSearch, setDebouncedSearch] = React.useState(searchQuery);
+  React.useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  // Active loading state when server query is in-flight or search query is being debounced
+  const isTableLoading = isServerLoading || searchQuery !== debouncedSearch;
+
   React.useEffect(() => {
     setData(initialData);
-  }, [initialData]);
+    if (initialSummary) setServerSummary(initialSummary);
+    if (initialStatusCounts) setServerStatusCounts(initialStatusCounts);
+    if (initialPagination) setServerPagination(initialPagination);
+  }, [initialData, initialSummary, initialStatusCounts, initialPagination]);
 
   // Reset to first page when search or filter criteria changes
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, statusFilter, timeRangeFilter, customDateRange, orderTypeFilter, sourceFilter, sortBy, itemsPerPage]);
+  }, [debouncedSearch, statusFilter, timeRangeFilter, customDateRange, orderTypeFilter, sourceFilter, sortBy, itemsPerPage]);
+
+  // Server-Side Query Execution across historical database
+  const isInitialMount = React.useRef(true);
+  React.useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    let active = true;
+    setIsServerLoading(true);
+    const startTime = Date.now();
+
+    const queryParams: GetTransactionsParams = {
+      search: debouncedSearch.trim() || undefined,
+      status: statusFilter,
+      timeRange: timeRangeFilter,
+      startDate: customDateRange?.from ? customDateRange.from.toISOString() : undefined,
+      endDate: customDateRange?.to ? customDateRange.to.toISOString() : undefined,
+      orderType: orderTypeFilter,
+      source: sourceFilter,
+      sortBy: sortBy,
+      page: currentPage,
+      limit: itemsPerPage,
+    };
+
+    getTransactions(queryParams)
+      .then((res) => {
+        if (!active) return;
+        if (res.success && res.data) {
+          setData(res.data as Transaction[]);
+          if (res.summary) setServerSummary(res.summary);
+          if (res.statusCounts) setServerStatusCounts(res.statusCounts);
+          if (res.pagination) setServerPagination(res.pagination);
+          // Keep period transactions synced when searching is empty or time filter changes
+          if (!debouncedSearch.trim() && statusFilter === 'all') {
+            setPeriodTransactions(res.data as Transaction[]);
+          }
+        }
+      })
+      .catch((err) => {
+        console.error('Error fetching filtered transactions:', err);
+      })
+      .finally(() => {
+        if (active) {
+          // Provide a smooth minimum visual feedback delay (200ms) so users clearly perceive skeleton response
+          const elapsed = Date.now() - startTime;
+          const remainingDelay = Math.max(0, 200 - elapsed);
+          if (remainingDelay > 0) {
+            setTimeout(() => {
+              if (active) setIsServerLoading(false);
+            }, remainingDelay);
+          } else {
+            setIsServerLoading(false);
+          }
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [debouncedSearch, statusFilter, timeRangeFilter, customDateRange, orderTypeFilter, sourceFilter, sortBy, currentPage, itemsPerPage]);
 
   // Handle escape key and body scroll lock for modals
   React.useEffect(() => {
@@ -810,8 +921,10 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
     }
   };
 
-  // Status breakdown counts across all records
+  // Status breakdown counts across all records (prioritizing unified server-side aggregation)
   const statusCounts = React.useMemo(() => {
+    if (serverStatusCounts) return serverStatusCounts;
+
     let completed = 0;
     let onProcess = 0;
     let pendingPayment = 0;
@@ -832,9 +945,9 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
       pendingPayment,
       cancelled,
     };
-  }, [data]);
+  }, [serverStatusCounts, data]);
 
-  // Filter & Sort calculation
+  // Filter & Sort calculation (fallback when not server paginated)
   const filteredData = React.useMemo(() => {
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -917,46 +1030,57 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
   }, [data, searchQuery, statusFilter, timeRangeFilter, customDateRange, orderTypeFilter, sourceFilter, sortBy]);
 
   // Paginated Data
-  const totalPages = Math.max(1, Math.ceil(filteredData.length / itemsPerPage));
+  const totalPages = React.useMemo(() => {
+    if (serverPagination?.totalPages !== undefined) return Math.max(1, serverPagination.totalPages);
+    return Math.max(1, Math.ceil(filteredData.length / itemsPerPage));
+  }, [serverPagination, filteredData.length, itemsPerPage]);
+
   const paginatedData = React.useMemo(() => {
+    if (serverPagination) {
+      return data;
+    }
     const start = (currentPage - 1) * itemsPerPage;
     return filteredData.slice(start, start + itemsPerPage);
-  }, [filteredData, currentPage, itemsPerPage]);
+  }, [serverPagination, data, filteredData, currentPage, itemsPerPage]);
 
   const totalRevenue = React.useMemo(() => {
-    return filteredData
-      .filter(tx => {
-        const info = getTransactionStatusDetails(tx.status, tx.paymentStatus);
-        const ps = (tx.paymentStatus || '').toUpperCase();
-        return info.key !== 'cancelled' && info.key !== 'failed' && (ps === 'PAID' || info.key === 'completed');
-      })
-      .reduce((acc, curr) => acc + parseFloat(curr.grandTotal || '0'), 0);
-  }, [filteredData]);
+    if (serverSummary?.totalRevenue !== undefined) return serverSummary.totalRevenue;
+    return initialSummary?.totalRevenue ?? 0;
+  }, [serverSummary, initialSummary]);
 
-  const totalOrders = filteredData.length;
+  const totalOrders = React.useMemo(() => {
+    if (serverSummary?.totalOrders !== undefined) return serverSummary.totalOrders;
+    return initialSummary?.totalOrders ?? 0;
+  }, [serverSummary, initialSummary]);
 
   const aov = React.useMemo(() => {
+    if (serverSummary?.aov !== undefined) return serverSummary.aov;
     return totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0;
-  }, [totalRevenue, totalOrders]);
+  }, [serverSummary, totalRevenue, totalOrders]);
 
   const totalItemsSold = React.useMemo(() => {
-    let count = 0;
-    filteredData.forEach((tx) => {
-      if ((tx as any).items && Array.isArray((tx as any).items)) {
-        (tx as any).items.forEach((item: any) => {
-          count += Number(item.quantity || item.qty || 1);
-        });
-      } else {
-        // Estimasi porsi pesanan berdasarkan order
-        count += 2;
-      }
-    });
-    return count;
-  }, [filteredData]);
+    if (totalOrders > 0) {
+      // Estimated or calculated portions from period
+      const list = periodTransactions.length > 0 ? periodTransactions : initialData;
+      let count = 0;
+      list.forEach((tx) => {
+        if ((tx as any).items && Array.isArray((tx as any).items)) {
+          (tx as any).items.forEach((item: any) => {
+            count += Number(item.quantity || item.qty || 1);
+          });
+        } else {
+          count += 2;
+        }
+      });
+      return Math.max(totalOrders * 2, count);
+    }
+    return 0;
+  }, [totalOrders, periodTransactions, initialData]);
 
-  // Real trend data computation from actual transactions (chronologically grouped)
+  // Real trend data computation from period transactions (chronologically grouped)
+  // Decoupled from table search/filter so sparkline stays consistent
   const { netSalesTrend, ordersTrend, aovTrend, itemsSoldTrend, growthStats, growthValues } = React.useMemo(() => {
-    const list = filteredData.length > 0 ? filteredData : data;
+    const list = periodTransactions.length > 0 ? periodTransactions : data;
     if (!list || list.length === 0) {
       return {
         netSalesTrend: undefined,
@@ -1095,7 +1219,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
     };
   }, [filteredData, data]);
 
-  const hasActiveExtraFilters = timeRangeFilter !== 'all' || orderTypeFilter !== 'all' || sourceFilter !== 'all';
+  const hasActiveExtraFilters = timeRangeFilter !== 'this_month' || orderTypeFilter !== 'all' || sourceFilter !== 'all' || customDateRange !== undefined;
 
   // Status Tab Definitions matching the screenshot
   const statusTabs: { key: StatusFilter; label: string; count: number }[] = [
@@ -1128,10 +1252,10 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
       {/* 1. TOP HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 flex items-center gap-2">
             Riwayat Transaksi
           </h1>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-xs text-slate-500 mt-1 font-medium">
             Kelola dan pantau seluruh riwayat transaksi pesanan outlet Anda secara langsung.
           </p>
         </div>
@@ -1140,17 +1264,17 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
       {/* 2. TOP 4 METRIC CARDS (Exact match with Sales & Report KPI cards) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* KPI 1: NET SALES - Solid Royal Blue Hero Card */}
-        <div className="relative overflow-hidden rounded-[22px] bg-[#0e59f9] text-white p-5 sm:p-6 shadow-sm shadow-blue-500/20 hover:shadow-md hover:shadow-blue-500/30 transition-all flex flex-col justify-between min-h-[168px]">
+        <div className="relative overflow-hidden rounded-2xl bg-[#0e59f9] text-white p-5 sm:p-6 shadow-md transition-all flex flex-col justify-between min-h-[168px]">
           {/* Top Row: Shopping Bag Icon (Top-Left) & Status Badge (Top-Right) */}
           <div className="flex items-center justify-between">
             <div className="w-10 h-10 rounded-full bg-white text-[#0e59f9] flex items-center justify-center shadow-xs flex-shrink-0">
               <ShoppingBag className="w-5 h-5 text-[#0e59f9]" />
             </div>
             <div className={cn(
-              "inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full backdrop-blur-xs",
+              "inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full border-none",
               growthValues.netSales >= 0
-                ? "bg-white/20 text-white border border-white/25"
-                : "bg-rose-500/30 text-rose-100 border border-rose-300/30"
+                ? "bg-white/20 text-white"
+                : "bg-rose-500/30 text-rose-100"
             )}>
               {growthValues.netSales >= 0 ? (
                 <ArrowUpRight className="h-3.5 w-3.5 text-white" />
@@ -1187,17 +1311,17 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
         </div>
 
         {/* KPI 2: TOTAL TRANSAKSI - Clean White Card */}
-        <div className="relative overflow-hidden rounded-[22px] bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md transition-all flex flex-col justify-between min-h-[168px]">
+        <div className="relative overflow-hidden rounded-2xl bg-white border-none p-5 sm:p-6 shadow-sm-md hover:shadow-md transition-all flex flex-col justify-between min-h-[168px]">
           {/* Top Row: Store Icon (Top-Left) & Status Badge (Top-Right) */}
           <div className="flex items-center justify-between">
             <div className="w-10 h-10 rounded-full bg-[#0e59f9] text-white flex items-center justify-center shadow-xs flex-shrink-0">
               <Store className="w-5 h-5 text-white" />
             </div>
             <div className={cn(
-              "inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full",
+              "inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full border-none",
               growthValues.orders >= 0
-                ? "bg-emerald-50 text-emerald-600 border border-emerald-200/70 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/60"
-                : "bg-rose-50 text-rose-600 border border-rose-200/70 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800/60"
+                ? "bg-emerald-50 text-emerald-700"
+                : "bg-rose-50 text-rose-700"
             )}>
               {growthValues.orders >= 0 ? (
                 <ArrowUpRight className="h-3.5 w-3.5" />
@@ -1211,12 +1335,12 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
           {/* Bottom Row: Label + Value (Bottom-Left) & Sparkline (Bottom-Right) */}
           <div className="mt-6 flex items-end justify-between gap-2">
             <div className="min-w-0">
-              <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-400 uppercase tracking-wider block mb-1">
+              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">
                 TOTAL TRANSAKSI
               </span>
-              <div className="text-2xl sm:text-[26px] font-semibold text-slate-900 dark:text-white tracking-tight leading-none whitespace-nowrap flex items-baseline gap-1.5">
+              <div className="text-2xl sm:text-[26px] font-semibold text-slate-900 tracking-tight leading-none whitespace-nowrap flex items-baseline gap-1.5">
                 <span>{totalOrders.toLocaleString('id-ID')}</span>
-                <span className="text-xs sm:text-sm font-normal text-slate-400 dark:text-slate-400">Order</span>
+                <span className="text-xs sm:text-sm font-normal text-slate-400">Order</span>
               </div>
             </div>
             <div className="flex-shrink-0 pb-0.5">
@@ -1231,17 +1355,17 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
         </div>
 
         {/* KPI 3: RATA-RATA ORDER (AOV) - Clean White Card */}
-        <div className="relative overflow-hidden rounded-[22px] bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md transition-all flex flex-col justify-between min-h-[168px]">
+        <div className="relative overflow-hidden rounded-2xl bg-white border-none p-5 sm:p-6 shadow-sm-md hover:shadow-md transition-all flex flex-col justify-between min-h-[168px]">
           {/* Top Row: Credit Card Icon (Top-Left) & Status Badge (Top-Right) */}
           <div className="flex items-center justify-between">
             <div className="w-10 h-10 rounded-full bg-[#0e59f9] text-white flex items-center justify-center shadow-xs flex-shrink-0">
               <CreditCard className="w-5 h-5 text-white" />
             </div>
             <div className={cn(
-              "inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full",
+              "inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full border-none",
               growthValues.aov >= 0
-                ? "bg-emerald-50 text-emerald-600 border border-emerald-200/70 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/60"
-                : "bg-rose-50 text-rose-600 border border-rose-200/70 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800/60"
+                ? "bg-emerald-50 text-emerald-700"
+                : "bg-rose-50 text-rose-700"
             )}>
               {growthValues.aov >= 0 ? (
                 <ArrowUpRight className="h-3.5 w-3.5" />
@@ -1255,11 +1379,11 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
           {/* Bottom Row: Label + Value (Bottom-Left) & Sparkline (Bottom-Right) */}
           <div className="mt-6 flex items-end justify-between gap-2">
             <div className="min-w-0">
-              <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-400 uppercase tracking-wider block mb-1">
+              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">
                 RATA-RATA ORDER (AOV)
               </span>
               <div
-                className="text-2xl sm:text-[26px] font-semibold text-slate-900 dark:text-white tracking-tight leading-none whitespace-nowrap"
+                className="text-2xl sm:text-[26px] font-semibold text-slate-900 tracking-tight leading-none whitespace-nowrap"
                 title={formatCurrency(aov)}
               >
                 {formatKpiCurrency(aov)}
@@ -1277,17 +1401,17 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
         </div>
 
         {/* KPI 4: TOTAL MENU TERJUAL - Clean White Card */}
-        <div className="relative overflow-hidden rounded-[22px] bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md transition-all flex flex-col justify-between min-h-[168px]">
+        <div className="relative overflow-hidden rounded-2xl bg-white border-none p-5 sm:p-6 shadow-sm-md hover:shadow-md transition-all flex flex-col justify-between min-h-[168px]">
           {/* Top Row: Utensils Icon (Top-Left) & Status Badge (Top-Right) */}
           <div className="flex items-center justify-between">
             <div className="w-10 h-10 rounded-full bg-[#0e59f9] text-white flex items-center justify-center shadow-xs flex-shrink-0">
               <UtensilsCrossed className="w-5 h-5 text-white" />
             </div>
             <div className={cn(
-              "inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full",
+              "inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full border-none",
               growthValues.itemsSold >= 0
-                ? "bg-emerald-50 text-emerald-600 border border-emerald-200/70 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/60"
-                : "bg-rose-50 text-rose-600 border border-rose-200/70 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800/60"
+                ? "bg-emerald-50 text-emerald-700"
+                : "bg-rose-50 text-rose-700"
             )}>
               {growthValues.itemsSold >= 0 ? (
                 <ArrowUpRight className="h-3.5 w-3.5" />
@@ -1301,12 +1425,12 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
           {/* Bottom Row: Label + Value (Bottom-Left) & Sparkline (Bottom-Right) */}
           <div className="mt-6 flex items-end justify-between gap-2">
             <div className="min-w-0">
-              <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-400 uppercase tracking-wider block mb-1">
+              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">
                 TOTAL MENU TERJUAL
               </span>
-              <div className="text-2xl sm:text-[26px] font-semibold text-slate-900 dark:text-white tracking-tight leading-none whitespace-nowrap flex items-baseline gap-1.5">
+              <div className="text-2xl sm:text-[26px] font-semibold text-slate-900 tracking-tight leading-none whitespace-nowrap flex items-baseline gap-1.5">
                 <span>{totalItemsSold.toLocaleString('id-ID')}</span>
-                <span className="text-xs sm:text-sm font-normal text-slate-400 dark:text-slate-400">Porsi</span>
+                <span className="text-xs sm:text-sm font-normal text-slate-400">Porsi</span>
               </div>
             </div>
             <div className="flex-shrink-0 pb-0.5">
@@ -1322,7 +1446,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
       </div>
 
       {/* 2. TABS & TOOLBAR ROW (Exact match with screenshot) */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between border-b border-slate-200 dark:border-slate-800 gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between border-b border-slate-100 gap-4">
         {/* Left: Underline Tabs */}
         <div className="flex items-center gap-6 overflow-x-auto no-scrollbar pt-1">
           {statusTabs.map((tab) => {
@@ -1332,29 +1456,32 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                 key={tab.key}
                 type="button"
                 onClick={() => {
-                  setStatusFilter(tab.key);
-                  setCurrentPage(1);
+                  if (statusFilter !== tab.key) {
+                    setStatusFilter(tab.key);
+                    setCurrentPage(1);
+                    setIsServerLoading(true);
+                  }
                 }}
                 className={cn(
                   "relative pb-3 text-xs sm:text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer whitespace-nowrap",
                   isActive
-                    ? "text-blue-600 dark:text-blue-400 font-semibold"
-                    : "text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
+                    ? "text-[#0e59f9] font-semibold"
+                    : "text-slate-500 hover:text-[#0e59f9]"
                 )}
               >
                 <span>{tab.label}</span>
                 <span className={cn(
-                  "text-xs px-2 py-0.5 rounded-lg font-medium transition-colors",
+                  "text-xs px-2 py-0.5 rounded-full font-medium transition-colors",
                   isActive
-                    ? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300"
-                    : "text-slate-400 dark:text-slate-500"
+                    ? "bg-blue-50 text-[#0e59f9] font-semibold"
+                    : "text-slate-400 bg-slate-100"
                 )}>
                   {tab.count}
                 </span>
                 {isActive && (
                   <motion.div
                     layoutId="activeStatusTabUnderline"
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-500 rounded-full"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#0e59f9] rounded-full"
                     transition={{ type: "spring", stiffness: 450, damping: 35 }}
                   />
                 )}
@@ -1365,25 +1492,35 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
 
         {/* Right: Search, Filter Popover, and Sort Dropdown (Matching screenshot right tools) */}
         <div className="flex items-center gap-2 pb-2.5 lg:pb-3 flex-wrap">
-          {/* Search Input with Search Icon */}
+          {/* Search Input with Search Icon and Loading Spinner */}
           <div className="relative w-full sm:w-56">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input
               type="text"
-              placeholder="Search..."
+              placeholder="Cari transaksi..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-9 text-xs rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus-visible:ring-blue-600"
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setIsServerLoading(true);
+              }}
+              className="pl-9 pr-8 h-10 text-xs rounded-full bg-white border-none shadow-sm-md focus-visible:ring-2 focus-visible:ring-[#0e59f9]"
             />
-            {searchQuery && (
+            {isTableLoading ? (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
+                <Loader2 className="w-3.5 h-3.5 text-[#0e59f9] animate-spin" />
+              </div>
+            ) : searchQuery ? (
               <button
                 type="button"
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                onClick={() => {
+                  setSearchQuery('');
+                  setIsServerLoading(true);
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
-            )}
+            ) : null}
           </div>
 
           {/* Filter Popover (Funnel icon in screenshot) */}
@@ -1393,30 +1530,30 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                 variant="outline"
                 size="icon"
                 className={cn(
-                  "h-9 w-9 rounded-xl border-slate-200 dark:border-slate-800 relative cursor-pointer",
-                  hasActiveExtraFilters && "border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 text-blue-600"
+                  "h-10 w-10 rounded-full border-none shadow-sm-md bg-white hover:bg-slate-100 relative cursor-pointer",
+                  hasActiveExtraFilters && "bg-blue-50 text-[#0e59f9]"
                 )}
                 title="Filter Transaksi"
               >
-                <Filter className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                <Filter className="w-4 h-4 text-slate-600" />
                 {hasActiveExtraFilters && (
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-blue-600 ring-2 ring-white dark:ring-slate-900" />
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#0e59f9] ring-2 ring-white" />
                 )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-80 p-4 rounded-xl shadow-xl border-slate-200 dark:border-slate-800 space-y-4">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-                <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">Filter Tambahan</span>
+            <PopoverContent align="end" className="w-80 p-4 rounded-2xl shadow-2xl border-none bg-white space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                <span className="text-xs font-semibold text-slate-900">Filter Tambahan</span>
                 {hasActiveExtraFilters && (
                   <button
                     type="button"
                     onClick={() => {
-                      setTimeRangeFilter('all');
+                      setTimeRangeFilter('this_month');
                       setCustomDateRange(undefined);
                       setOrderTypeFilter('all');
                       setSourceFilter('all');
                     }}
-                    className="text-[11px] text-blue-600 hover:underline font-medium"
+                    className="text-[11px] text-[#0e59f9] hover:underline font-medium cursor-pointer"
                   >
                     Reset Filter
                   </button>
@@ -1425,7 +1562,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
 
               {/* Filter 1: Waktu Transaksi */}
               <div className="space-y-1.5">
-                <Label className="text-[11px] font-medium text-slate-500 uppercase">Periode Waktu</Label>
+                <Label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Periode Waktu</Label>
                 <div className="grid grid-cols-3 gap-1.5">
                   {[
                     { key: 'all', label: 'Semua' },
@@ -1438,14 +1575,17 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                       key={preset.key}
                       type="button"
                       onClick={() => {
-                        setTimeRangeFilter(preset.key as TimeFilter);
-                        setCustomDateRange(undefined);
+                        if (timeRangeFilter !== preset.key || customDateRange !== undefined) {
+                          setTimeRangeFilter(preset.key as TimeFilter);
+                          setCustomDateRange(undefined);
+                          setIsServerLoading(true);
+                        }
                       }}
                       className={cn(
-                        "py-1.5 text-xs rounded-xl border text-center transition-colors cursor-pointer",
+                        "py-1.5 text-xs rounded-full border-none shadow-sm-md text-center transition-all cursor-pointer font-medium",
                         timeRangeFilter === preset.key
-                          ? "bg-blue-600 text-white border-transparent font-medium shadow-xs"
-                          : "border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 dark:hover:bg-blue-950/40 dark:hover:text-blue-400"
+                          ? "bg-[#0e59f9] text-white shadow-xs"
+                          : "bg-white text-slate-700 hover:bg-slate-100 hover:text-slate-900"
                       )}
                     >
                       {preset.label}
@@ -1460,11 +1600,11 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                       variant="outline"
                       size="sm"
                       className={cn(
-                        "w-full h-8 text-xs mt-1.5 rounded-xl justify-start gap-1.5 border-slate-200 dark:border-slate-800 cursor-pointer",
-                        timeRangeFilter === 'custom' && "border-blue-500 text-blue-600 font-medium"
+                        "w-full h-9 text-xs mt-1.5 rounded-full justify-start gap-1.5 border-none shadow-sm-md bg-white hover:bg-slate-100 text-slate-700 cursor-pointer",
+                        timeRangeFilter === 'custom' && "text-[#0e59f9] font-medium"
                       )}
                     >
-                      <CalendarIcon className="w-3.5 h-3.5 text-muted-foreground" />
+                      <CalendarIcon className="w-3.5 h-3.5 text-slate-400" />
                       <span>
                         {timeRangeFilter === 'custom' && customDateRange?.from ? (
                           customDateRange.to ? (
@@ -1478,7 +1618,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                       </span>
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 rounded-xl shadow-xl" align="start">
+                  <PopoverContent className="w-auto p-0 rounded-2xl border-none shadow-2xl bg-white" align="start">
                     <div className="p-3">
                       <Calendar
                         mode="range"
@@ -1500,7 +1640,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
 
               {/* Filter 2: Tipe Layanan */}
               <div className="space-y-1.5">
-                <Label className="text-[11px] font-medium text-slate-500 uppercase">Tipe Layanan</Label>
+                <Label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Tipe Layanan</Label>
                 <div className="grid grid-cols-2 gap-1.5">
                   {[
                     { key: 'all', label: 'Semua Layanan' },
@@ -1513,10 +1653,10 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                       type="button"
                       onClick={() => setOrderTypeFilter(ot.key as OrderTypeFilter)}
                       className={cn(
-                        "py-1.5 px-2 text-xs rounded-xl border text-center transition-colors cursor-pointer truncate",
+                        "py-1.5 px-2 text-xs rounded-full border-none shadow-sm-md text-center transition-all cursor-pointer truncate font-medium",
                         orderTypeFilter === ot.key
-                          ? "bg-blue-600 text-white border-transparent font-medium shadow-xs"
-                          : "border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 dark:hover:bg-blue-950/40 dark:hover:text-blue-400"
+                          ? "bg-[#0e59f9] text-white shadow-xs"
+                          : "bg-white text-slate-700 hover:bg-slate-100 hover:text-slate-900"
                       )}
                     >
                       {ot.label}
@@ -1527,7 +1667,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
 
               {/* Filter 3: Channel Penjualan */}
               <div className="space-y-1.5">
-                <Label className="text-[11px] font-medium text-slate-500 uppercase">Kanal Penjualan</Label>
+                <Label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Kanal Penjualan</Label>
                 <div className="grid grid-cols-3 gap-1.5">
                   {[
                     { key: 'all', label: 'Semua' },
@@ -1539,10 +1679,10 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                       type="button"
                       onClick={() => setSourceFilter(ch.key as SourceFilter)}
                       className={cn(
-                        "py-1.5 text-xs rounded-xl border text-center transition-colors cursor-pointer truncate",
+                        "py-1.5 text-xs rounded-full border-none shadow-sm-md text-center transition-all cursor-pointer truncate font-medium",
                         sourceFilter === ch.key
-                          ? "bg-blue-600 text-white border-transparent font-medium shadow-xs"
-                          : "border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 dark:hover:bg-blue-950/40 dark:hover:text-blue-400"
+                          ? "bg-[#0e59f9] text-white shadow-xs"
+                          : "bg-white text-slate-700 hover:bg-slate-100 hover:text-slate-900"
                       )}
                     >
                       {ch.label}
@@ -1551,10 +1691,10 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                 </div>
               </div>
 
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+              <div className="pt-2 border-t border-slate-100 flex justify-end">
                 <Button
                   size="sm"
-                  className="h-8 text-xs rounded-xl px-4 bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+                  className="h-9 text-xs rounded-full px-5 bg-[#0e59f9] hover:bg-blue-600 text-white shadow-md font-semibold cursor-pointer border-none"
                   onClick={() => setIsFilterPopoverOpen(false)}
                 >
                   Terapkan
@@ -1569,34 +1709,34 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
               <Button
                 variant="outline"
                 size="icon"
-                className="h-9 w-9 rounded-xl border-slate-200 dark:border-slate-800 cursor-pointer"
+                className="h-10 w-10 rounded-full border-none shadow-sm-md bg-white hover:bg-slate-100 text-slate-700 cursor-pointer"
                 title="Urutkan Data"
               >
-                <SlidersHorizontal className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                <SlidersHorizontal className="w-4 h-4 text-slate-600" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48 p-1 rounded-xl shadow-lg border-slate-200 dark:border-slate-800">
+            <DropdownMenuContent align="end" className="w-48 p-1.5 rounded-2xl shadow-2xl border-none bg-white">
               <DropdownMenuItem
-                className={cn("text-xs py-2 px-3 rounded-lg cursor-pointer", sortBy === 'newest' && "font-semibold text-blue-600")}
+                className={cn("text-xs py-2 px-3 rounded-xl cursor-pointer hover:bg-slate-100", sortBy === 'newest' && "font-semibold text-[#0e59f9]")}
                 onClick={() => setSortBy('newest')}
               >
                 Terbaru
               </DropdownMenuItem>
               <DropdownMenuItem
-                className={cn("text-xs py-2 px-3 rounded-lg cursor-pointer", sortBy === 'oldest' && "font-semibold text-blue-600")}
+                className={cn("text-xs py-2 px-3 rounded-xl cursor-pointer hover:bg-slate-100", sortBy === 'oldest' && "font-semibold text-[#0e59f9]")}
                 onClick={() => setSortBy('oldest')}
               >
                 Terlama
               </DropdownMenuItem>
-              <DropdownMenuSeparator className="my-1 border-slate-100 dark:border-slate-800" />
+              <DropdownMenuSeparator className="my-1 border-slate-100" />
               <DropdownMenuItem
-                className={cn("text-xs py-2 px-3 rounded-lg cursor-pointer", sortBy === 'amount_high' && "font-semibold text-blue-600")}
+                className={cn("text-xs py-2 px-3 rounded-xl cursor-pointer hover:bg-slate-100", sortBy === 'amount_high' && "font-semibold text-[#0e59f9]")}
                 onClick={() => setSortBy('amount_high')}
               >
                 Nominal Terbesar
               </DropdownMenuItem>
               <DropdownMenuItem
-                className={cn("text-xs py-2 px-3 rounded-lg cursor-pointer", sortBy === 'amount_low' && "font-semibold text-blue-600")}
+                className={cn("text-xs py-2 px-3 rounded-xl cursor-pointer hover:bg-slate-100", sortBy === 'amount_low' && "font-semibold text-[#0e59f9]")}
                 onClick={() => setSortBy('amount_low')}
               >
                 Nominal Terkecil
@@ -1607,12 +1747,12 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
       </div>
 
       {/* 3. TABLE CONTAINER (Exact match with screenshot layout & columns) */}
-      <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-950 overflow-hidden shadow-xs">
+      <div className="rounded-2xl border-none bg-white overflow-hidden shadow-sm-md">
         <div className="relative w-full overflow-x-auto">
           <table className="w-full text-left text-xs">
             {/* Header: Number, Client, Email / Info, Create & End Date, Amount, Status, Subject, Actions */}
             <thead>
-              <tr className="bg-slate-50/70 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-200/80 dark:border-slate-800">
+              <tr className="bg-slate-50/70 text-slate-500 font-semibold border-b border-slate-100">
                 <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap w-[150px]">No. Transaksi</th>
                 <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap w-[150px]">Pelanggan</th>
                 <th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap w-[140px]">Pembayaran</th>
@@ -1624,8 +1764,70 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
-              {paginatedData.length > 0 ? (
+            <tbody className="divide-y divide-slate-100">
+              {isTableLoading ? (
+                Array.from({ length: 6 }).map((_, index) => (
+                  <tr key={`skeleton-row-${index}`} className="animate-pulse">
+                    {/* 1. No. Transaksi */}
+                    <td className="py-4 px-4 whitespace-nowrap">
+                      <div className="flex items-center gap-1.5">
+                        <Skeleton className="h-4 w-28 rounded-md bg-slate-200/80" />
+                        <Skeleton className="h-4 w-4 rounded-md bg-slate-200/60" />
+                      </div>
+                    </td>
+
+                    {/* 2. Pelanggan */}
+                    <td className="py-4 px-4 w-[150px] max-w-[150px]">
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="w-7 h-7 rounded-full bg-slate-200/80 shrink-0" />
+                        <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                          <Skeleton className="h-3.5 w-20 rounded-md bg-slate-200/80" />
+                          <Skeleton className="h-2.5 w-12 rounded-md bg-slate-200/60" />
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* 3. Pembayaran */}
+                    <td className="py-4 px-4">
+                      <div className="flex flex-col gap-1.5">
+                        <Skeleton className="h-3.5 w-16 rounded-md bg-slate-200/80" />
+                        <Skeleton className="h-2.5 w-10 rounded-md bg-slate-200/60" />
+                      </div>
+                    </td>
+
+                    {/* 4. Tanggal & Waktu */}
+                    <td className="py-4 px-4 whitespace-nowrap">
+                      <div className="flex flex-col gap-1.5">
+                        <Skeleton className="h-3.5 w-24 rounded-md bg-slate-200/80" />
+                        <Skeleton className="h-2.5 w-14 rounded-md bg-slate-200/60" />
+                      </div>
+                    </td>
+
+                    {/* 5. Total */}
+                    <td className="py-4 px-4 whitespace-nowrap">
+                      <Skeleton className="h-4 w-20 rounded-md bg-slate-200/80" />
+                    </td>
+
+                    {/* 6. Status */}
+                    <td className="py-4 px-4 whitespace-nowrap">
+                      <Skeleton className="h-6 w-20 rounded-full bg-slate-200/80" />
+                    </td>
+
+                    {/* 7. Tipe */}
+                    <td className="py-4 px-4 whitespace-nowrap">
+                      <div className="flex flex-col gap-1.5">
+                        <Skeleton className="h-3.5 w-16 rounded-md bg-slate-200/80" />
+                        <Skeleton className="h-2.5 w-12 rounded-md bg-slate-200/60" />
+                      </div>
+                    </td>
+
+                    {/* 8. Aksi */}
+                    <td className="py-4 px-4 text-right whitespace-nowrap">
+                      <Skeleton className="h-6 w-6 rounded-full ml-auto bg-slate-200/80" />
+                    </td>
+                  </tr>
+                ))
+              ) : paginatedData.length > 0 ? (
                 paginatedData.map((trx) => {
                   const statusInfo = getTransactionStatusDetails(trx.status, trx.paymentStatus);
                   const orderNum = trx.orderNumber || `#${trx.id.slice(0, 8).toUpperCase()}`;
@@ -1652,18 +1854,18 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                     <tr
                       key={trx.id}
                       onClick={() => handleRowClick(trx)}
-                      className="hover:bg-blue-50/50 dark:hover:bg-blue-950/25 transition-colors cursor-pointer"
+                      className="hover:bg-slate-100/60 transition-colors cursor-pointer"
                     >
                       {/* 1. Nomor Transaksi / Invoice */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
-                          <span className="font-semibold text-slate-900 dark:text-slate-100 text-xs tracking-tight">
+                          <span className="font-semibold text-slate-900 text-xs tracking-tight">
                             {orderNum}
                           </span>
                           <button
                             type="button"
                             onClick={(e) => handleCopyId(e, orderNum)}
-                            className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:text-slate-500 dark:hover:text-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                            className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
                             title="Salin nomor transaksi"
                           >
                             {isCopied ? (
@@ -1685,7 +1887,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                             {getInitials(customerName)}
                           </div>
                           <div className="flex flex-col min-w-0 flex-1 overflow-hidden">
-                            <span className="font-medium text-slate-800 dark:text-slate-200 truncate" title={customerName}>
+                            <span className="font-medium text-slate-800 truncate" title={customerName}>
                               {customerName}
                             </span>
                             <span className="text-[10px] text-muted-foreground truncate">
@@ -1698,7 +1900,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                       {/* 3. Pembayaran */}
                       <td className="py-3.5 px-4">
                         <div className="flex flex-col">
-                          <span className="font-medium text-slate-800 dark:text-slate-200 text-xs">
+                          <span className="font-medium text-slate-800 text-xs">
                             {paymentMethodMap[trx.paymentMethod] || trx.paymentMethod || 'Tunai'}
                           </span>
                           <span className="text-[10px] text-muted-foreground">
@@ -1710,7 +1912,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                       {/* 4. Create & End Date (Date and Time) */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         <div className="flex flex-col text-xs">
-                          <span className="text-slate-700 dark:text-slate-300 font-medium">
+                          <span className="text-slate-700 font-medium">
                             {dateStr}
                           </span>
                           <span className="text-[10px] text-muted-foreground">
@@ -1724,7 +1926,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                         <div className="flex flex-col">
                           <span className={cn(
                             "font-semibold text-xs",
-                            isCanceled ? "line-through text-slate-400" : "text-slate-900 dark:text-slate-100"
+                            isCanceled ? "line-through text-slate-400" : "text-slate-900"
                           )}>
                             {formatCurrency(total)}
                           </span>
@@ -1736,10 +1938,10 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                         </div>
                       </td>
 
-                      {/* 6. Status (Soft pill badge matching screenshot) */}
+                      {/* 6. Status (Soft borderless pill badge) */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         <span className={cn(
-                          "inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px]",
+                          "inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium border-none",
                           statusInfo.badgeClass
                         )}>
                           {statusInfo.label}
@@ -1749,7 +1951,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                       {/* 7. Tipe Layanan & Sumber Channel */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         <div className="flex flex-col">
-                          <span className="font-medium text-slate-800 dark:text-slate-200 text-xs">
+                          <span className="font-medium text-slate-800 text-xs">
                             {serviceTypeLabel}
                           </span>
                           <span className="text-[10px] text-muted-foreground">
@@ -1758,22 +1960,22 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                         </div>
                       </td>
 
-                      {/* 8. Actions (3-dots vertical icon button matching screenshot) */}
+                      {/* 8. Actions (3-dots vertical icon button) */}
                       <td className="py-3.5 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 p-0 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-950/30 rounded-lg cursor-pointer"
+                              className="h-8 w-8 p-0 text-slate-400 hover:text-[#0e59f9] hover:bg-slate-100 rounded-full cursor-pointer"
                             >
                               <span className="sr-only">Menu aksi</span>
                               <MoreVertical className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48 p-1 rounded-xl shadow-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                          <DropdownMenuContent align="end" className="w-48 p-1.5 rounded-2xl shadow-2xl border-none bg-white">
                             <DropdownMenuItem
-                              className="text-xs font-medium py-2 px-3 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2"
+                              className="text-xs font-medium py-2 px-3 rounded-xl cursor-pointer hover:bg-slate-100 flex items-center gap-2 text-slate-700"
                               onClick={() => handleRowClick(trx)}
                             >
                               <Eye className="h-3.5 w-3.5 text-slate-500" /> Detail transaksi
@@ -1783,7 +1985,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                               <DropdownMenuItem
                                 onClick={() => handleCompleteOrder(trx.id)}
                                 disabled={isUpdating}
-                                className="text-xs font-medium py-2 px-3 rounded-lg cursor-pointer hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center gap-2"
+                                className="text-xs font-medium py-2 px-3 rounded-xl cursor-pointer hover:bg-emerald-50 text-emerald-600 flex items-center gap-2"
                               >
                                 <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
                                 <span>{isUpdating ? 'Menyelesaikan...' : 'Selesaikan pesanan'}</span>
@@ -1794,7 +1996,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                               <DropdownMenuItem
                                 onClick={() => handleSyncPayment(trx.id)}
                                 disabled={isSyncing}
-                                className="text-xs font-medium py-2 px-3 rounded-lg cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center gap-2"
+                                className="text-xs font-medium py-2 px-3 rounded-xl cursor-pointer hover:bg-amber-50 text-amber-600 flex items-center gap-2"
                               >
                                 <RefreshCw className={cn("h-3.5 w-3.5 text-amber-600", isSyncing && "animate-spin")} />
                                 <span>{isSyncing ? 'Memeriksa...' : 'Cek status bayar'}</span>
@@ -1804,34 +2006,34 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                             <DropdownMenuItem
                               onClick={() => handleReprint(trx.id, 'customer')}
                               disabled={isLoadingPrint}
-                              className="text-xs font-medium py-2 px-3 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2"
+                              className="text-xs font-medium py-2 px-3 rounded-xl cursor-pointer hover:bg-slate-100 flex items-center gap-2 text-slate-700"
                             >
                               <ReceiptText className="h-3.5 w-3.5 text-slate-500" /> Struk pelanggan
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => handleReprint(trx.id, 'kitchen')}
                               disabled={isLoadingPrint}
-                              className="text-xs font-medium py-2 px-3 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2"
+                              className="text-xs font-medium py-2 px-3 rounded-xl cursor-pointer hover:bg-slate-100 flex items-center gap-2 text-slate-700"
                             >
                               <ChefHat className="h-3.5 w-3.5 text-slate-500" /> Tiket dapur
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => handleReprint(trx.id, 'all')}
                               disabled={isLoadingPrint}
-                              className="text-xs font-medium py-2 px-3 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2"
+                              className="text-xs font-medium py-2 px-3 rounded-xl cursor-pointer hover:bg-slate-100 flex items-center gap-2 text-slate-700"
                             >
                               <Printer className="h-3.5 w-3.5 text-slate-500" /> Cetak lengkap
                             </DropdownMenuItem>
 
                             {!isCanceled && (
                               <>
-                                <DropdownMenuSeparator className="my-1 border-slate-100 dark:border-slate-800" />
+                                <DropdownMenuSeparator className="my-1 border-slate-100" />
                                 <DropdownMenuItem
                                   onClick={() => {
                                     setSelectedTxForVoid(trx);
                                     setVoidReason('');
                                   }}
-                                  className="text-xs font-medium py-2 px-3 rounded-lg cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/40 flex items-center gap-2"
+                                  className="text-xs font-medium py-2 px-3 rounded-xl cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 flex items-center gap-2"
                                 >
                                   <Ban className="h-3.5 w-3.5 text-red-600" /> Batalkan transaksi
                                 </DropdownMenuItem>
@@ -1847,8 +2049,8 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                 <tr>
                   <td colSpan={8} className="py-16 text-center text-muted-foreground">
                     <div className="flex flex-col items-center justify-center space-y-2">
-                      <PackageSearch className="w-9 h-9 text-slate-300 dark:text-slate-600" />
-                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                      <PackageSearch className="w-9 h-9 text-slate-300" />
+                      <p className="text-sm font-semibold text-slate-800">
                         Tidak ada transaksi ditemukan
                       </p>
                       <p className="text-xs text-muted-foreground max-w-sm">
@@ -1863,7 +2065,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
         </div>
       </div>
 
-      {/* 4. FOOTER PAGINATION BAR (Exact match with screenshot) */}
+      {/* 4. FOOTER PAGINATION BAR */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-1">
         {/* Left: Items Per Page Selector */}
         <div className="flex items-center gap-2 text-xs text-slate-500">
@@ -1873,18 +2075,18 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 px-3 rounded-xl border-slate-200 dark:border-slate-800 text-xs font-medium gap-1.5 cursor-pointer"
+                className="h-8 px-3 rounded-full border-none bg-white shadow-sm-md text-xs font-medium gap-1.5 text-slate-700 hover:bg-slate-100 cursor-pointer"
               >
                 <span>{itemsPerPage}</span>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-24 p-1 rounded-xl shadow-lg border-slate-200 dark:border-slate-800">
-              {[10, 20, 50, 100].map((size) => (
+            <DropdownMenuContent align="start" className="w-24 p-1.5 rounded-2xl shadow-2xl border-none bg-white">
+              {[10, 20, 25, 50, 100].map((size) => (
                 <DropdownMenuItem
                   key={size}
                   onClick={() => setItemsPerPage(size)}
-                  className={cn("text-xs py-1.5 px-3 rounded-lg cursor-pointer", itemsPerPage === size && "font-semibold text-blue-600")}
+                  className={cn("text-xs py-1.5 px-3 rounded-xl cursor-pointer hover:bg-slate-100", itemsPerPage === size && "font-semibold text-[#0e59f9] bg-blue-50/50")}
                 >
                   {size}
                 </DropdownMenuItem>
@@ -1893,15 +2095,18 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
           </DropdownMenu>
         </div>
 
-        {/* Right: Page Numbers < 1 2 3 ... 8 9 10 > */}
+        {/* Right: Page Numbers < 1 2 3 ... 8 9 10 > (Circular Pagination Standard) */}
         {totalPages > 1 && (
-          <div className="flex items-center gap-1">
+          <div className={cn("flex items-center gap-1.5 sm:gap-2 transition-opacity", isTableLoading && "opacity-60 pointer-events-none")}>
             <Button
               variant="outline"
               size="icon"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              className="h-8 w-8 rounded-lg border-slate-200 dark:border-slate-800 text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:text-blue-400 dark:hover:border-blue-700 dark:hover:bg-blue-950/30 disabled:opacity-40 cursor-pointer"
+              disabled={currentPage === 1 || isTableLoading}
+              onClick={() => {
+                setCurrentPage((p) => Math.max(1, p - 1));
+                setIsServerLoading(true);
+              }}
+              className="h-8 w-8 rounded-full border-none bg-white shadow-sm-md text-slate-600 hover:text-[#0e59f9] hover:bg-slate-100 disabled:opacity-30 disabled:shadow-none cursor-pointer flex items-center justify-center transition-all aspect-square"
               aria-label="Halaman sebelumnya"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -1910,7 +2115,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
             {getPaginationNumbers().map((pageItem, index) => {
               if (pageItem === '...') {
                 return (
-                  <span key={`ellipsis-${index}`} className="px-1.5 text-xs text-slate-400">
+                  <span key={`ellipsis-${index}`} className="w-6 text-center text-xs text-slate-400 select-none">
                     ...
                   </span>
                 );
@@ -1921,12 +2126,18 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                 <button
                   key={pageNum}
                   type="button"
-                  onClick={() => setCurrentPage(pageNum)}
+                  disabled={isTableLoading}
+                  onClick={() => {
+                    if (currentPage !== pageNum) {
+                      setCurrentPage(pageNum);
+                      setIsServerLoading(true);
+                    }
+                  }}
                   className={cn(
-                    "h-8 min-w-[32px] px-2 text-xs rounded-lg font-medium transition-colors cursor-pointer",
+                    "h-8 w-8 text-xs rounded-full font-medium transition-all cursor-pointer flex items-center justify-center aspect-square",
                     isCurrent
-                      ? "bg-blue-600 text-white shadow-xs"
-                      : "text-slate-600 dark:text-slate-400 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/40 dark:hover:text-blue-400"
+                      ? "bg-[#0e59f9] text-white font-semibold shadow-md hover:bg-[#0e59f9]/90"
+                      : "text-slate-600 bg-white shadow-sm-md hover:bg-slate-100 hover:text-slate-900"
                   )}
                 >
                   {pageNum}
@@ -1937,9 +2148,12 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
             <Button
               variant="outline"
               size="icon"
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              className="h-8 w-8 rounded-lg border-slate-200 dark:border-slate-800 text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:text-blue-400 dark:hover:border-blue-700 dark:hover:bg-blue-950/30 disabled:opacity-40 cursor-pointer"
+              disabled={currentPage === totalPages || isTableLoading}
+              onClick={() => {
+                setCurrentPage((p) => Math.min(totalPages, p + 1));
+                setIsServerLoading(true);
+              }}
+              className="h-8 w-8 rounded-full border-none bg-white shadow-sm-md text-slate-600 hover:text-[#0e59f9] hover:bg-slate-100 disabled:opacity-30 disabled:shadow-none cursor-pointer flex items-center justify-center transition-all aspect-square"
               aria-label="Halaman berikutnya"
             >
               <ChevronRight className="w-4 h-4" />
@@ -1959,7 +2173,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-xs"
+              className="fixed inset-0 bg-black/40 backdrop-blur-xs"
               onClick={() => setIsDetailOpen(false)}
               aria-hidden="true"
             />
@@ -1974,13 +2188,13 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.94, y: 16 }}
               transition={{ type: "spring", duration: 0.35, bounce: 0.12 }}
-              className="relative w-full max-w-lg bg-white dark:bg-slate-950 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xl overflow-hidden z-10 flex flex-col max-h-[90vh]"
+              className="relative w-full max-w-lg bg-white rounded-3xl border-none shadow-2xl overflow-hidden z-10 flex flex-col max-h-[90vh]"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="px-6 pt-6 pb-4 flex items-center justify-between">
                 <div>
-                  <h3 id="tx-detail-title" className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                  <h3 id="tx-detail-title" className="text-base font-semibold text-slate-900">
                     Rincian Transaksi
                   </h3>
                   <p className="text-xs text-muted-foreground mt-0.5">
@@ -1990,7 +2204,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                 <button
                   type="button"
                   onClick={() => setIsDetailOpen(false)}
-                  className="p-1.5 -mr-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  className="p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
                   aria-label="Tutup dialog"
                 >
                   <X className="w-4 h-4" />
@@ -2007,8 +2221,8 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                   <div className={cn(
                     "text-3xl sm:text-4xl font-semibold tracking-tight",
                     selectedTxDetail.transaction.status === 'CANCELLED' || selectedTxDetail.transaction.paymentStatus === 'CANCELED'
-                      ? 'line-through text-slate-400 dark:text-slate-600'
-                      : 'text-slate-900 dark:text-slate-100'
+                      ? 'line-through text-slate-400'
+                      : 'text-slate-900'
                   )}>
                     {formatCurrency(parseFloat(selectedTxDetail.transaction.grandTotal || '0'))}
                   </div>
@@ -2023,8 +2237,8 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
 
                   if (statusInfo.key === 'on_process') {
                     return (
-                      <div className="flex items-center justify-between p-3 rounded-xl bg-purple-50/80 dark:bg-purple-950/40 border border-purple-200/60 dark:border-purple-900/40 text-xs">
-                        <div className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
+                      <div className="flex items-center justify-between p-3.5 rounded-2xl bg-purple-50/80 text-xs shadow-sm-md">
+                        <div className="flex items-center gap-2 text-purple-700">
                           <Clock className="w-4 h-4 shrink-0 text-purple-500 animate-pulse" />
                           <span>Pesanan berstatus <strong>{statusInfo.label}</strong> (sedang diproses di dapur).</span>
                         </div>
@@ -2032,7 +2246,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                           size="sm"
                           onClick={() => handleCompleteOrder(tx.id)}
                           disabled={isUpdating}
-                          className="h-7 text-xs rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shrink-0 ml-2"
+                          className="h-7 text-xs px-3 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm-md font-medium shrink-0 ml-2 cursor-pointer"
                         >
                           {isUpdating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Tandai Selesai'}
                         </Button>
@@ -2042,8 +2256,8 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
 
                   if (statusInfo.key === 'pending_payment') {
                     return (
-                      <div className="flex items-center justify-between p-3 rounded-xl bg-sky-50/80 dark:bg-sky-950/40 border border-sky-200/60 dark:border-sky-900/40 text-xs">
-                        <div className="flex items-center gap-2 text-sky-700 dark:text-sky-300">
+                      <div className="flex items-center justify-between p-3.5 rounded-2xl bg-sky-50/80 text-xs shadow-sm-md">
+                        <div className="flex items-center gap-2 text-sky-700">
                           <AlertTriangle className="w-4 h-4 shrink-0 text-sky-500" />
                           <span>Pesanan ini <strong>Belum Lunas</strong> (Menunggu Pembayaran).</span>
                         </div>
@@ -2052,7 +2266,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                           variant="outline"
                           onClick={() => handleSyncPayment(tx.id)}
                           disabled={isSyncing}
-                          className="h-7 text-xs rounded-lg border-sky-300 dark:border-sky-800 text-sky-800 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-950 shrink-0 ml-2"
+                          className="h-7 text-xs px-3 rounded-full border-none bg-white text-sky-800 shadow-sm-md hover:bg-slate-100 shrink-0 ml-2 font-medium cursor-pointer"
                         >
                           {isSyncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Cek Status Bayar'}
                         </Button>
@@ -2064,7 +2278,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                 })()}
 
                 {/* Flat Key-Value Metadata Grid */}
-                <div className="grid grid-cols-2 gap-x-4 gap-y-3 pt-4 border-t border-slate-100 dark:border-slate-800 text-xs">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3 pt-4 border-t border-slate-100 text-xs">
                   <div>
                     <span className="text-[11px] text-muted-foreground block">Status Pesanan</span>
                     <div className="mt-1">
@@ -2072,7 +2286,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                         const statusInfo = getTransactionStatusDetails(selectedTxDetail.transaction.status, selectedTxDetail.transaction.paymentStatus);
                         return (
                           <span className={cn(
-                            "inline-flex items-center px-2 py-0.5 rounded-md text-[11px]",
+                            "inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium border-none",
                             statusInfo.badgeClass
                           )}>
                             {statusInfo.label}
@@ -2090,20 +2304,20 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                         const isCanceled = selectedTxDetail.transaction.status === 'CANCELLED' || ps === 'CANCELED' || selectedTxDetail.transaction.status === 'CANCELED';
                         if (isCanceled) {
                           return (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-rose-100/70 text-rose-700 border-none">
                               Batal
                             </span>
                           );
                         }
                         if (ps === 'PAID') {
                           return (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-100/80 text-emerald-700 border-none">
                               Lunas
                             </span>
                           );
                         }
                         return (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-sky-100 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-sky-100/80 text-sky-700 border-none">
                             Menunggu Pembayaran
                           </span>
                         );
@@ -2113,7 +2327,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
 
                   <div>
                     <span className="text-[11px] text-muted-foreground block">Waktu Transaksi</span>
-                    <span className="font-medium text-slate-800 dark:text-slate-200 block mt-0.5">
+                    <span className="font-medium text-slate-800 block mt-0.5">
                       {(() => {
                         const d = new Date(selectedTxDetail.transaction.createdAt);
                         const { dateStr, timeStr } = formatFriendlyDate(d);
@@ -2124,7 +2338,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
 
                   <div>
                     <span className="text-[11px] text-muted-foreground block">Channel & Layanan</span>
-                    <span className="font-medium text-slate-800 dark:text-slate-200 block mt-0.5">
+                    <span className="font-medium text-slate-800 block mt-0.5">
                       {getOrderSourceInfo(selectedTxDetail.transaction.source).isStorefront ? 'Self Order' : 'Kasir Manual'}
                       {' • '}
                       {getOrderTypeDetails(selectedTxDetail.transaction.orderType).label}
@@ -2134,7 +2348,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
 
                   <div>
                     <span className="text-[11px] text-muted-foreground block">Metode Pembayaran</span>
-                    <span className="font-medium text-slate-800 dark:text-slate-200 block mt-0.5">
+                    <span className="font-medium text-slate-800 block mt-0.5">
                       {paymentMethodMap[selectedTxDetail.transaction.paymentMethod] || selectedTxDetail.transaction.paymentMethod || 'TUNAI'}
                     </span>
                   </div>
@@ -2142,7 +2356,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                   {selectedTxDetail.transaction.customerName && (
                     <div>
                       <span className="text-[11px] text-muted-foreground block">Pelanggan</span>
-                      <span className="font-medium text-slate-800 dark:text-slate-200 block mt-0.5">
+                      <span className="font-medium text-slate-800 block mt-0.5">
                         {selectedTxDetail.transaction.customerName}
                       </span>
                     </div>
@@ -2151,7 +2365,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                   {!getOrderSourceInfo(selectedTxDetail.transaction.source).isStorefront && selectedTxDetail.transaction.cashierName && (
                     <div>
                       <span className="text-[11px] text-muted-foreground block">Kasir / Petugas</span>
-                      <span className="font-medium text-slate-800 dark:text-slate-200 block mt-0.5">
+                      <span className="font-medium text-slate-800 block mt-0.5">
                         {selectedTxDetail.transaction.cashierName}
                       </span>
                     </div>
@@ -2159,9 +2373,9 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                 </div>
 
                 {/* Items Breakdown */}
-                <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                <div className="pt-4 border-t border-slate-100">
                   <div className="flex items-center justify-between pb-2">
-                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    <span className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
                       Item Pesanan
                     </span>
                     <span className="text-xs text-muted-foreground">
@@ -2173,21 +2387,21 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                     <div className="py-2 space-y-2">
                       {[1, 2].map((i) => (
                         <div key={i} className="flex justify-between items-center animate-pulse">
-                          <div className="h-3.5 bg-slate-100 dark:bg-slate-800 rounded w-1/2" />
-                          <div className="h-3.5 bg-slate-100 dark:bg-slate-800 rounded w-16" />
+                          <div className="h-3.5 bg-slate-100 rounded w-1/2" />
+                          <div className="h-3.5 bg-slate-100 rounded w-16" />
                         </div>
                       ))}
                     </div>
                   ) : selectedTxDetail.items.length === 0 ? (
                     <p className="py-2 text-xs text-muted-foreground italic">Tidak ada item tercatat.</p>
                   ) : (
-                    <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                    <div className="divide-y divide-slate-100">
                       {selectedTxDetail.items.map((item: any, idx: number) => (
                         <div key={idx} className="py-2 flex items-start justify-between text-xs gap-3">
                           <div className="space-y-0.5 flex-1 min-w-0">
                             <div className="flex items-baseline gap-1.5">
-                              <span className="font-medium text-slate-500 dark:text-slate-400">{item.quantity}×</span>
-                              <span className="font-medium text-slate-800 dark:text-slate-200">{item.name}</span>
+                              <span className="font-medium text-slate-500">{item.quantity}×</span>
+                              <span className="font-medium text-slate-800">{item.name}</span>
                             </div>
                             {Array.isArray(item.modifiers) && item.modifiers.length > 0 && (
                               <div className="text-[11px] text-muted-foreground pl-4">
@@ -2200,7 +2414,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                               </p>
                             )}
                           </div>
-                          <span className="font-medium text-slate-800 dark:text-slate-200 text-right shrink-0">
+                          <span className="font-medium text-slate-800 text-right shrink-0">
                             {formatCurrency(item.subtotal)}
                           </span>
                         </div>
@@ -2210,13 +2424,13 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                 </div>
 
                 {/* Flat Financial Breakdown */}
-                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2 text-xs">
+                <div className="pt-4 border-t border-slate-100 space-y-2 text-xs">
                   <div className="flex justify-between text-muted-foreground">
                     <span>Subtotal Produk</span>
-                    <span className="font-medium text-slate-700 dark:text-slate-300">{formatCurrency(parseFloat(selectedTxDetail.transaction.totalAmount || '0'))}</span>
+                    <span className="font-medium text-slate-700">{formatCurrency(parseFloat(selectedTxDetail.transaction.totalAmount || '0'))}</span>
                   </div>
                   {parseFloat(selectedTxDetail.transaction.discount || '0') > 0 && (
-                    <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
+                    <div className="flex justify-between text-emerald-600">
                       <span>Diskon {selectedTxDetail.transaction.promoCode ? `(${selectedTxDetail.transaction.promoCode})` : ''}</span>
                       <span className="font-medium">-{formatCurrency(parseFloat(selectedTxDetail.transaction.discount || '0'))}</span>
                     </div>
@@ -2224,13 +2438,13 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                   {parseFloat(selectedTxDetail.transaction.tax || '0') > 0 && (
                     <div className="flex justify-between text-muted-foreground">
                       <span>Pajak (PB1)</span>
-                      <span className="font-medium text-slate-700 dark:text-slate-300">{formatCurrency(parseFloat(selectedTxDetail.transaction.tax || '0'))}</span>
+                      <span className="font-medium text-slate-700">{formatCurrency(parseFloat(selectedTxDetail.transaction.tax || '0'))}</span>
                     </div>
                   )}
                   {parseFloat(selectedTxDetail.transaction.serviceCharge || '0') > 0 && (
                     <div className="flex justify-between text-muted-foreground">
                       <span>Biaya Layanan</span>
-                      <span className="font-medium text-slate-700 dark:text-slate-300">{formatCurrency(parseFloat(selectedTxDetail.transaction.serviceCharge || '0'))}</span>
+                      <span className="font-medium text-slate-700">{formatCurrency(parseFloat(selectedTxDetail.transaction.serviceCharge || '0'))}</span>
                     </div>
                   )}
                   {parseFloat(selectedTxDetail.transaction.rounding || '0') > 0 && (
@@ -2239,9 +2453,9 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                       <span className="font-normal">+{formatCurrency(parseFloat(selectedTxDetail.transaction.rounding || '0'))}</span>
                     </div>
                   )}
-                  <div className="pt-2.5 border-t border-slate-200 dark:border-slate-800 flex justify-between items-baseline">
-                    <span className="font-semibold text-sm text-slate-900 dark:text-slate-100">Total Pembayaran</span>
-                    <span className="font-semibold text-lg font-mono text-primary">
+                  <div className="pt-2.5 border-t border-slate-100 flex justify-between items-baseline">
+                    <span className="font-semibold text-sm text-slate-900">Total Pembayaran</span>
+                    <span className="font-semibold text-lg font-mono text-[#0e59f9]">
                       {formatCurrency(parseFloat(selectedTxDetail.transaction.grandTotal || '0'))}
                     </span>
                   </div>
@@ -2261,14 +2475,14 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
 
                     if (isCash) {
                       return (
-                        <div className="pt-2 border-t border-dashed border-slate-200 dark:border-slate-800 space-y-1.5 text-muted-foreground">
+                        <div className="pt-2 border-t border-dashed border-slate-200 space-y-1.5 text-muted-foreground">
                           <div className="flex justify-between">
                             <span>Biaya Gateway (Tunai)</span>
-                            <span className="font-medium text-slate-600 dark:text-slate-400">Rp 0 (0%)</span>
+                            <span className="font-medium text-slate-600">Rp 0 (0%)</span>
                           </div>
-                          <div className="flex justify-between font-medium text-slate-800 dark:text-slate-200">
+                          <div className="flex justify-between font-medium text-slate-800">
                             <span>Penerimaan Uang Tunai di Laci</span>
-                            <span className="font-semibold text-slate-900 dark:text-slate-100">{formatCurrency(grandTotalVal)}</span>
+                            <span className="font-semibold text-slate-900">{formatCurrency(grandTotalVal)}</span>
                           </div>
                         </div>
                       );
@@ -2280,32 +2494,32 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                         : (rawMethod === 'CARD' || rawMethod === 'EDC' ? 'Mesin EDC Bank Toko' : 'Transfer Bank Toko');
 
                       return (
-                        <div className="pt-2 border-t border-dashed border-slate-200 dark:border-slate-800 space-y-1.5 text-muted-foreground">
+                        <div className="pt-2 border-t border-dashed border-slate-200 space-y-1.5 text-muted-foreground">
                           <div className="flex justify-between">
                             <span>Kanal Penerimaan</span>
-                            <span className="text-slate-700 dark:text-slate-300 font-medium">{channelName}</span>
+                            <span className="text-slate-700 font-medium">{channelName}</span>
                           </div>
                           <div className="flex justify-between">
                             <span>Biaya Gateway</span>
-                            <span className="font-medium text-slate-600 dark:text-slate-400">Rp 0 (0%)</span>
+                            <span className="font-medium text-slate-600">Rp 0 (0%)</span>
                           </div>
-                          <div className="flex justify-between font-medium text-slate-800 dark:text-slate-200">
+                          <div className="flex justify-between font-medium text-slate-800">
                             <span>Dana Langsung ke Rekening Toko</span>
-                            <span className="font-semibold text-slate-900 dark:text-slate-100">+{formatCurrency(grandTotalVal)}</span>
+                            <span className="font-semibold text-slate-900">+{formatCurrency(grandTotalVal)}</span>
                           </div>
                         </div>
                       );
                     }
 
                     return (
-                      <div className="pt-2 border-t border-dashed border-slate-200 dark:border-slate-800 space-y-1.5 text-muted-foreground">
+                      <div className="pt-2 border-t border-dashed border-slate-200 space-y-1.5 text-muted-foreground">
                         <div className="flex justify-between text-slate-500">
                           <span>Biaya MDR Gateway (0.7%)</span>
-                          <span className="font-medium text-slate-600 dark:text-slate-400">-{formatCurrency(feeVal)}</span>
+                          <span className="font-medium text-slate-600">-{formatCurrency(feeVal)}</span>
                         </div>
-                        <div className="flex justify-between font-medium text-slate-900 dark:text-slate-100">
+                        <div className="flex justify-between font-medium text-slate-900">
                           <span>Saldo Bersih ke Rekening Toko</span>
-                          <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                          <span className="font-semibold text-emerald-600">
                             +{formatCurrency(netVal)}
                           </span>
                         </div>
@@ -2316,13 +2530,13 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
 
                 {/* Void Alert */}
                 {(selectedTxDetail.transaction.status === 'CANCELLED' || selectedTxDetail.transaction.paymentStatus === 'CANCELED') && selectedTxDetail.transaction.voidReason && (
-                  <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs space-y-1">
-                    <div className="font-medium text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
+                  <div className="p-3.5 rounded-2xl bg-rose-50/70 text-xs space-y-1">
+                    <div className="font-semibold text-rose-700 flex items-center gap-1.5">
                       <AlertTriangle className="w-3.5 h-3.5" />
                       Transaksi Dibatalkan (Void)
                     </div>
-                    <p className="text-slate-600 dark:text-slate-400">
-                      Alasan: <span className="text-slate-800 dark:text-slate-200">{selectedTxDetail.transaction.voidReason}</span>
+                    <p className="text-slate-600">
+                      Alasan: <span className="text-slate-800 font-medium">{selectedTxDetail.transaction.voidReason}</span>
                     </p>
                     {selectedTxDetail.transaction.voidedAt && (
                       <p className="text-[11px] text-muted-foreground">
@@ -2334,13 +2548,13 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
               </div>
 
               {/* Footer Actions */}
-              <div className="p-4 sm:p-5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 bg-slate-50/50 dark:bg-slate-900/40">
+              <div className="p-4 sm:p-5 flex items-center justify-between gap-2 bg-slate-50/50">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => setIsDetailOpen(false)}
-                  className="rounded-xl text-xs h-9 cursor-pointer"
+                  className="rounded-full text-xs h-9 px-5 border-none bg-white text-slate-700 shadow-sm-md hover:bg-slate-100 cursor-pointer font-medium"
                 >
                   Tutup
                 </Button>
@@ -2355,7 +2569,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                           size="sm"
                           onClick={() => handleCompleteOrder(selectedTxDetail.transaction.id)}
                           disabled={updatingOrderId === selectedTxDetail.transaction.id}
-                          className="rounded-xl text-xs h-9 bg-emerald-600 hover:bg-emerald-700 text-white font-medium flex items-center gap-1.5 cursor-pointer"
+                          className="rounded-full text-xs h-9 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-md flex items-center gap-1.5 cursor-pointer"
                         >
                           {updatingOrderId === selectedTxDetail.transaction.id ? (
                             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -2374,7 +2588,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                           size="sm"
                           onClick={() => handleSyncPayment(selectedTxDetail.transaction.id)}
                           disabled={syncingOrderId === selectedTxDetail.transaction.id}
-                          className="rounded-xl text-xs h-9 border-sky-300 dark:border-sky-800 text-sky-800 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-950 font-medium flex items-center gap-1.5 cursor-pointer"
+                          className="rounded-full text-xs h-9 px-4 border-none bg-white text-sky-800 shadow-sm-md hover:bg-slate-100 font-medium flex items-center gap-1.5 cursor-pointer"
                         >
                           <RefreshCw className={cn("w-3.5 h-3.5", syncingOrderId === selectedTxDetail.transaction.id && "animate-spin")} />
                           <span>Cek Status Bayar</span>
@@ -2393,7 +2607,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                         setSelectedTxForVoid(selectedTxDetail.transaction);
                         setVoidReason('');
                       }}
-                      className="rounded-xl text-xs h-9 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40 border-red-200 dark:border-red-900 cursor-pointer"
+                      className="rounded-full text-xs h-9 px-4 border-none bg-white text-rose-600 hover:text-rose-700 shadow-sm-md hover:bg-rose-50 cursor-pointer font-medium"
                     >
                       <Ban className="w-3.5 h-3.5 mr-1" />
                       Void Transaksi
@@ -2405,29 +2619,29 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                       <Button
                         type="button"
                         size="sm"
-                        className="rounded-xl text-xs h-9 bg-primary hover:bg-primary/90 text-primary-foreground font-medium flex items-center gap-1.5 cursor-pointer"
+                        className="rounded-full text-xs h-9 px-4 bg-[#0e59f9] hover:bg-[#0e59f9]/90 text-white font-medium shadow-md flex items-center gap-1.5 cursor-pointer"
                       >
                         <Printer className="w-3.5 h-3.5" />
                         <span>Cetak Struk</span>
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48 p-1 rounded-xl shadow-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                    <DropdownMenuContent align="end" className="w-48 p-1.5 rounded-2xl shadow-2xl border-none bg-white">
                       <DropdownMenuItem
-                        className="text-xs font-medium py-2 px-3 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2"
+                        className="text-xs font-medium py-2 px-3 rounded-xl cursor-pointer hover:bg-slate-100 flex items-center gap-2 text-slate-700"
                         onClick={() => handleReprint(selectedTxDetail.transaction.id, 'customer')}
                       >
                         <ReceiptText className="w-3.5 h-3.5 text-slate-500" />
                         Struk Pelanggan
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        className="text-xs font-medium py-2 px-3 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2"
+                        className="text-xs font-medium py-2 px-3 rounded-xl cursor-pointer hover:bg-slate-100 flex items-center gap-2 text-slate-700"
                         onClick={() => handleReprint(selectedTxDetail.transaction.id, 'kitchen')}
                       >
                         <ChefHat className="w-3.5 h-3.5 text-slate-500" />
                         Tiket Dapur
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        className="text-xs font-medium py-2 px-3 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2"
+                        className="text-xs font-medium py-2 px-3 rounded-xl cursor-pointer hover:bg-slate-100 flex items-center gap-2 text-slate-700"
                         onClick={() => handleReprint(selectedTxDetail.transaction.id, 'all')}
                       >
                         <Printer className="w-3.5 h-3.5 text-slate-500" />
@@ -2452,7 +2666,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+              className="fixed inset-0 bg-black/40 backdrop-blur-xs"
               onClick={() => !isSubmittingVoid && setSelectedTxForVoid(null)}
               aria-hidden="true"
             />
@@ -2466,40 +2680,40 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.94, y: 16 }}
               transition={{ type: "spring", duration: 0.35, bounce: 0.12 }}
-              className="relative w-full max-w-md bg-white dark:bg-slate-950 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xl overflow-hidden z-10 flex flex-col p-6"
+              className="relative w-full max-w-md bg-white rounded-3xl border-none shadow-2xl overflow-hidden z-10 flex flex-col p-6"
               onClick={(e) => e.stopPropagation()}
             >
               <form onSubmit={handleConfirmVoid} className="space-y-4">
                 <div>
-                  <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                  <div className="flex items-center gap-2 text-rose-600">
                     <AlertTriangle className="h-5 w-5 shrink-0" />
                     <h3 id="void-dialog-title" className="text-base font-semibold">Batalkan (Void) Transaksi</h3>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Transaksi yang dibatalkan akan ditandai <strong className="font-semibold">BATAL</strong> dan tetap tersimpan di audit trail anti-fraud.
+                    Transaksi yang dibatalkan akan ditandai <strong className="font-semibold text-rose-600">BATAL</strong> dan tetap tersimpan di audit trail anti-fraud.
                   </p>
                 </div>
 
-                <div className="border-l-4 border-l-red-500 bg-red-500/10 rounded-r-xl p-3.5 space-y-2 text-xs">
+                <div className="border-l-4 border-l-rose-500 bg-rose-50/70 rounded-r-2xl p-3.5 space-y-2 text-xs">
                   <div className="flex justify-between">
-                    <span className="text-slate-600 dark:text-slate-400">ID Transaksi</span>
-                    <span className="font-mono font-semibold text-slate-800 dark:text-slate-200">{selectedTxForVoid.id.slice(0, 8).toUpperCase()}</span>
+                    <span className="text-slate-600">ID Transaksi</span>
+                    <span className="font-mono font-semibold text-slate-800">{selectedTxForVoid.id.slice(0, 8).toUpperCase()}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-600 dark:text-slate-400">No. Order / Meja</span>
-                    <span className="font-medium text-slate-800 dark:text-slate-200">
+                    <span className="text-slate-600">No. Order / Meja</span>
+                    <span className="font-medium text-slate-800">
                       {selectedTxForVoid.orderNumber || '-'} {selectedTxForVoid.tableNumber ? `(Meja ${selectedTxForVoid.tableNumber})` : ''}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-600 dark:text-slate-400">Nominal Transaksi</span>
-                    <span className="font-semibold text-slate-900 dark:text-slate-100">{formatCurrency(parseFloat(selectedTxForVoid.grandTotal))}</span>
+                    <span className="text-slate-600">Nominal Transaksi</span>
+                    <span className="font-semibold text-slate-900">{formatCurrency(parseFloat(selectedTxForVoid.grandTotal))}</span>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="voidReason" className="text-xs font-semibold uppercase text-slate-700 dark:text-slate-300">
-                    Alasan Pembatalan <span className="text-red-500">*</span>
+                  <Label htmlFor="voidReason" className="text-xs font-semibold uppercase text-slate-700">
+                    Alasan Pembatalan <span className="text-rose-500">*</span>
                   </Label>
                   <Textarea
                     id="voidReason"
@@ -2507,7 +2721,7 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                     onChange={(e) => setVoidReason(e.target.value)}
                     placeholder="Contoh: Pelanggan salah pesan menu, pembayaran gagal/double, salah input kasir..."
                     rows={3}
-                    className="text-xs resize-none rounded-xl"
+                    className="text-xs resize-none rounded-2xl border-none bg-white shadow-sm-md focus-visible:ring-2 focus-visible:ring-[#0e59f9] p-3 text-slate-800"
                     required
                   />
                   <p className="text-[11px] text-muted-foreground">
@@ -2521,15 +2735,14 @@ export function TransactionHistory({ initialData }: { initialData: Transaction[]
                     variant="outline" 
                     onClick={() => setSelectedTxForVoid(null)}
                     disabled={isSubmittingVoid}
-                    className="rounded-xl text-xs h-9 cursor-pointer"
+                    className="rounded-full text-xs h-9 px-5 border-none bg-white text-slate-700 shadow-sm-md hover:bg-slate-100 font-medium cursor-pointer"
                   >
                     Kembali
                   </Button>
                   <Button 
                     type="submit" 
-                    variant="destructive"
                     disabled={isSubmittingVoid || !voidReason.trim()}
-                    className="rounded-xl text-xs h-9 bg-red-600 hover:bg-red-700 min-w-[130px] cursor-pointer"
+                    className="rounded-full text-xs h-9 px-5 bg-rose-600 hover:bg-rose-700 text-white shadow-md font-medium min-w-[130px] cursor-pointer"
                   >
                     {isSubmittingVoid ? (
                       <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Memproses...</>

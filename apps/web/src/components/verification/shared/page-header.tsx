@@ -66,7 +66,7 @@ export function PageHeader({
             onClick={handleRefresh}
             title="Muat Ulang Halaman"
             disabled={isRefreshing}
-            className="w-9 h-9 rounded-xl border border-[#EAEFF8] bg-white hover:bg-slate-50 text-slate-600 shadow-xs flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50"
+            className="w-9 h-9 rounded-full border-none bg-white hover:bg-slate-100 text-slate-600 shadow-sm-md flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50"
           >
             <RefreshCw
               className={cn('w-4 h-4 text-slate-500', isRefreshing && 'animate-spin')}

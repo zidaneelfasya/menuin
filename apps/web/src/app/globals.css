@@ -94,6 +94,11 @@
     font-feature-settings: "tnum", "cv02", "cv03", "cv04", "cv11";
   }
 
+  .shadow-sm-md,
+  .shadow-form {
+    box-shadow: 0 2px 5px -1px rgba(0, 0, 0, 0.08), 0 1px 3px -1px rgba(0, 0, 0, 0.06);
+  }
+
   /* Dashboard Active Nav Tab Curved Scoop Styles */
   .curved-tab-active {
     position: relative;
@@ -242,5 +247,59 @@ html.lenis body {
 .scrollbar-hide,
 * {
   -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
 }
+
+/* Custom Menuin Theme Scrollbar */
+.menuin-scrollbar::-webkit-scrollbar,
+.menuin-scrollbar *::-webkit-scrollbar {
+  display: block !important;
+  width: 5px !important;
+  height: 5px !important;
+}
+
+.menuin-scrollbar::-webkit-scrollbar-button,
+.menuin-scrollbar *::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0px !important;
+  height: 0px !important;
+}
+
+.menuin-scrollbar::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.menuin-scrollbar::-webkit-scrollbar-thumb {
+  background: #0e59f9 !important;
+  border-radius: 9999px !important;
+  transition: background-color 0.2s ease !important;
+}
+
+.menuin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #0b4de0 !important;
+}
+
+.dark .menuin-scrollbar::-webkit-scrollbar-thumb {
+  background: #3b82f6 !important;
+}
+
+.dark .menuin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #2563eb !important;
+}
+
+.menuin-scrollbar {
+  -ms-overflow-style: auto !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: #0e59f9 transparent !important;
+}
+
+.dark .menuin-scrollbar {
+  scrollbar-color: #3b82f6 transparent !important;
+}
+
+/* Hide Next.js dev indicator overlay */
+nextjs-portal {
+  display: none !important;
+}
+
 

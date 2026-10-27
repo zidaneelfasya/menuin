@@ -2,12 +2,11 @@ import { CategoryList } from '@/features/categories/components/category-list';
 import { Metadata } from 'next';
 import { Suspense } from 'react';
 import { getCategories } from '@/lib/actions/categories';
-import { TableSkeleton } from '@/components/ui/table-skeleton';
-
-export const metadata: Metadata = { title: 'Kategori - Menuin' };
-
+import CategoriesLoading from './loading';
 import { connection } from "next/server";
 import { requireFeature } from '@/lib/actions/auth-context';
+
+export const metadata: Metadata = { title: 'Kategori - Menuin' };
 
 async function CategoryDataWrapper() {
   await connection();
@@ -19,7 +18,7 @@ async function CategoryDataWrapper() {
 
 export default function Page() {
   return (
-    <Suspense fallback={<div className="p-6"><TableSkeleton /></div>}>
+    <Suspense fallback={<CategoriesLoading />}>
       <CategoryDataWrapper />
     </Suspense>
   );

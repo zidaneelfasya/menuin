@@ -2167,9 +2167,9 @@ export function FinanceReportClient({
 							<button
 								type="button"
 								className={cn(
-									"h-9 px-3 rounded-xl bg-white border border-[#EAEFF8] text-xs font-medium text-slate-700 hover:bg-slate-50 shadow-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer",
+									"h-9 px-3.5 rounded-full bg-white border-none text-xs font-medium text-slate-700 hover:bg-slate-100 shadow-sm-md inline-flex items-center gap-1.5 transition-colors cursor-pointer",
 									hasCustomDate &&
-										"border-blue-300 bg-blue-50/40 text-[#0e59f9] font-semibold",
+										"bg-blue-50/70 text-[#0e59f9] font-semibold",
 								)}
 							>
 								<CalendarIcon className="w-3.5 h-3.5 text-slate-400" />
@@ -2183,7 +2183,7 @@ export function FinanceReportClient({
 						</PopoverTrigger>
 						<PopoverContent
 							align="end"
-							className="w-auto p-0 rounded-2xl shadow-xl border border-[#EAEFF8]"
+							className="w-auto p-0 rounded-2xl shadow-2xl border-none bg-white"
 						>
 							<div className="p-3 border-b border-slate-100 flex items-center justify-between gap-3">
 								<div className="text-xs font-semibold text-slate-900">
@@ -2310,7 +2310,7 @@ export function FinanceReportClient({
 						<PopoverTrigger asChild>
 							<button
 								type="button"
-								className="h-9 px-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+								className="h-9 px-3.5 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-md inline-flex items-center gap-1.5 transition-colors cursor-pointer"
 							>
 								<Download className="w-3.5 h-3.5 text-white/80" />
 								<span>Export</span>
@@ -2319,12 +2319,12 @@ export function FinanceReportClient({
 						</PopoverTrigger>
 						<PopoverContent
 							align="end"
-							className="w-48 p-1.5 bg-white rounded-xl border border-[#EAEFF8] shadow-lg text-slate-800"
+							className="w-48 p-1.5 bg-white rounded-2xl border-none shadow-2xl text-slate-800"
 						>
 							<button
 								type="button"
 								onClick={handleExportExcel}
-								className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg text-left hover:bg-slate-50 transition-colors text-slate-700 cursor-pointer"
+								className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-xl text-left hover:bg-slate-50 transition-colors text-slate-700 cursor-pointer"
 							>
 								<FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
 								<span>Unduh Excel (.xlsx)</span>
@@ -2332,7 +2332,7 @@ export function FinanceReportClient({
 							<button
 								type="button"
 								onClick={handlePrint}
-								className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg text-left hover:bg-slate-50 transition-colors text-slate-700 cursor-pointer"
+								className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-xl text-left hover:bg-slate-50 transition-colors text-slate-700 cursor-pointer"
 							>
 								<Printer className="w-3.5 h-3.5 text-slate-500" />
 								<span>Cetak Laporan</span>
@@ -2340,16 +2340,13 @@ export function FinanceReportClient({
 						</PopoverContent>
 					</Popover>
 
-					{/* Action icon buttons: Bell (Shift alert) + Refresh */}
-					
-
 					<button
 						type="button"
 						onClick={() => handleTabChange(currentTab)}
 						disabled={isLoading}
 						className={cn(
-							"w-9 h-9 rounded-xl border border-[#EAEFF8] bg-white hover:bg-slate-50 text-slate-600 shadow-xs flex items-center justify-center transition-all cursor-pointer",
-							isLoading && "border-blue-200 bg-blue-50/40 text-[#0e59f9]"
+							"w-9 h-9 rounded-full border-none bg-white hover:bg-slate-100 text-slate-600 shadow-sm-md flex items-center justify-center transition-all cursor-pointer",
+							isLoading && "bg-blue-50/70 text-[#0e59f9]"
 						)}
 						title="Segarkan Data"
 					>
@@ -2369,7 +2366,7 @@ export function FinanceReportClient({
 			{/* ==================================================== */}
 			<div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5">
 				{/* KPI 1: NET FLOW - HERO BLUE CARD (Solid Menuin Blue, Takes ~50% / 6 cols) */}
-				<Card className="lg:col-span-6 bg-[#0e59f9] text-white shadow-sm rounded-2xl border-none flex flex-col justify-between overflow-hidden min-h-[220px]">
+				<Card className="lg:col-span-6 bg-[#0e59f9] text-white shadow-md hover:shadow-lg rounded-2xl border-none transition-all flex flex-col justify-between overflow-hidden min-h-[220px]">
 					<CardContent className="p-5 sm:p-6 flex flex-col justify-between flex-1 h-full">
 						{/* Top row: Icon + Dual Title (Indonesian & English) on left, Period Filter Dropdown on right */}
 						<div className="flex items-center justify-between gap-3">
@@ -2500,7 +2497,7 @@ export function FinanceReportClient({
 				</Card>
 
 				{/* KPI 2: INFLOWS (KAS MASUK - White Card, 3 Cols) */}
-				<Card className="lg:col-span-3 border border-[#EAEFF8] shadow-sm rounded-2xl bg-white hover:border-[#d7e2f5] transition-all flex flex-col justify-between overflow-hidden min-h-[220px]">
+				<Card className="lg:col-span-3 border-none shadow-sm-md hover:shadow-md rounded-2xl bg-white transition-all flex flex-col justify-between overflow-hidden min-h-[220px]">
 					<CardContent className="p-5 sm:p-6 flex flex-col justify-between flex-1 h-full">
 						{/* Top row: Icon + Dual Title (Indonesian & English) on left, Period on right */}
 						<div className="flex items-center justify-between gap-2">
@@ -2530,10 +2527,10 @@ export function FinanceReportClient({
 							<div className="mt-1.5 flex items-center gap-2">
 								<span
 									className={cn(
-										"px-2.5 py-0.5 rounded-full text-[11px] font-semibold inline-flex items-center gap-1 border",
+										"px-2.5 py-0.5 rounded-full text-[11px] font-semibold inline-flex items-center gap-1 border-none",
 										growth.cashIn >= 0
-											? "bg-emerald-50 text-emerald-700 border-emerald-100"
-											: "bg-rose-50 text-rose-700 border-rose-100",
+											? "bg-emerald-100/80 text-emerald-700"
+											: "bg-rose-100/80 text-rose-700",
 									)}
 								>
 									{growth.cashIn >= 0 ? (
@@ -2563,7 +2560,7 @@ export function FinanceReportClient({
 				</Card>
 
 				{/* KPI 3: OUTFLOWS (KAS KELUAR - White Card, 3 Cols) */}
-				<Card className="lg:col-span-3 border border-[#EAEFF8] shadow-sm rounded-2xl bg-white hover:border-[#d7e2f5] transition-all flex flex-col justify-between overflow-hidden min-h-[220px]">
+				<Card className="lg:col-span-3 border-none shadow-sm-md hover:shadow-md rounded-2xl bg-white transition-all flex flex-col justify-between overflow-hidden min-h-[220px]">
 					<CardContent className="p-5 sm:p-6 flex flex-col justify-between flex-1 h-full">
 						{/* Top row: Icon + Dual Title (Indonesian & English) on left, Period on right */}
 						<div className="flex items-center justify-between gap-2">
@@ -2593,10 +2590,10 @@ export function FinanceReportClient({
 							<div className="mt-1.5 flex items-center gap-2">
 								<span
 									className={cn(
-										"px-2.5 py-0.5 rounded-full text-[11px] font-semibold inline-flex items-center gap-1 border",
+										"px-2.5 py-0.5 rounded-full text-[11px] font-semibold inline-flex items-center gap-1 border-none",
 										growth.cashOut <= 0
-											? "bg-emerald-50 text-emerald-700 border-emerald-100"
-											: "bg-rose-50 text-rose-700 border-rose-100",
+											? "bg-emerald-100/80 text-emerald-700"
+											: "bg-rose-100/80 text-rose-700",
 									)}
 								>
 									{growth.cashOut >= 0 ? (
@@ -2632,7 +2629,7 @@ export function FinanceReportClient({
 				{/* Left Column (7 Cols): Cashflow Chart */}
 				<div
 					ref={heroChartRef}
-					className="lg:col-span-7 bg-white rounded-2xl border border-[#EAEFF8] p-5 sm:p-6 shadow-xs flex flex-col justify-between space-y-4 overflow-hidden"
+					className="lg:col-span-7 bg-white rounded-2xl border-none p-5 sm:p-6 shadow-sm-md hover:shadow-md transition-all flex flex-col justify-between space-y-4 overflow-hidden"
 				>
 					<div>
 						{/* Header: Title on left, Active Period on right */}
@@ -2956,12 +2953,12 @@ export function FinanceReportClient({
 				</div>
 
 				{/* Right Column (5 Cols): Real Data Financial Breakdown & Dominance Pillars */}
-				<div className="lg:col-span-5 bg-white rounded-2xl border border-[#EAEFF8] p-5 sm:p-6 shadow-xs flex flex-col justify-between space-y-4">
+				<div className="lg:col-span-5 bg-white rounded-2xl border-none p-5 sm:p-6 shadow-sm-md hover:shadow-md transition-all flex flex-col justify-between space-y-4">
 					<div>
 						{/* Header: Title + Controls (Atur Target & Flow Toggle) */}
 						<div className="flex items-center justify-between pb-3 border-b border-slate-100 gap-2 flex-wrap">
 							<div className="flex items-center gap-2">
-								<div className="w-7 h-7 rounded-lg flex items-center justify-center bg-slate-100 text-slate-700">
+								<div className="w-7 h-7 rounded-full flex items-center justify-center bg-slate-100 text-slate-700">
 									{analysisBreakdown.isExpense ? (
 										<CreditCard className="w-4 h-4 text-slate-700" />
 									) : (
@@ -2976,15 +2973,13 @@ export function FinanceReportClient({
 							</div>
 
 							<div className="flex items-center gap-2">
-								
-
 								{/* Flow Toggle: Pengeluaran | Pemasukan */}
-								<div className="inline-flex items-center p-1 rounded-xl bg-slate-100 border border-slate-200/60">
+								<div className="inline-flex items-center p-1 rounded-full bg-slate-100 border-none shadow-xs">
 									<button
 										type="button"
 										onClick={() => setAnalysisFlow("EXPENSE")}
 										className={cn(
-											"px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+											"px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer",
 											analysisBreakdown.isExpense
 												? "bg-[#1e293b] text-white shadow-xs"
 												: "text-slate-600 hover:text-slate-900",
@@ -2996,7 +2991,7 @@ export function FinanceReportClient({
 										type="button"
 										onClick={() => setAnalysisFlow("INCOME")}
 										className={cn(
-											"px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+											"px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer",
 											!analysisBreakdown.isExpense
 												? "bg-[#1e293b] text-white shadow-xs"
 												: "text-slate-600 hover:text-slate-900",
@@ -3262,7 +3257,7 @@ export function FinanceReportClient({
 			{/* ==================================================== */}
 			<div className="space-y-4">
 				{/* Zone 1: Toolbar Row (Left: Underline Tabs, Right: Search, Filter, Sort, Export, Tambah Biaya) */}
-				<div className="flex flex-col lg:flex-row lg:items-center justify-between border-b border-slate-200 dark:border-slate-800 gap-4">
+				<div className="flex flex-col lg:flex-row lg:items-center justify-between border-b border-slate-200 gap-4">
 					{/* Left: Underline Tabs */}
 					<div className="flex items-center gap-6 overflow-x-auto no-scrollbar pt-1">
 						{cashFlowTabs.map((tab) => {
@@ -3278,17 +3273,17 @@ export function FinanceReportClient({
 									className={cn(
 										"relative pb-3 text-xs sm:text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer whitespace-nowrap",
 										isActive
-											? "text-blue-600 dark:text-blue-400 font-semibold"
-											: "text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400",
+											? "text-blue-600 font-semibold"
+											: "text-slate-500 hover:text-blue-600",
 									)}
 								>
 									<span>{tab.label}</span>
 									<span
 										className={cn(
-											"text-xs px-2 py-0.5 rounded-lg font-medium transition-colors",
+											"text-xs px-2.5 py-0.5 rounded-full font-medium transition-colors",
 											isActive
-												? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300"
-												: "text-slate-400 dark:text-slate-500",
+												? "bg-blue-50 text-blue-700"
+												: "text-slate-400 bg-slate-100",
 										)}
 									>
 										{tab.count}
@@ -3296,7 +3291,7 @@ export function FinanceReportClient({
 									{isActive && (
 										<motion.div
 											layoutId="activeCashFlowTabUnderline"
-											className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-500 rounded-full"
+											className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full"
 											transition={{ type: "spring", stiffness: 450, damping: 35 }}
 										/>
 									)}
@@ -3318,7 +3313,7 @@ export function FinanceReportClient({
 									setSearchQuery(e.target.value);
 									setCurrentPage(1);
 								}}
-								className="pl-9 h-9 text-xs rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus-visible:ring-blue-600"
+								className="pl-9 h-9 text-xs rounded-full bg-white border-none shadow-sm-md focus-visible:ring-blue-600"
 							/>
 							{searchQuery && (
 								<button
@@ -3344,24 +3339,24 @@ export function FinanceReportClient({
 									variant="outline"
 									size="icon"
 									className={cn(
-										"h-9 w-9 rounded-xl border-slate-200 dark:border-slate-800 relative cursor-pointer",
+										"h-9 w-9 rounded-full border-none shadow-sm-md bg-white hover:bg-slate-100 relative cursor-pointer",
 										hasActiveExtraFilters &&
-											"border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 text-blue-600",
+											"bg-blue-50 text-blue-600",
 									)}
 									title="Filter Transaksi Arus Kas"
 								>
-									<Filter className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+									<Filter className="w-4 h-4 text-slate-600" />
 									{hasActiveExtraFilters && (
-										<span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-blue-600 ring-2 ring-white dark:ring-slate-900" />
+										<span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-blue-600 ring-2 ring-white" />
 									)}
 								</Button>
 							</PopoverTrigger>
 							<PopoverContent
 								align="end"
-								className="w-80 p-4 rounded-xl shadow-xl border-slate-200 dark:border-slate-800 space-y-4"
+								className="w-80 p-4 rounded-2xl shadow-2xl border-none bg-white space-y-4"
 							>
-								<div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-									<span className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+								<div className="flex items-center justify-between pb-2 border-b border-slate-100">
+									<span className="text-xs font-semibold text-slate-900">
 										Filter Tambahan
 									</span>
 									{hasActiveExtraFilters && (
@@ -3394,10 +3389,10 @@ export function FinanceReportClient({
 													setCurrentPage(1);
 												}}
 												className={cn(
-													"py-1.5 px-2 text-xs rounded-xl border text-center transition-colors cursor-pointer truncate",
+													"py-1.5 px-2.5 text-xs rounded-full border-none text-center transition-colors cursor-pointer truncate",
 													categoryFilter === cat.id
-														? "bg-blue-600 text-white border-transparent font-medium shadow-xs"
-														: "border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 dark:hover:bg-blue-950/40 dark:hover:text-blue-400",
+														? "bg-blue-600 text-white font-medium shadow-xs"
+														: "bg-slate-100 text-slate-700 hover:bg-blue-50 hover:text-blue-600",
 												)}
 											>
 												{cat.label}
@@ -3421,10 +3416,10 @@ export function FinanceReportClient({
 													setCurrentPage(1);
 												}}
 												className={cn(
-													"py-1.5 text-xs rounded-xl border text-center transition-colors cursor-pointer truncate",
+													"py-1.5 text-xs rounded-full border-none text-center transition-colors cursor-pointer truncate",
 													paymentMethodFilter === pm.id
-														? "bg-blue-600 text-white border-transparent font-medium shadow-xs"
-														: "border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 dark:hover:bg-blue-950/40 dark:hover:text-blue-400",
+														? "bg-blue-600 text-white font-medium shadow-xs"
+														: "bg-slate-100 text-slate-700 hover:bg-blue-50 hover:text-blue-600",
 												)}
 											>
 												{pm.label}
@@ -3433,10 +3428,10 @@ export function FinanceReportClient({
 									</div>
 								</div>
 
-								<div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+								<div className="pt-2 border-t border-slate-100 flex justify-end">
 									<Button
 										size="sm"
-										className="h-8 text-xs rounded-xl px-4 bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+										className="h-8 text-xs rounded-full px-4 bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-xs"
 										onClick={() => setIsFilterPopoverOpen(false)}
 									>
 										Terapkan
@@ -3451,20 +3446,20 @@ export function FinanceReportClient({
 								<Button
 									variant="outline"
 									size="icon"
-									className="h-9 w-9 rounded-xl border-slate-200 dark:border-slate-800 cursor-pointer"
+									className="h-9 w-9 rounded-full border-none shadow-sm-md bg-white hover:bg-slate-100 cursor-pointer"
 									title="Urutkan Data"
 								>
-									<SlidersHorizontal className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+									<SlidersHorizontal className="w-4 h-4 text-slate-600" />
 								</Button>
 							</DropdownMenuTrigger>
 							<DropdownMenuContent
 								align="end"
-								className="w-48 p-1 rounded-xl shadow-lg border-slate-200 dark:border-slate-800"
+								className="w-48 p-1.5 rounded-2xl shadow-2xl border-none bg-white"
 							>
 								<DropdownMenuItem
 									className={cn(
-										"text-xs py-2 px-3 rounded-lg cursor-pointer",
-										sortBy === "newest" && "font-semibold text-blue-600",
+										"text-xs py-2 px-3 rounded-xl cursor-pointer",
+										sortBy === "newest" && "font-semibold text-blue-600 bg-blue-50",
 									)}
 									onClick={() => setSortBy("newest")}
 								>
@@ -3472,18 +3467,18 @@ export function FinanceReportClient({
 								</DropdownMenuItem>
 								<DropdownMenuItem
 									className={cn(
-										"text-xs py-2 px-3 rounded-lg cursor-pointer",
-										sortBy === "oldest" && "font-semibold text-blue-600",
+										"text-xs py-2 px-3 rounded-xl cursor-pointer",
+										sortBy === "oldest" && "font-semibold text-blue-600 bg-blue-50",
 									)}
 									onClick={() => setSortBy("oldest")}
 								>
 									Terlama
 								</DropdownMenuItem>
-								<DropdownMenuSeparator className="my-1 border-slate-100 dark:border-slate-800" />
+								<DropdownMenuSeparator className="my-1 border-slate-100" />
 								<DropdownMenuItem
 									className={cn(
-										"text-xs py-2 px-3 rounded-lg cursor-pointer",
-										sortBy === "amount_high" && "font-semibold text-blue-600",
+										"text-xs py-2 px-3 rounded-xl cursor-pointer",
+										sortBy === "amount_high" && "font-semibold text-blue-600 bg-blue-50",
 									)}
 									onClick={() => setSortBy("amount_high")}
 								>
@@ -3491,8 +3486,8 @@ export function FinanceReportClient({
 								</DropdownMenuItem>
 								<DropdownMenuItem
 									className={cn(
-										"text-xs py-2 px-3 rounded-lg cursor-pointer",
-										sortBy === "amount_low" && "font-semibold text-blue-600",
+										"text-xs py-2 px-3 rounded-xl cursor-pointer",
+										sortBy === "amount_low" && "font-semibold text-blue-600 bg-blue-50",
 									)}
 									onClick={() => setSortBy("amount_low")}
 								>
@@ -3506,7 +3501,7 @@ export function FinanceReportClient({
 							variant="outline"
 							size="sm"
 							onClick={handleExportExcel}
-							className="h-9 px-3 rounded-xl border-slate-200 dark:border-slate-800 text-xs font-medium gap-1.5 cursor-pointer text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900"
+							className="h-9 px-3.5 rounded-full border-none shadow-sm-md bg-white text-xs font-medium gap-1.5 cursor-pointer text-slate-700 hover:bg-slate-100"
 							title="Ekspor laporan ke file Excel"
 						>
 							<FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
@@ -3520,7 +3515,7 @@ export function FinanceReportClient({
 								setModalMode("EXPENSE");
 								setIsModalOpen(true);
 							}}
-							className="h-9 px-4 text-xs font-semibold rounded-xl bg-[#0e59f9] hover:bg-blue-600 text-white shadow-xs gap-1.5 cursor-pointer"
+							className="h-9 px-4 text-xs font-semibold rounded-full bg-[#0e59f9] hover:bg-blue-600 text-white shadow-md gap-1.5 cursor-pointer"
 						>
 							<Plus className="w-3.5 h-3.5" />
 							<span>Tambah Biaya</span>
@@ -3529,11 +3524,11 @@ export function FinanceReportClient({
 				</div>
 
 				{/* Zone 2: Table Data Container */}
-				<div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-950 overflow-hidden shadow-xs">
+				<div className="rounded-2xl border-none bg-white overflow-hidden shadow-sm-md">
 					<div className="relative w-full overflow-x-auto">
 						<table className="w-full text-left text-xs">
 							<thead>
-								<tr className="bg-slate-50/70 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-200/80 dark:border-slate-800">
+								<tr className="bg-slate-50/70 text-slate-500 font-medium border-b border-slate-100">
 									<th className="py-3.5 px-4 text-xs font-semibold whitespace-nowrap min-w-[200px]">
 										Transaksi &amp; Kategori
 									</th>
@@ -3558,7 +3553,7 @@ export function FinanceReportClient({
 								</tr>
 							</thead>
 
-							<tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+							<tbody className="divide-y divide-slate-100">
 								{paginatedTransactions.length > 0 ? (
 									paginatedTransactions.map((trx) => {
 										const isIncome = trx.type === "INCOME";
@@ -3571,13 +3566,13 @@ export function FinanceReportClient({
 											<tr
 												key={trx.id}
 												onClick={() => setSelectedDetailTransaction(trx)}
-												className="hover:bg-blue-50/50 dark:hover:bg-blue-950/25 transition-colors cursor-pointer group"
+												className="hover:bg-slate-100/60 transition-colors cursor-pointer group"
 											>
 												{/* 1. Transaksi & Kategori */}
 												<td className="py-3.5 px-4">
 													<div className="flex flex-col min-w-0 max-w-[280px] sm:max-w-[340px]">
 														<span
-															className="font-semibold text-slate-900 dark:text-slate-100 text-xs truncate"
+															className="font-semibold text-slate-900 text-xs truncate"
 															title={trx.description}
 														>
 															{trx.description ||
@@ -3585,7 +3580,7 @@ export function FinanceReportClient({
 																	? "Pemasukan Kas"
 																	: "Biaya Operasional")}
 														</span>
-														<span className="text-[10px] text-slate-400 dark:text-slate-500 truncate">
+														<span className="text-[10px] text-slate-400 truncate">
 															{getCategoryLabel(trx.category)}
 														</span>
 													</div>
@@ -3595,10 +3590,10 @@ export function FinanceReportClient({
 												<td className="py-3.5 px-4 whitespace-nowrap">
 													<span
 														className={cn(
-															"inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-medium",
+															"inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full border-none text-[11px] font-medium",
 															isIncome
-																? "bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300"
-																: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+																? "bg-emerald-100/80 text-emerald-700"
+																: "bg-slate-100 text-slate-700",
 														)}
 													>
 														{isIncome ? (
@@ -3618,7 +3613,7 @@ export function FinanceReportClient({
 												{/* 3. Tanggal & Waktu */}
 												<td className="py-3.5 px-4 whitespace-nowrap">
 													<div className="flex flex-col">
-														<span className="font-medium text-slate-800 dark:text-slate-200 text-xs">
+														<span className="font-medium text-slate-800 text-xs">
 															{formatTrxDate(trx.date)}
 														</span>
 														<span className="text-[10px] text-muted-foreground">
@@ -3631,10 +3626,10 @@ export function FinanceReportClient({
 												<td className="py-3.5 px-4 whitespace-nowrap">
 													<span
 														className={cn(
-															"inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-medium",
+															"inline-flex items-center px-2.5 py-0.5 rounded-full border-none text-[11px] font-medium",
 															isCash
-																? "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-																: "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300",
+																? "bg-slate-100 text-slate-700"
+																: "bg-blue-50 text-blue-700",
 														)}
 													>
 														{isCash
@@ -3648,8 +3643,8 @@ export function FinanceReportClient({
 													className={cn(
 														"py-3.5 px-4 text-right font-semibold tabular-nums text-xs whitespace-nowrap",
 														isIncome
-															? "text-emerald-600 dark:text-emerald-400"
-															: "text-slate-900 dark:text-slate-100",
+															? "text-emerald-600"
+															: "text-slate-900",
 													)}
 												>
 													{isIncome
@@ -3659,7 +3654,7 @@ export function FinanceReportClient({
 
 												{/* 6. Status */}
 												<td className="py-3.5 px-4 text-center whitespace-nowrap">
-													<span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-medium bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300">
+													<span className="inline-flex items-center px-2.5 py-0.5 rounded-full border-none text-[11px] font-medium bg-emerald-100/80 text-emerald-700">
 														Sukses
 													</span>
 												</td>
@@ -3674,7 +3669,7 @@ export function FinanceReportClient({
 															<Button
 																variant="ghost"
 																size="icon"
-																className="h-8 w-8 p-0 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-950/30 rounded-lg cursor-pointer"
+																className="h-8 w-8 p-0 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded-full cursor-pointer"
 															>
 																<span className="sr-only">Menu aksi</span>
 																<MoreVertical className="h-4 w-4" />
@@ -3682,10 +3677,10 @@ export function FinanceReportClient({
 														</DropdownMenuTrigger>
 														<DropdownMenuContent
 															align="end"
-															className="w-44 p-1 rounded-xl shadow-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
+															className="w-44 p-1.5 rounded-2xl shadow-2xl border-none bg-white"
 														>
 															<DropdownMenuItem
-																className="text-xs font-medium py-2 px-3 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2"
+																className="text-xs font-medium py-2 px-3 rounded-xl cursor-pointer hover:bg-slate-100 flex items-center gap-2"
 																onClick={() => setSelectedDetailTransaction(trx)}
 															>
 																<Eye className="h-3.5 w-3.5 text-slate-500" />
@@ -3694,14 +3689,14 @@ export function FinanceReportClient({
 
 															{!isPosOrder && (
 																<>
-																	<DropdownMenuSeparator className="my-1 border-slate-100 dark:border-slate-800" />
+																	<DropdownMenuSeparator className="my-1 border-slate-100" />
 																	<DropdownMenuItem
 																		onClick={() =>
 																			isIncome
 																				? handleDeleteIncome(trx.id)
 																				: handleDeleteExpense(trx.id)
 																		}
-																		className="text-xs font-medium py-2 px-3 rounded-lg cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/40 flex items-center gap-2"
+																		className="text-xs font-medium py-2 px-3 rounded-xl cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 flex items-center gap-2"
 																	>
 																		<Trash2 className="h-3.5 w-3.5 text-red-600" />
 																		<span>Hapus catatan</span>
@@ -3718,8 +3713,8 @@ export function FinanceReportClient({
 									<tr>
 										<td colSpan={7} className="py-16 text-center text-muted-foreground">
 											<div className="flex flex-col items-center justify-center space-y-2">
-												<PackageSearch className="w-9 h-9 text-slate-300 dark:text-slate-600" />
-												<p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+												<PackageSearch className="w-9 h-9 text-slate-300" />
+												<p className="text-sm font-semibold text-slate-800">
 													Tidak ada transaksi arus kas ditemukan
 												</p>
 												<p className="text-xs text-muted-foreground max-w-sm">
@@ -3744,7 +3739,7 @@ export function FinanceReportClient({
 								<Button
 									variant="outline"
 									size="sm"
-									className="h-8 px-3 rounded-xl border-slate-200 dark:border-slate-800 text-xs font-medium gap-1.5 cursor-pointer"
+									className="h-8 px-3 rounded-full border-none shadow-sm-md bg-white hover:bg-slate-100 text-xs font-medium gap-1.5 cursor-pointer text-slate-700"
 								>
 									<span>{itemsPerPage}</span>
 									<ChevronDown className="w-3.5 h-3.5 text-slate-400" />
@@ -3752,7 +3747,7 @@ export function FinanceReportClient({
 							</DropdownMenuTrigger>
 							<DropdownMenuContent
 								align="start"
-								className="w-24 p-1 rounded-xl shadow-lg border-slate-200 dark:border-slate-800"
+								className="w-24 p-1.5 rounded-2xl shadow-2xl border-none bg-white"
 							>
 								{[10, 20, 50, 100].map((size) => (
 									<DropdownMenuItem
@@ -3762,8 +3757,8 @@ export function FinanceReportClient({
 											setCurrentPage(1);
 										}}
 										className={cn(
-											"text-xs py-1.5 px-3 rounded-lg cursor-pointer",
-											itemsPerPage === size && "font-semibold text-blue-600",
+											"text-xs py-1.5 px-3 rounded-xl cursor-pointer",
+											itemsPerPage === size && "font-semibold text-blue-600 bg-blue-50",
 										)}
 									>
 										{size}
@@ -3781,7 +3776,7 @@ export function FinanceReportClient({
 								size="icon"
 								disabled={currentPage === 1}
 								onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-								className="h-8 w-8 rounded-lg border-slate-200 dark:border-slate-800 text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:text-blue-400 dark:hover:border-blue-700 dark:hover:bg-blue-950/30 disabled:opacity-40 cursor-pointer"
+								className="h-8 w-8 rounded-full border-none shadow-sm-md bg-white hover:bg-slate-100 text-slate-600 disabled:opacity-30 cursor-pointer flex items-center justify-center transition-all aspect-square"
 								aria-label="Halaman sebelumnya"
 							>
 								<ChevronLeft className="w-4 h-4" />
@@ -3792,7 +3787,7 @@ export function FinanceReportClient({
 									return (
 										<span
 											key={`ellipsis-${index}`}
-											className="px-1.5 text-xs text-slate-400"
+											className="w-6 text-center text-xs text-slate-400 select-none"
 										>
 											...
 										</span>
@@ -3806,10 +3801,10 @@ export function FinanceReportClient({
 										type="button"
 										onClick={() => setCurrentPage(pageNum)}
 										className={cn(
-											"h-8 min-w-[32px] px-2 text-xs rounded-lg font-medium transition-colors cursor-pointer",
+											"h-8 w-8 text-xs rounded-full font-medium transition-all cursor-pointer flex items-center justify-center aspect-square",
 											isCurrent
-												? "bg-blue-600 text-white shadow-xs"
-												: "text-slate-600 dark:text-slate-400 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/40 dark:hover:text-blue-400",
+												? "bg-[#0e59f9] text-white font-semibold shadow-md hover:bg-[#0b4de0]"
+												: "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
 										)}
 									>
 										{pageNum}
@@ -3822,7 +3817,7 @@ export function FinanceReportClient({
 								size="icon"
 								disabled={currentPage === totalPages}
 								onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-								className="h-8 w-8 rounded-lg border-slate-200 dark:border-slate-800 text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:text-blue-400 dark:hover:border-blue-700 dark:hover:bg-blue-950/30 disabled:opacity-40 cursor-pointer"
+								className="h-8 w-8 rounded-full border-none shadow-sm-md bg-white hover:bg-slate-100 text-slate-600 disabled:opacity-30 cursor-pointer flex items-center justify-center transition-all aspect-square"
 								aria-label="Halaman berikutnya"
 							>
 								<ChevronRight className="w-4 h-4" />
@@ -3839,9 +3834,9 @@ export function FinanceReportClient({
 					if (!open) setSelectedDetailTransaction(null);
 				}}
 			>
-				<DialogContent className="sm:max-w-md rounded-2xl p-6">
+				<DialogContent className="sm:max-w-md rounded-3xl p-6 border-none shadow-2xl bg-white">
 					<DialogHeader>
-						<DialogTitle className="text-base font-semibold text-slate-900 dark:text-slate-100">
+						<DialogTitle className="text-base font-semibold text-slate-900">
 							Rincian Transaksi Arus Kas
 						</DialogTitle>
 						<DialogDescription className="text-xs text-slate-500">
@@ -3851,15 +3846,15 @@ export function FinanceReportClient({
 
 					{selectedDetailTransaction && (
 						<div className="space-y-4 pt-2">
-							<div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-2">
+							<div className="p-4 rounded-2xl bg-slate-50 border-none shadow-xs space-y-2.5">
 								<div className="flex items-center justify-between text-xs">
 									<span className="text-slate-500">Tipe Arus Kas</span>
 									<span
 										className={cn(
-											"inline-flex items-center gap-1 font-semibold px-2 py-0.5 rounded-md text-[11px]",
+											"inline-flex items-center gap-1 font-semibold px-2.5 py-0.5 rounded-full border-none text-[11px]",
 											selectedDetailTransaction.type === "INCOME"
-												? "bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300"
-												: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+												? "bg-emerald-100/80 text-emerald-700"
+												: "bg-slate-200 text-slate-700",
 										)}
 									>
 										{selectedDetailTransaction.type === "INCOME" ? (
@@ -3882,7 +3877,7 @@ export function FinanceReportClient({
 											"font-semibold text-sm tabular-nums",
 											selectedDetailTransaction.type === "INCOME"
 												? "text-emerald-600"
-												: "text-slate-900 dark:text-slate-100",
+												: "text-slate-900",
 										)}
 									>
 										{selectedDetailTransaction.type === "INCOME"
@@ -3892,22 +3887,22 @@ export function FinanceReportClient({
 								</div>
 								<div className="flex items-center justify-between text-xs">
 									<span className="text-slate-500">Status</span>
-									<span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-medium bg-emerald-100/80 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300">
+									<span className="inline-flex items-center px-2.5 py-0.5 rounded-full border-none text-[11px] font-medium bg-emerald-100/80 text-emerald-700">
 										Sukses
 									</span>
 								</div>
 							</div>
 
-							<div className="space-y-2 text-xs divide-y divide-slate-100 dark:divide-slate-800">
+							<div className="space-y-2 text-xs divide-y divide-slate-100">
 								<div className="flex justify-between py-2">
 									<span className="text-slate-500">Keterangan</span>
-									<span className="font-medium text-slate-800 dark:text-slate-200 text-right max-w-[220px]">
+									<span className="font-medium text-slate-800 text-right max-w-[220px]">
 										{selectedDetailTransaction.description || "-"}
 									</span>
 								</div>
 								<div className="flex justify-between py-2">
 									<span className="text-slate-500">Kategori</span>
-									<span className="font-medium text-slate-800 dark:text-slate-200">
+									<span className="font-medium text-slate-800">
 										{getCategoryLabel(selectedDetailTransaction.category)}
 									</span>
 								</div>
@@ -3915,11 +3910,11 @@ export function FinanceReportClient({
 									<span className="text-slate-500">Metode Pembayaran</span>
 									<span
 										className={cn(
-											"inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium",
+											"inline-flex items-center px-2.5 py-0.5 rounded-full border-none text-[11px] font-medium",
 											selectedDetailTransaction.paymentMethod === "TUNAI" ||
 												selectedDetailTransaction.paymentMethod === "CASH"
-												? "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-												: "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300",
+												? "bg-slate-100 text-slate-700"
+												: "bg-blue-50 text-blue-700",
 										)}
 									>
 										{formatPaymentMethodLabel(
@@ -3929,7 +3924,7 @@ export function FinanceReportClient({
 								</div>
 								<div className="flex justify-between py-2">
 									<span className="text-slate-500">Tanggal &amp; Waktu</span>
-									<span className="font-medium text-slate-800 dark:text-slate-200">
+									<span className="font-medium text-slate-800">
 										{formatTrxDate(selectedDetailTransaction.date)}
 										{formatTrxTime(selectedDetailTransaction.date)
 											? `, ${formatTrxTime(selectedDetailTransaction.date)}`
@@ -3951,7 +3946,7 @@ export function FinanceReportClient({
 							variant="outline"
 							size="sm"
 							onClick={() => setSelectedDetailTransaction(null)}
-							className="rounded-xl text-xs h-9 cursor-pointer"
+							className="rounded-full border-none shadow-sm-md hover:bg-slate-100 text-slate-700 text-xs h-9 px-5 cursor-pointer"
 						>
 							Tutup
 						</Button>
@@ -3964,7 +3959,7 @@ export function FinanceReportClient({
 			{/* 8. MODAL: CATAT TRANSAKSI KAS (PEMASUKAN / PENGELUARAN) */}
 			{/* ==================================================== */}
 			<Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-				<DialogContent className="sm:max-w-md bg-white rounded-2xl border border-slate-200">
+				<DialogContent className="sm:max-w-md bg-white rounded-3xl border-none shadow-2xl p-6">
 					<DialogHeader>
 						<DialogTitle className="text-lg font-semibold text-slate-900">
 							{modalMode === "INCOME"
@@ -3985,12 +3980,12 @@ export function FinanceReportClient({
 									Kategori Biaya
 								</Label>
 
-								{/* Clean Modern Dropdown Trigger (No Icons, No Descriptions) */}
+								{/* Clean Modern Dropdown Trigger */}
 								<div className="relative">
 									<button
 										type="button"
 										onClick={() => setIsCategoryMenuOpen((prev) => !prev)}
-										className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50/70 flex items-center justify-between text-left transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0e59f9]"
+										className="w-full h-10 px-4 rounded-full border-none shadow-sm-md bg-slate-50 hover:bg-slate-100 flex items-center justify-between text-left transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0e59f9]"
 									>
 										<span className="text-xs font-semibold text-slate-800">
 											{EXPENSE_CATEGORIES.find((c) => c.id === category)
@@ -4011,7 +4006,7 @@ export function FinanceReportClient({
 												className="fixed inset-0 z-40"
 												onClick={() => setIsCategoryMenuOpen(false)}
 											/>
-											<div className="absolute z-50 left-0 right-0 mt-1 p-1 bg-white rounded-xl border border-slate-200 shadow-xl max-h-56 overflow-y-auto space-y-0.5">
+											<div className="absolute z-50 left-0 right-0 mt-1.5 p-1.5 bg-white rounded-2xl border-none shadow-2xl max-h-56 overflow-y-auto space-y-0.5">
 												{EXPENSE_CATEGORIES.map((cat) => {
 													const isSelected = category === cat.id;
 
@@ -4024,9 +4019,9 @@ export function FinanceReportClient({
 																setIsCategoryMenuOpen(false);
 															}}
 															className={cn(
-																"w-full px-3 py-2 rounded-lg flex items-center justify-between text-left transition-colors cursor-pointer text-xs",
+																"w-full px-3 py-2 rounded-xl flex items-center justify-between text-left transition-colors cursor-pointer text-xs",
 																isSelected
-																	? "bg-blue-50/80 text-[#0e59f9] font-semibold"
+																	? "bg-blue-50 text-[#0e59f9] font-semibold"
 																	: "hover:bg-slate-50 text-slate-700 font-medium",
 															)}
 														>
@@ -4048,12 +4043,12 @@ export function FinanceReportClient({
 									Kategori Pemasukan
 								</Label>
 
-								{/* Clean Modern Dropdown Trigger (No Icons, No Descriptions) */}
+								{/* Clean Modern Dropdown Trigger */}
 								<div className="relative">
 									<button
 										type="button"
 										onClick={() => setIsIncomeCategoryMenuOpen((prev) => !prev)}
-										className="w-full h-10 px-3.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50/70 flex items-center justify-between text-left transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0e59f9]"
+										className="w-full h-10 px-4 rounded-full border-none shadow-sm-md bg-slate-50 hover:bg-slate-100 flex items-center justify-between text-left transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0e59f9]"
 									>
 										<span className="text-xs font-semibold text-slate-800">
 											{INCOME_CATEGORIES.find((c) => c.id === incomeCategory)
@@ -4074,7 +4069,7 @@ export function FinanceReportClient({
 												className="fixed inset-0 z-40"
 												onClick={() => setIsIncomeCategoryMenuOpen(false)}
 											/>
-											<div className="absolute z-50 left-0 right-0 mt-1 p-1 bg-white rounded-xl border border-slate-200 shadow-xl max-h-56 overflow-y-auto space-y-0.5">
+											<div className="absolute z-50 left-0 right-0 mt-1.5 p-1.5 bg-white rounded-2xl border-none shadow-2xl max-h-56 overflow-y-auto space-y-0.5">
 												{INCOME_CATEGORIES.map((cat) => {
 													const isSelected = incomeCategory === cat.id;
 
@@ -4087,9 +4082,9 @@ export function FinanceReportClient({
 																setIsIncomeCategoryMenuOpen(false);
 															}}
 															className={cn(
-																"w-full px-3 py-2 rounded-lg flex items-center justify-between text-left transition-colors cursor-pointer text-xs",
+																"w-full px-3 py-2 rounded-xl flex items-center justify-between text-left transition-colors cursor-pointer text-xs",
 																isSelected
-																	? "bg-blue-50/80 text-[#0e59f9] font-semibold"
+																	? "bg-blue-50 text-[#0e59f9] font-semibold"
 																	: "hover:bg-slate-50 text-slate-700 font-medium",
 															)}
 														>
@@ -4122,7 +4117,7 @@ export function FinanceReportClient({
 								onChange={(e) => setAmount(e.target.value)}
 								required
 								min={1}
-								className="h-9 text-xs rounded-xl"
+								className="h-10 text-xs rounded-full border-none shadow-sm-md bg-slate-50 px-4 focus-visible:ring-blue-600"
 							/>
 						</div>
 
@@ -4139,10 +4134,10 @@ export function FinanceReportClient({
 										type="button"
 										onClick={() => setPaymentMethod(method)}
 										className={cn(
-											"py-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer",
+											"py-2 rounded-full text-xs font-semibold border-none transition-all text-center cursor-pointer shadow-xs",
 											paymentMethod === method
-												? "bg-[#0e59f9] text-white border-[#0e59f9] shadow-xs"
-												: "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100",
+												? "bg-[#0e59f9] text-white shadow-md"
+												: "bg-slate-100 text-slate-700 hover:bg-slate-200",
 										)}
 									>
 										{method === "TUNAI"
@@ -4170,7 +4165,7 @@ export function FinanceReportClient({
 								value={description}
 								onChange={(e) => setDescription(e.target.value)}
 								required
-								className="h-9 text-xs rounded-xl"
+								className="h-10 text-xs rounded-full border-none shadow-sm-md bg-slate-50 px-4 focus-visible:ring-blue-600"
 							/>
 						</div>
 
@@ -4189,7 +4184,7 @@ export function FinanceReportClient({
 										: setExpenseDate(e.target.value)
 								}
 								required
-								className="h-9 text-xs rounded-xl"
+								className="h-10 text-xs rounded-full border-none shadow-sm-md bg-slate-50 px-4 focus-visible:ring-blue-600"
 							/>
 						</div>
 
@@ -4198,14 +4193,14 @@ export function FinanceReportClient({
 								type="button"
 								variant="outline"
 								onClick={() => setIsModalOpen(false)}
-								className="h-9 text-xs font-medium cursor-pointer rounded-xl"
+								className="h-9 px-5 text-xs font-medium cursor-pointer rounded-full border-none shadow-sm-md hover:bg-slate-100 text-slate-700"
 							>
 								Batal
 							</Button>
 							<Button
 								type="submit"
 								disabled={isSubmitting}
-								className="h-9 text-xs font-semibold bg-[#0e59f9] hover:bg-[#0c4cd4] text-white cursor-pointer rounded-xl"
+								className="h-9 px-5 text-xs font-semibold bg-[#0e59f9] hover:bg-[#0c4cd4] text-white cursor-pointer rounded-full shadow-md"
 							>
 								{isSubmitting
 									? "Menyimpan..."
@@ -4220,10 +4215,10 @@ export function FinanceReportClient({
 
 			{/* Target Anggaran & Pemasukan Modal */}
 			<Dialog open={isTargetModalOpen} onOpenChange={setIsTargetModalOpen}>
-				<DialogContent className="sm:max-w-md bg-white rounded-2xl p-5 sm:p-6 shadow-2xl border border-slate-200">
+				<DialogContent className="sm:max-w-md bg-white rounded-3xl p-6 shadow-2xl border-none">
 					<DialogHeader className="space-y-1">
 						<div className="flex items-center gap-2.5">
-							<div className="w-8 h-8 rounded-xl bg-blue-50 text-[#0e59f9] flex items-center justify-center flex-shrink-0">
+							<div className="w-9 h-9 rounded-full bg-blue-50 text-[#0e59f9] flex items-center justify-center flex-shrink-0">
 								<Target className="w-4 h-4 text-[#0e59f9]" />
 							</div>
 							<div>
@@ -4242,12 +4237,12 @@ export function FinanceReportClient({
 					</DialogHeader>
 
 					{/* Tab Selector inside Modal: Pengeluaran | Pemasukan */}
-					<div className="inline-flex w-full p-1 rounded-xl bg-slate-100 border border-slate-200/60 mt-1">
+					<div className="inline-flex w-full p-1 rounded-full bg-slate-100 border-none shadow-xs mt-1">
 						<button
 							type="button"
 							onClick={() => handleSwitchTargetModalTab("EXPENSE")}
 							className={cn(
-								"flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+								"flex-1 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer",
 								targetFlowTab === "EXPENSE"
 									? "bg-[#1e293b] text-white shadow-xs"
 									: "text-slate-600 hover:text-slate-900",
@@ -4259,7 +4254,7 @@ export function FinanceReportClient({
 							type="button"
 							onClick={() => handleSwitchTargetModalTab("INCOME")}
 							className={cn(
-								"flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+								"flex-1 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer",
 								targetFlowTab === "INCOME"
 									? "bg-[#1e293b] text-white shadow-xs"
 									: "text-slate-600 hover:text-slate-900",
@@ -4301,7 +4296,7 @@ export function FinanceReportClient({
 												return (
 													<div
 														key={cat.id}
-														className="p-2 sm:p-2.5 rounded-xl bg-slate-50 border border-slate-200/70 flex items-center justify-between gap-3 hover:bg-slate-100/60 transition-colors"
+														className="p-2 sm:p-2.5 rounded-2xl bg-slate-50 border-none shadow-xs flex items-center justify-between gap-3 hover:bg-slate-100/60 transition-colors"
 													>
 														<div className="min-w-0 flex-1">
 															<Label className="text-xs font-semibold text-slate-800 block truncate">
@@ -4328,7 +4323,7 @@ export function FinanceReportClient({
 																		[cat.id]: raw,
 																	}));
 																}}
-																className="h-8 pl-8 pr-2.5 text-right text-xs font-semibold font-sans bg-white border-slate-200 rounded-lg focus-visible:ring-[#0e59f9]"
+																className="h-8 pl-8 pr-2.5 text-right text-xs font-semibold font-sans bg-white border-none shadow-sm-md rounded-full focus-visible:ring-[#0e59f9]"
 															/>
 														</div>
 													</div>
@@ -4346,7 +4341,7 @@ export function FinanceReportClient({
 									return (
 										<div
 											key={cat.id}
-											className="p-2.5 sm:p-3 rounded-xl bg-slate-50 border border-slate-200/70 flex items-center justify-between gap-3"
+											className="p-2.5 sm:p-3 rounded-2xl bg-slate-50 border-none shadow-xs flex items-center justify-between gap-3"
 										>
 											<div className="min-w-0 flex-1">
 												<Label className="text-xs font-semibold text-slate-800 block truncate">
@@ -4373,7 +4368,7 @@ export function FinanceReportClient({
 															[cat.id]: raw,
 														}));
 													}}
-													className="h-8 pl-8 pr-2.5 text-right text-xs font-semibold font-sans bg-white border-slate-200 rounded-lg focus-visible:ring-[#0e59f9]"
+													className="h-8 pl-8 pr-2.5 text-right text-xs font-semibold font-sans bg-white border-none shadow-sm-md rounded-full focus-visible:ring-[#0e59f9]"
 												/>
 											</div>
 										</div>
@@ -4382,7 +4377,7 @@ export function FinanceReportClient({
 					</div>
 
 					{/* Summary Live Calculation Footer */}
-					<div className="p-2.5 sm:p-3 rounded-xl bg-blue-50/60 border border-blue-100 flex items-center justify-between text-xs">
+					<div className="p-3 rounded-2xl bg-blue-50/60 border-none shadow-xs flex items-center justify-between text-xs">
 						<span className="text-slate-600 font-medium">
 							Total Target{" "}
 							{targetFlowTab === "EXPENSE" ? "Anggaran" : "Pemasukan"}:
@@ -4403,7 +4398,7 @@ export function FinanceReportClient({
 							variant="outline"
 							disabled={isSavingBudgets}
 							onClick={() => setIsTargetModalOpen(false)}
-							className="h-9 text-xs font-medium cursor-pointer rounded-xl"
+							className="h-9 px-5 text-xs font-medium cursor-pointer rounded-full border-none shadow-sm-md hover:bg-slate-100 text-slate-700"
 						>
 							Batal
 						</Button>
@@ -4411,7 +4406,7 @@ export function FinanceReportClient({
 							type="button"
 							disabled={isSavingBudgets}
 							onClick={handleSaveTargetBudgets}
-							className="h-9 text-xs font-semibold bg-[#0e59f9] hover:bg-[#0c4cd4] text-white cursor-pointer rounded-xl"
+							className="h-9 px-5 text-xs font-semibold bg-[#0e59f9] hover:bg-[#0c4cd4] text-white cursor-pointer rounded-full shadow-md"
 						>
 							{isSavingBudgets ? "Menyimpan..." : "Simpan Target"}
 						</Button>

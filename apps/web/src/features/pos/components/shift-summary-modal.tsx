@@ -88,66 +88,66 @@ export function ShiftSummaryModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md p-0 overflow-hidden rounded-2xl bg-white dark:bg-slate-950 border border-border/80 shadow-xl">
-        <DialogHeader className="p-4 pb-3 border-b bg-slate-50/70 dark:bg-slate-900/50">
-          <DialogTitle className="text-base font-semibold text-foreground flex items-center gap-2">
-            <Clock className="w-4 h-4 text-blue-600" />
+      <DialogContent className="max-w-md p-0 overflow-hidden rounded-2xl bg-white border border-[#EAEFF8] shadow-xl">
+        <DialogHeader className="p-4 pb-3 border-b border-[#EAEFF8] bg-slate-50/70">
+          <DialogTitle className="text-base font-semibold text-slate-900 flex items-center gap-2">
+            <Clock className="w-4 h-4 text-[#0e59f9]" />
             Ringkasan Shift Kasir
           </DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
-            <span className="flex items-center gap-1 font-medium text-slate-700 dark:text-slate-300">
+          <DialogDescription className="text-xs text-slate-500 flex items-center gap-2 mt-0.5">
+            <span className="flex items-center gap-1 font-medium text-slate-700">
               <User className="w-3.5 h-3.5" />
               {shift?.cashierName || 'Kasir'}
             </span>
             <span>•</span>
-            <span>Shift Aktif</span>
+            <span className="text-emerald-700 font-medium">Shift Aktif</span>
           </DialogDescription>
         </DialogHeader>
 
         <div className="p-4 space-y-3.5">
           {/* Summary Cards */}
           <div className="grid grid-cols-2 gap-2">
-            <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200/70 dark:border-slate-800">
-              <span className="text-[11px] text-muted-foreground block font-medium">Total Penjualan</span>
-              <span className="text-sm font-semibold text-foreground">
+            <div className="p-3 rounded-xl bg-slate-50/80 border border-[#EAEFF8]">
+              <span className="text-[11px] text-slate-400 block font-semibold uppercase tracking-wider mb-0.5">Total Penjualan</span>
+              <span className="text-base font-semibold text-slate-900 font-financial tabular-nums">
                 {formatCurrency(totalSales)}
               </span>
             </div>
 
-            <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200/70 dark:border-slate-800">
-              <span className="text-[11px] text-muted-foreground block font-medium">Total Transaksi</span>
-              <span className="text-sm font-semibold text-foreground">
+            <div className="p-3 rounded-xl bg-slate-50/80 border border-[#EAEFF8]">
+              <span className="text-[11px] text-slate-400 block font-semibold uppercase tracking-wider mb-0.5">Total Transaksi</span>
+              <span className="text-base font-semibold text-slate-900 font-financial tabular-nums">
                 {totalTransactions} Transaksi
               </span>
             </div>
           </div>
 
           {/* Breakdown List */}
-          <div className="p-3 rounded-xl bg-slate-50/70 dark:bg-slate-900/30 border border-slate-200/70 dark:border-slate-800 space-y-2 text-xs">
-            <div className="flex justify-between text-muted-foreground">
+          <div className="p-3.5 rounded-xl bg-slate-50/80 border border-[#EAEFF8] space-y-2 text-xs">
+            <div className="flex justify-between text-slate-500 font-normal">
               <span className="flex items-center gap-1.5">
-                <Banknote className="w-3.5 h-3.5 text-blue-600" /> Modal Kas Awal
+                <Banknote className="w-3.5 h-3.5 text-[#0e59f9]" /> Modal Kas Awal
               </span>
-              <span className="font-medium text-foreground">{formatCurrency(startingCash)}</span>
+              <span className="font-medium text-slate-900 font-financial tabular-nums">{formatCurrency(startingCash)}</span>
             </div>
 
-            <div className="flex justify-between text-muted-foreground">
+            <div className="flex justify-between text-slate-500 font-normal">
               <span className="flex items-center gap-1.5">
                 <Banknote className="w-3.5 h-3.5 text-emerald-600" /> Penjualan Tunai
               </span>
-              <span className="font-medium text-foreground">+{formatCurrency(totalCashSales)}</span>
+              <span className="font-medium text-slate-900 font-financial tabular-nums">+{formatCurrency(totalCashSales)}</span>
             </div>
 
-            <div className="flex justify-between text-muted-foreground">
+            <div className="flex justify-between text-slate-500 font-normal">
               <span className="flex items-center gap-1.5">
                 <CreditCard className="w-3.5 h-3.5 text-amber-600" /> Non-Tunai (QRIS/Kartu)
               </span>
-              <span className="font-medium text-foreground">+{formatCurrency(totalNonCashSales)}</span>
+              <span className="font-medium text-slate-900 font-financial tabular-nums">+{formatCurrency(totalNonCashSales)}</span>
             </div>
 
-            <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center font-medium">
-              <span className="text-slate-800 dark:text-slate-200 font-semibold">Estimasi Kas di Laci</span>
-              <span className="font-semibold text-sm text-blue-600 dark:text-blue-400">
+            <div className="pt-2 border-t border-[#EAEFF8] flex justify-between items-center font-medium">
+              <span className="text-slate-800 font-semibold">Estimasi Kas di Laci</span>
+              <span className="font-semibold text-sm text-[#0e59f9] font-financial tabular-nums">
                 {formatCurrency(expectedCash)}
               </span>
             </div>
@@ -155,37 +155,37 @@ export function ShiftSummaryModal({
 
           {/* End Shift Mode */}
           {isClosingMode ? (
-            <div className="p-3 rounded-xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 space-y-2.5">
-              <div className="flex items-center gap-1.5 text-amber-800 dark:text-amber-300 text-xs font-semibold">
-                <AlertTriangle className="w-4 h-4" />
+            <div className="p-3.5 rounded-xl bg-amber-50/80 border border-amber-200/80 space-y-2.5">
+              <div className="flex items-center gap-1.5 text-amber-900 text-xs font-semibold">
+                <AlertTriangle className="w-4 h-4 text-amber-600" />
                 <span>Hitung Uang Fisik Kasir</span>
               </div>
-              <p className="text-[11px] text-amber-700 dark:text-amber-400">
+              <p className="text-[11px] text-amber-800/90 font-normal">
                 Hitung uang tunai fisik yang ada di laci kasir saat ini untuk verifikasi selisih.
               </p>
 
               <div className="space-y-1">
-                <Label className="text-[11px] font-semibold">Uang Fisik Dihitung (Rp)</Label>
+                <Label className="text-[11px] font-semibold text-slate-700">Uang Fisik Dihitung (Rp)</Label>
                 <Input
                   type="text"
                   placeholder="0"
                   value={actualCashStr}
                   onChange={(e) => setActualCashStr(e.target.value.replace(/\D/g, ''))}
-                  className="h-9 text-xs bg-white dark:bg-slate-900 font-mono"
+                  className="h-9 text-xs bg-white border-[#EAEFF8] font-financial tabular-nums"
                   autoFocus
                 />
               </div>
 
               {actualCashStr !== '' && (
-                <div className="flex justify-between items-center text-xs pt-1 border-t border-amber-200 dark:border-amber-800/50">
-                  <span className="text-muted-foreground font-medium">Selisih Kas:</span>
+                <div className="flex justify-between items-center text-xs pt-2 border-t border-amber-200">
+                  <span className="text-slate-600 font-medium">Selisih Kas:</span>
                   <span
-                    className={`font-semibold ${
+                    className={`font-semibold font-financial tabular-nums ${
                       cashDifference === 0
                         ? 'text-emerald-700'
                         : cashDifference > 0
-                        ? 'text-blue-600'
-                        : 'text-destructive'
+                        ? 'text-[#0e59f9]'
+                        : 'text-rose-600'
                     }`}
                   >
                     {cashDifference === 0
@@ -201,7 +201,7 @@ export function ShiftSummaryModal({
         </div>
 
         {/* Modal Actions */}
-        <div className="p-4 pt-3 border-t bg-slate-50/70 dark:bg-slate-900/50 flex gap-2">
+        <div className="p-4 pt-3 border-t border-[#EAEFF8] bg-slate-50/70 flex gap-2">
           {isClosingMode ? (
             <>
               <Button
@@ -209,7 +209,7 @@ export function ShiftSummaryModal({
                 variant="outline"
                 onClick={() => setIsClosingMode(false)}
                 disabled={isSubmitting}
-                className="flex-1 h-10 text-xs rounded-xl"
+                className="flex-1 h-10 text-xs rounded-xl border-[#EAEFF8] text-slate-700 hover:bg-slate-50 cursor-pointer"
               >
                 Batal
               </Button>
@@ -218,7 +218,7 @@ export function ShiftSummaryModal({
                 variant="destructive"
                 onClick={handleCloseShift}
                 disabled={isSubmitting}
-                className="flex-1 h-10 text-xs rounded-xl font-semibold gap-1.5"
+                className="flex-1 h-10 text-xs rounded-xl font-semibold gap-1.5 cursor-pointer shadow-xs"
               >
                 {isSubmitting ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -234,7 +234,7 @@ export function ShiftSummaryModal({
                 type="button"
                 variant="outline"
                 onClick={onClose}
-                className="flex-1 h-10 text-xs rounded-xl"
+                className="flex-1 h-10 text-xs rounded-xl border-[#EAEFF8] text-slate-700 hover:bg-slate-50 cursor-pointer"
               >
                 Tutup Jendela
               </Button>
@@ -242,7 +242,7 @@ export function ShiftSummaryModal({
                 type="button"
                 variant="destructive"
                 onClick={() => setIsClosingMode(true)}
-                className="flex-1 h-10 text-xs rounded-xl font-semibold gap-1.5 bg-rose-600 hover:bg-rose-700 text-white"
+                className="flex-1 h-10 text-xs rounded-xl font-semibold gap-1.5 bg-rose-600 hover:bg-rose-700 text-white cursor-pointer shadow-xs"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 <span>Tutup Kasir / Akhiri Shift</span>
