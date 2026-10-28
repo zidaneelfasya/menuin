@@ -1,0 +1,105 @@
+{
+  "targetBaseUrl": "http://localhost:3000",
+  "syntheticOutletPrefix": "stg-outlet",
+  "totalSyntheticOutlets": 10,
+  "outlets": [
+    {
+      "id": "stg-tenant-01",
+      "slug": "stg-outlet-01",
+      "name": "[STAGING] Kopi Kenangan Staging 01",
+      "outletKey": "stg-outlet-01",
+      "cashierPin": "123456",
+      "cashierUsername": "cashier1@stg-outlet01.menuin.id",
+      "tables": ["1", "2", "3", "4", "5"]
+    },
+    {
+      "id": "stg-tenant-02",
+      "slug": "stg-outlet-02",
+      "name": "[STAGING] Warung Padang Staging 02",
+      "outletKey": "stg-outlet-02",
+      "cashierPin": "123456",
+      "cashierUsername": "cashier1@stg-outlet02.menuin.id",
+      "tables": ["1", "2", "3", "4", "5"]
+    },
+    {
+      "id": "stg-tenant-03",
+      "slug": "stg-outlet-03",
+      "name": "[STAGING] Burger Joint Staging 03",
+      "outletKey": "stg-outlet-03",
+      "cashierPin": "123456",
+      "cashierUsername": "cashier1@stg-outlet03.menuin.id",
+      "tables": ["1", "2", "3", "4", "5"]
+    },
+    {
+      "id": "stg-tenant-04",
+      "slug": "stg-outlet-04",
+      "name": "[STAGING] Ramen Bar Staging 04",
+      "outletKey": "stg-outlet-04",
+      "cashierPin": "123456",
+      "cashierUsername": "cashier1@stg-outlet04.menuin.id",
+      "tables": ["1", "2", "3", "4", "5"]
+    },
+    {
+      "id": "stg-tenant-05",
+      "slug": "stg-outlet-05",
+      "name": "[STAGING] Bebek Goreng Staging 05",
+      "outletKey": "stg-outlet-05",
+      "cashierPin": "123456",
+      "cashierUsername": "cashier1@stg-outlet05.menuin.id",
+      "tables": ["1", "2", "3", "4", "5"]
+    },
+    {
+      "id": "stg-tenant-06",
+      "slug": "stg-outlet-06",
+      "name": "[STAGING] Cafe Bistro Staging 06",
+      "outletKey": "stg-outlet-06",
+      "cashierPin": "123456",
+      "cashierUsername": "cashier1@stg-outlet06.menuin.id",
+      "tables": ["1", "2", "3", "4", "5"]
+    },
+    {
+      "id": "stg-tenant-07",
+      "slug": "stg-outlet-07",
+      "name": "[STAGING] Nasi Kulit Staging 07",
+      "outletKey": "stg-outlet-07",
+      "cashierPin": "123456",
+      "cashierUsername": "cashier1@stg-outlet07.menuin.id",
+      "tables": ["1", "2", "3", "4", "5"]
+    },
+    {
+      "id": "stg-tenant-08",
+      "slug": "stg-outlet-08",
+      "name": "[STAGING] Dimsum House Staging 08",
+      "outletKey": "stg-outlet-08",
+      "cashierPin": "123456",
+      "cashierUsername": "cashier1@stg-outlet08.menuin.id",
+      "tables": ["1", "2", "3", "4", "5"]
+    },
+    {
+      "id": "stg-tenant-09",
+      "slug": "stg-outlet-09",
+      "name": "[STAGING] Ayam Geprek Staging 09",
+      "outletKey": "stg-outlet-09",
+      "cashierPin": "123456",
+      "cashierUsername": "cashier1@stg-outlet09.menuin.id",
+      "tables": ["1", "2", "3", "4", "5"]
+    },
+    {
+      "id": "stg-tenant-10",
+      "slug": "stg-outlet-10",
+      "name": "[STAGING] Gelato & Dessert Staging 10",
+      "outletKey": "stg-outlet-10",
+      "cashierPin": "123456",
+      "cashierUsername": "cashier1@stg-outlet10.menuin.id",
+      "tables": ["1", "2", "3", "4", "5"]
+    }
+  ],
+  "thresholds": {
+    "http_req_failed": ["rate<0.005"],
+    "http_req_duration": ["p(95)<450", "p(99)<1000"],
+    "storefront_duration": ["p(95)<350"],
+    "pos_checkout_duration": ["p(95)<500"],
+    "kds_poll_duration": ["p(95)<150"],
+    "owner_dashboard_duration": ["p(95)<1200"]
+  }
+}

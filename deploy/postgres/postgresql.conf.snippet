@@ -1,0 +1,37 @@
+# ==============================================================================
+# MENUIN PostgreSQL 16 Performance Tuning Snippet
+# Target Environment: 2 vCPU / 4 GB RAM NVMe Single-VPS
+# Placement: Append to /etc/postgresql/16/main/postgresql.conf
+# ==============================================================================
+
+# Memory Configuration (Shares 4GB RAM with Next.js & OS)
+shared_buffers = 512MB                  # 1/8 to 1/4 of total RAM for shared buffers
+effective_cache_size = 1536MB           # 3/8 of total RAM for OS filesystem cache
+maintenance_work_mem = 128MB            # Memory for VACUUM, CREATE INDEX
+work_mem = 8MB                          # Memory per sorting/hash operation
+checkpoint_completion_target = 0.9      # Spread checkpoints over time
+wal_buffers = 16MB
+
+# Storage & Disk I/O (Optimized for Fast NVMe SSD)
+random_page_cost = 1.1                  # Fast seek time on NVMe
+effective_io_concurrency = 200          # High concurrent I/O requests for SSD
+min_wal_size = 1GB
+max_wal_size = 4GB
+
+# CPU & Parallel Query Workers (Optimized for 2 vCPUs)
+max_worker_processes = 2
+max_parallel_workers_per_gather = 1
+max_parallel_workers = 2
+max_parallel_maintenance_workers = 1
+
+# Connection Management
+max_connections = 100                   # Ample headroom for connection singleton
+
+# Logging & Slow Query Diagnostics
+logging_collector = on
+log_directory = 'log'
+log_filename = 'postgresql-%Y-%m-%d_%H%M%S.log'
+log_min_duration_statement = 250        # Log queries that take longer than 250ms
+log_line_prefix = '%m [%p] %q%u@%d '
+log_timezone = 'Asia/Jakarta'
+timezone = 'Asia/Jakarta'

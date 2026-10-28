@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { categories, products, tenants, productModifierGroups, modifierGroups, transactionItems, promotions } from "@/lib/db/schema";
-import { eq, and, sql, or } from "drizzle-orm";
+import { eq, and, sql, or, gte } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { CatalogProductList } from "./catalog-product-list";
 import { connection } from "next/server";
@@ -23,13 +23,72 @@ export default async function StorePage({
   if (tenantResult.length === 0) notFound();
   const tenant = tenantResult[0];
 
-  // Get active promotions for this tenant
   const now = new Date();
-  const allTenantPromos = await db
-    .select()
-    .from(promotions)
-    .where(and(eq(promotions.tenantId, tenant.id), eq(promotions.isActive, true)))
-    .orderBy(promotions.name);
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  // Parallelize tenant queries to eliminate DB waterfall and minimize connection hold time
+  const [allTenantPromos, productsList, salesData, productMods, tenantModGroups, allCats] = await Promise.all([
+    // 1. Active promotions
+    db
+      .select()
+      .from(promotions)
+      .where(and(eq(promotions.tenantId, tenant.id), eq(promotions.isActive, true)))
+      .orderBy(promotions.name),
+
+    // 2. Products available online
+    db
+      .select({
+        id: products.id,
+        name: products.name,
+        price: products.price,
+        potongan: products.potongan,
+        imageUrl: products.imageUrl,
+        description: products.description,
+        isFeatured: products.isFeatured,
+        categoryId: products.categoryId,
+      })
+      .from(products)
+      .where(and(
+        eq(products.tenantId, tenant.id),
+        eq(products.isActive, true),
+        eq(products.isAvailableOnline, true)
+      )),
+
+    // 3. Sales aggregation for best sellers (bounded to 30 days to utilize composite index idx_trx_items_tenant_created)
+    db
+      .select({
+        productId: transactionItems.productId,
+        totalSold: sql<number>`COALESCE(SUM(${transactionItems.quantity}), 0)::int`,
+      })
+      .from(transactionItems)
+      .where(and(
+        eq(transactionItems.tenantId, tenant.id),
+        gte(transactionItems.createdAt, thirtyDaysAgo)
+      ))
+      .groupBy(transactionItems.productId),
+
+    // 4. Product modifiers mapping
+    db
+      .select({
+        productId: productModifierGroups.productId,
+        modifierGroupId: productModifierGroups.modifierGroupId,
+      })
+      .from(productModifierGroups)
+      .innerJoin(products, eq(products.id, productModifierGroups.productId))
+      .where(eq(products.tenantId, tenant.id)),
+
+    // 5. Modifier groups with modifiers
+    db.query.modifierGroups.findMany({
+      where: eq(modifierGroups.tenantId, tenant.id),
+      with: {
+        modifiers: true,
+      },
+    }),
+
+    // 6. Categories for this tenant
+    db.select().from(categories).where(eq(categories.tenantId, tenant.id)),
+  ]);
 
   const activePromos = allTenantPromos.filter((p) => {
     if (p.startDate && new Date(p.startDate) > now) return false;
@@ -37,50 +96,11 @@ export default async function StorePage({
     return true;
   });
 
-  // Get products available online
-  const productsList = await db
-    .select({
-      id: products.id,
-      name: products.name,
-      price: products.price,
-      potongan: products.potongan,
-      imageUrl: products.imageUrl,
-      description: products.description,
-      isFeatured: products.isFeatured,
-      categoryId: products.categoryId,
-    })
-    .from(products)
-    .where(and(
-      eq(products.tenantId, tenant.id),
-      eq(products.isActive, true),
-      eq(products.isAvailableOnline, true)
-    ));
-
-  // Fetch sales aggregation from transactionItems
-  const salesData = await db
-    .select({
-      productId: transactionItems.productId,
-      totalSold: sql<number>`COALESCE(SUM(${transactionItems.quantity}), 0)::int`,
-    })
-    .from(transactionItems)
-    .where(eq(transactionItems.tenantId, tenant.id))
-    .groupBy(transactionItems.productId);
-
   const salesMap = new Map<string, number>();
   salesData.forEach((s) => {
     salesMap.set(s.productId, Number(s.totalSold));
   });
 
-  // Fetch product modifiers mapping
-  const productMods = await db
-    .select({
-      productId: productModifierGroups.productId,
-      modifierGroupId: productModifierGroups.modifierGroupId
-    })
-    .from(productModifierGroups)
-    .innerJoin(products, eq(products.id, productModifierGroups.productId))
-    .where(eq(products.tenantId, tenant.id));
-    
   const productsWithMods = productsList.map(p => {
     return {
       ...p,
@@ -89,22 +109,9 @@ export default async function StorePage({
     };
   });
 
-  // Get all modifier groups for this tenant
-  const tenantModGroups = await db.query.modifierGroups.findMany({
-    where: eq(modifierGroups.tenantId, tenant.id),
-    with: {
-      modifiers: true
-    }
-  });
-
-  // Get categories
-  const categoryIds = Array.from(new Set(productsWithMods.map(p => p.categoryId).filter(Boolean))) as string[];
-  
-  let cats: any[] = [];
-  if (categoryIds.length > 0) {
-    const allCats = await db.select().from(categories).where(eq(categories.tenantId, tenant.id));
-    cats = allCats.filter(c => categoryIds.includes(c.id));
-  }
+  // Filter categories to only those containing available products
+  const categoryIds = new Set(productsWithMods.map(p => p.categoryId).filter(Boolean));
+  const cats = allCats.filter(c => categoryIds.has(c.id));
 
   // Group products by category ID
   const productsByCategory: Record<string, typeof productsWithMods> = {
@@ -140,7 +147,7 @@ export default async function StorePage({
         activePromotions={activePromos}
         primaryColor={tenant.primaryColor}
       />
-      <ActiveOrderBanner tenantSlug={tenant.slug!} />
+      <ActiveOrderBanner tenantSlug={tenant.slug!} primaryColor={tenant.primaryColor} />
     </div>
   );
 }
