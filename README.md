@@ -4,6 +4,8 @@
 
 Sistem ini mengintegrasikan aplikasi Kasir (POS) berkecepatan tinggi dengan sistem **QR Order Mandiri** (Self-Service) di meja pelanggan, yang semuanya saling sinkron secara real-time ke dapur (Kitchen Display) dan laporan analitik *owner* (Dashboard).
 
+> 📖 **Dokumentasi Lengkap Fitur, Keunggulan & Alur Operasional:**  
+> Pelajari filosofi fitur esensial, perbandingan kompetitif terhadap kompetitor, dan alur operasional end-to-end di [docs/MENUIN_PRODUCT_OVERVIEW.md](file:///home/zidaneelfasya/D/Github/menuin/docs/MENUIN_PRODUCT_OVERVIEW.md).
 
 ## ✨ Fitur Unggulan
 

@@ -1,0 +1,21 @@
+{
+  "author": "Menuin, original procedural reconstruction",
+  "blender": "5.2.3 LTS",
+  "body_mm": [
+    78.0,
+    163.4,
+    8.75
+  ],
+  "screen_mm": [
+    73.35,
+    159.35
+  ],
+  "triangles": 18638,
+  "mesh_objects": 12,
+  "materials": 12,
+  "glb_bytes": 331944,
+  "axes": "X right, Y up, Z front",
+  "screen_uv": "glTF standard: V=0 at top",
+  "reference": "https://support.apple.com/en-us/125091",
+  "notes": "Visual reconstruction from public product reference; not a manufacturing CAD or an official Apple asset."
+}

@@ -1,0 +1,215 @@
+{
+  "examined_date": "2026-11-01",
+  "site": "https://premotio.com/",
+  "jam": "https://jam.dev/c/8a360bcb-b640-465c-9a3f-711d8bc7f710",
+  "sources": [
+    {
+      "url": "https://premotio.com/_nuxt/Xc5JkAqg.js",
+      "bytes": 829373,
+      "sha256": "d11ffaaca7934fe3e65091cbdc4340db0b54c4627dfd78824436dd50658240e3"
+    },
+    {
+      "url": "https://premotio.com/_nuxt/CGu4ElgJ.js",
+      "bytes": 183136,
+      "sha256": "f59b02541661e67575327cddd5e7e29a44e0f24c86c508b7f60e71c7e02bb6b6"
+    },
+    {
+      "url": "https://premotio.com/_nuxt/DXTYc6wn.js",
+      "bytes": 26486,
+      "sha256": "6bf68170d437477fb3411dfb24339df33257d69a4322c3907e14af33cff083c7"
+    },
+    {
+      "url": "https://premotio.com/_nuxt/maker.worker-BEm4Ac2Z.js",
+      "bytes": 172953,
+      "sha256": "f30c71cd2d27e05e61a06d58715296399a73c412c40bc1aa40161eb038f83d99"
+    }
+  ],
+  "assets": [
+    {
+      "url": "https://premotio.com/devices/iphone.glb",
+      "bytes": 440984,
+      "sha256": "e5e50559a432a3c9862be64d266ccb5494576394b056f5e9902301479694e02d",
+      "type": "model/gltf-binary",
+      "extensions": [
+        "EXT_meshopt_compression",
+        "KHR_mesh_quantization"
+      ],
+      "meshes": 16,
+      "materials": [
+        "Island",
+        "Frosted_glass",
+        "Tint_back_glass",
+        "Glass",
+        "Lens",
+        "Sapphire_miror",
+        "Mirror_filter",
+        "Aluminum",
+        "Frame",
+        "Camera_filter",
+        "Plastic_LED",
+        "Metal_Screw",
+        "Plastic_antena",
+        "Plastic_USB_port",
+        "material",
+        "Display"
+      ],
+      "animations": 0,
+      "images": 0
+    },
+    {
+      "url": "https://premotio.com/devices/screen-editor.webp",
+      "bytes": 53884,
+      "sha256": "87ec0278eb2b011ce10d05d16955b4da6c1fe8fb85a7890dfa87f035c173fadc",
+      "type": "image/webp",
+      "size": [
+        804,
+        1748
+      ],
+      "mode": "RGB",
+      "frames": 1
+    },
+    {
+      "url": "https://premotio.com/devices/screen-library.webp",
+      "bytes": 68956,
+      "sha256": "132a3219f4742e6ae1b208d366f6c879f023533fec4e2cab579b754d3bc7088b",
+      "type": "image/webp",
+      "size": [
+        804,
+        1748
+      ],
+      "mode": "RGB",
+      "frames": 1
+    },
+    {
+      "url": "https://premotio.com/devices/screen-loop-a.webp",
+      "bytes": 52794,
+      "sha256": "bf98eb4f0c886c0f4cf0a8f319d4f71111129c9a069c2ec760cd8b77e2e01e6f",
+      "type": "image/webp",
+      "size": [
+        604,
+        1312
+      ],
+      "mode": "RGB",
+      "frames": 1
+    },
+    {
+      "url": "https://premotio.com/devices/screen-loop-b.webp",
+      "bytes": 22532,
+      "sha256": "4e048728d5a9c9937f2a10735ea4236e0ce2cbd8b7aec6770cf8688b8a24f81b",
+      "type": "image/webp",
+      "size": [
+        604,
+        1312
+      ],
+      "mode": "RGB",
+      "frames": 1
+    },
+    {
+      "url": "https://premotio.com/pictures/1.webp",
+      "bytes": 26940,
+      "size": [
+        720,
+        1019
+      ],
+      "frames": 1,
+      "sha256": "0976bf22a203f8ee90dfeb89f6b89c3690c339af0a0ded98de635beb22770623"
+    },
+    {
+      "url": "https://premotio.com/pictures/2.webp",
+      "bytes": 12930,
+      "size": [
+        720,
+        1019
+      ],
+      "frames": 1,
+      "sha256": "64bd2925dca523c1db773408e2ab2a9aff4c431cf5844411df1ae4e7986f2aab"
+    },
+    {
+      "url": "https://premotio.com/pictures/3.webp",
+      "bytes": 42140,
+      "size": [
+        720,
+        1019
+      ],
+      "frames": 1,
+      "sha256": "2ab878f326aab408193bbe4e062697278c9a326ccda8f878c59b8d5e9b15bb22"
+    },
+    {
+      "url": "https://premotio.com/pictures/4.webp",
+      "bytes": 21602,
+      "size": [
+        720,
+        1019
+      ],
+      "frames": 1,
+      "sha256": "321ec39066426a3f301d1c717e498390d8cc5286588d6fb7b97e204b49e66d31"
+    },
+    {
+      "url": "https://premotio.com/pictures/5.webp",
+      "bytes": 31270,
+      "size": [
+        720,
+        1019
+      ],
+      "frames": 1,
+      "sha256": "6574d59d44e55a564778ee2ad7f53c57323cd52fa407931fca3bb735e7d456fa"
+    },
+    {
+      "url": "https://premotio.com/pictures/6.webp",
+      "bytes": 17712,
+      "size": [
+        720,
+        1019
+      ],
+      "frames": 1,
+      "sha256": "45e2a2883722c9be7290c2fb103b4e5d3d7c1503cf8ad9a76df231a84654c072"
+    },
+    {
+      "url": "https://premotio.com/pictures/7.webp",
+      "bytes": 18874,
+      "size": [
+        720,
+        1019
+      ],
+      "frames": 1,
+      "sha256": "69e759e25ce717ef4387aae96cc97f8bb7cd7ea9c4e11db71dcb523a5c699a36"
+    },
+    {
+      "url": "https://premotio.com/pictures/8.webp",
+      "bytes": 50226,
+      "size": [
+        720,
+        1019
+      ],
+      "frames": 1,
+      "sha256": "2621080bb4c695666750adc507820c41a9e82d9c6adac85a5fd0b09d09e47b9f"
+    },
+    {
+      "url": "https://premotio.com/pictures/9.webp",
+      "bytes": 12482,
+      "size": [
+        720,
+        1019
+      ],
+      "frames": 1,
+      "sha256": "3b01489043a2d6360375b853435d431c7930a2e4bf83a6ed36e0d40499637523"
+    }
+  ],
+  "measurements": {
+    "runtime_canvas_engine": "three.js r186",
+    "runtime_viewport": [
+      1280,
+      720
+    ],
+    "hold_scrollY": 35280,
+    "hold_duration_seconds": 31.82,
+    "hold_screenshots_pixel_identical": true,
+    "reference_phone_triangles": 65708,
+    "reference_phone_vertices": 75130,
+    "reference_phone_primitives": 16,
+    "reference_phone_animation_clips": 0,
+    "device_asset_bytes": 639150,
+    "ring_picture_bytes": 234176,
+    "scope_note": "Bytes are decoded HTTP response bodies/file sizes, not total page transfer, compressed JavaScript transfer, or GPU memory."
+  }
+}
