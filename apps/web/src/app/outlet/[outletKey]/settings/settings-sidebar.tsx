@@ -113,19 +113,50 @@ const SETTINGS_SECTIONS: NavSection[] = [
   },
 ];
 
+import { usePageTransition } from '@/components/providers/page-transition-provider';
+
 export function SettingsSidebar({ outletKey, userRole }: SettingsSidebarProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
+  const { navigateWithTransition, prefetchRoute } = usePageTransition();
   const settingsBase = `/outlet/${outletKey}/settings`;
   const isOnSubRoute = pathname !== settingsBase && pathname.startsWith(`${settingsBase}/`);
 
   const isOwner = userRole === 'OWNER' || userRole === 'SYSTEM_ADMIN' || !userRole;
-  const currentTab = searchParams.get('tab') || 'store';
+  const [currentTab, setCurrentTab] = React.useState(searchParams.get('tab') || 'store');
+
+  React.useEffect(() => {
+    const tabFromUrl = searchParams.get('tab') || 'store';
+    setCurrentTab(tabFromUrl);
+  }, [searchParams]);
+
+  React.useEffect(() => {
+    const handleCustomTab = (e: Event) => {
+      const customEvent = e as CustomEvent<string>;
+      if (customEvent.detail) {
+        setCurrentTab(customEvent.detail);
+      }
+    };
+    window.addEventListener('menuin:settings-tab', handleCustomTab);
+    return () => window.removeEventListener('menuin:settings-tab', handleCustomTab);
+  }, []);
 
   const handleNavigate = (item: NavItem) => {
     const targetHref = item.href(outletKey);
-    router.replace(targetHref, { scroll: false });
+    if (item.isRoute || isOnSubRoute) {
+      navigateWithTransition(targetHref);
+    } else {
+      if (item.tab) {
+        setCurrentTab(item.tab);
+        if (typeof window !== 'undefined') {
+          window.history.replaceState(null, '', targetHref);
+          window.dispatchEvent(new CustomEvent('menuin:settings-tab', { detail: item.tab }));
+        }
+      } else {
+        navigateWithTransition(targetHref);
+      }
+    }
   };
 
   return (

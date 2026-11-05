@@ -50,7 +50,6 @@ import { id as localeId } from "date-fns/locale";
 import { getSalesReport, ReportPeriod } from "@/lib/actions/reports";
 import { toast } from "sonner";
 import { formatPaymentMethodLabel } from "@/lib/utils/format";
-import * as XLSX from "xlsx";
 import { cn } from "@/lib/utils";
 
 type SalesReportData = NonNullable<Awaited<ReturnType<typeof getSalesReport>>["data"]>;
@@ -1425,8 +1424,9 @@ export function SalesReportClient({ initialData, outletKey }: SalesReportClientP
   // ==========================================
   // PROFESSIONAL MULTI-SHEET EXCEL EXPORT
   // ==========================================
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     try {
+      const XLSX = await import("xlsx");
       const workbook = XLSX.utils.book_new();
 
       // Sheet 1: Ringkasan Penjualan

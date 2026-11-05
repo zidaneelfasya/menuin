@@ -1,111 +1,197 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 
 interface PageTransitionContextType {
   navigateWithTransition: (href: string) => void;
+  prefetchRoute: (href: string) => void;
   isTransitioning: boolean;
 }
 
 const PageTransitionContext = createContext<PageTransitionContextType | undefined>(undefined);
 
+// Symmetrical transition timing for curtain entrance (masuk) and exit (keluar)
+// 380ms provides a crisp, purposeful sweep without sluggishness
+const CURTAIN_TRANSITION = {
+  duration: 0.38,
+  ease: [0.4, 0, 0.2, 1] as const,
+};
+
 export function PageTransitionProvider({ children }: { children: ReactNode }) {
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isCurtainCovered, setIsCurtainCovered] = useState(false);
   const [targetHref, setTargetHref] = useState<string | null>(null);
+  const [isAnimationFinished, setIsAnimationFinished] = useState(false);
+  const [isRouteReady, setIsRouteReady] = useState(false);
+  const [animationKey, setAnimationKey] = useState(0);
+
   const pathname = usePathname();
   const router = useRouter();
-  const navigationStartTimeRef = React.useRef<number>(0);
 
-  // Handle route change completion:
-  // ONLY drop the curtain AFTER the new route has actually mounted in the DOM
-  // AND the elegant liquid animation has finished its full duration.
+  // Trigger logo fill animation ONLY after the curtain has fully covered the screen (380ms)
+  useEffect(() => {
+    if (isTransitioning) {
+      const curtainTimer = setTimeout(() => {
+        setIsCurtainCovered(true);
+      }, 380);
+      return () => clearTimeout(curtainTimer);
+    } else {
+      setIsCurtainCovered(false);
+    }
+  }, [isTransitioning]);
+
+  // Gate 2: Listen for target route mounting in DOM
   useEffect(() => {
     if (isTransitioning && targetHref) {
-      const normalizedTarget = targetHref.split('?')[0].split('#')[0];
-      const normalizedPath = pathname.split('?')[0].split('#')[0];
+      const normalizedTarget = targetHref.split('?')[0].split('#')[0].replace(/\/$/, '');
+      const normalizedPath = pathname.split('?')[0].split('#')[0].replace(/\/$/, '');
 
-      // If we've reached the target pathname, the destination page is mounted!
-      if (normalizedPath === normalizedTarget || (normalizedTarget !== '/' && normalizedPath.startsWith(normalizedTarget))) {
-        const elapsed = Date.now() - navigationStartTimeRef.current;
-        const MIN_ANIMATION_MS = 750; // Elegant Menuin logo liquid fill duration
-        const delay = Math.max(0, MIN_ANIMATION_MS - elapsed) + 100;
-
-        const timer = setTimeout(() => {
-          setIsTransitioning(false);
-          setTargetHref(null);
-        }, delay);
-        return () => clearTimeout(timer);
+      if (normalizedPath === normalizedTarget) {
+        setIsRouteReady(true);
       }
     }
   }, [pathname, isTransitioning, targetHref]);
 
-  // Safety fallback so transition never freezes permanently in case of total network disconnect
+  // Dual-Gate Completion: Only lift curtain when BOTH animation has completed AND route is mounted
+  useEffect(() => {
+    if (isTransitioning && isAnimationFinished && isRouteReady) {
+      // Settle beat (100ms) so user perceives the solid white filled logo before curtain exits
+      const settleTimer = setTimeout(() => {
+        setIsTransitioning(false);
+        setIsCurtainCovered(false);
+        setTargetHref(null);
+        setIsAnimationFinished(false);
+        setIsRouteReady(false);
+      }, 100);
+
+      return () => clearTimeout(settleTimer);
+    }
+  }, [isTransitioning, isAnimationFinished, isRouteReady]);
+
+  // Backup animation timer: Guarantees Gate 1 completes even if browser throttles animation frames in background
+  useEffect(() => {
+    if (isTransitioning && !isAnimationFinished) {
+      const backupTimer = setTimeout(() => {
+        setIsAnimationFinished(true);
+      }, 1400);
+      return () => clearTimeout(backupTimer);
+    }
+  }, [isTransitioning, isAnimationFinished]);
+
+  // Safety fallback: Never trap user in case of severe network disconnect
   useEffect(() => {
     if (isTransitioning) {
       const safetyTimer = setTimeout(() => {
         setIsTransitioning(false);
+        setIsCurtainCovered(false);
         setTargetHref(null);
-      }, 8000);
+        setIsAnimationFinished(false);
+        setIsRouteReady(false);
+      }, 4000);
       return () => clearTimeout(safetyTimer);
     }
   }, [isTransitioning]);
 
-  const navigateWithTransition = (href: string) => {
-    if (pathname === href) {
+  const prefetchRoute = useCallback((href: string) => {
+    try {
+      router.prefetch(href);
+    } catch {
+      // Ignore prefetch errors
+    }
+  }, [router]);
+
+  const navigateWithTransition = useCallback((href: string) => {
+    const normalizedTarget = href.split('?')[0].split('#')[0].replace(/\/$/, '');
+    const normalizedCurrent = pathname.split('?')[0].split('#')[0].replace(/\/$/, '');
+
+    // Ignore click if already on identical page
+    if (normalizedCurrent === normalizedTarget && href === pathname) {
       return;
     }
-    
-    navigationStartTimeRef.current = Date.now();
+
+    // Ignore redundant click if already transitioning to identical target
+    if (isTransitioning && targetHref === href) {
+      return;
+    }
+
+    // Reset all transition and animation states
+    setIsCurtainCovered(false);
+    setIsAnimationFinished(false);
+    setIsRouteReady(false);
+    setAnimationKey((prev) => prev + 1);
     setTargetHref(href);
     setIsTransitioning(true);
-    // Trigger router.push immediately in parallel so new route mounts under the curtain
+
+    // Parallel Background Routing: Trigger navigation immediately so server fetch runs concurrently
     router.push(href);
-  };
+  }, [pathname, isTransitioning, targetHref, router]);
 
   return (
-    <PageTransitionContext.Provider value={{ navigateWithTransition, isTransitioning }}>
+    <PageTransitionContext.Provider value={{ navigateWithTransition, prefetchRoute, isTransitioning }}>
       {children}
       
       <AnimatePresence>
         {isTransitioning && (
           <motion.div
+            key="page-transition-curtain"
             initial={{ y: "100%" }}
-            animate={{ y: "0%" }}
-            exit={{ y: "-100%" }}
-            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-primary" 
+            animate={{ 
+              y: "0%", 
+              transition: CURTAIN_TRANSITION 
+            }}
+            exit={{ 
+              y: "-100%", 
+              transition: CURTAIN_TRANSITION 
+            }}
+            onAnimationComplete={(definition: any) => {
+              if (definition?.y === "0%") {
+                setIsCurtainCovered(true);
+              }
+            }}
+            style={{ willChange: "transform" }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0b57fa] select-none overflow-hidden" 
           >
-            {/* The Logo Container */}
-            <div className="relative w-48 h-48 md:w-64 md:h-64">
-              {/* Dimmed Background Logo */}
+            {/* The Logo Container - matching exact /menuin-biru visual presentation */}
+            <div className="relative w-56 h-28 md:w-80 md:h-40 flex items-center justify-center">
+              {/* Dimmed Background Logo ("Logo Kosong" Base Outline) */}
               <Image 
-                src="/menuin-putih.png" 
-                alt="Loading..." 
+                src="/menuin-white.png" 
+                alt="Menuin" 
                 fill 
-                sizes="(max-width: 768px) 192px, 256px"
-                className="object-contain opacity-25" 
+                sizes="(max-width: 768px) 224px, 320px"
+                className="object-contain opacity-25 pointer-events-none" 
                 priority
               />
               
-              {/* Liquid Fill Animated Logo */}
+              {/* Liquid Fill Animated Foreground ("Terisi Penuh Warna Putih") */}
+              {/* Starts rising ONLY when the curtain has completely covered the screen */}
               <motion.div
+                key={animationKey}
                 initial={{ clipPath: "inset(100% 0 0 0)" }}
-                animate={{ clipPath: "inset(0% 0 0 0)" }}
+                animate={{ 
+                  clipPath: isCurtainCovered ? "inset(0% 0 0 0)" : "inset(100% 0 0 0)" 
+                }}
+                exit={{ clipPath: "inset(0% 0 0 0)" }}
                 transition={{ 
                   duration: 0.65, 
                   ease: [0.45, 0, 0.15, 1],
-                  delay: 0.08
+                  delay: isCurtainCovered ? 0.05 : 0
                 }}
-                className="absolute inset-0"
+                onAnimationComplete={() => {
+                  if (isCurtainCovered) {
+                    setIsAnimationFinished(true);
+                  }
+                }}
+                className="absolute inset-0 pointer-events-none"
               >
                 <Image 
-                  src="/menuin-putih.png" 
-                  alt="Loading Full..." 
+                  src="/menuin-white.png" 
+                  alt="Menuin Full" 
                   fill 
-                  sizes="(max-width: 768px) 192px, 256px"
+                  sizes="(max-width: 768px) 224px, 320px"
                   className="object-contain" 
                   priority
                 />

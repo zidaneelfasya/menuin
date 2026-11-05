@@ -26,7 +26,10 @@ async function requirePosUser(): Promise<{ id: string; tenantId: string; outletK
 }
 
 function revalidateOutlet(outletKey: string | null) {
-  if (outletKey) revalidatePath(`/outlet/${outletKey}`, 'layout');
+  if (outletKey) {
+    revalidatePath(`/outlet/${outletKey}/pos`, 'page');
+    revalidatePath(`/outlet/${outletKey}/orders`, 'page');
+  }
 }
 
 async function cancelPendingQrisTransaction(tenantId: string, transactionId: string, reason: string) {

@@ -1,5 +1,4 @@
 import { Metadata } from 'next';
-import { getActiveShift } from '@/lib/actions/shifts';
 import { ShiftsSidebar } from './shifts-sidebar';
 
 export const metadata: Metadata = {
@@ -14,14 +13,12 @@ export default async function ShiftsLayout({
   params: Promise<{ outletKey: string }>;
 }) {
   const { outletKey } = await params;
-  const activeShiftResult = await getActiveShift();
-  const hasActiveShift = Boolean(activeShiftResult.success && activeShiftResult.data);
 
   return (
     <div className="flex flex-col md:flex-row h-full w-full overflow-hidden bg-[#F9FBFF]">
       {/* Sub-sidebar docked directly flush with primary rail */}
       <aside className="w-full md:w-60 flex-shrink-0 bg-white border-r border-[#EAEFF8] flex flex-col h-auto md:h-full relative z-20 shadow-[4px_0_16px_rgba(0,0,0,0.04),1px_0_4px_rgba(0,0,0,0.02)]">
-        <ShiftsSidebar outletKey={outletKey} hasActiveShift={hasActiveShift} />
+        <ShiftsSidebar outletKey={outletKey} />
       </aside>
 
       {/* Main Content Area on #F9FBFF Canvas */}

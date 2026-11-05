@@ -37,7 +37,12 @@ export async function createTransaction(payload: PosCheckoutPayload) {
       mode: 'PAID',
     });
 
-    if (user && typeof user === "object" && "outletKey" in user) { revalidatePath(`/outlet/${user.outletKey}`, "layout"); }
+    if (user && typeof user === "object" && "outletKey" in user && user.outletKey) {
+      revalidatePath(`/outlet/${user.outletKey}/transactions`, "page");
+      revalidatePath(`/outlet/${user.outletKey}/reports`, "page");
+      revalidatePath(`/outlet/${user.outletKey}/orders`, "page");
+      revalidatePath(`/outlet/${user.outletKey}/shifts`, "page");
+    }
     return { success: true, transactionId: created.id };
   } catch (error) {
     console.error('Error creating transaction:', error);

@@ -7,8 +7,10 @@ import {
   AnimatePresence,
   useScroll,
   useMotionValueEvent,
+  useReducedMotion,
+  LayoutGroup,
 } from "framer-motion";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 interface NavbarProps {
   children: React.ReactNode;
@@ -24,7 +26,6 @@ interface NavBodyProps {
 export interface NavItemType {
   name: string;
   link: string;
-  children?: React.ReactNode;
 }
 
 interface NavItemsProps {
@@ -55,6 +56,10 @@ export const Navbar = ({ children, className }: NavbarProps) => {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollY } = useScroll();
   const [visible, setVisible] = useState<boolean>(false);
+  const [hidden, setHidden] = useState(false);
+  const previousScroll = useRef(0);
+  const pointerNear = useRef(false);
+  const reducedMotion = useReducedMotion();
 
   // Hysteresis threshold eliminates any oscillation / rapid flickering
   useMotionValueEvent(scrollY, "change", (latest) => {
@@ -63,11 +68,56 @@ export const Navbar = ({ children, className }: NavbarProps) => {
     } else if (latest < 50) {
       setVisible(false);
     }
+    const delta = latest - previousScroll.current;
+    if (Math.abs(delta) >= 3) {
+      if (latest < 5 || delta < 0) setHidden(false);
+      else if (!pointerNear.current) setHidden(true);
+      previousScroll.current = latest;
+    }
   });
+
+  useEffect(() => {
+    let touchY = 0;
+    const pointer = (event: PointerEvent) => {
+      if (event.pointerType !== "mouse") return;
+      pointerNear.current = event.clientY <= 100;
+      if (pointerNear.current) setHidden(false);
+    };
+    // Some pinned scenes consume the wheel before the document actually scrolls.
+    const wheel = (event: WheelEvent) => {
+      if (Math.abs(event.deltaY) < 2) return;
+      if (event.deltaY < 0) setHidden(false);
+      else if (!pointerNear.current) setHidden(true);
+    };
+    const touchStart = (event: TouchEvent) => {
+      touchY = event.touches[0]?.clientY ?? 0;
+      pointerNear.current = false;
+    };
+    const touchMove = (event: TouchEvent) => {
+      const y = event.touches[0]?.clientY;
+      if (y === undefined || Math.abs(touchY - y) < 3) return;
+      setHidden(y < touchY);
+      touchY = y;
+    };
+    window.addEventListener("pointermove", pointer, { passive: true });
+    window.addEventListener("wheel", wheel, { capture: true, passive: true });
+    window.addEventListener("touchstart", touchStart, { capture: true, passive: true });
+    window.addEventListener("touchmove", touchMove, { capture: true, passive: true });
+    return () => {
+      window.removeEventListener("pointermove", pointer);
+      window.removeEventListener("wheel", wheel, true);
+      window.removeEventListener("touchstart", touchStart, true);
+      window.removeEventListener("touchmove", touchMove, true);
+    };
+  }, []);
 
   return (
     <motion.div
       ref={ref}
+      initial={false}
+      animate={{ y: hidden ? "-150%" : "0%" }}
+      transition={{ duration: reducedMotion ? 0 : 0.3, ease: "easeInOut" }}
+      onFocusCapture={() => setHidden(false)}
       className={cn(
         "sticky inset-x-0 top-4 z-50 w-full px-4 sm:px-6",
         className,
@@ -90,10 +140,7 @@ export const NavBody = ({ children, className, visible }: NavBodyProps) => {
     <motion.div
       animate={{
         backdropFilter: "blur(12px)",
-        boxShadow: visible
-          ? "0 0 24px rgba(34, 42, 53, 0.08), 0 1px 1px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(34, 42, 53, 0.06), 0 0 4px rgba(34, 42, 53, 0.08), 0 16px 68px rgba(47, 48, 55, 0.05), 0 1px 0 rgba(255, 255, 255, 0.1) inset"
-          : "0 1px 3px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(0, 0, 0, 0.04)",
-        width: visible ? "62%" : "100%",
+        width: visible ? "48%" : "100%",
         y: visible ? 8 : 0,
       }}
       transition={{
@@ -102,11 +149,10 @@ export const NavBody = ({ children, className, visible }: NavBodyProps) => {
         damping: 35,
       }}
       style={{
-        minWidth: "760px",
+        minWidth: "860px",
       }}
       className={cn(
-        "relative z-[60] mx-auto hidden w-full max-w-7xl flex-row items-center justify-between rounded-full border border-black/[0.07] px-6 py-2 transition-colors lg:flex",
-        visible ? "bg-white/95 shadow-md" : "bg-white/80 shadow-xs",
+        "relative z-[60] mx-auto hidden w-full max-w-7xl flex-row items-center justify-between rounded-full bg-white px-6 py-2 shadow-md transition-colors lg:flex",
         className,
       )}
     >
@@ -117,51 +163,32 @@ export const NavBody = ({ children, className, visible }: NavBodyProps) => {
 
 export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
   const [hovered, setHovered] = useState<number | null>(null);
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
 
   return (
-    <motion.div
-      onMouseLeave={() => {
-        setHovered(null);
-        setActiveDropdown(null);
-      }}
-      className={cn(
-        "hidden flex-1 flex-row items-center justify-center space-x-1 text-sm font-medium transition duration-200 lg:flex",
-        className,
-      )}
-    >
-      {items.map((item, idx) => (
-        <div
-          key={`nav-item-${idx}`}
-          className="relative"
-          onMouseEnter={() => {
-            setHovered(idx);
-            if (item.children) {
-              setActiveDropdown(item.name);
-            } else {
-              setActiveDropdown(null);
-            }
-          }}
-        >
-          <a
-            onClick={onItemClick}
-            className={cn(
-              "relative block px-4 py-2 text-sm font-medium transition-colors duration-200",
-              hovered === idx
-                ? "text-[#0E59F9] font-semibold"
-                : "text-slate-600 hover:text-[#0E59F9]",
-            )}
-            href={item.link}
+    <LayoutGroup id="navbar-hover-group">
+      <motion.div
+        onMouseLeave={() => setHovered(null)}
+        className={cn(
+          "hidden flex-1 flex-row items-center justify-center space-x-1 text-sm font-medium transition duration-200 lg:flex",
+          className,
+        )}
+      >
+        {items.map((item, idx) => (
+          <div
+            key={`nav-item-${idx}`}
+            className="relative"
+            onMouseEnter={() => setHovered(idx)}
           >
-            {/* Smooth moving bubble pill matching Menuin brand */}
-            <AnimatePresence>
+            <a
+              onClick={onItemClick}
+              className="relative block px-4 py-2 text-sm font-medium text-slate-600 transition-colors duration-200 whitespace-nowrap"
+              href={item.link}
+            >
+              {/* Smooth continuous moving bubble pill with spring physics */}
               {hovered === idx && (
                 <motion.div
                   layoutId="hovered-bubble"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="absolute inset-0 h-full w-full rounded-full bg-[#0E59F9]/[0.08]"
+                  className="absolute inset-0 h-full w-full rounded-full bg-white shadow-[2px_4px_12px_rgba(160,175,200,0.42),-2px_-2px_8px_rgba(255,255,255,0.9)]"
                   transition={{
                     type: "spring",
                     stiffness: 420,
@@ -169,38 +196,12 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
                   }}
                 />
               )}
-            </AnimatePresence>
-            <span className="relative z-20">{item.name}</span>
-          </a>
-
-          {/* Children Preview Dropdown */}
-          {item.children && activeDropdown === item.name && (
-            <div className="absolute top-[calc(100%_+_0.6rem)] left-1/2 -translate-x-1/2 pt-2 z-50">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 6 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 6 }}
-                transition={{
-                  type: "spring",
-                  mass: 0.5,
-                  damping: 14,
-                  stiffness: 130,
-                }}
-              >
-                <motion.div
-                  layoutId="active-dropdown-card"
-                  className="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-[0_20px_50px_rgba(0,0,0,0.15)] ring-1 ring-black/5"
-                >
-                  <motion.div layout className="w-max h-full p-4 sm:p-5">
-                    {item.children}
-                  </motion.div>
-                </motion.div>
-              </motion.div>
-            </div>
-          )}
-        </div>
-      ))}
-    </motion.div>
+              <span className="relative z-20">{item.name}</span>
+            </a>
+          </div>
+        ))}
+      </motion.div>
+    </LayoutGroup>
   );
 };
 
@@ -209,9 +210,6 @@ export const MobileNav = ({ children, className, visible }: MobileNavProps) => {
     <motion.div
       animate={{
         backdropFilter: "blur(12px)",
-        boxShadow: visible
-          ? "0 0 24px rgba(34, 42, 53, 0.08), 0 1px 1px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(34, 42, 53, 0.06), 0 0 4px rgba(34, 42, 53, 0.08), 0 16px 68px rgba(47, 48, 55, 0.05), 0 1px 0 rgba(255, 255, 255, 0.1) inset"
-          : "none",
         width: visible ? "92%" : "100%",
         paddingRight: "12px",
         paddingLeft: "12px",
@@ -223,7 +221,7 @@ export const MobileNav = ({ children, className, visible }: MobileNavProps) => {
         damping: 35,
       }}
       className={cn(
-        "relative z-50 mx-auto flex w-full max-w-[calc(100vw-2rem)] flex-col items-center justify-between rounded-2xl border border-black/[0.08] bg-white/95 px-4 py-2.5 shadow-md backdrop-blur-md lg:hidden",
+        "relative z-50 mx-auto flex w-full max-w-[calc(100vw-2rem)] flex-col items-center justify-between rounded-2xl bg-white px-4 py-2.5 shadow-[6px_8px_20px_rgba(160,175,200,0.32),-4px_-4px_16px_rgba(255,255,255,0.9),0_1px_3px_rgba(15,23,42,0.04)] lg:hidden",
         className,
       )}
     >
@@ -262,7 +260,7 @@ export const MobileNavMenu = ({
           exit={{ opacity: 0, height: 0 }}
           transition={{ duration: 0.25, ease: "easeInOut" }}
           className={cn(
-            "w-full overflow-hidden pt-3 border-t border-black/[0.06] mt-2",
+            "w-full overflow-hidden pt-3 border-t border-slate-200/60 mt-2",
             className,
           )}
         >
@@ -284,7 +282,7 @@ export const MobileNavToggle = ({
     <button
       onClick={onClick}
       aria-label="Toggle Mobile Menu"
-      className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-800 hover:bg-slate-200 transition cursor-pointer"
+      className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-slate-800 shadow-[2px_4px_10px_rgba(160,175,200,0.35),-2px_-2px_8px_rgba(255,255,255,0.9)] active:shadow-[inset_2px_2px_4px_rgba(160,175,200,0.4)] transition cursor-pointer"
     >
       {isOpen ? (
         <IconX className="h-4 w-4 text-slate-900" />
@@ -321,15 +319,16 @@ export const NavbarButton = ({
   | React.ComponentPropsWithoutRef<"button">
 )) => {
   const baseStyles =
-    "px-5 py-2 rounded-full text-sm font-semibold relative cursor-pointer transition duration-200 inline-flex items-center justify-center space-x-1.5 active:scale-95";
+    "px-5 py-2 rounded-full text-sm font-semibold relative cursor-pointer transition-all duration-150 ease-out inline-flex items-center justify-center space-x-1.5 select-none";
 
   const variantStyles = {
     primary:
-      "bg-[#0E59F9] text-white shadow-sm hover:bg-[#0C4CD6] hover:shadow-md",
+      "bg-[#0e59f9] text-white hover:bg-[#0b4de0] active:scale-[0.98] shadow-none",
     secondary:
-      "bg-transparent hover:bg-[#0E59F9]/[0.08] text-slate-700 hover:text-[#0E59F9]",
-    dark: "bg-slate-900 text-white hover:bg-black",
-    gradient: "bg-[#0E59F9] text-white shadow-sm hover:bg-[#0C4CD6]",
+      "bg-white text-slate-700 shadow-[2px_4px_10px_rgba(160,175,200,0.35),-2px_-2px_8px_rgba(255,255,255,0.9)] hover:shadow-[3px_5px_12px_rgba(160,175,200,0.45)]",
+    dark: "bg-slate-900 text-white hover:bg-black shadow-[3px_5px_12px_rgba(15,23,42,0.3)]",
+    gradient:
+      "bg-[#0e59f9] text-white hover:bg-[#0b4de0] active:scale-[0.98] shadow-none",
   };
 
   return (

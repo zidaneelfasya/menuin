@@ -6,6 +6,9 @@ import { getOutletVerificationOverview } from '@/lib/actions/merchant-verificati
 import { getCurrentUser } from '@/lib/actions/auth';
 import { WizardShell } from '@/components/verification/wizard/wizard-shell';
 
+import { Suspense } from 'react';
+import VerificationLoading from '../loading';
+
 export const metadata: Metadata = {
   title: 'Onboarding Verifikasi Bisnis - MENUIN',
   description: 'Alur pendaftaran verifikasi legalitas bisnis, rekening penampungan, dan kepatuhan gerai.',
@@ -15,9 +18,7 @@ type Props = {
   params: Promise<{ outletKey: string }>;
 };
 
-export default async function OnboardingPage({ params }: Props) {
-  const { outletKey } = await params;
-
+async function OnboardingContent({ outletKey }: { outletKey: string }) {
   const user = await getCurrentUser();
   if (!user) {
     redirect('/auth/login');
@@ -59,4 +60,14 @@ export default async function OnboardingPage({ params }: Props) {
   }
 
   return <WizardShell outletKey={outletKey} initialData={data} />;
+}
+
+export default async function OnboardingPage({ params }: Props) {
+  const { outletKey } = await params;
+
+  return (
+    <Suspense fallback={<VerificationLoading />}>
+      <OnboardingContent outletKey={outletKey} />
+    </Suspense>
+  );
 }

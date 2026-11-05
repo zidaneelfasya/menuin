@@ -23,12 +23,12 @@ const tones = [
   { card: "bg-white ring-1 ring-black/[0.08]", dark: false, text: "" },
   { card: "bg-[#f3f7ff] ring-1 ring-[#0E59F9]/15", dark: false, text: "" },
   { card: "bg-[#0E59F9] ring-1 ring-[#0E59F9]", dark: true, text: "text-[#0E59F9]" },
-  { card: "bg-[#f3f7ff] ring-1 ring-[#0E59F9]/15", dark: false, text: "" },
 ];
 
 /** Kartu paket — dipakai di landing (ringkas) dan di /harga. */
 export function PricingCards() {
   const [cycle, setCycle] = useState<BillingCycle>("monthly");
+  const displayPlans = plans.filter((p) => p.id !== "custom");
 
   return (
     <div>
@@ -55,18 +55,18 @@ export function PricingCards() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4 lg:gap-4">
-        {plans.map((plan, i) => {
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:gap-6">
+        {displayPlans.map((plan, i) => {
           const tone = tones[Math.min(i, tones.length - 1)];
           const dark = tone.dark;
           const { price, original, period } = planPrice(plan, cycle);
           return (
             <article
               key={plan.id}
-              className={`relative flex flex-col rounded-[28px] p-7 ${tone.card} ${
+              className={`relative flex flex-col rounded-[28px] p-7 sm:p-8 ${tone.card} ${
                 plan.highlight
-                  ? "shadow-[0_40px_80px_-40px_rgba(14,89,249,0.6)] lg:py-10"
-                  : "lg:my-6"
+                  ? "shadow-[0_40px_80px_-40px_rgba(14,89,249,0.6)] md:py-10"
+                  : "md:my-4 lg:my-6"
               }`}
             >
               {plan.highlight && (

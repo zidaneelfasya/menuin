@@ -2,6 +2,8 @@
 
 Dokumen ini adalah **pedoman desain dan arsitektur visual universal** untuk seluruh ekosistem **Menuin** (Aplikasi Kasir POS, Dashboard Pengelola, Suite Laporan & Analitik, Manajemen Menu, dan Pengaturan Outlet).
 
+> 📌 **Spesifikasi Hero 3D Interaktif WebGL**: Lihat [`docs/design/HERO_3D_SCENE_SOURCE_OF_TRUTH.md`](file:///home/zidaneelfasya/D/Github/menuin/docs/design/HERO_3D_SCENE_SOURCE_OF_TRUTH.md) untuk rumus matematika grounding, koordinat Three.js, orientasi Euler, dan trajektori kamera 6-stage.
+
 Seluruh desainer, frontend engineer, dan AI coding agent **WAJIB MEMATUHI** aturan mutlak dalam dokumen ini tanpa pengecualian.
 
 ---
@@ -414,10 +416,79 @@ Penggunaan ikon anchor di dalam sebuah kartu (card) wajib mematuhi aturan kontra
    - Teks atau ikon di dalamnya **wajib berwarna biru Menuin** (`text-[#0e59f9]`).
    - Contoh: Hero summary card di dashboard atau kasir (`w-10 h-10 rounded-full bg-white text-[#0e59f9] flex items-center justify-center`).
 
+---
 
+## 12. Standar Gaya Menuin Neumorphism (Soft UI) — Pure White Borderless & Tactile Precision
 
+> [!IMPORTANT]
+> **ATURAN MUTLAK PENERAPAN (ON-DEMAND ONLY):**
+> Gaya Neumorphism ini **BUKAN** default style untuk platform Menuin. Style default Menuin tetap clean modern flat borderless/hairline standard.
+> Gaya Neumorphism **HANYA BOLEH DITERAPKAN JIKA USER SECARA EKSPLISIT MEMINTA** (misalnya: *"buat gaya neumorphism"*, *"terapkan soft UI tactile"*, atau komponen khusus seperti floating navbar yang telah disepakati).
+> Agent **DILARANG KERAS** menerapkan gaya neumorphism secara sepihak atau tiba-tiba ke halaman/komponen lain tanpa instruksi spesifik.
 
+Gaya Neumorphism Menuin adalah varian antarmuka *soft tactile UI* resmi yang dirancang untuk elemen-elemen khusus seperti **floating navbar, kartu metrik interaktif, kontrol kasir/POS, toggle, dan tombol aksi utama**. 
 
+Standar ini mempertahankan integritas **The 6 Zero Principles** Menuin (100% solid colors tanpa gradasi, plafon berat font `font-semibold`, dwi-tipografi Poppins + Inter tabular-nums).
 
+### 12.1. Tiga Pilar Neumorphism Menuin
+1. **Pure White Surface (`bg-white`):** Berbeda dari neumorphism konvensional era lama yang memakai abu-abu redup/muddy di seluruh kartu, Menuin menggunakan **warna putih murni (`bg-white` / `#ffffff`)** di atas kanvas abu lembut (`#f8fafc` / `bg-slate-50/50`).
+2. **100% Borderless (`border-none`):** Seluruh kontainer, kartu, tombol, dan pill navigasi neumorphic **DILARANG KERAS** menggunakan border garis kaku (`border border-...`). Pemisahan ruang dan ilusi kedalaman murni diciptakan oleh bayangan difus multi-stop.
+3. **Multi-Stop Slate-Periwinkle Shadows:** Bayangan menggunakan rona slate-periwinkle yang sejuk dan bersih (`rgba(160, 175, 200, ...)`), dipadukan dengan pantulan balik putih terang (`rgba(255, 255, 255, 0.9)`), menghasilkan kesan mengambang yang mewah tanpa kesan kotor.
 
+### 12.2. Spesifikasi Token Elevasi Bayangan (Shadow Tokens)
 
+| Tipe Elemen | Deskripsi | Nilai CSS Shadow |
+| :--- | :--- | :--- |
+| **Kontainer / Card Mengambang** | Navbar melayang, kartu metrik, panel modal | `shadow-[6px_8px_20px_rgba(160,175,200,0.32),-4px_-4px_16px_rgba(255,255,255,0.9),0_1px_3px_rgba(15,23,42,0.04)]` |
+| **Raised Pill / Hover Bubble** | Item navigasi yang dihover, secondary button raised | `shadow-[2px_4px_12px_rgba(160,175,200,0.42),-2px_-2px_8px_rgba(255,255,255,0.9)]` |
+| **Dropdown / Flyout Card** | Sub-menu dropdown, kartu popup | `shadow-[8px_14px_30px_rgba(160,175,200,0.35),-4px_-4px_16px_rgba(255,255,255,0.9)]` |
+| **Inset Socket (Input & Track)** | Kolom pencarian, input form, track toggle | `shadow-[inset_2px_2px_5px_rgba(160,175,200,0.35),inset_-2px_-2px_5px_rgba(255,255,255,0.95)]` |
+| **Inset Input Padat (Deep Socket)**| Input teks utama kasir, list container inset | `shadow-[inset_3px_4px_8px_rgba(160,175,200,0.38),inset_-3px_-3px_8px_rgba(255,255,255,0.95)]` |
+
+### 12.3. Standar Tombol Tactile 3-State (Zero Blue Glowing Halo)
+
+Tombol aksi utama (seperti *"Coba gratis"*, *"Masuk dashboard"*, *"Buka kasir"*) wajib menggunakan **3-State Tactile Physics** yang meniru tombol fisik presisi tinggi:
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│ 1. NORMAL STATE                                                        │
+│    Fill solid: bg-[#1d68fe]                                            │
+│    Highlight atas: inset 0 1.5px 1.5px 0 rgba(255,255,255,0.45)        │
+│    Shade bawah:    inset 0 -1.5px 2px 0 rgba(10,40,130,0.35)           │
+│    Drop shadow:    0 8px 18px -2px rgba(100,130,190,0.38),             │
+│                    0 3px 6px -1px rgba(15,23,42,0.08)                 │
+│    (TIDAK ADA blue glow aura / bayangan berpendar biru)                │
+├────────────────────────────────────────────────────────────────────────┤
+│ 2. HOVER STATE                                                         │
+│    Fill solid: hover:bg-[#2472fe]                                      │
+│    Highlight atas lebih terang: inset 0 2px 2px 0 rgba(255,255,255,0.75)│
+│    Shade bawah:    inset 0 -1.5px 2px 0 rgba(10,40,130,0.35)           │
+│    Drop shadow bertambah: 0 12px 24px -3px rgba(100,130,190,0.45),     │
+│                           0 4px 8px -2px rgba(15,23,42,0.12)          │
+├────────────────────────────────────────────────────────────────────────┤
+│ 3. PRESSED / ACTIVE STATE                                              │
+│    Fill solid: active:bg-[#155de8]                                     │
+│    Translasi fisik: active:translate-y-[1px]                           │
+│    Socket atas gelap: inset 0 6px 10px 0 rgba(10,40,130,0.75),        │
+│                       inset 0 2px 4px 0 rgba(5,20,80,0.6)              │
+│    Highlight bibir bawah: inset 0 -2px 3px 0 rgba(255,255,255,0.4)     │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+**Implementasi Kode Tailwind Kelas Lengkap:**
+```html
+<button class="bg-[#1d68fe] text-white shadow-[inset_0_1.5px_1.5px_0_rgba(255,255,255,0.45),inset_0_-1.5px_2px_0_rgba(10,40,130,0.35),0_8px_18px_-2px_rgba(100,130,190,0.38),0_3px_6px_-1px_rgba(15,23,42,0.08)] hover:bg-[#2472fe] hover:shadow-[inset_0_2px_2px_0_rgba(255,255,255,0.75),inset_0_-1.5px_2px_0_rgba(10,40,130,0.35),0_12px_24px_-3px_rgba(100,130,190,0.45),0_4px_8px_-2px_rgba(15,23,42,0.12)] active:bg-[#155de8] active:translate-y-[1px] active:shadow-[inset_0_6px_10px_0_rgba(10,40,130,0.75),inset_0_2px_4px_0_rgba(5,20,80,0.6),inset_0_-2px_3px_0_rgba(255,255,255,0.4)] transition-all duration-150 ease-out border-none rounded-full px-5 py-2 font-medium text-sm">
+  Coba gratis
+</button>
+```
+
+### 12.4. Floating Navbar & Hover Pill Interaktif
+- **Kontainer Navbar:** `rounded-full bg-white px-6 py-2 shadow-[6px_8px_20px_rgba(160,175,200,0.32),-4px_-4px_16px_rgba(255,255,255,0.9),0_1px_3px_rgba(15,23,42,0.04)] border-none`.
+- **Item Hover Bubble (Moving Pill):** `rounded-full bg-white shadow-[2px_4px_12px_rgba(160,175,200,0.42),-2px_-2px_8px_rgba(255,255,255,0.9)] border-none` bergerak halus dengan spring physics (`stiffness: 420, damping: 30`).
+- **Tombol Masuk (Ghost/Pill Hover):** `text-slate-600 hover:text-slate-900 hover:bg-white hover:shadow-[2px_4px_12px_rgba(160,175,200,0.42),-2px_-2px_8px_rgba(255,255,255,0.9)] transition-all duration-200 rounded-full px-4 py-2 border-none`.
+
+### 12.5. Anti-Patterns (Larangan Mutlak pada Neumorphism Menuin)
+1. ❌ **Dilarang Border Garis Kaku:** Dilarang menambahkan `border border-slate-200` atau border apapun pada elemen neumorphic. Elemen harus 100% borderless (`border-none`).
+2. ❌ **Dilarang Blue Glowing Shadow:** Dilarang membuat tombol biru dengan pendaran neon seperti `shadow-[0_0_20px_#0e59f9]`. Drop shadow tombol biru harus bernuansa slate netral (`rgba(100,130,190,0.38)`).
+3. ❌ **Dilarang Gradasi Linear Permukaan:** Dilarang memakai `bg-gradient-to-b` atau `linear-gradient` pada badan tombol maupun kartu. Seluruh fill wajib solid `#1d68fe` atau `#ffffff`.
+4. ❌ **Dilarang Background Abu Gelap Menyeluruh:** Hindari membuat latar belakang seluruh kartu menjadi abu-abu semen tebal. Gunakan putih murni `bg-white` agar antarmuka tetap bersih, terang, dan higienis untuk aplikasi kasir F&B.

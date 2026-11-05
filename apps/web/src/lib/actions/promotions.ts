@@ -1,5 +1,6 @@
 'use server';
 
+import { cache } from 'react';
 import { db } from '@/lib/db';
 import { promotions, tenants, products, transactions } from '@/lib/db/schema';
 import { eq, and, desc, sql, ne, or } from 'drizzle-orm';
@@ -34,42 +35,66 @@ import { calculatePromoDiscount, type CartItemForPromo } from '@/lib/utils/promo
 
 export type { CartItemForPromo };
 
-export async function getPromotions() {
+export const getPromotions = cache(async () => {
   try {
     const user = await getCurrentUser();
     if (!user || !user.tenantId) {
       return { success: false, error: 'Unauthorized or no dashboard' };
     }
 
-    const data = await db
-      .select()
-      .from(promotions)
-      .where(eq(promotions.tenantId, user.tenantId))
-      .orderBy(desc(promotions.createdAt));
+    // Parallel query for promos and aggregated transaction usage stats
+    const [promos, statsRows] = await Promise.all([
+      db
+        .select()
+        .from(promotions)
+        .where(eq(promotions.tenantId, user.tenantId))
+        .orderBy(desc(promotions.createdAt)),
+      db
+        .select({
+          promotionId: transactions.promotionId,
+          promoCode: sql<string>`UPPER(${transactions.promoCode})`,
+          usageCount: sql<number>`CAST(COUNT(*) AS INT)`,
+          totalDiscount: sql<number>`COALESCE(SUM(CAST(${transactions.discount} AS NUMERIC)), 0)`,
+        })
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.tenantId, user.tenantId),
+            ne(transactions.status, 'CANCELED'),
+            or(
+              sql`${transactions.promotionId} IS NOT NULL`,
+              sql`${transactions.promoCode} IS NOT NULL`
+            )
+          )
+        )
+        .groupBy(transactions.promotionId, sql`UPPER(${transactions.promoCode})`),
+    ]);
 
-    // Fetch transactions stats for tenant
-    const txs = await db
-      .select({
-        id: transactions.id,
-        promoCode: transactions.promoCode,
-        promotionId: transactions.promotionId,
-        discount: transactions.discount,
-        status: transactions.status,
-      })
-      .from(transactions)
-      .where(and(
-        eq(transactions.tenantId, user.tenantId),
-        ne(transactions.status, 'CANCELED')
-      ));
+    // Build lookup maps for instant O(1) matching
+    const statsById = new Map<string, { usage: number; discount: number }>();
+    const statsByCode = new Map<string, { usage: number; discount: number }>();
 
-    const dataWithStats = data.map((promo) => {
-      const matching = txs.filter((t) =>
-        (t.promotionId && t.promotionId === promo.id) ||
-        (t.promoCode && t.promoCode.toUpperCase() === promo.code.toUpperCase())
-      );
+    for (const row of statsRows) {
+      const usage = Number(row.usageCount) || 0;
+      const discount = Number(row.totalDiscount) || 0;
+      if (row.promotionId) {
+        const cur = statsById.get(row.promotionId) || { usage: 0, discount: 0 };
+        statsById.set(row.promotionId, { usage: cur.usage + usage, discount: cur.discount + discount });
+      }
+      if (row.promoCode) {
+        const codeKey = row.promoCode.trim().toUpperCase();
+        const cur = statsByCode.get(codeKey) || { usage: 0, discount: 0 };
+        statsByCode.set(codeKey, { usage: cur.usage + usage, discount: cur.discount + discount });
+      }
+    }
 
-      const totalUsage = matching.length;
-      const totalDiscountValue = matching.reduce((sum, t) => sum + parseFloat(t.discount || '0'), 0);
+    const dataWithStats = promos.map((promo) => {
+      const fromId = statsById.get(promo.id);
+      const fromCode = statsByCode.get(promo.code.toUpperCase());
+
+      // Prefer ID match if exists, fallback to code match
+      const totalUsage = fromId ? fromId.usage : fromCode ? fromCode.usage : 0;
+      const totalDiscountValue = fromId ? fromId.discount : fromCode ? fromCode.discount : 0;
 
       return {
         ...promo,
@@ -83,9 +108,9 @@ export async function getPromotions() {
     console.error('Error fetching promotions:', error);
     return { success: false, error: 'Gagal mengambil data promo' };
   }
-}
+});
 
-export async function getActivePromotions() {
+export const getActivePromotions = cache(async () => {
   try {
     const user = await getCurrentUser();
     if (!user || !user.tenantId) {
@@ -103,9 +128,9 @@ export async function getActivePromotions() {
     console.error('Error fetching active promotions:', error);
     return { success: false, error: 'Gagal mengambil promo aktif' };
   }
-}
+});
 
-export async function getTenantProductsForPromo() {
+export const getTenantProductsForPromo = cache(async () => {
   try {
     const user = await getCurrentUser();
     if (!user || !user.tenantId) {
@@ -130,7 +155,7 @@ export async function getTenantProductsForPromo() {
     console.error('Error fetching products for promo:', error);
     return { success: false, error: 'Gagal mengambil daftar produk' };
   }
-}
+});
 
 export async function getPublicPromotions(tenantSlug: string) {
   try {

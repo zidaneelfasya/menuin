@@ -1,0 +1,21 @@
+{
+  "name": "menuin-load-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Production-grade staging load-testing suite for MENUIN multi-tenant architecture",
+  "scripts": {
+    "seed": "tsx --env-file=../apps/web/.env.local scripts/seed-staging-data.ts",
+    "cleanup": "tsx --env-file=../apps/web/.env.local scripts/cleanup-staging-data.ts",
+    "mock:doku": "tsx --env-file=../apps/web/.env.local scripts/mock-doku-webhook.ts",
+    "monitor": "bash monitoring/monitor-vps-resources.sh",
+    "test:runner": "tsx --env-file=../apps/web/.env.local runner/run-load-test.ts",
+    "k6:smoke": "k6 run --config config/test-config.json scenarios/05-combined-rush-workload.js -e SCENARIO=smoke",
+    "k6:expected": "k6 run --config config/test-config.json scenarios/05-combined-rush-workload.js -e SCENARIO=expected",
+    "k6:peak": "k6 run --config config/test-config.json scenarios/05-combined-rush-workload.js -e SCENARIO=peak",
+    "k6:soak": "k6 run --config config/test-config.json scenarios/05-combined-rush-workload.js -e SCENARIO=soak"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.15",
+    "typescript": "^5"
+  }
+}

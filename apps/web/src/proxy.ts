@@ -2,6 +2,10 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { updateSession } from './lib/supabase/middleware';
 
 export async function proxy(request: NextRequest) {
+  // Strip untrusted internal auth headers from incoming client requests
+  request.headers.delete('x-menuin-auth-user-id');
+  request.headers.delete('x-menuin-auth-email');
+
   const url = request.nextUrl.clone();
   const rawHost = request.headers.get('x-forwarded-host')?.split(',')[0].trim() || request.headers.get('host') || request.nextUrl.hostname || '';
   const currentHost = rawHost.split(':')[0].toLowerCase(); // remove port and normalize to lowercase

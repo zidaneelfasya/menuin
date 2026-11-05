@@ -42,6 +42,7 @@ Dokumen ini adalah **Master Source of Truth** untuk seluruh *skills* yang terins
 | **Aksesibilitas (A11y)** | `a11y-debugging` | `~/.gemini/config/plugins/chrome-devtools-plugin/skills/a11y-debugging/SKILL.md` | - Menguji kontras warna, ARIA labels, navigasi keyboard (focus states), dan ukuran tap target (WCAG 2.1). |
 | **Performa LCP Web Vitals** | `debug-optimize-lcp` | `~/.gemini/config/plugins/chrome-devtools-plugin/skills/debug-optimize-lcp/SKILL.md` | - Mengoptimalkan Core Web Vitals, Largest Contentful Paint (LCP), loading gambar hero dan font. |
 | **Memory & Resource Leak** | `memory-leak-debugging` | `~/.gemini/config/plugins/chrome-devtools-plugin/skills/memory-leak-debugging/SKILL.md` | - Mengatasi lonjakan memori, kebocoran listener event di React, atau OOM pada build server. |
+| **Desain Neumorphism / Soft UI** | `menuin-neumorphism` | `.agents/skills/menuin-neumorphism/SKILL.md` | - **HANYA DIGUNAKAN JIKA DIMINTA EKSPLISIT OLEH USER**. Dilarang keras menerapkan neumorphism secara tiba-tiba/spontan tanpa permintaan.<br>- Membangun komponen UI bergaya Neumorphism / Soft UI tactile untuk Menuin jika diminta.<br>- Template & panduan resmi elemen putih murni (`bg-white`), 100% borderless (`border-none`), multi-layer shadow slate-periwinkle.<br>- Tombol tactile 3-state (Normal, Hover, Pressed tanpa blue glowing halo). |
 | **Penemuan Skill Baru** | `find-skills` | `.agents/skills/find-skills/SKILL.md` | - Membantu pengguna mencari dan menginstal kemampuan baru ketika ada fitur khusus yang belum tercakup. |
 
 ---
@@ -53,7 +54,8 @@ flowchart TD
     Start["Instruksi Diterima"] --> Q1{"Apakah instruksi menyentuh UI, layout, atau visual?"}
     
     Q1 -- "Ya" --> Q1_Type{"Tipe Kebutuhan Visual?"}
-    Q1_Type -- "Desain UI / Dashboard / POS" --> S_UI["Aktifkan: ui-ux-pro-max + high-end-visual-design"]
+    Q1_Type -- "Desain UI / Dashboard / POS Standar (Default)" --> S_UI["Aktifkan: ui-ux-pro-max + high-end-visual-design"]
+    Q1_Type -- "Neumorphism / Soft UI (HANYA jika diminta eksplisit)" --> S_Neu["Aktifkan: menuin-neumorphism"]
     Q1_Type -- "Audit / Refactor Tampilan Lama" --> S_Audit["Aktifkan: impeccable + redesign-existing-projects"]
     Q1_Type -- "Landing Page / Marketing" --> S_Landing["Aktifkan: design-taste-frontend + hallmark"]
     Q1_Type -- "Perlu Gambar Referensi / Mockup" --> S_Img["Aktifkan: imagegen-frontend-web / imagegen-frontend-mobile"]

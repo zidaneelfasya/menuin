@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getStatusDescriptor, type VerificationItemStatus } from '@/lib/verification/ui-status';
+import { usePageTransition } from '@/components/providers/page-transition-provider';
 
 interface PillarCardProps {
   eyebrow: string;
@@ -33,6 +34,7 @@ export function PillarCard({
   className,
 }: PillarCardProps) {
   const router = useRouter();
+  const { navigateWithTransition, prefetchRoute } = usePageTransition();
   const desc = getStatusDescriptor(status);
 
   const renderIndicator = (s: VerificationItemStatus) => {
@@ -56,11 +58,12 @@ export function PillarCard({
     <div
       role="button"
       tabIndex={0}
-      onClick={() => router.push(href)}
+      onMouseEnter={() => prefetchRoute(href)}
+      onClick={() => navigateWithTransition(href)}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          router.push(href);
+          navigateWithTransition(href);
         }
       }}
       className={cn(
@@ -106,7 +109,7 @@ export function PillarCard({
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              router.push(editHref || href);
+              navigateWithTransition(editHref || href);
             }}
             className="group/editbtn w-7 h-7 rounded-full bg-blue-50 hover:bg-[#0e59f9] text-[#0e59f9] hover:text-white flex items-center justify-center transition-all duration-200 ease-out active:scale-90 shadow-2xs hover:shadow-xs cursor-pointer select-none flex-shrink-0"
             title="Perbaiki Data (Buka Formulir Onboarding)"

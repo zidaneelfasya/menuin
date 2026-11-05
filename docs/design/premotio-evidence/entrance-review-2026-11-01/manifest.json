@@ -1,0 +1,124 @@
+{
+  "review_date": "2026-11-01",
+  "implementation_jam": {
+    "id": "3b4489c1-0e99-46b5-91a6-b21ed3dfbe86",
+    "duration_ms": 19460,
+    "frames_inspected_ms": [
+      0,
+      1200,
+      2100,
+      2800,
+      3500,
+      4200,
+      6600,
+      7400,
+      8500,
+      10000,
+      11500
+    ],
+    "input_limit": "Only one keyboard event; no recorded scroll events; gesture timing is not recoverable."
+  },
+  "reference_jam": {
+    "id": "8a360bcb-b640-465c-9a3f-711d8bc7f710",
+    "entrance_frames_inspected_ms": [
+      7500,
+      8000,
+      8500,
+      9000,
+      9500,
+      10000,
+      10500,
+      11000
+    ]
+  },
+  "attachments": [
+    {
+      "file": "01-warp-peak.png",
+      "origin": "user attachment",
+      "sha256": "8582a73c158685f9d63e4a609c444dbcf479674fb6ae8356ca14db2c9b3bc782"
+    },
+    {
+      "file": "02-tunnel.png",
+      "origin": "user attachment",
+      "sha256": "fb314fa7fd06675a7da12d4ca792ab534d69db6c1593292c68bc01e339377763"
+    },
+    {
+      "file": "03-phone-back-warp.png",
+      "origin": "user attachment",
+      "sha256": "d52e74d7f645423b96ddb31b838a6c88cfb7fab48ac804f3a6fb8e461dd4a7f7"
+    },
+    {
+      "file": "04-profile-reveal.png",
+      "origin": "user attachment",
+      "sha256": "ab4f47f97e1bdf6e0bccdb76df2c734824ada034224a9b32ef4fa26314f3c5af"
+    },
+    {
+      "file": "05-triptych.png",
+      "origin": "user attachment",
+      "sha256": "4c2c11dc67e88cdc62ee632cda03af789e72d7e1105f9ff868c2f293f72d1010"
+    }
+  ],
+  "source_evidence": [
+    {
+      "file": "/tmp/premotio-source/Xc5JkAqg.js.formatted",
+      "sha256": "1eeca0e2758304602e945d15e95ac57e4bebc730ffc8338a56733d2d8acf6f2a"
+    },
+    {
+      "file": "/tmp/premotio-source/CGu4ElgJ.js.formatted",
+      "sha256": "4c76e12132a53f87769157f27d8baa192e158f51f0bd82954a68fdb1fe0fdbed"
+    }
+  ],
+  "runtime_limit": "No new live local browser session; this review uses Jam frames and source inspection.",
+  "implementation_sources": [
+    {
+      "file": "apps/web/src/components/landing/device-story-renderer.ts",
+      "sha256": "4006a190066f550cb3ef06b8cf16ea7506455aba0af79438fafdf9241561de55"
+    },
+    {
+      "file": "apps/web/src/components/landing/device-story-motion.ts",
+      "sha256": "ef8bc1556df9a15af29efb68c83258617fd4baea949be0ddfda117a7b7be6516"
+    },
+    {
+      "file": "apps/web/src/components/landing/device-export-story.tsx",
+      "sha256": "a2b85cac2b027f9dcc8f43ba8f95ce5295155e526817d44e0696222b4549befc"
+    },
+    {
+      "file": "apps/web/src/components/landing/device-export-story.module.css",
+      "sha256": "5b33620fd31c445a4352ebf99427bcfe98865b392a50de358a67294a5607a1b5"
+    },
+    {
+      "file": "apps/web/src/components/landing-experiment-page.tsx",
+      "sha256": "29a3dfabd0fec3572f932da98ffbab501666a021d3c47a677f634fbe333a4342"
+    }
+  ],
+  "numerical_checks": {
+    "type": "Equation evaluations, not browser runtime tests",
+    "fractional_equilibrium": {
+      "spring_stiffness": 120,
+      "damping": 15,
+      "target": 0.4,
+      "duration_seconds": 6,
+      "substep_seconds": 0.008333333333333333,
+      "position": 0.40000000000000036,
+      "velocity": -2.6645352590952457e-15,
+      "aspect_ratio": 0.715909090909091
+    },
+    "original_warp_example": {
+      "output_radius": 0.5,
+      "k": 22,
+      "zoom": 2.3,
+      "source_radius": 0.019681683922286638
+    },
+    "current_warp_example": {
+      "output_radius": 0.5,
+      "warp": 0.65,
+      "source_radius_factor": 0.97725
+    },
+    "geometry_example": {
+      "room_width": 280,
+      "room_height": 400,
+      "square_preview_width": 230.25380710659903,
+      "square_outline_width": 274.4
+    }
+  }
+}

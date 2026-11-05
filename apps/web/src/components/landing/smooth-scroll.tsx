@@ -26,13 +26,33 @@ export default function SmoothScroll() {
     gsap.registerPlugin(ScrollTrigger);
 
     const lenis = new Lenis({
-      duration: 1.05,
+      duration: 0.55,
       easing: (t: number) => 1 - Math.pow(1 - t, 3),
+      wheelMultiplier: 0.85,
       smoothWheel: true,
+      // A pinned story may consume a gesture before the page's smooth scroll.
+      virtualScroll: (input) => {
+        if (input.event.defaultPrevented) return false;
+        const story = document.querySelector<HTMLElement>('#device-export-story[data-animated="true"]');
+        const progress = Number(story?.dataset.progress);
+        if (story && input.event.type === "wheel" && progress >= 0.64 && progress < 0.87 && !input.event.ctrlKey && !input.event.metaKey) {
+          input.deltaY *= 0.45;
+        }
+        if (input.event.type === "wheel" && !input.event.ctrlKey && !input.event.metaKey) {
+          const filter = (window as unknown as { __deviceStoryWheelFilter?: (delta: number, target: number) => number }).__deviceStoryWheelFilter;
+          if (filter) {
+            input.deltaY = filter(input.deltaY, lenis.targetScroll);
+            if (!input.deltaY) { if (input.event.cancelable) input.event.preventDefault(); return false; }
+          }
+        }
+        return true;
+      },
       // Sentuh dibiarkan native: di ponsel, gulir yang dilambatkan terasa
       // seperti aplikasi yang tersendat.
       syncTouch: false,
     });
+
+    (window as unknown as { __lenis?: Lenis }).__lenis = lenis;
 
     lenis.on("scroll", ScrollTrigger.update);
 
@@ -62,6 +82,7 @@ export default function SmoothScroll() {
       document.removeEventListener("click", onAnchorClick);
       gsap.ticker.remove(raf);
       gsap.ticker.lagSmoothing(500, 33);
+      delete (window as unknown as { __lenis?: Lenis }).__lenis;
       lenis.destroy();
     };
   }, []);

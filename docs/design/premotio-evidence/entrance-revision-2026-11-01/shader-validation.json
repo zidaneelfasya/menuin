@@ -1,0 +1,54 @@
+{
+  "driver": "OpenGL ES 3.2 Mesa 25.1.5-1pop0~1756399231~22.04~b84bab8",
+  "scope": "Native GLES compile of extracted shader sources with Three colorspace chunks; not a browser integration or visual test.",
+  "results": [
+    {
+      "shader": "VERTEX",
+      "variant": "default",
+      "compiled": true,
+      "log": ""
+    },
+    {
+      "shader": "SCREEN",
+      "variant": "default",
+      "compiled": true,
+      "log": ""
+    },
+    {
+      "shader": "PREVIEW",
+      "variant": "default",
+      "compiled": true,
+      "log": ""
+    },
+    {
+      "shader": "COMPOSITE",
+      "variant": "full",
+      "compiled": true,
+      "log": ""
+    },
+    {
+      "shader": "COMPOSITE",
+      "variant": "half",
+      "compiled": true,
+      "log": ""
+    },
+    {
+      "shader": "CARD_VERTEX",
+      "variant": "default",
+      "compiled": true,
+      "log": ""
+    },
+    {
+      "shader": "CARD_VERTEX",
+      "variant": "instanced",
+      "compiled": true,
+      "log": ""
+    },
+    {
+      "shader": "CARD_FRAGMENT",
+      "variant": "default",
+      "compiled": true,
+      "log": ""
+    }
+  ]
+}
