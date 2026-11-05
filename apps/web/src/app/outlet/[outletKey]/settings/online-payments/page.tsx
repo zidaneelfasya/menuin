@@ -4,15 +4,17 @@ import { getCurrentUser } from '@/lib/actions/auth';
 import { getOnlinePayments } from '@/lib/actions/online-payments';
 import { OnlinePaymentsClient } from './online-payments-client';
 
+import { Suspense } from 'react';
+import OnlinePaymentsLoading from './loading';
+
 export const metadata: Metadata = {
   title: 'Transaksi Online - Menuin',
 };
 
 type Props = { searchParams: Promise<{ view?: string }> };
 
-export default async function OnlinePaymentsPage({ searchParams }: Props) {
+async function OnlinePaymentsContent({ view }: { view?: string }) {
   await connection();
-  const { view } = await searchParams;
   const filter = view === 'all' ? 'ALL' : 'REVIEW';
   const [user, result] = await Promise.all([getCurrentUser(), getOnlinePayments(filter)]);
 
@@ -37,5 +39,15 @@ export default async function OnlinePaymentsPage({ searchParams }: Props) {
       reviewCount={result.reviewCount}
       canImportSettlement={user?.role === 'OWNER' || (user?.role as string) === 'SYSTEM_ADMIN'}
     />
+  );
+}
+
+export default async function OnlinePaymentsPage({ searchParams }: Props) {
+  const { view } = await searchParams;
+
+  return (
+    <Suspense fallback={<OnlinePaymentsLoading />}>
+      <OnlinePaymentsContent view={view} />
+    </Suspense>
   );
 }

@@ -1,0 +1,32 @@
+{
+  "date": "2026-11-02",
+  "route": "/landing-experiment",
+  "recording": "https://jam.dev/c/da217e1a-2900-41ce-b795-4ae99ef58630",
+  "recordingFramesMs": [6853, 23299],
+  "model": {
+    "file": "apps/web/public/hero/3d/iphone_17_pro_max_silver.glb",
+    "sha256": "5fa38d647c489a9cbac32701f2b0fcbec329c29abc2f49f660bcc19043cec7bc",
+    "bytes": 331944,
+    "triangles": 18638,
+    "drawsPerHandset": 12,
+    "meshoptExponentialPrecisionBits": 20,
+    "embeddedImages": 1
+  },
+  "rendererSha256": "d60a240d38f67c3e67cc92f922c69f8454770ed85d61588fb9b263e5301af37c",
+  "checks": {
+    "offlineGLTFLoaderAndMeshoptDecode": "passed",
+    "screenUvDimensionsNormalsMaterialsContract": "passed",
+    "animationTestsPassed": 18,
+    "rendererEslint": "passed",
+    "projectTypeScript": "passed",
+    "productionBuild": "passed",
+    "nativeGlesShaderVariantsCompiled": 9,
+    "blenderPreviewAnglesReviewed": ["front-three-quarter", "rear-three-quarter", "triptych"]
+  },
+  "limits": [
+    "Preview images are Blender renders, not website screenshots.",
+    "Native GLES validation checks section shader syntax and the body ACES function, not the entire linked browser PBR material.",
+    "Local browser origin access remains denied; visual parity, actual scroll rendering, FPS and mobile GPU cost remain unverified.",
+    "The independently authored handset is a visual reconstruction, not manufacturing CAD or an official Apple model."
+  ]
+}

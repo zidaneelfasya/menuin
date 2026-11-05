@@ -1,0 +1,70 @@
+{
+  "date": "2026-11-01",
+  "target": "/landing-experiment, after FeatureGridMinimal",
+  "checks": {
+    "behavior_tests": {
+      "passed": 18,
+      "files": [
+        "device-story-motion.test.ts",
+        "device-story-scroll.test.ts"
+      ]
+    },
+    "eslint": "passed for seven related TypeScript files",
+    "typescript": "passed, noEmit with incremental false",
+    "production_build": {
+      "status": "passed",
+      "command": "npm run build --workspace=web",
+      "log": "/tmp/menuin-story-revision-build-verified.log",
+      "log_sha256": "01c43442823dd0a52470131d84cd60c21e967da7624bf740b0a895449e46b817"
+    },
+    "native_gles_shader_compile": "8 variants passed; see shader-validation.json",
+    "optimized_texture_url": "getImageProps produces w=640&q=75"
+  },
+  "browser_verification": {
+    "status": "blocked",
+    "origin": "http://127.0.0.1:3000",
+    "reason": "Browser permission gate still denies origin due to saved permission or managed policy, after the user reported updating permission. No alternate browser path used.",
+    "not_verified": [
+      "visual fidelity",
+      "live gesture feel",
+      "mobile/desktop layout",
+      "image optimizer HTTP responses",
+      "GPU performance"
+    ]
+  },
+  "asset_policy": "Existing GLB and images reused. No new source visual assets and no changes to original image files. Ring images use framework optimized URLs.",
+  "files": [
+    {
+      "file": "apps/web/src/components/landing/device-export-story.tsx",
+      "sha256": "eb5e12d11ba6f74af041e82b31e08221464f71856e1ddf362bd1328bcd670815"
+    },
+    {
+      "file": "apps/web/src/components/landing/device-export-story.module.css",
+      "sha256": "99499c6eb062c90c0016ec462c5f857245a18f803fb47f287d29ea85c1331a33"
+    },
+    {
+      "file": "apps/web/src/components/landing/device-story-motion.ts",
+      "sha256": "ff627e0c1f058d02eccbf78c1722e55a981c2aaf71c477e634efe0a46b054e21"
+    },
+    {
+      "file": "apps/web/src/components/landing/device-story-renderer.ts",
+      "sha256": "09f51226fd46ddc674bf48675e02691ce9ceeece107249d49f56c5c5bc8e375f"
+    },
+    {
+      "file": "apps/web/src/components/landing/device-story-scroll.ts",
+      "sha256": "fac81c25c1074f8cd4c5b9028245553dc4644f028f52c3e874277153ae283c8b"
+    },
+    {
+      "file": "apps/web/src/components/landing/device-story-motion.test.ts",
+      "sha256": "46cf46d8b1404c285a8b5113604ed119b68c81998fce8fb7088ee26c2cbdd031"
+    },
+    {
+      "file": "apps/web/src/components/landing/device-story-scroll.test.ts",
+      "sha256": "be79b5fce915cbce9c8e36563b0137a9d96cf99deb48fb0cbefb8ed5cb73988a"
+    },
+    {
+      "file": "apps/web/src/components/landing/smooth-scroll.tsx",
+      "sha256": "0621c81d334b468651b14ee2b99edd61e7312edc0e5b7824e21e3ba70f9bf439"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useRef, ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { getOrderById } from "@/lib/actions/orders";
 import { toast } from "sonner";
@@ -29,6 +29,8 @@ export function RealtimeOrderProvider({ children, tenantId }: { children: ReactN
   const [incomingOrders, setIncomingOrders] = useState<Order[]>([]);
   const router = useRouter();
   const pathname = usePathname();
+  const pathnameRef = useRef(pathname);
+  pathnameRef.current = pathname;
 
   const [dismissedPopupIds, setDismissedPopupIds] = useState<Set<string>>(new Set());
   const notifiedOrderIdsRef = useState(() => new Set<string>())[0];
@@ -107,7 +109,8 @@ export function RealtimeOrderProvider({ children, tenantId }: { children: ReactN
               
               // Only trigger router.refresh on POS or transactions list. 
               // The /orders Kanban board manages its own in-memory delta state to prevent SSR thundering herd.
-              if (pathname.includes('/pos') || pathname.includes('/transactions')) {
+              const currentPath = pathnameRef.current;
+              if (currentPath.includes('/pos') || currentPath.includes('/transactions')) {
                 router.refresh();
               }
             }
@@ -129,7 +132,7 @@ export function RealtimeOrderProvider({ children, tenantId }: { children: ReactN
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [tenantId, router, pathname, notifiedOrderIdsRef]);
+  }, [tenantId, router, notifiedOrderIdsRef]);
 
   // Actually accepts and updates DB, removing from both
   const acceptOrder = (orderId: string) => {

@@ -3,6 +3,7 @@ import { Check, Minus } from "lucide-react";
 import { comparison, planPrice, plans, type Cell } from "@/components/landing/pricing-data";
 
 export { PricingCards } from "@/components/landing/pricing-cards";
+export { PricingSection } from "@/components/landing/pricing-section";
 
 function CellValue({ value }: { value: Cell }) {
   if (value === true)

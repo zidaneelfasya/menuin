@@ -113,6 +113,31 @@ export const getAvailableTenants = cache(async () => {
   }));
 });
 
+export const getAvailableTenantsLite = cache(async () => {
+  const { getAuthenticatedAccount } = await import('./auth-context');
+  const account = await getAuthenticatedAccount();
+  
+  const results = await db
+    .select({
+      member: memberships,
+      tenant: tenants,
+    })
+    .from(memberships)
+    .innerJoin(tenants, eq(memberships.tenantId, tenants.id))
+    .where(eq(memberships.accountId, account.id));
+
+  return results.map(row => ({
+    membershipId: row.member.id,
+    role: row.member.role,
+    tenantId: row.tenant.id,
+    name: row.tenant.name,
+    slug: row.tenant.slug,
+    outletKey: row.tenant.outletKey,
+    storeLogoUrl: row.tenant.storeLogoUrl,
+    storeDescription: row.tenant.storeDescription,
+  }));
+});
+
 export const getCurrentUser = cache(async (): Promise<UserProfile | null> => {
   const context = await getCurrentContext();
   if (!context) return null;

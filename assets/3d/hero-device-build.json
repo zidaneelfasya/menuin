@@ -1,0 +1,18 @@
+[
+  {
+    "model": "macbook_pro_silver_hero.glb",
+    "before_triangles": 54024,
+    "triangles": 30683,
+    "before_draws": 96,
+    "draws": 14,
+    "bytes": 295996
+  },
+  {
+    "model": "ipad_pro_space_black_hero.glb",
+    "before_triangles": 5770,
+    "triangles": 5770,
+    "before_draws": 54,
+    "draws": 12,
+    "bytes": 163260
+  }
+]

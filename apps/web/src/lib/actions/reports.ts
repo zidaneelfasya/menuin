@@ -1,5 +1,6 @@
 'use server';
 
+import { cache } from 'react';
 import { db } from '@/lib/db';
 import { 
   transactions, 
@@ -173,7 +174,7 @@ function calculateGatewayFee(t: { gatewayFee?: string | null; platformFee?: stri
 // -------------------------------------------------------------
 // 1. LAPORAN PENJUALAN (SALES REPORT & NOVEL ROUNDED BAR ANALYTICS)
 // -------------------------------------------------------------
-export async function getSalesReport(outletKey: string, params?: DateFilterParams) {
+export const getSalesReport = cache(async (outletKey: string, params?: DateFilterParams) => {
   try {
     const user = await getCurrentUser();
     if (!user || !user.tenantId) {
@@ -193,7 +194,7 @@ export async function getSalesReport(outletKey: string, params?: DateFilterParam
     const { currentStart, currentEnd, prevStart, prevEnd, period } = resolveDateIntervals(params);
 
     // Fetch current transactions, previous transactions, products catalog, and transaction items in parallel
-    const [currentTrxResult, prevTrxResult, productsResult, currentItemsResult] = await Promise.allSettled([
+    const [currentTrxResult, prevTrxResult, productsResult, currentItemsResult, prevItemsResult] = await Promise.allSettled([
       db
         .select()
         .from(transactions)
@@ -258,12 +259,30 @@ export async function getSalesReport(outletKey: string, params?: DateFilterParam
             lte(transactionItems.createdAt, currentEnd)
           )
         ),
+      db
+        .select({
+          productId: transactionItems.productId,
+          quantity: transactionItems.quantity,
+          price: transactionItems.price,
+          subtotal: transactionItems.subtotal,
+          costPrice: products.costPrice,
+        })
+        .from(transactionItems)
+        .leftJoin(products, eq(transactionItems.productId, products.id))
+        .where(
+          and(
+            eq(transactionItems.tenantId, tenant.id),
+            gte(transactionItems.createdAt, prevStart),
+            lte(transactionItems.createdAt, prevEnd)
+          )
+        ),
     ]);
 
     const trxList = currentTrxResult.status === 'fulfilled' ? currentTrxResult.value : [];
     const prevTrxList = prevTrxResult.status === 'fulfilled' ? prevTrxResult.value : [];
     const allTenantProducts = productsResult.status === 'fulfilled' ? productsResult.value : [];
     const allItems = currentItemsResult.status === 'fulfilled' ? currentItemsResult.value : [];
+    const prevItems = prevItemsResult.status === 'fulfilled' ? prevItemsResult.value : [];
 
     // 1. Calculate COGS / HPP, Top Products, Categories, and Items Sold for current period
     const trxIds = trxList.map((t) => t.id);
@@ -314,23 +333,10 @@ export async function getSalesReport(outletKey: string, params?: DateFilterParam
     }
 
     // 2. Calculate COGS / HPP, Items Sold, and Product Sales for previous period (for trend & product growth)
-    const prevTrxIds = prevTrxList.map((t) => t.id);
     let prevTotalHpp = 0;
     let prevTotalItemsSold = 0;
     const prevProductSalesMap: Record<string, { totalQty: number; totalRevenue: number }> = {};
-    if (prevTrxIds.length > 0) {
-      const prevItems = await db
-        .select({
-          productId: transactionItems.productId,
-          quantity: transactionItems.quantity,
-          price: transactionItems.price,
-          subtotal: transactionItems.subtotal,
-          costPrice: products.costPrice,
-        })
-        .from(transactionItems)
-        .leftJoin(products, eq(transactionItems.productId, products.id))
-        .where(inArray(transactionItems.transactionId, prevTrxIds));
-
+    if (prevItems.length > 0) {
       prevItems.forEach((it) => {
         const qty = it.quantity || 1;
         const cost = parseFloat(it.costPrice || '0') || 0;
@@ -871,12 +877,12 @@ export async function getSalesReport(outletKey: string, params?: DateFilterParam
     console.error('Error fetching sales report:', error);
     return { success: false, error: error.message || 'Gagal memuat laporan penjualan' };
   }
-}
+});
 
 // -------------------------------------------------------------
 // 2. LAPORAN OPERASIONAL & PEAK HOURS HEATMAP (GRANETPRO REFERENCE)
 // -------------------------------------------------------------
-export async function getOperationsReport(outletKey: string, params?: DateFilterParams) {
+export const getOperationsReport = cache(async (outletKey: string, params?: DateFilterParams) => {
   try {
     const user = await getCurrentUser();
     if (!user || !user.tenantId) {
@@ -895,7 +901,7 @@ export async function getOperationsReport(outletKey: string, params?: DateFilter
 
     const { currentStart, currentEnd, prevStart, prevEnd, period } = resolveDateIntervals(params);
 
-    const [trxList, prevTrxList] = await Promise.all([
+    const [trxList, prevTrxList, itemRows] = await Promise.all([
       db
         .select()
         .from(transactions)
@@ -914,6 +920,24 @@ export async function getOperationsReport(outletKey: string, params?: DateFilter
             eq(transactions.tenantId, tenant.id),
             gte(transactions.createdAt, prevStart),
             lte(transactions.createdAt, prevEnd)
+          )
+        ),
+      db
+        .select({
+          productId: transactionItems.productId,
+          productName: products.name,
+          categoryName: categories.name,
+          quantity: transactionItems.quantity,
+          subtotal: transactionItems.subtotal,
+        })
+        .from(transactionItems)
+        .leftJoin(products, eq(transactionItems.productId, products.id))
+        .leftJoin(categories, eq(products.categoryId, categories.id))
+        .where(
+          and(
+            eq(transactionItems.tenantId, tenant.id),
+            gte(transactionItems.createdAt, currentStart),
+            lte(transactionItems.createdAt, currentEnd)
           )
         ),
     ]);
@@ -1141,24 +1165,10 @@ export async function getOperationsReport(outletKey: string, params?: DateFilter
     const weekdayOrdersPercent = totalOrders > 0 ? (weekdayOrders / totalOrders) * 100 : 0;
     const weekendOrdersPercent = totalOrders > 0 ? (weekendOrders / totalOrders) * 100 : 0;
 
-    // Product performance query
-    const trxIds = trxList.map((t) => t.id);
+    // Product performance
     let topProducts: { id: string; name: string; categoryName: string; totalQty: number; totalRevenue: number }[] = [];
 
-    if (trxIds.length > 0) {
-      const itemRows = await db
-        .select({
-          productId: transactionItems.productId,
-          productName: products.name,
-          categoryName: categories.name,
-          quantity: transactionItems.quantity,
-          subtotal: transactionItems.subtotal,
-        })
-        .from(transactionItems)
-        .leftJoin(products, eq(transactionItems.productId, products.id))
-        .leftJoin(categories, eq(products.categoryId, categories.id))
-        .where(inArray(transactionItems.transactionId, trxIds));
-
+    if (itemRows.length > 0) {
       const prodMap: Record<string, { id: string; name: string; categoryName: string; totalQty: number; totalRevenue: number }> = {};
       itemRows.forEach((row) => {
         const pId = row.productId || 'unknown';
@@ -1250,12 +1260,12 @@ export async function getOperationsReport(outletKey: string, params?: DateFilter
     console.error('Error fetching operations report:', error);
     return { success: false, error: error.message || 'Gagal memuat laporan operasional' };
   }
-}
+});
 
 // -------------------------------------------------------------
 // 3. LAPORAN KEUANGAN & ARUS KAS (FINANCE, EXPENSES & RECONCILIATION)
 // -------------------------------------------------------------
-export async function getFinanceReport(outletKey: string, params?: DateFilterParams) {
+export const getFinanceReport = cache(async (outletKey: string, params?: DateFilterParams) => {
   try {
     const user = await getCurrentUser();
     if (!user || !user.tenantId) {
@@ -1273,9 +1283,21 @@ export async function getFinanceReport(outletKey: string, params?: DateFilterPar
     }
 
     const { currentStart, currentEnd, prevStart, prevEnd, period } = resolveDateIntervals(params);
+    const activeMonthYear = `${currentStart.getFullYear()}-${String(currentStart.getMonth() + 1).padStart(2, '0')}`;
 
-    // Fetch transactions & previous period transactions
-    const [trxList, prevTrxList, expenseList, prevExpenseList, incomeList, prevIncomeList] = await Promise.all([
+    // Fetch transactions, expenses, incomes, items, movements, shifts, and budgets in a single parallel batch
+    const [
+      trxList,
+      prevTrxList,
+      expenseList,
+      prevExpenseList,
+      incomeList,
+      prevIncomeList,
+      allItems,
+      movements,
+      shiftList,
+      budgetList,
+    ] = await Promise.all([
       db
         .select()
         .from(transactions)
@@ -1337,6 +1359,60 @@ export async function getFinanceReport(outletKey: string, params?: DateFilterPar
             eq(incomes.tenantId, tenant.id),
             gte(incomes.date, prevStart),
             lte(incomes.date, prevEnd)
+          )
+        ),
+      db
+        .select({
+          quantity: transactionItems.quantity,
+          costPrice: products.costPrice,
+        })
+        .from(transactionItems)
+        .leftJoin(products, eq(transactionItems.productId, products.id))
+        .where(
+          and(
+            eq(transactionItems.tenantId, tenant.id),
+            gte(transactionItems.createdAt, currentStart),
+            lte(transactionItems.createdAt, currentEnd)
+          )
+        ),
+      db
+        .select()
+        .from(cashMovements)
+        .where(
+          and(
+            eq(cashMovements.tenantId, tenant.id),
+            gte(cashMovements.createdAt, currentStart),
+            lte(cashMovements.createdAt, currentEnd)
+          )
+        ),
+      db
+        .select({
+          id: shifts.id,
+          tenantId: shifts.tenantId,
+          membershipId: shifts.membershipId,
+          deviceId: shifts.deviceId,
+          startTime: shifts.startTime,
+          endTime: shifts.endTime,
+          startingCash: shifts.startingCash,
+          actualCash: shifts.actualCash,
+          expectedCash: shifts.expectedCash,
+          cashDifference: shifts.cashDifference,
+          status: shifts.status,
+          cashierName: sql<string>`COALESCE(${memberships.displayName}, ${accounts.name}, 'Kasir')`,
+        })
+        .from(shifts)
+        .leftJoin(memberships, eq(shifts.membershipId, memberships.id))
+        .leftJoin(accounts, eq(memberships.accountId, accounts.id))
+        .where(eq(shifts.tenantId, tenant.id))
+        .orderBy(desc(shifts.startTime))
+        .limit(10),
+      db
+        .select()
+        .from(categoryBudgets)
+        .where(
+          and(
+            eq(categoryBudgets.tenantId, tenant.id),
+            inArray(categoryBudgets.periodMonth, [activeMonthYear, 'DEFAULT'])
           )
         ),
     ]);
@@ -1404,30 +1480,13 @@ export async function getFinanceReport(outletKey: string, params?: DateFilterPar
       }
     };
 
-    // Fetch product items to calculate theoretical COGS using indexed tenantId and date range
+    // Calculate theoretical COGS using pre-fetched allItems
     let totalHpp = 0;
-    if (trxList.length > 0) {
-      const allItems = await db
-        .select({
-          quantity: transactionItems.quantity,
-          costPrice: products.costPrice,
-        })
-        .from(transactionItems)
-        .leftJoin(products, eq(transactionItems.productId, products.id))
-        .where(
-          and(
-            eq(transactionItems.tenantId, tenant.id),
-            gte(transactionItems.createdAt, currentStart),
-            lte(transactionItems.createdAt, currentEnd)
-          )
-        );
-
-      allItems.forEach((it) => {
-        const qty = it.quantity || 1;
-        const cost = parseFloat(it.costPrice || '0') || 0;
-        totalHpp += cost * qty;
-      });
-    }
+    allItems.forEach((it) => {
+      const qty = it.quantity || 1;
+      const cost = parseFloat(it.costPrice || '0') || 0;
+      totalHpp += cost * qty;
+    });
 
     // Cash in & Sales calculation with accurate cash vs non-cash classification and MDR gateway fees
     let cashGrossSales = 0;
@@ -1539,18 +1598,7 @@ export async function getFinanceReport(outletKey: string, params?: DateFilterPar
       }
     });
 
-    // Fetch Cash Movements from shifts
-    const movements = await db
-      .select()
-      .from(cashMovements)
-      .where(
-        and(
-          eq(cashMovements.tenantId, tenant.id),
-          gte(cashMovements.createdAt, currentStart),
-          lte(cashMovements.createdAt, currentEnd)
-        )
-      );
-
+    // Process Cash Movements from shifts
     let manualCashIn = 0;
     let manualCashOut = 0;
     movements.forEach((m) => {
@@ -1682,41 +1730,6 @@ export async function getFinanceReport(outletKey: string, params?: DateFilterPar
       })),
     ].sort((a, b) => b.amount - a.amount);
 
-    // Fetch recent shifts for reconciliation with cashier name
-    const shiftList = await db
-      .select({
-        id: shifts.id,
-        tenantId: shifts.tenantId,
-        membershipId: shifts.membershipId,
-        deviceId: shifts.deviceId,
-        startTime: shifts.startTime,
-        endTime: shifts.endTime,
-        startingCash: shifts.startingCash,
-        actualCash: shifts.actualCash,
-        expectedCash: shifts.expectedCash,
-        cashDifference: shifts.cashDifference,
-        status: shifts.status,
-        cashierName: sql<string>`COALESCE(${memberships.displayName}, ${accounts.name}, 'Kasir')`,
-      })
-      .from(shifts)
-      .leftJoin(memberships, eq(shifts.membershipId, memberships.id))
-      .leftJoin(accounts, eq(memberships.accountId, accounts.id))
-      .where(eq(shifts.tenantId, tenant.id))
-      .orderBy(desc(shifts.startTime))
-      .limit(10);
-
-    // Fetch category budgets for this tenant (active month or DEFAULT)
-    const activeMonthYear = `${currentStart.getFullYear()}-${String(currentStart.getMonth() + 1).padStart(2, '0')}`;
-    const budgetList = await db
-      .select()
-      .from(categoryBudgets)
-      .where(
-        and(
-          eq(categoryBudgets.tenantId, tenant.id),
-          inArray(categoryBudgets.periodMonth, [activeMonthYear, 'DEFAULT'])
-        )
-      );
-
     const expenseBudgets: Record<string, number> = {};
     const incomeBudgets: Record<string, number> = {};
 
@@ -1818,7 +1831,7 @@ export async function getFinanceReport(outletKey: string, params?: DateFilterPar
     console.error('Error fetching finance report:', error);
     return { success: false, error: error.message || 'Gagal memuat laporan keuangan' };
   }
-}
+});
 
 // -------------------------------------------------------------
 // 4. ACTION: PENCATATAN BIAYA OPERASIONAL (EXPENSE LOGGING)
@@ -2143,7 +2156,7 @@ export async function deleteExpenseAction(expenseId: string, outletKey: string) 
 // -------------------------------------------------------------
 // 6. ACTION: RINGKASAN EKSEKUTIF (REPORTS & ANALYTICS OVERVIEW)
 // -------------------------------------------------------------
-export async function getReportsOverview(outletKey: string, params?: DateFilterParams) {
+export const getReportsOverview = cache(async (outletKey: string, params?: DateFilterParams) => {
   try {
     const user = await getCurrentUser();
     if (!user || !user.tenantId) {
@@ -2151,30 +2164,46 @@ export async function getReportsOverview(outletKey: string, params?: DateFilterP
     }
 
     const [tenant] = await db
-      .select()
+      .select({
+        id: tenants.id,
+        name: tenants.name,
+        outletKey: tenants.outletKey,
+      })
       .from(tenants)
       .where(eq(tenants.outletKey, outletKey))
       .limit(1);
 
     if (!tenant || tenant.id !== user.tenantId) {
-      return { success: false, error: 'Akses ditolak: Cabang tidak valid.' };
+      return { success: false, error: 'Akses ditolak: Cabang tidak sesuai hak akses Anda.' };
     }
 
+    const tenantId = user.tenantId;
     const { currentStart, currentEnd, prevStart, prevEnd, period } = resolveDateIntervals(params);
 
-    // 1. Fetch Transactions (Current & Previous in parallel via Promise.allSettled)
-    const [currentTrxResult, prevTrxResult] = await Promise.allSettled([
+    // Fetch ALL 7 data sets simultaneously in a single parallel Promise.allSettled batch
+    const [
+      currentTrxResult,
+      prevTrxResult,
+      hppResult,
+      topItemsResult,
+      expenseListResult,
+      movementsResult,
+      activeShiftResult,
+    ] = await Promise.allSettled([
+      // 1. Current Transactions
       db
         .select()
         .from(transactions)
         .where(
           and(
-            eq(transactions.tenantId, tenant.id),
+            eq(transactions.tenantId, tenantId),
             gte(transactions.createdAt, currentStart),
             lte(transactions.createdAt, currentEnd)
           )
         )
         .orderBy(desc(transactions.createdAt)),
+
+      // 2. Previous Transactions
       db
         .select({
           id: transactions.id,
@@ -2188,39 +2217,31 @@ export async function getReportsOverview(outletKey: string, params?: DateFilterP
         .from(transactions)
         .where(
           and(
-            eq(transactions.tenantId, tenant.id),
+            eq(transactions.tenantId, tenantId),
             gte(transactions.createdAt, prevStart),
             lte(transactions.createdAt, prevEnd)
           )
         ),
-    ]);
 
-    const trxList = currentTrxResult.status === 'fulfilled' ? currentTrxResult.value : [];
-    const prevTrxList = prevTrxResult.status === 'fulfilled' ? prevTrxResult.value : [];
-
-    // 2. Fetch Items for Theoretical COGS / HPP
-    const trxIds = trxList.map((t) => t.id);
-    let totalHpp = 0;
-    let topProducts: { id: string; name: string; categoryName: string; totalQty: number; totalRevenue: number }[] = [];
-
-    if (trxIds.length > 0) {
-      const allItems = await db
+      // 3. Direct SQL Aggregation for COGS / HPP (avoids pulling thousands of rows into memory)
+      db
         .select({
-          quantity: transactionItems.quantity,
-          costPrice: products.costPrice,
+          totalHpp: sql<number>`COALESCE(SUM(COALESCE(${transactionItems.quantity}, 1) * COALESCE(CAST(${products.costPrice} AS NUMERIC), 0)), 0)`
         })
         .from(transactionItems)
+        .innerJoin(transactions, eq(transactions.id, transactionItems.transactionId))
         .leftJoin(products, eq(transactionItems.productId, products.id))
-        .where(inArray(transactionItems.transactionId, trxIds));
+        .where(
+          and(
+            eq(transactions.tenantId, tenantId),
+            gte(transactions.createdAt, currentStart),
+            lte(transactions.createdAt, currentEnd),
+            eq(transactions.paymentStatus, 'PAID')
+          )
+        ),
 
-      allItems.forEach((it) => {
-        const qty = it.quantity || 1;
-        const cost = parseFloat(it.costPrice || '0') || 0;
-        totalHpp += cost * qty;
-      });
-
-      // Top 5 Products
-      const topItems = await db
+      // 4. Top 5 Products (Direct SQL Group By)
+      db
         .select({
           productId: transactionItems.productId,
           productName: products.name,
@@ -2229,21 +2250,81 @@ export async function getReportsOverview(outletKey: string, params?: DateFilterP
           totalRevenue: sql<number>`SUM(CAST(${transactionItems.price} AS NUMERIC) * COALESCE(${transactionItems.quantity}, 1))`,
         })
         .from(transactionItems)
+        .innerJoin(transactions, eq(transactions.id, transactionItems.transactionId))
         .leftJoin(products, eq(transactionItems.productId, products.id))
         .leftJoin(categories, eq(products.categoryId, categories.id))
-        .where(inArray(transactionItems.transactionId, trxIds))
+        .where(
+          and(
+            eq(transactions.tenantId, tenantId),
+            gte(transactions.createdAt, currentStart),
+            lte(transactions.createdAt, currentEnd),
+            eq(transactions.paymentStatus, 'PAID')
+          )
+        )
         .groupBy(transactionItems.productId, products.name, categories.name)
         .orderBy(desc(sql`SUM(COALESCE(${transactionItems.quantity}, 1))`))
-        .limit(5);
+        .limit(5),
 
-      topProducts = topItems.map((item) => ({
-        id: item.productId || '',
-        name: item.productName || 'Menu Tanpa Nama',
-        categoryName: item.categoryName || 'Lainnya',
-        totalQty: Number(item.totalQty) || 0,
-        totalRevenue: Number(item.totalRevenue) || 0,
-      }));
-    }
+      // 5. Expenses
+      db
+        .select()
+        .from(expenses)
+        .where(
+          and(
+            eq(expenses.tenantId, tenantId),
+            gte(expenses.date, currentStart),
+            lte(expenses.date, currentEnd)
+          )
+        ),
+
+      // 6. Cash Movements
+      db
+        .select()
+        .from(cashMovements)
+        .where(
+          and(
+            eq(cashMovements.tenantId, tenantId),
+            gte(cashMovements.createdAt, currentStart),
+            lte(cashMovements.createdAt, currentEnd)
+          )
+        ),
+
+      // 7. Active Shift
+      db
+        .select({
+          id: shifts.id,
+          startTime: shifts.startTime,
+          startingCash: shifts.startingCash,
+          expectedCash: shifts.expectedCash,
+          status: shifts.status,
+          cashierName: sql<string>`COALESCE(${memberships.displayName}, ${accounts.name}, 'Kasir')`,
+        })
+        .from(shifts)
+        .leftJoin(memberships, eq(shifts.membershipId, memberships.id))
+        .leftJoin(accounts, eq(memberships.accountId, accounts.id))
+        .where(
+          and(
+            eq(shifts.tenantId, tenantId),
+            eq(shifts.status, 'ACTIVE')
+          )
+        )
+        .limit(1),
+    ]);
+
+    const trxList = currentTrxResult.status === 'fulfilled' ? currentTrxResult.value : [];
+    const prevTrxList = prevTrxResult.status === 'fulfilled' ? prevTrxResult.value : [];
+    const totalHpp = hppResult.status === 'fulfilled' && hppResult.value[0] ? Number(hppResult.value[0].totalHpp) || 0 : 0;
+    const topItems = topItemsResult.status === 'fulfilled' ? topItemsResult.value : [];
+    const topProducts = topItems.map((item) => ({
+      id: item.productId || '',
+      name: item.productName || 'Menu Tanpa Nama',
+      categoryName: item.categoryName || 'Lainnya',
+      totalQty: Number(item.totalQty) || 0,
+      totalRevenue: Number(item.totalRevenue) || 0,
+    }));
+    const expenseList = expenseListResult.status === 'fulfilled' ? expenseListResult.value : [];
+    const movements = movementsResult.status === 'fulfilled' ? movementsResult.value : [];
+    const activeShift = activeShiftResult.status === 'fulfilled' && activeShiftResult.value.length > 0 ? activeShiftResult.value[0] : null;
 
     // 3. Sales Aggregations
     const isCashPayment = (method: string | null | undefined): boolean => {
@@ -2552,17 +2633,6 @@ export async function getReportsOverview(outletKey: string, params?: DateFilterP
     const aovGrowth = prevAov > 0 ? ((aov - prevAov) / prevAov) * 100 : 0;
 
     // 4. Expenses & Cash Movements
-    const expenseList = await db
-      .select()
-      .from(expenses)
-      .where(
-        and(
-          eq(expenses.tenantId, tenant.id),
-          gte(expenses.date, currentStart),
-          lte(expenses.date, currentEnd)
-        )
-      );
-
     let totalExpenses = 0;
     let cashExpenses = 0;
     let nonCashExpenses = 0;
@@ -2576,17 +2646,6 @@ export async function getReportsOverview(outletKey: string, params?: DateFilterP
         nonCashExpenses += amt;
       }
     });
-
-    const movements = await db
-      .select()
-      .from(cashMovements)
-      .where(
-        and(
-          eq(cashMovements.tenantId, tenant.id),
-          gte(cashMovements.createdAt, currentStart),
-          lte(cashMovements.createdAt, currentEnd)
-        )
-      );
 
     let manualCashIn = 0;
     let manualCashOut = 0;
@@ -2617,27 +2676,6 @@ export async function getReportsOverview(outletKey: string, params?: DateFilterP
       if (d.revenue > busiestDay.revenue) busiestDay = d;
       if (d.revenue < slowestDay.revenue) slowestDay = d;
     });
-
-    // 6. Active Shift Info
-    const [activeShift] = await db
-      .select({
-        id: shifts.id,
-        startTime: shifts.startTime,
-        startingCash: shifts.startingCash,
-        expectedCash: shifts.expectedCash,
-        status: shifts.status,
-        cashierName: sql<string>`COALESCE(${memberships.displayName}, ${accounts.name}, 'Kasir')`,
-      })
-      .from(shifts)
-      .leftJoin(memberships, eq(shifts.membershipId, memberships.id))
-      .leftJoin(accounts, eq(memberships.accountId, accounts.id))
-      .where(
-        and(
-          eq(shifts.tenantId, tenant.id),
-          eq(shifts.status, 'ACTIVE')
-        )
-      )
-      .limit(1);
 
     // Format top payment methods
     const topPaymentList = Object.entries(paymentMethodsMap).map(([method, val]) => ({
@@ -2742,5 +2780,6 @@ export async function getReportsOverview(outletKey: string, params?: DateFilterP
     console.error('Error fetching reports overview:', error);
     return { success: false, error: error.message || 'Gagal memuat ringkasan laporan.' };
   }
-}
+});
+
 

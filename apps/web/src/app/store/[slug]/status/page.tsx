@@ -128,15 +128,26 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
   const orderStatus = order?.status;
   const currentOrderNumber = order?.orderNumber;
 
-  // Polling every 10 seconds if we have an active order
+  // Polling every 10 seconds if we have an active order (pauses when screen is locked/tab hidden)
   useEffect(() => {
     if (!orderStatus || !currentOrderNumber || ["COMPLETED", "CANCELLED", "REJECTED"].includes(orderStatus)) return;
 
     const interval = setInterval(() => {
+      if (typeof document !== "undefined" && document.hidden) return;
       fetchOrder(currentOrderNumber, true);
     }, 10000);
 
-    return () => clearInterval(interval);
+    const handleVisibilityChange = () => {
+      if (typeof document !== "undefined" && !document.hidden) {
+        fetchOrder(currentOrderNumber, true);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [orderStatus, currentOrderNumber, fetchOrder]);
 
   // Clean up active order in localStorage when order completes or cancels

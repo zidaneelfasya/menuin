@@ -35,14 +35,20 @@ export class FeatureLockedError extends Error {
 // --- Modular Resolvers (Cached per request) ---
 
 export const getAuthenticatedAccount = cache(async () => {
-  const supabase = await createClient();
-  const { data: { user }, error } = await supabase.auth.getUser();
+  const headersList = await headers();
+  const verifiedUserId = headersList.get('x-menuin-auth-user-id');
 
-  if (!user || !user.id) throw new AuthError('No active session.');
+  let authUserId = verifiedUserId;
+  if (!authUserId) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user || !user.id) throw new AuthError('No active session.');
+    authUserId = user.id;
+  }
 
   const [account] = await db.select()
     .from(accounts)
-    .where(eq(accounts.authUserId, user.id))
+    .where(eq(accounts.authUserId, authUserId))
     .limit(1);
 
   if (!account) throw new AuthError('Account not found.');
@@ -161,15 +167,19 @@ export type AuthContext = {
 
 export const getCurrentContext = cache(async (): Promise<AuthContext | null> => {
   try {
-    const account = await getAuthenticatedAccount();
-    const tenant = await getActiveTenant();
+    const [account, tenant] = await Promise.all([
+      getAuthenticatedAccount(),
+      getActiveTenant(),
+    ]);
     
     if (!tenant) return null;
     
-    const membership = await getMembership(account.id, tenant.id);
-    if (!membership) return null;
+    const [membership, subscription] = await Promise.all([
+      getMembership(account.id, tenant.id),
+      getSubscription(tenant.id),
+    ]);
 
-    const subscription = await getSubscription(tenant.id);
+    if (!membership) return null;
     const entitlements = getEntitlements(subscription);
 
     return {

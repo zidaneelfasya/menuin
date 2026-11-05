@@ -14,27 +14,27 @@ import FooterSuperfluidStyle from "@/components/ui/footer-superfluid-style";
  * scroll dan ScrollTrigger tidak terbawa dari halaman sebelumnya.
  */
 export default function SiteShell({
-  isLoggedIn,
-  userName,
-  children,
+	isLoggedIn,
+	userName,
+	children,
 }: {
-  isLoggedIn: boolean;
-  userName: string;
-  children: React.ReactNode;
+	isLoggedIn: boolean;
+	userName: string;
+	children: React.ReactNode;
 }) {
-  const pathname = usePathname();
+	const pathname = usePathname();
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [pathname]);
+	useEffect(() => {
+		window.scrollTo(0, 0);
+	}, [pathname]);
 
-  return (
-    <div className="landing-root min-h-screen bg-white text-[#111] antialiased selection:bg-[#0E59F9] selection:text-white">
-      <SmoothScroll key={pathname} />
-      <SiteHeader isLoggedIn={isLoggedIn} userName={userName} />
-      <main>{children}</main>
-      <FooterReadyToBegin />
-      <FooterSuperfluidStyle />
-    </div>
-  );
+	return (
+		<div className="landing-root min-h-screen bg-white text-[#111] antialiased selection:bg-[#0E59F9] selection:text-white">
+			<SmoothScroll key={pathname} />
+			<SiteHeader isLoggedIn={isLoggedIn} userName={userName} />
+			<main>{children}</main>
+			<FooterReadyToBegin />
+			<FooterSuperfluidStyle />
+		</div>
+	);
 }

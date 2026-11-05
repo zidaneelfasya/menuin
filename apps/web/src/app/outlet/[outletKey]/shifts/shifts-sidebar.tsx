@@ -28,7 +28,23 @@ export function ShiftsSidebar({ outletKey, hasActiveShift }: ShiftsSidebarProps)
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const currentTab = searchParams.get('tab') || 'active';
+  const [currentTab, setCurrentTab] = React.useState(searchParams.get('tab') || 'active');
+
+  React.useEffect(() => {
+    const tabFromUrl = searchParams.get('tab') || 'active';
+    setCurrentTab(tabFromUrl);
+  }, [searchParams]);
+
+  React.useEffect(() => {
+    const handleCustomTab = (e: Event) => {
+      const customEvent = e as CustomEvent<string>;
+      if (customEvent.detail) {
+        setCurrentTab(customEvent.detail);
+      }
+    };
+    window.addEventListener('menuin:shift-tab', handleCustomTab);
+    return () => window.removeEventListener('menuin:shift-tab', handleCustomTab);
+  }, []);
 
   const navItems: NavItem[] = [
     {
@@ -65,7 +81,12 @@ export function ShiftsSidebar({ outletKey, hasActiveShift }: ShiftsSidebarProps)
   ];
 
   const handleNavigate = (tab: string) => {
-    router.replace(`/outlet/${outletKey}/shifts?tab=${tab}`, { scroll: false });
+    setCurrentTab(tab);
+    if (typeof window !== 'undefined') {
+      const targetUrl = `/outlet/${outletKey}/shifts?tab=${tab}`;
+      window.history.replaceState(null, '', targetUrl);
+      window.dispatchEvent(new CustomEvent('menuin:shift-tab', { detail: tab }));
+    }
   };
 
   return (

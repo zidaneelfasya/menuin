@@ -11,6 +11,7 @@ node_modules
 !.yarn/versions
 
 # AI Agents
+.agents/
 /.agents
 /.skills
 skills-lock.json
