@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useRef, useMemo, useEffect, useCallback } from "react";
+import React, { useRef, useMemo, useEffect, useCallback, useState } from "react";
 import { Canvas, useFrame, useThree, ThreeEvent } from "@react-three/fiber";
-import { useGLTF, useTexture, ContactShadows } from "@react-three/drei";
+import { useGLTF, useTexture, useProgress, ContactShadows } from "@react-three/drei";
 import * as THREE from "three";
 import { gsap } from "gsap";
 import { HERO_DEVICE_MODELS, HeroDeviceReflections, useHeroDeviceModel } from "./hero-device-materials";
@@ -13,6 +13,8 @@ export interface Hero3DSceneProps {
   progress: number;
   cameraMode?: CameraMode;
   active?: boolean;
+  onReady?: () => void;
+  onAssetProgress?: (progress: number) => void;
 }
 
 // -----------------------------------------------------------------------------
@@ -285,42 +287,31 @@ function CameraRig({
 const KEY_LIGHT_POSITION: [number, number, number] = [-0.40, 5.0, 1.8];
 const FLOOR_Y = -0.45;
 
-function StudioLighting({ progress }: { progress: number }) {
-  // Reveal factor: 0.0 (Stage 1 Silhouette) -> 1.0 (Stage 2 Lit PBR)
-  const reveal = useMemo(() => {
-    if (progress <= 0.02) return 0;
-    if (progress >= 0.2) return 1;
-    const t = (progress - 0.02) / 0.18;
-    return t * t * (3 - 2 * t);
-  }, [progress]);
-
+function StudioLighting({ progress: _progress }: { progress: number }) {
   const dirLightRef = useRef<THREE.DirectionalLight>(null);
   const ambientRef = useRef<THREE.AmbientLight>(null);
   const rimLightRef = useRef<THREE.PointLight>(null);
 
   useFrame(() => {
     if (dirLightRef.current) {
-      // Directional Key Light: 0.65 (casts directional floor shadow in Stage 1) -> 3.2 (full studio key)
-      dirLightRef.current.intensity = THREE.MathUtils.lerp(0.65, 3.2, reveal);
+      dirLightRef.current.intensity = 3.2;
     }
     if (ambientRef.current) {
-      // Ambient Fill Light: 0.05 -> 0.75
-      ambientRef.current.intensity = THREE.MathUtils.lerp(0.05, 0.75, reveal);
+      ambientRef.current.intensity = 0.75;
     }
     if (rimLightRef.current) {
-      // Rim accent light stays active to define silhouettes in Stage 1
-      rimLightRef.current.intensity = THREE.MathUtils.lerp(1.4, 1.2, reveal);
+      rimLightRef.current.intensity = 1.2;
     }
   });
 
   return (
     <>
-      <ambientLight ref={ambientRef} color="#ffffff" intensity={0.05} />
+      <ambientLight ref={ambientRef} color="#ffffff" intensity={0.75} />
       {/* Studio Key Softbox */}
       <directionalLight
         ref={dirLightRef}
         position={KEY_LIGHT_POSITION}
-        intensity={0.65}
+        intensity={3.2}
         castShadow
         shadow-mapSize={[2048, 2048]}
         shadow-camera-near={0.5}
@@ -331,12 +322,12 @@ function StudioLighting({ progress }: { progress: number }) {
         shadow-camera-bottom={-2.5}
         shadow-bias={-0.0003}
       />
-      {/* Silhouette Rim / Back Light */}
+      {/* Rim / Back Light */}
       <pointLight
         ref={rimLightRef}
         position={[0, 1.5, -1.8]}
         color="#8ab4f8"
-        intensity={1.4}
+        intensity={1.2}
       />
       {/* Left Cool Fill */}
       <directionalLight position={[-3.0, 2.0, 1.5]} color="#d0e0ff" intensity={0.35} />
@@ -574,38 +565,29 @@ function HeightAwareShadow({
 // -----------------------------------------------------------------------------
 // 3D WORDMARK: Midground Floating Mesh (menuin_3d_text.glb) at Z = -0.05
 // -----------------------------------------------------------------------------
-function BackgroundWordmark({ progress }: { progress: number }) {
+function BackgroundWordmark({ progress: _progress }: { progress: number }) {
   const gltf = useGLTF("/hero/3d/menuin_3d_text.glb");
 
   const meshRef = useRef<THREE.Mesh>(null);
 
-  // Compute silhouette blend factor
-  const reveal = useMemo(() => {
-    if (progress <= 0.02) return 0;
-    if (progress >= 0.2) return 1;
-    const t = (progress - 0.02) / 0.18;
-    return t * t * (3 - 2 * t);
-  }, [progress]);
-
-  // Clone material to avoid shared mutation
+  // Brand blue material from start (double-sided to ensure inner letter curves and backfaces are not culled)
   const mat = useMemo(() => {
     return new THREE.MeshPhysicalMaterial({
       color: new THREE.Color("#0854f8"),
       roughness: 0.25,
-      metalness: 0.05,
+      metalness: 0.08,
       clearcoat: 0.3,
+      side: THREE.DoubleSide,
+      shadowSide: THREE.DoubleSide,
     });
   }, []);
 
   useFrame(() => {
     if (mat) {
-      // Interpolate from deep Bersus silhouette black to Menuin Blue
-      const silColor = new THREE.Color("#050505");
-      const brandColor = new THREE.Color("#0854f8");
-      mat.color.lerpColors(silColor, brandColor, reveal);
-      mat.roughness = THREE.MathUtils.lerp(0.95, 0.25, reveal);
-      mat.metalness = THREE.MathUtils.lerp(0.0, 0.08, reveal);
-      mat.clearcoat = THREE.MathUtils.lerp(0.0, 0.3, reveal);
+      mat.color.set("#0854f8");
+      mat.roughness = 0.25;
+      mat.metalness = 0.08;
+      mat.clearcoat = 0.3;
     }
   });
 
@@ -1140,14 +1122,7 @@ function MacBookProMonument({
     []
   );
 
-  const reveal = useMemo(() => {
-    if (progress <= 0.02) return 0;
-    if (progress >= 0.2) return 1;
-    const t = (progress - 0.02) / 0.18;
-    return t * t * (3 - 2 * t);
-  }, [progress]);
-
-  const sceneCloned = useHeroDeviceModel("macbook", screenTexture, reveal);
+  const sceneCloned = useHeroDeviceModel("macbook", screenTexture, 1);
 
   const tempPos = useMemo(() => new THREE.Vector3(), []);
   const tempQuat = useMemo(() => new THREE.Quaternion(), []);
@@ -1268,14 +1243,7 @@ function IPhoneSatellite({
     []
   );
 
-  const reveal = useMemo(() => {
-    if (progress <= 0.02) return 0;
-    if (progress >= 0.2) return 1;
-    const t = (progress - 0.02) / 0.18;
-    return t * t * (3 - 2 * t);
-  }, [progress]);
-
-  const sceneCloned = useHeroDeviceModel("iphone", screenTexture, reveal);
+  const sceneCloned = useHeroDeviceModel("iphone", screenTexture, 1);
 
   const tempPos = useMemo(() => new THREE.Vector3(), []);
   const tempQuat = useMemo(() => new THREE.Quaternion(), []);
@@ -1398,14 +1366,7 @@ function IPadSatellite({
     []
   );
 
-  const reveal = useMemo(() => {
-    if (progress <= 0.02) return 0;
-    if (progress >= 0.2) return 1;
-    const t = (progress - 0.02) / 0.18;
-    return t * t * (3 - 2 * t);
-  }, [progress]);
-
-  const sceneCloned = useHeroDeviceModel("ipad", screenTexture, reveal);
+  const sceneCloned = useHeroDeviceModel("ipad", screenTexture, 1);
 
   const tempPos = useMemo(() => new THREE.Vector3(), []);
   const tempQuat = useMemo(() => new THREE.Quaternion(), []);
@@ -1621,6 +1582,18 @@ function SceneContent({
   );
 }
 
+function SceneReady({ onReady }: { onReady?: () => void }) {
+  useEffect(() => {
+    let presented = 0;
+    // This effect mounts only after the scene's Suspense boundary has resolved.
+    const committed = requestAnimationFrame(() => {
+      presented = requestAnimationFrame(() => onReady?.());
+    });
+    return () => { cancelAnimationFrame(committed); cancelAnimationFrame(presented); };
+  }, [onReady]);
+  return null;
+}
+
 // -----------------------------------------------------------------------------
 // HERO 3D SCENE ROOT COMPONENT
 // -----------------------------------------------------------------------------
@@ -1628,9 +1601,21 @@ export default function Hero3DScene({
   progress,
   cameraMode = "A",
   active = true,
+  onReady,
+  onAssetProgress,
 }: Hero3DSceneProps) {
+  const [sceneReady, setSceneReady] = useState(false);
+  const assetProgress = useProgress(state => state.progress);
+  useEffect(() => { onAssetProgress?.(assetProgress / 100); }, [assetProgress, onAssetProgress]);
+  const handleReady = useCallback(() => { setSceneReady(true); onReady?.(); }, [onReady]);
   return (
     <div className="absolute inset-0 h-full w-full pointer-events-none">
+      {!sceneReady && (
+        <div className="absolute inset-0 grid place-items-center bg-white" aria-hidden="true">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/img/landing/hero/menuin-wordmark.png" alt="" className="w-[64%] max-w-[1271px]" />
+        </div>
+      )}
       <Canvas
         frameloop={active ? "always" : "demand"}
         shadows
@@ -1657,6 +1642,7 @@ export default function Hero3DScene({
       >
         <React.Suspense fallback={null}>
           <SceneContent progress={progress} cameraMode={cameraMode} />
+          <SceneReady onReady={handleReady} />
         </React.Suspense>
       </Canvas>
     </div>

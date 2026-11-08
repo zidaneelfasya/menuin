@@ -120,12 +120,12 @@ export function useHeroDeviceModel(device: Device, screenTexture: THREE.Texture,
   }, [model, environment]);
 
   useFrame(() => {
-    model.screen.color.lerpColors(model.black, model.white, reveal);
+    model.screen.color.copy(model.white);
     for (const { material, color, metalness, roughness } of model.targets) {
-      material.color.lerpColors(model.dark, color, reveal);
-      material.metalness = THREE.MathUtils.lerp(0.02, metalness, reveal);
-      material.roughness = THREE.MathUtils.lerp(0.95, roughness, reveal);
-      material.envMapIntensity = 0.65 * reveal;
+      material.color.copy(color);
+      material.metalness = metalness;
+      material.roughness = roughness;
+      material.envMapIntensity = 0.65;
     }
   });
 
