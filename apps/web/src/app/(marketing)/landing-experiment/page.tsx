@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import LandingExperimentPage from "@/components/landing-experiment-page";
+import ExperimentLoader from "@/components/landing/experiment-loader";
 import { createClient } from "@/lib/supabase/server";
 
 async function LandingExperimentWithAuth() {
@@ -18,7 +19,7 @@ async function LandingExperimentWithAuth() {
 
 export default function LandingExperimentRoute() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<ExperimentLoader />}>
       <LandingExperimentWithAuth />
     </Suspense>
   );
