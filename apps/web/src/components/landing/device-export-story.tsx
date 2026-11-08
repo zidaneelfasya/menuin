@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { ArrowRight } from "lucide-react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { clamp, deviceArrival, deviceCopyReveal, deviceLandingStrength, getFormatFrames, laptopNotchProgress, lerp, phase, phoneIslandRetraction, pickerPose, previewSize, pricingScrollOffset, sampleStory, sampleExtendedStory, screenTransition, storyProgress, storyScrollPosition, type FormatIndex, type StoryLayout } from "./device-story-motion";
+import { clamp, deviceArrival, deviceCopyReveal, deviceLandingStrength, extendedStoryProgress, fallbackEntrance, getFormatFrames, laptopNotchProgress, lerp, phase, phoneIslandRetraction, pickerPose, previewSize, pricingScrollOffset, sampleStory, sampleExtendedStory, screenTransition, storyProgress, storyScrollPosition, type FormatIndex, type StoryLayout } from "./device-story-motion";
 import { PREVIEW_DEVICES } from "./device-story-devices";
 import { attachProgressiveFormatScroll } from "./device-story-progressive-scroll";
 import type { DeviceStoryRenderer } from "./device-story-renderer";
@@ -36,6 +36,7 @@ export default function DeviceExportStory() {
       const track = find<HTMLElement>("track");
       const stage = find<HTMLElement>("stage");
       const phone = find<HTMLElement>("phone-anchor");
+      const entranceFallback = find<HTMLElement>("entrance-fallback");
       const room = find<HTMLElement>("preview-room");
       const canvas = find<HTMLCanvasElement>("canvas");
       const deviceCopy = find<HTMLElement>("device-copy");
@@ -52,6 +53,8 @@ export default function DeviceExportStory() {
       const teaserTitle = find<HTMLElement>("teaser-title");
       const teaserContent = find<HTMLElement>("teaser-content");
       const pricing = find<HTMLElement>("pricing");
+      const pricingTitle = find<HTMLElement>("pricing-title");
+      const pricingContent = find<HTMLElement>("pricing-content");
       const pill = find<HTMLElement>("pill");
       const pillLabels = find<HTMLElement>("pill-labels");
       const labels = Array.from(root.querySelectorAll<HTMLElement>("[data-device-option]"));
@@ -70,6 +73,8 @@ export default function DeviceExportStory() {
       let lastProgress = -1;
       let scrollProgress = 0;
       let scrollDistance = 0;
+      let deviceScrollDistance = 0;
+      let physicalScrollProgress = 0;
       let lastScrollProgress = -1;
       let formatPosition = 0;
       let galleryPosition = 0;
@@ -162,25 +167,26 @@ export default function DeviceExportStory() {
 
           // SCENE 3: Feature Grid Minimal
           show(next, ext.gridVisible ? ext.gridAlpha : 0);
-          next.style.filter = `brightness(${(1 - ext.gridDarken).toFixed(4)})`;
           next.style.pointerEvents = ext.gridInteractive ? "auto" : "none";
           nextTitle.style.transform = `translateY(${(1 - frame.nextTitle) * layout.height * 0.95}px)`;
           nextContent.style.transform = `translateY(${(1 - frame.nextContent) * layout.height * 0.95}px)`;
 
           // SCENE 4: Feature Teaser
           show(teaser, ext.teaserVisible ? ext.teaserAlpha : 0);
-          teaser.style.filter = `brightness(${(1 - ext.teaserDarken).toFixed(4)})`;
           teaser.style.pointerEvents = ext.teaserInteractive ? "auto" : "none";
           teaserTitle.style.transform = `translateY(${(1 - ext.teaserTitle) * layout.height * 0.95}px)`;
           teaserContent.style.transform = `translateY(${(1 - ext.teaserContent) * layout.height * 0.95}px)`;
 
           // SCENE 5: Pricing Section
           show(pricing, ext.pricingVisible ? ext.pricingAlpha : 0);
-          pricing.style.filter = `brightness(${(1 - ext.pricingDarken).toFixed(4)})`;
           pricing.style.pointerEvents = ext.pricingInteractive ? "auto" : "none";
-          pricing.style.transform = `translateY(${ext.pricingVisible ? pricingScrollOffset(scrollProgress, scrollDistance, layout.height) : 0}px)`;
+          pricing.style.transform = `translateY(${ext.pricingVisible ? pricingScrollOffset(physicalScrollProgress, scrollDistance) : 0}px)`;
+          pricingTitle.style.transform = `translateY(${(1 - ext.pricingTitle) * layout.height * 0.95}px)`;
+          pricingContent.style.transform = `translateY(${(1 - ext.pricingContent) * layout.height * 0.95}px)`;
 
-          root.style.setProperty("--phone-alpha", String(frame.phoneAlpha));
+          const fallbackEntranceState = fallbackEntrance(frame);
+          show(entranceFallback, fallbackEntranceState.logo);
+          root.style.setProperty("--phone-alpha", String(fallbackEntranceState.phone));
           root.dataset.progress = progress.toFixed(4);
           root.dataset.scrollProgress = scrollProgress.toFixed(4);
           root.dataset.format = formatPosition.toFixed(5);
@@ -214,30 +220,37 @@ export default function DeviceExportStory() {
         }
       };
       root.dataset.animated = "true";
-      root.style.setProperty("--phone-alpha", "1");
+      root.style.setProperty("--phone-alpha", "0");
       const trigger = ScrollTrigger.create({
         trigger: track, start: "top top", end: "bottom bottom",
         onUpdate: self => {
-          scrollProgress = self.progress;
+          physicalScrollProgress = self.progress;
+          scrollProgress = extendedStoryProgress(physicalScrollProgress, scrollDistance, deviceScrollDistance);
           const ext = sampleExtendedStory(scrollProgress);
           progress = ext.deviceProgress;
           ratios?.sync(progress);
           dirty = true;
         },
         onRefresh: self => {
-          scrollProgress = self.progress;
+          physicalScrollProgress = self.progress;
           scrollDistance = self.end - self.start;
+          const removedViewports = Number.parseFloat(getComputedStyle(track).getPropertyValue("--story-scroll-cut")) || 0;
+          deviceScrollDistance = 0.52 * (scrollDistance + removedViewports * stage.clientHeight);
+          scrollProgress = extendedStoryProgress(physicalScrollProgress, scrollDistance, deviceScrollDistance);
           const ext = sampleExtendedStory(scrollProgress);
           progress = ext.deviceProgress;
           measure();
           ratios?.sync(progress, true);
         },
       });
-      scrollProgress = trigger.progress;
+      physicalScrollProgress = trigger.progress;
       scrollDistance = trigger.end - trigger.start;
+      const removedViewports = Number.parseFloat(getComputedStyle(track).getPropertyValue("--story-scroll-cut")) || 0;
+      deviceScrollDistance = 0.52 * (scrollDistance + removedViewports * stage.clientHeight);
+      scrollProgress = extendedStoryProgress(physicalScrollProgress, scrollDistance, deviceScrollDistance);
       progress = sampleExtendedStory(scrollProgress).deviceProgress;
       // The picker gets extra scroll distance without slowing the preceding phone scenes.
-      const positionAt = (p: number) => trigger.start + storyScrollPosition(p) * 0.52 * (trigger.end - trigger.start);
+      const positionAt = (p: number) => trigger.start + storyScrollPosition(p) * deviceScrollDistance;
       ratios = attachProgressiveFormatScroll(progress, positionAt, (gallery, format, selected, refresh, velocity) => {
         if (refresh) {
           landingMotion?.kill(); landingMotion = null; landing.amount = 0; landingReturning = false;
@@ -264,7 +277,7 @@ export default function DeviceExportStory() {
       const resize = new ResizeObserver(measure); resize.observe(stage);
       const visibility = () => { if (!document.hidden) dirty = true; };
       document.addEventListener("visibilitychange", visibility);
-      const lost = () => { root.dataset.renderer = "fallback"; engine?.dispose(); engine = null; };
+      const lost = () => { root.dataset.renderer = "fallback"; engine?.dispose(); engine = null; dirty = true; };
       canvas.addEventListener("webglcontextlost", lost);
       gsap.ticker.add(render);
       void document.fonts.ready.then(() => { if (!controller.signal.aborted) { measure(); ScrollTrigger.refresh(); } });
@@ -280,7 +293,7 @@ export default function DeviceExportStory() {
         descriptions.forEach((description, index) => { description.textContent = SCREEN_COPY[0][index]; });
         deviceLetters.forEach(letter => letter.removeAttribute("style"));
         deviceDescription.removeAttribute("style");
-        [deviceCopy, output, heading, lower, next, nextTitle, nextContent, teaser, teaserTitle, teaserContent, pricing, fallback, pill, pillLabels].forEach(el => el.removeAttribute("style"));
+        [entranceFallback, deviceCopy, output, heading, lower, next, nextTitle, nextContent, teaser, teaserTitle, teaserContent, pricing, pricingTitle, pricingContent, fallback, pill, pillLabels].forEach(el => el.removeAttribute("style"));
         island.removeAttribute("style");
         notch.removeAttribute("style");
         [previewCaption, ...previewDescriptions].forEach(el => el.removeAttribute("style"));

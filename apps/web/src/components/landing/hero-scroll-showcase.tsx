@@ -6,19 +6,26 @@ import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { gsap } from "gsap";
 
+function HeroScenePlaceholder() {
+  return (
+    <div className="absolute inset-0 grid place-items-center bg-white" aria-hidden="true">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/img/landing/hero/menuin-wordmark.png" alt="" className="w-[64%] max-w-[1271px]" />
+    </div>
+  );
+}
+
+class HeroSceneBoundary extends React.Component<{ children: React.ReactNode; onError?: () => void }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  componentDidCatch() { this.props.onError?.(); }
+  render() { return this.state.failed ? <HeroScenePlaceholder /> : this.props.children; }
+}
+
 // Dynamic import with SSR disabled for Three.js WebGL Canvas
 const Hero3DScene = dynamic(() => import("./hero-3d-scene"), {
   ssr: false,
-  loading: () => (
-    <div className="absolute inset-0 flex items-center justify-center bg-white">
-      <div className="flex flex-col items-center gap-3">
-        <div className="h-9 w-9 animate-spin rounded-full border-2 border-slate-200 border-t-[#0854f8]" />
-        <span className="text-[13px] font-medium tracking-tight text-slate-400">
-          Memuat Ruang 3D...
-        </span>
-      </div>
-    </div>
-  ),
+  loading: HeroScenePlaceholder,
 });
 
 // Bersus-inspired discrete stage targets across the 6-stage showcase:
@@ -51,9 +58,19 @@ const MAX_NUDGE = 0.024;
 
 export default function HeroScrollShowcase({
   isLoggedIn = false,
+  loading = false,
+  onSceneReady,
+  onAssetProgress,
+  onSceneError,
 }: {
   isLoggedIn?: boolean;
+  loading?: boolean;
+  onSceneReady?: () => void;
+  onAssetProgress?: (progress: number) => void;
+  onSceneError?: () => void;
 }) {
+  const loadingRef = useRef(loading);
+  loadingRef.current = loading;
   const sectionRef = useRef<HTMLElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [sceneVisible, setSceneVisible] = useState(true);
@@ -766,6 +783,7 @@ export default function HeroScrollShowcase({
     };
 
     const handleWheel = (e: WheelEvent) => {
+      if (loadingRef.current) { if (!e.ctrlKey && !e.metaKey) e.preventDefault(); return; }
       const isAtEnd =
         modeRef.current === "stage" &&
         Math.abs(currentProgressRef.current - STAGE_HERO) < 0.005;
@@ -804,6 +822,7 @@ export default function HeroScrollShowcase({
     };
 
     const handleTouchMove = (e: TouchEvent) => {
+      if (loadingRef.current) { e.preventDefault(); return; }
       const isAtEnd =
         modeRef.current === "stage" &&
         Math.abs(currentProgressRef.current - STAGE_HERO) < 0.005;
@@ -834,6 +853,7 @@ export default function HeroScrollShowcase({
     };
 
     const handleTouchEnd = () => {
+      if (loadingRef.current) return;
       if (modeRef.current === "stage" && !isAnimatingRef.current && accumDeltaRef.current !== 0) {
         let baseStage = STAGE_TARGETS[0];
         let minDiff = 999;
@@ -850,6 +870,10 @@ export default function HeroScrollShowcase({
 
     // Keyboard support
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (loadingRef.current) {
+        if (["ArrowDown", "ArrowUp", "PageDown", "PageUp", " "].includes(e.key)) e.preventDefault();
+        return;
+      }
       const isAtEnd =
         modeRef.current === "stage" &&
         Math.abs(currentProgressRef.current - STAGE_HERO) < 0.005;
@@ -965,7 +989,9 @@ export default function HeroScrollShowcase({
         />
 
         {/* 3D Canvas Scene */}
-        <Hero3DScene progress={scrollProgress} active={sceneVisible} />
+        <HeroSceneBoundary onError={onSceneError}>
+          <Hero3DScene progress={scrollProgress} active={sceneVisible} onReady={onSceneReady} onAssetProgress={onAssetProgress} />
+        </HeroSceneBoundary>
 
         {/* ================================================================ */}
         {/* TOP BRAND TEXT ("Simple. Modern. Efficient.")                     */}
@@ -976,7 +1002,7 @@ export default function HeroScrollShowcase({
           className="pointer-events-none absolute inset-x-0 top-[8vh] z-30 flex justify-center px-4 will-change-transform sm:top-[10vh] md:top-[18vh]"
         >
           <span className="text-[19px] font-medium tracking-tight text-[#0a0a0a] sm:text-[23px] md:text-[26px]">
-            Simple. Modern. Efficient.
+            Simple Ways to run your business.
           </span>
         </div>
 

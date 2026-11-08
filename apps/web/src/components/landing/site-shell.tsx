@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import SmoothScroll from "@/components/landing/smooth-scroll";
 import SiteHeader from "@/components/landing/site-header";
 import FooterReadyToBegin from "@/components/ui/footer-ready-to-begin";
+import ExperimentCta from "@/components/landing/experiment-cta";
 import FooterSuperfluidStyle from "@/components/ui/footer-superfluid-style";
 
 /**
@@ -33,7 +34,7 @@ export default function SiteShell({
 			<SmoothScroll key={pathname} />
 			<SiteHeader isLoggedIn={isLoggedIn} userName={userName} />
 			<main>{children}</main>
-			<FooterReadyToBegin />
+			{pathname === "/landing-experiment" ? <ExperimentCta /> : <FooterReadyToBegin />}
 			<FooterSuperfluidStyle />
 		</div>
 	);

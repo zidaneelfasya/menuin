@@ -9,7 +9,7 @@
 .phoneFallback { position: absolute; inset: 0; overflow: hidden; border: 6px solid #1c1c1e; border-radius: 38px; background: white; box-shadow: 2px 3px 0 #bfc2c5; opacity: var(--phone-alpha, 0); }
 .phoneFallback img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .entranceLogoFallback { display: none; }
-.story[data-animated="true"]:not([data-renderer]) .entranceLogoFallback { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(64vw, 1271px); max-height: 50svh; pointer-events: none; display: flex; align-items: center; justify-content: center; z-index: 1; }
+.story[data-animated="true"]:not([data-renderer="ready"]) .entranceLogoFallback { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(64vw, 1271px); max-height: 50svh; pointer-events: none; display: flex; align-items: center; justify-content: center; z-index: 1; }
 .entranceLogoFallback img { width: 100%; height: auto; max-height: 50svh; object-fit: contain; display: block; }
 .deviceCopy { position: relative; padding: 70px 4.5%; display: flex; justify-content: space-between; gap: 32px; }
 .story .deviceHeading { font-family: var(--font-inter), sans-serif; font-size: clamp(40px, 5.6vw, 110px); font-weight: 500; line-height: .98; letter-spacing: -.04em; }
@@ -56,7 +56,7 @@
 .pricingContent { width: 100%; margin-top: 28px; }
 
 /* ANIMATED STACK ON STICKY STAGE */
-.story[data-animated="true"] .track { height: 2150svh; }
+.story[data-animated="true"] .track { --story-scroll-cut: 2.952; height: 1854.8svh; }
 .story[data-animated="true"] .stage { position: sticky; top: 0; height: 100svh; overflow: hidden; }
 .story[data-animated="true"] .canvas { display: block; }
 .story[data-animated="true"] .phoneAnchor { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
@@ -82,7 +82,7 @@
   margin: 0 auto;
   width: 100%;
   box-sizing: border-box;
-  will-change: transform, opacity, filter;
+  will-change: transform, opacity;
 }
 
 .story[data-animated="true"] .nextScene,
@@ -91,8 +91,8 @@
 .story[data-animated="true"] .pricingScene {
   position: relative;
   z-index: 30;
-  margin-top: -65svh;
-  background: #fff;
+  margin-top: -100svh;
+  background: transparent;
 }
 
 @media (min-width: 1600px) { .deviceDescription { font-size: 18px; } .exportDescription { font-size: 18px; } }
@@ -111,7 +111,7 @@
   .deviceSwitch > button { width: 84px; }
   .pillLabels > span { flex-basis: 84px; }
   .previewRoom { height: 100%; max-height: 53svh; min-height: 220px; }
-  .story[data-animated="true"] .track { height: 1850svh; }
+  .story[data-animated="true"] .track { --story-scroll-cut: 2.52; height: 1598svh; }
   .story[data-animated="true"] .phoneAnchor { top: 51%; height: 53svh; }
   .story[data-animated="true"] .deviceCopy { padding: 90px 6% 25px; }
   .story[data-animated="true"] .exportScene { padding: 90px 6% 25px; }

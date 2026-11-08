@@ -58,7 +58,20 @@ export function PaymentGate({ user }: { user: UserProfile }) {
                     : "text-slate-600 hover:text-slate-900"
                 }`}
               >
-                Bulanan
+                1 Bulan
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={cycle === "quarterly"}
+                onClick={() => setCycle("quarterly")}
+                className={`h-9 px-4 rounded-full text-xs font-semibold transition-all ${
+                  cycle === "quarterly"
+                    ? "bg-[#0E59F9] text-white shadow-sm"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                3 Bulan
               </button>
               <button
                 type="button"
@@ -71,15 +84,15 @@ export function PaymentGate({ user }: { user: UserProfile }) {
                     : "text-slate-600 hover:text-slate-900"
                 }`}
               >
-                <span>Tahunan</span>
+                <span>1 Tahun</span>
                 <span
                   className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
                     cycle === "annual"
                       ? "bg-white/20 text-white"
-                      : "bg-emerald-50 text-emerald-600"
+                      : "bg-blue-50 text-[#0E59F9]"
                   }`}
                 >
-                  Hemat 2 Bulan
+                  Best Deal
                 </span>
               </button>
             </div>
@@ -97,16 +110,10 @@ export function PaymentGate({ user }: { user: UserProfile }) {
                 key={group.id}
                 className={`bg-white rounded-2xl p-6 flex flex-col justify-between transition-all relative ${
                   isHighlighted
-                    ? "ring-2 ring-[#0E59F9] shadow-md shadow-blue-500/5"
+                    ? "ring-2 ring-[#0E59F9] shadow-md"
                     : "ring-1 ring-slate-200 hover:ring-slate-300 shadow-sm"
                 }`}
               >
-                {isHighlighted && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#0E59F9] text-white text-[11px] font-semibold px-3 py-0.5 rounded-full uppercase tracking-wider">
-                    Paling Lengkap
-                  </span>
-                )}
-
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <h3
@@ -123,9 +130,14 @@ export function PaymentGate({ user }: { user: UserProfile }) {
 
                   <div className="mb-4">
                     {plan.originalAmount && (
-                      <span className="text-xs text-slate-400 line-through block">
-                        {formatCurrency(plan.originalAmount)}
-                      </span>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs text-slate-400 line-through">
+                          {formatCurrency(plan.originalAmount)}
+                        </span>
+                        <span className="text-[10px] font-semibold bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded-full">
+                          Hemat {Math.round((1 - plan.amount / plan.originalAmount) * 100)}%
+                        </span>
+                      </div>
                     )}
                     <div className="flex items-baseline gap-1">
                       <span className="text-2xl font-bold text-slate-900">

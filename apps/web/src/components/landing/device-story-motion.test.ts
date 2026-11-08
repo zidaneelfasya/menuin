@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CAROUSEL_CARD_COUNT, ORBIT_CARD_COUNT, PICKER_SLOTS, WALL_CARD_COUNT, deviceArrival, deviceCopyReveal, deviceLandingStrength, entranceWarp, galleryCardPose, galleryImageIndex, getFormatFrames, laptopNotchProgress, nearestFormat, phoneEntranceRotations, phoneFloat, phoneIslandRetraction, pickerPose, previewSize, pullFormat, sampleStory, screenTransition, stepDeviceMotion, storyProgress, storyScrollPosition, wallSlot, type FormatGesture } from "./device-story-motion";
+import { CAROUSEL_CARD_COUNT, ORBIT_CARD_COUNT, PICKER_SLOTS, WALL_CARD_COUNT, deviceArrival, deviceCopyReveal, deviceLandingStrength, entranceWarp, fallbackEntrance, galleryCardPose, galleryImageIndex, getFormatFrames, laptopNotchProgress, nearestFormat, phoneEntranceRotations, phoneFloat, phoneIslandRetraction, pickerPose, previewSize, pullFormat, sampleStory, screenTransition, stepDeviceMotion, storyProgress, storyScrollPosition, wallSlot, type FormatGesture } from "./device-story-motion";
 import { GALLERY_IMAGES, PREVIEW_DEVICES } from "./device-story-devices";
 
 describe("device story choreography", () => {
@@ -76,14 +76,14 @@ describe("device story choreography", () => {
   });
 
   it("turns each side phone through its own outward-facing path while the center settles more slowly", () => {
-    for (const p of [0.10, 0.14, 0.17, 0.19, 0.21, 0.24, 0.285, 0.33]) {
+    for (const p of [0.10, 0.14, 0.17, 0.19, 0.21, 0.24]) {
       const pose = phoneEntranceRotations(p);
       expect(Math.sin(pose.leftYaw)).toBeLessThan(0);
       expect(Math.sin(pose.rightYaw)).toBeGreaterThan(0);
       expect(pose.leftRoll).toBeGreaterThan(0);
       expect(pose.rightRoll).toBeGreaterThan(0);
     }
-    const arriving = phoneEntranceRotations(0.19), leaving = phoneEntranceRotations(0.285);
+    const arriving = phoneEntranceRotations(0.15), leaving = phoneEntranceRotations(0.285);
     expect(Math.cos(arriving.leftYaw)).toBeLessThan(0);
     expect(Math.cos(arriving.rightYaw)).toBeGreaterThan(0);
     expect(Math.cos(leaving.leftYaw)).toBeGreaterThan(0);
@@ -93,6 +93,8 @@ describe("device story choreography", () => {
     expect(phoneEntranceRotations(0.24).centerYaw).toBeLessThan(0);
     expect(phoneEntranceRotations(0.285).centerYaw).toBeLessThan(0);
     expect(phoneEntranceRotations(0.32).centerYaw).toBeCloseTo(0, 12);
+    expect(phoneEntranceRotations(0.285).leftYaw).toBeCloseTo(0, 10);
+    expect(phoneEntranceRotations(0.33).leftYaw).toBeCloseTo(0, 10);
     expect(phoneEntranceRotations(0.24).leftYaw).toBeGreaterThan(-Math.PI / 3);
     expect(phoneEntranceRotations(0.24).rightYaw - phoneEntranceRotations(0.24).leftYaw).not.toBeCloseTo(Math.PI, 2);
     expect(phoneEntranceRotations(0.30).leftRoll).toBeGreaterThan(phoneEntranceRotations(0.20).leftRoll);
@@ -373,6 +375,19 @@ describe("device story choreography", () => {
     for (const p of [0.87, 0.88, 0.90, 0.93, 0.97, 1]) {
       expect(storyProgress(storyScrollPosition(p))).toBeCloseTo(p, 12);
     }
+  });
+});
+
+describe("device story loading and fallback entrance", () => {
+  it("shows only the logo initially, then switches to the phone as the entrance advances", () => {
+    expect(fallbackEntrance(sampleStory(0))).toEqual({ logo: 1, phone: 0 });
+    expect(fallbackEntrance(sampleStory(0.04))).toEqual({ logo: 1, phone: 0 });
+    const transition = fallbackEntrance(sampleStory(0.097));
+    expect(transition.logo).toBeGreaterThan(0);
+    expect(transition.phone).toBeGreaterThan(0);
+    expect(transition.logo + transition.phone).toBeCloseTo(1);
+    expect(fallbackEntrance(sampleStory(0.20))).toEqual({ logo: 0, phone: 1 });
+    expect(fallbackEntrance(sampleStory(0.67))).toEqual({ logo: 0, phone: 0 });
   });
 });
 
