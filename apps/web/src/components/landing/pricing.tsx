@@ -26,7 +26,7 @@ function CellValue({ value }: { value: Cell }) {
 /** Tabel perbandingan fitur per paket — halaman /harga. */
 export function PricingTable() {
   return (
-    <div className="overflow-x-auto rounded-[28px] ring-1 ring-black/[0.08]">
+    <div className="overflow-x-auto rounded-[32px] bg-white shadow-[0_12px_40px_-10px_rgba(15,23,42,0.08)] border-none">
       <table className="w-full min-w-[860px] border-collapse text-left">
         <thead className="sticky top-0">
           <tr className="bg-white">

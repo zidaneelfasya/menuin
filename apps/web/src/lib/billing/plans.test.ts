@@ -8,18 +8,29 @@ describe('getBillingPlan', () => {
   it('returns server-side plans by code', () => {
     expect(getBillingPlan('starter')).toBe(BILLING_PLANS.starter);
     expect(getBillingPlan('business')?.plan).toBe('PRO');
-    expect(getBillingPlan('kasir_monthly')?.amount).toBe(49_900);
-    expect(getBillingPlan('kasir_annual')?.amount).toBe(499_000);
-    expect(getBillingPlan('kasir_annual')?.periodDays).toBe(365);
-    expect(getBillingPlan('kasir_plus_monthly')?.amount).toBe(74_900);
-    expect(getBillingPlan('lengkap_monthly')?.amount).toBe(149_000);
-    expect(getBillingPlan('lengkap_annual')?.amount).toBe(1_490_000);
+    expect(getBillingPlan('basic_monthly')?.amount).toBe(49_900);
+    expect(getBillingPlan('basic_quarterly')?.amount).toBe(134_900);
+    expect(getBillingPlan('basic_quarterly')?.periodDays).toBe(90);
+    expect(getBillingPlan('basic_annual')?.amount).toBe(499_000);
+    expect(getBillingPlan('basic_annual')?.periodDays).toBe(365);
+    expect(getBillingPlan('pro_monthly')?.amount).toBe(99_900);
+    expect(getBillingPlan('pro_quarterly')?.amount).toBe(269_900);
+    expect(getBillingPlan('pro_quarterly')?.periodDays).toBe(90);
+    expect(getBillingPlan('pro_annual')?.amount).toBe(999_000);
+    expect(getBillingPlan('promax_monthly')?.amount).toBe(149_900);
+    expect(getBillingPlan('promax_quarterly')?.amount).toBe(399_900);
+    expect(getBillingPlan('promax_quarterly')?.periodDays).toBe(90);
+    expect(getBillingPlan('promax_annual')?.amount).toBe(1_499_000);
   });
 
   it('resolves aliases from landing page', () => {
-    expect(getBillingPlan('kasir')).toBe(BILLING_PLANS.kasir_monthly);
-    expect(getBillingPlan('kasir-plus')).toBe(BILLING_PLANS.kasir_plus_monthly);
-    expect(getBillingPlan('lengkap')).toBe(BILLING_PLANS.lengkap_monthly);
+    expect(getBillingPlan('basic')).toBe(BILLING_PLANS.basic_monthly);
+    expect(getBillingPlan('pro')).toBe(BILLING_PLANS.pro_monthly);
+    expect(getBillingPlan('promax')).toBe(BILLING_PLANS.promax_monthly);
+    // Legacy aliases
+    expect(getBillingPlan('kasir')).toBe(BILLING_PLANS.basic_monthly);
+    expect(getBillingPlan('kasir-plus')).toBe(BILLING_PLANS.pro_monthly);
+    expect(getBillingPlan('lengkap')).toBe(BILLING_PLANS.promax_monthly);
   });
 
   it.each([null, undefined, '', 'enterprise', 'STARTER', '__proto__'])('rejects unknown code %s', (code) => {
