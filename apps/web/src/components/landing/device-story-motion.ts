@@ -39,7 +39,7 @@ export function phoneEntranceRotations(p: number) {
   return {
     centerPitch: lerp(0.17, 0, turn),
     centerYaw: (lerp(-520, 0, turn) - 18 * (1 - phase(p, 0.10, 0.32))) * radians,
-    leftYaw: lerp(-150, -25, phase(p, 0.10, 0.285)) * radians,
+    leftYaw: lerp(-150, 0, phase(p, 0.10, 0.285)) * radians,
     rightYaw: lerp(30, 155, phase(p, 0.10, 0.30)) * radians,
     leftRoll: lerp(0.045, 0.11, phase(p, 0.14, 0.32)),
     rightRoll: lerp(0.045, 0.10, phase(p, 0.14, 0.32)),
@@ -179,25 +179,36 @@ export function sampleStory(progress: number) {
   };
 }
 
+export function fallbackEntrance(frame: ReturnType<typeof sampleStory>) {
+  const source = entranceWarp(frame.p).source;
+  return { logo: 1 - source, phone: frame.phoneAlpha * source };
+}
+
 export interface ExtendedStoryFrame {
   story: ReturnType<typeof sampleStory>;
   deviceProgress: number;
   gridVisible: boolean;
-  gridDarken: number;
   gridAlpha: number;
   gridInteractive: boolean;
   teaserVisible: boolean;
-  teaserDarken: number;
   teaserAlpha: number;
   teaserTitle: number;
   teaserContent: number;
   teaserInteractive: boolean;
   pricingVisible: boolean;
-  pricingDarken: number;
   pricingAlpha: number;
   pricingTitle: number;
   pricingContent: number;
   pricingInteractive: boolean;
+}
+
+// Keep the device story's original scroll distance while shortening the later scenes.
+export function extendedStoryProgress(scrollProgress: number, scrollDistance: number, deviceDistance: number) {
+  if (scrollDistance <= 0 || deviceDistance <= 0 || deviceDistance >= scrollDistance) return clamp(scrollProgress);
+  const distance = clamp(scrollProgress) * scrollDistance;
+  return distance <= deviceDistance
+    ? 0.52 * distance / deviceDistance
+    : 0.52 + 0.48 * (distance - deviceDistance) / (scrollDistance - deviceDistance);
 }
 
 export function sampleExtendedStory(scrollProgress: number): ExtendedStoryFrame {
@@ -207,62 +218,48 @@ export function sampleExtendedStory(scrollProgress: number): ExtendedStoryFrame 
   const deviceProgress = storyProgress(clamp(s / 0.52, 0, 1));
   const story = sampleStory(deviceProgress);
 
-  // Scene 3 (Feature Grid Minimal) exit transition (0.64 to 0.76)
-  const tGridExit = clamp((s - 0.64) / 0.12, 0, 1);
-  const gridDarken = s < 0.64 ? 0 : phase(tGridExit, 0.0, 0.65);
-  const gridFadeIn = story.nextTitle > 0 ? 1 : 0;
-  const gridFadeOut = 1 - phase(tGridExit, 0.0, 0.65);
-  const gridAlpha = s < 0.64 ? gridFadeIn : gridFadeOut;
-  const gridVisible = story.nextTitle > 0 && s < 0.74;
+  // Match the device-to-grid handoff: the outgoing scene fades while the
+  // incoming heading and content rise independently, without a second fade.
+  const gridExit = clamp((s - 0.64) / 0.12);
+  const gridAlpha = story.nextTitle > 0 ? 1 - phase(gridExit, 0.05, 0.53) : 0;
+  const gridVisible = story.nextTitle > 0 && gridAlpha > 0;
   const gridInteractive = s >= 0.50 && s < 0.65;
 
-  // Scene 4 (Feature Teaser) entrance (0.64 to 0.76) and exit (0.86 to 0.96)
-  const tTeaserEnter = clamp((s - 0.64) / 0.12, 0, 1);
-  const teaserTitle = s < 0.64 ? 0 : s >= 0.76 ? 1 : phase(tTeaserEnter, 0.0, 0.85);
-  const teaserContent = s < 0.64 ? 0 : s >= 0.76 ? 1 : phase(tTeaserEnter, 0.10, 1.0);
-
-  const tTeaserExit = clamp((s - 0.86) / 0.10, 0, 1);
-  const teaserDarken = s < 0.86 ? 0 : phase(tTeaserExit, 0.0, 0.65);
-  const teaserFadeIn = phase(tTeaserEnter, 0.0, 0.60);
-  const teaserFadeOut = 1 - phase(tTeaserExit, 0.0, 0.65);
-  const teaserAlpha = s < 0.64 ? 0 : s <= 0.86 ? teaserFadeIn : teaserFadeOut;
-  const teaserVisible = s >= 0.64 && s < 0.94;
+  const teaserEnter = clamp((s - 0.64) / 0.12);
+  const teaserExit = clamp((s - 0.86) / 0.10);
+  const teaserTitle = phase(teaserEnter, 0, 0.79);
+  const teaserContent = phase(teaserEnter, 0.105, 1);
+  const teaserAlpha = s >= 0.64 ? 1 - phase(teaserExit, 0.05, 0.53) : 0;
+  const teaserVisible = s >= 0.64 && teaserAlpha > 0;
   const teaserInteractive = s >= 0.75 && s < 0.87;
 
-  // Scene 5 (Pricing Section) entrance (0.86 to 0.96)
-  const tPricingEnter = clamp((s - 0.86) / 0.10, 0, 1);
-  const pricingTitle = s < 0.86 ? 0 : s >= 0.96 ? 1 : phase(tPricingEnter, 0.0, 0.85);
-  const pricingContent = s < 0.86 ? 0 : s >= 0.96 ? 1 : phase(tPricingEnter, 0.10, 1.0);
-  const pricingAlpha = s < 0.86 ? 0 : phase(tPricingEnter, 0.0, 0.60);
+  const pricingEnter = clamp((s - 0.86) / 0.10);
+  const pricingTitle = phase(pricingEnter, 0, 0.79);
+  const pricingContent = phase(pricingEnter, 0.105, 1);
   const pricingVisible = s >= 0.86;
-  const pricingInteractive = s >= 0.94;
+  const pricingInteractive = s >= 0.96;
 
   return {
     story,
     deviceProgress,
     gridVisible,
-    gridDarken,
     gridAlpha,
     gridInteractive,
     teaserVisible,
-    teaserDarken,
     teaserAlpha,
     teaserTitle,
     teaserContent,
     teaserInteractive,
     pricingVisible,
-    pricingDarken: 0,
-    pricingAlpha,
+    pricingAlpha: Number(pricingVisible),
     pricingTitle,
     pricingContent,
     pricingInteractive,
   };
 }
 
-export function pricingScrollOffset(progress: number, scrollDistance: number, viewportHeight: number) {
-  const s = clamp(progress);
-  const reveal = sampleExtendedStory(s).pricingTitle * 0.85 + phase(s, 0.94, 1) * 0.15;
-  return -(1 - s) * scrollDistance + (1 - reveal) * viewportHeight * 0.95;
+export function pricingScrollOffset(progress: number, scrollDistance: number) {
+  return (clamp(progress) - 1) * scrollDistance;
 }
 
 export function getFormatFrames(maxWidth: number, maxHeight: number) {
