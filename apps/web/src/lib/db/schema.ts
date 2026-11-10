@@ -18,6 +18,18 @@ export const roleEnum = pgEnum('tenant_role', [
   'SUPERADMIN',
 ]);
 export const invitationStatusEnum = pgEnum('invitation_status', ['PENDING', 'ACCEPTED', 'EXPIRED', 'REVOKED']);
+export const notificationCategoryEnum = pgEnum('notification_category', [
+  'VERIFICATION',
+  'BILLING',
+  'PROMOTION',
+  'ACCOUNT_TEAM',
+]);
+export const notificationSeverityEnum = pgEnum('notification_severity', [
+  'INFO',
+  'WARNING',
+  'ACTION_REQUIRED',
+  'SUCCESS',
+]);
 
 export const accounts = pgTable('accounts', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -978,6 +990,84 @@ export const careTickets = pgTable('care_tickets', {
   index('idx_care_tickets_verification').on(table.verificationSubmissionId),
 ]);
 
+export const notifications = pgTable('notifications', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id')
+    .references(() => tenants.id, { onDelete: 'cascade' })
+    .notNull(),
+  recipientAccountId: uuid('recipient_account_id')
+    .references(() => accounts.id, { onDelete: 'cascade' }),
+  category: notificationCategoryEnum('category').notNull(),
+  severity: notificationSeverityEnum('severity').default('INFO').notNull(),
+  title: text('title').notNull(),
+  message: text('message').notNull(),
+  actionUrl: text('action_url'),
+  actionLabel: text('action_label'),
+  isRead: boolean('is_read').default(false).notNull(),
+  readAt: timestamp('read_at', { withTimezone: true }),
+  metadata: jsonb('metadata'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index('notifications_tenant_idx').on(table.tenantId),
+  index('notifications_recipient_idx').on(table.recipientAccountId),
+  index('notifications_created_idx').on(table.createdAt),
+  index('notifications_tenant_unread_idx').on(table.tenantId, table.isRead),
+]);
+
+// ============================================================================
+// RAW MATERIALS & INVENTORY MANAGEMENT (STOK BAHAN)
+// ============================================================================
+
+export const rawMaterialMovementTypeEnum = pgEnum('raw_material_movement_type', [
+  'IN',
+  'OUT',
+  'ADJUSTMENT',
+]);
+
+export const rawMaterials = pgTable('raw_materials', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id')
+    .references(() => tenants.id, { onDelete: 'cascade' })
+    .notNull(),
+  name: text('name').notNull(),
+  sku: text('sku'),
+  category: text('category'),
+  unit: text('unit').default('pcs').notNull(),
+  stock: decimal('stock', { precision: 12, scale: 2 }).default('0').notNull(),
+  minStock: decimal('min_stock', { precision: 12, scale: 2 }).default('5').notNull(),
+  costPerUnit: decimal('cost_per_unit', { precision: 12, scale: 2 }).default('0'),
+  description: text('description'),
+  isActive: boolean('is_active').default(true).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index('raw_materials_tenant_idx').on(table.tenantId),
+  index('raw_materials_category_idx').on(table.category),
+  index('raw_materials_created_idx').on(table.createdAt),
+]);
+
+export const rawMaterialMovements = pgTable('raw_material_movements', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id')
+    .references(() => tenants.id, { onDelete: 'cascade' })
+    .notNull(),
+  rawMaterialId: uuid('raw_material_id')
+    .references(() => rawMaterials.id, { onDelete: 'cascade' })
+    .notNull(),
+  type: rawMaterialMovementTypeEnum('type').notNull(),
+  quantity: decimal('quantity', { precision: 12, scale: 2 }).notNull(),
+  previousStock: decimal('previous_stock', { precision: 12, scale: 2 }).notNull(),
+  currentStock: decimal('current_stock', { precision: 12, scale: 2 }).notNull(),
+  reasonCategory: text('reason_category'),
+  reason: text('reason'),
+  actorName: text('actor_name'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index('raw_material_movements_tenant_idx').on(table.tenantId),
+  index('raw_material_movements_material_idx').on(table.rawMaterialId),
+  index('raw_material_movements_created_idx').on(table.createdAt),
+]);
+
 // ============================================================================
 // VERIFICATION RELATIONS
 // ============================================================================
@@ -1079,6 +1169,36 @@ export const careTicketsRelations = relations(careTickets, ({ one }) => ({
   assignedToUser: one(accounts, {
     fields: [careTickets.assignedTo],
     references: [accounts.id],
+  }),
+}));
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [notifications.tenantId],
+    references: [tenants.id],
+  }),
+  recipient: one(accounts, {
+    fields: [notifications.recipientAccountId],
+    references: [accounts.id],
+  }),
+}));
+
+export const rawMaterialsRelations = relations(rawMaterials, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [rawMaterials.tenantId],
+    references: [tenants.id],
+  }),
+  movements: many(rawMaterialMovements),
+}));
+
+export const rawMaterialMovementsRelations = relations(rawMaterialMovements, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [rawMaterialMovements.tenantId],
+    references: [tenants.id],
+  }),
+  rawMaterial: one(rawMaterials, {
+    fields: [rawMaterialMovements.rawMaterialId],
+    references: [rawMaterials.id],
   }),
 }));
 
