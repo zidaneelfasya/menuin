@@ -395,21 +395,21 @@ function ProductForm({
     <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0 bg-white">
       <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
         
-        {/* Section 1: Foto Menu (Compact, Sleek Row) */}
+        {/* Section 1: Foto Produk (Compact, Sleek Row) */}
         <div className="flex items-center gap-4 p-3.5 rounded-2xl shadow-sm-md bg-slate-50">
           <div 
             onClick={() => fileInputRef.current?.click()}
             className="relative w-16 h-16 rounded-xl overflow-hidden bg-white flex items-center justify-center shrink-0 cursor-pointer group shadow-sm-md"
           >
             {currentImage ? (
-              <img src={currentImage} alt="Foto Menu" className="w-full h-full object-cover" />
+              <img src={currentImage} alt="Foto Produk" className="w-full h-full object-cover" />
             ) : (
               <Upload className="w-5 h-5 text-slate-400 group-hover:text-slate-600 transition-colors" />
             )}
           </div>
           <div className="space-y-1 min-w-0 flex-1">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-900">Foto Menu</span>
+              <span className="text-xs font-semibold text-slate-900">Foto Produk</span>
               {currentImage && (
                 <button
                   type="button"
@@ -453,11 +453,11 @@ function ProductForm({
           />
         </div>
 
-        {/* Section 2: Informasi Menu */}
+        {/* Section 2: Informasi Produk */}
         <div className="space-y-3.5">
           <div className="space-y-1.5">
             <Label htmlFor="name" className="text-xs font-medium text-slate-700">
-              Nama Menu <span className="text-rose-500">*</span>
+              Nama Produk <span className="text-rose-500">*</span>
             </Label>
             <Input 
               id="name" 
@@ -500,7 +500,7 @@ function ProductForm({
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label htmlFor="sku" className="text-xs font-medium text-slate-700">
-                  SKU (Kode Menu) <span className="text-rose-500">*</span>
+                  SKU (Kode Produk) <span className="text-rose-500">*</span>
                 </Label>
                 <button
                   type="button"
@@ -545,12 +545,12 @@ function ProductForm({
 
           <div className="space-y-1.5">
             <Label htmlFor="description" className="text-xs font-medium text-slate-700">
-              Deskripsi Menu (Opsional)
+              Deskripsi Produk (Opsional)
             </Label>
             <Textarea 
               id="description" 
               {...form.register('description')} 
-              placeholder="Deskripsi singkat menu atau catatan penyajian..." 
+              placeholder="Deskripsi singkat produk atau catatan..." 
               className="min-h-[72px] resize-none text-sm rounded-2xl border-none shadow-sm-md bg-white p-3.5 focus-visible:ring-2 focus-visible:ring-primary/20"
             />
           </div>
@@ -567,14 +567,14 @@ function ProductForm({
         <div className="space-y-3">
           <div>
             <h4 className="text-sm font-semibold text-slate-900">Ketersediaan & Stok</h4>
-            <p className="text-xs text-muted-foreground mt-0.5">Kontrol ketersediaan menu di kasir dan pelacakan sisa stok.</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Kontrol ketersediaan produk di kasir dan pelacakan sisa stok.</p>
           </div>
 
           <div className="divide-y divide-slate-100 rounded-2xl shadow-sm-md bg-slate-50">
             <div className="flex items-center justify-between p-3.5">
               <div className="space-y-0.5 pr-4">
                 <Label htmlFor="isActiveSwitch" className="text-xs font-medium cursor-pointer text-slate-800">
-                  Menu Aktif & Tersedia
+                  Produk Aktif & Tersedia
                 </Label>
                 <p className="text-[11px] text-muted-foreground">
                   Tampil aktif di kasir POS dan katalog digital.
@@ -662,8 +662,8 @@ function ProductForm({
             <div className="border-t border-slate-100" />
             <div className="space-y-3">
               <div>
-                <h4 className="text-sm font-semibold text-slate-900">Grup Modifier & Varian</h4>
-                <p className="text-xs text-muted-foreground mt-0.5">Pilih varian atau opsi tambahan yang dapat dipilih saat memesan menu ini.</p>
+                <h4 className="text-sm font-semibold text-slate-900">Grup Modifier</h4>
+                <p className="text-xs text-muted-foreground mt-0.5">Pilih modifier atau opsi kustomisasi yang dapat dipilih saat memesan produk ini.</p>
               </div>
 
               <Controller
@@ -1270,7 +1270,7 @@ export function ProductList({
                   ? "text-blue-600 bg-blue-50 hover:bg-blue-100" 
                   : "text-slate-300 hover:text-blue-600 hover:bg-slate-100"
               )}
-              title={isFeatured ? 'Rekomendasi Menu (Klik untuk batalkan)' : 'Jadikan Rekomendasi Menu'}
+              title={isFeatured ? 'Rekomendasi Produk (Klik untuk batalkan)' : 'Jadikan Rekomendasi Produk'}
             >
               <ThumbsUp className={cn("h-4 w-4", isFeatured ? "fill-blue-500 text-blue-600" : "text-slate-300")} />
             </button>
@@ -1534,8 +1534,8 @@ export function ProductList({
       {/* 1. Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Daftar Menu</h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Kelola katalog menu, harga jual, ketersediaan, dan sisa stok produk outlet.</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Daftar Produk</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Kelola katalog produk, harga jual, ketersediaan, dan sisa stok produk outlet.</p>
         </div>
         <div className="flex items-center gap-2">
           <ExportMenuDropdown products={productsList} selectedProducts={selectedProducts} />
@@ -1544,11 +1544,11 @@ export function ProductList({
       </div>
 
       {/* 2. ZONE 1: TABS & TOOLBAR ROW (Single Universal Row) */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between border-b border-slate-200 gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between border-b border-slate-100 gap-4">
         {/* Left: Underline Status Filter Tabs */}
         <div className="flex items-center gap-6 overflow-x-auto no-scrollbar pt-1">
           {[
-            { key: 'ALL', label: 'Semua Menu', count: totalCount },
+            { key: 'ALL', label: 'Semua Produk', count: totalCount },
             { key: 'ACTIVE', label: 'Tersedia', count: activeCount },
             ...(lowStockCount > 0 ? [{ key: 'LOW_STOCK', label: 'Stok Menipis', count: lowStockCount }] : []),
             { key: 'INACTIVE', label: 'Tidak Tersedia', count: inactiveCount },
@@ -1562,15 +1562,15 @@ export function ProductList({
                 className={cn(
                   "relative pb-3 text-xs sm:text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer whitespace-nowrap",
                   isActive
-                    ? "text-blue-600 font-semibold"
-                    : "text-slate-500 hover:text-blue-600"
+                    ? "text-[#0e59f9] font-semibold"
+                    : "text-slate-500 hover:text-[#0e59f9]"
                 )}
               >
                 <span>{tab.label}</span>
                 <span className={cn(
                   "text-xs px-2 py-0.5 rounded-full font-medium transition-colors",
                   isActive
-                    ? "bg-blue-50 text-blue-700"
+                    ? "bg-blue-50 text-[#0e59f9] font-semibold"
                     : "text-slate-400 bg-slate-100"
                 )}>
                   {tab.count}
@@ -1578,7 +1578,7 @@ export function ProductList({
                 {isActive && (
                   <motion.div
                     layoutId="activeProductTabUnderline"
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#0e59f9] rounded-full"
                     transition={{ type: "spring", stiffness: 450, damping: 35 }}
                   />
                 )}
@@ -1630,7 +1630,7 @@ export function ProductList({
             </PopoverTrigger>
             <PopoverContent align="end" className="w-64 p-3 rounded-2xl shadow-2xl border-none space-y-2 bg-white">
               <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                <span className="text-xs font-semibold text-slate-900">Kategori Menu</span>
+                <span className="text-xs font-semibold text-slate-900">Kategori Produk</span>
                 {categoryFilter !== 'ALL' && (
                   <button
                     type="button"
@@ -1737,7 +1737,7 @@ export function ProductList({
               {selectedCount} item terpilih
             </span>
             <span className="text-xs text-slate-700 hidden sm:inline">
-              Aksi massal pada menu yang dipilih:
+              Aksi massal pada produk yang dipilih:
             </span>
           </div>
 
@@ -1821,7 +1821,7 @@ export function ProductList({
           {cardGridProducts.length === 0 ? (
             <div className="text-center py-16 px-4 rounded-3xl bg-slate-50 shadow-sm-md">
               <PackageSearch className="w-10 h-10 text-muted-foreground mx-auto mb-3 opacity-60" />
-              <h3 className="font-semibold text-slate-900 text-base">Tidak ada menu ditemukan</h3>
+              <h3 className="font-semibold text-slate-900 text-base">Tidak ada produk ditemukan</h3>
               <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
                 Coba ubah kata kunci pencarian atau ganti filter kategori dan status ketersediaan di atas.
               </p>
@@ -1881,7 +1881,7 @@ export function ProductList({
                               ? "bg-blue-600 text-white"
                               : "bg-white/90 text-slate-400 hover:text-blue-600 hover:bg-white"
                           )}
-                          title={product.isFeatured ? 'Rekomendasi Menu (Klik untuk batalkan)' : 'Jadikan Rekomendasi Menu'}
+                          title={product.isFeatured ? 'Rekomendasi Produk (Klik untuk batalkan)' : 'Jadikan Rekomendasi Produk'}
                         >
                           <ThumbsUp className={cn("w-3.5 h-3.5", product.isFeatured && "fill-white")} />
                         </button>
@@ -2035,7 +2035,7 @@ export function ProductList({
                             checked={isActive}
                             onCheckedChange={() => handleToggleActiveStatus(product, isActive)}
                             className="data-[state=checked]:bg-emerald-600 cursor-pointer scale-75"
-                            title={isActive ? 'Nonaktifkan menu (86)' : 'Aktifkan menu'}
+                            title={isActive ? 'Nonaktifkan produk (86)' : 'Aktifkan produk'}
                           />
                         </div>
                       </div>
@@ -2103,7 +2103,7 @@ export function ProductList({
                   <div className="space-y-0.5 pr-4">
                     <span className="text-xs font-semibold text-slate-800 block">Status Ketersediaan Item</span>
                     <p className="text-xs text-muted-foreground">
-                      {detailProduct.isActive !== false ? 'Item aktif dan dapat dipesan di kasir & menu digital.' : 'Item sedang dinonaktifkan (Tidak Tersedia).'}
+                      {detailProduct.isActive !== false ? 'Item aktif dan dapat dipesan di kasir & katalog produk.' : 'Item sedang dinonaktifkan (Tidak Tersedia).'}
                     </p>
                   </div>
                   <Switch
@@ -2281,12 +2281,12 @@ export function ProductList({
         >
           <SheetHeader className="px-6 py-4 border-b border-slate-100 bg-white flex-shrink-0">
             <SheetTitle className="text-base font-semibold text-slate-900">
-              {selectedProduct ? 'Edit Menu' : 'Tambah Menu Baru'}
+              {selectedProduct ? 'Edit Produk' : 'Tambah Produk Baru'}
             </SheetTitle>
             <SheetDescription className="text-xs text-muted-foreground truncate">
               {selectedProduct 
                 ? selectedProduct.name 
-                : 'Lengkapi informasi menu untuk kasir dan katalog digital.'}
+                : 'Lengkapi informasi produk untuk kasir dan katalog produk.'}
             </SheetDescription>
           </SheetHeader>
 

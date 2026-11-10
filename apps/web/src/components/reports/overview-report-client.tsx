@@ -935,13 +935,13 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
       // 3. Top Products Sheet
       const productRows = data.operationsSnapshot.topProducts.map((p, i) => ({
         Peringkat: i + 1,
-        "Nama Menu": p.name,
+        "Nama Produk": p.name,
         Kategori: p.categoryName,
         "Jumlah Terjual (Qty)": p.totalQty,
         "Total Omset (Rp)": Math.round(p.totalRevenue),
       }));
       const productSheet = XLSX.utils.json_to_sheet(productRows);
-      XLSX.utils.book_append_sheet(workbook, productSheet, "Menu Terlaris");
+      XLSX.utils.book_append_sheet(workbook, productSheet, "Produk Terlaris");
 
       // 4. Cash Flow Channels Sheet
       const channelRows = [
@@ -1935,7 +1935,7 @@ export function OverviewReportClient({ initialData, outletKey }: OverviewReportC
               <div className="pt-3 space-y-3.5 min-h-[220px]">
                 {operationsSnapshot.topProducts.length === 0 ? (
                   <div className="py-8 text-center text-xs text-slate-400 min-h-[220px] flex items-center justify-center">
-                    Belum ada data menu terjual pada rentang tanggal ini.
+                    Belum ada data produk terjual pada rentang tanggal ini.
                   </div>
                 ) : (
                   operationsSnapshot.topProducts.slice(0, 5).map((item, idx) => {

@@ -189,7 +189,7 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">Kategori Produk</h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-            Kelola kelompok menu untuk mempermudah kasir dan pelanggan saat memesan.
+            Kelola kelompok produk untuk mempermudah kasir dan pelanggan saat memesan.
           </p>
         </div>
         <Button
@@ -324,7 +324,7 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
                 <div className="pt-3 mt-4 border-t border-slate-100/80 flex items-center justify-between text-xs">
                   <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-700 bg-slate-50 px-2.5 py-1 rounded-full border-none">
                     <Package className="w-3.5 h-3.5 text-slate-400" />
-                    <span className="font-semibold text-slate-900">{category.productCount ?? 0}</span> Menu
+                    <span className="font-semibold text-slate-900">{category.productCount ?? 0}</span> Produk
                   </span>
 
                   <span className="text-[11px] text-slate-400 flex items-center gap-1 font-normal">
@@ -506,7 +506,7 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
               Apakah Anda yakin ingin menghapus kategori <span className="font-semibold text-slate-900">{selectedCategory?.name}</span>?
               {selectedCategory?.productCount && selectedCategory.productCount > 0 ? (
                 <span className="block mt-2 text-amber-700 bg-amber-50 p-3 rounded-2xl border-none shadow-sm-md">
-                  Peringatan: Kategori ini memiliki <span className="font-semibold">{selectedCategory.productCount} menu</span>. Pastikan untuk memindahkan produk ke kategori lain terlebih dahulu.
+                  Peringatan: Kategori ini memiliki <span className="font-semibold">{selectedCategory.productCount} produk</span>. Pastikan untuk memindahkan produk ke kategori lain terlebih dahulu.
                 </span>
               ) : (
                 <span className="block mt-1 text-slate-500">Tindakan ini tidak dapat dibatalkan.</span>
@@ -546,7 +546,7 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
               Detail Kategori
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-              Rincian kategori dan daftar menu yang terhubung dengan kategori ini.
+              Rincian kategori dan daftar produk yang terhubung dengan kategori ini.
             </DialogDescription>
           </DialogHeader>
 
@@ -578,7 +578,7 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
                 <div className="text-right shrink-0">
                   <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-blue-700 bg-blue-50 border-none px-3 py-1 rounded-full shadow-xs">
                     <Package className="w-3.5 h-3.5 text-blue-600" />
-                    <span>{selectedCategory.productCount ?? 0} Menu</span>
+                    <span>{selectedCategory.productCount ?? 0} Produk</span>
                   </span>
                 </div>
               </div>
@@ -619,10 +619,10 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                     <Package className="w-3.5 h-3.5 text-blue-600" />
-                    Daftar Menu ({isLoadingProducts ? '...' : categoryProducts.length})
+                    Daftar Produk ({isLoadingProducts ? '...' : categoryProducts.length})
                   </h4>
                   <span className="text-[11px] text-muted-foreground">
-                    {selectedCategory.productCount ?? 0} menu terhubung
+                    {selectedCategory.productCount ?? 0} produk terhubung
                   </span>
                 </div>
 
@@ -638,9 +638,9 @@ export function CategoryList({ initialData }: { initialData: CategoryDto[] }) {
                 ) : categoryProducts.length === 0 ? (
                   <div className="p-5 text-center bg-slate-50/60 border-none shadow-sm-md rounded-2xl">
                     <PackageOpen className="w-7 h-7 mx-auto text-slate-400 mb-1.5" />
-                    <p className="text-xs font-semibold text-foreground">Belum ada menu di kategori ini</p>
+                    <p className="text-xs font-semibold text-foreground">Belum ada produk di kategori ini</p>
                     <p className="text-[11px] text-muted-foreground mt-0.5">
-                      Menu yang ditambahkan dengan kategori ini akan tampil di sini dan kasir.
+                      Produk yang ditambahkan dengan kategori ini akan tampil di sini dan kasir.
                     </p>
                   </div>
                 ) : (

@@ -251,12 +251,14 @@ function getInitials(name?: string | null): string {
 }
 
 const avatarColorPalette = [
-  'bg-amber-100 text-amber-800',
-  'bg-blue-100 text-blue-800',
-  'bg-purple-100 text-purple-800',
-  'bg-emerald-100 text-emerald-800',
-  'bg-rose-100 text-rose-800',
-  'bg-indigo-100 text-indigo-800',
+  'bg-[#0e59f9] text-white',
+  'bg-blue-700 text-white',
+  'bg-blue-500 text-white',
+  'bg-sky-600 text-white',
+  'bg-indigo-600 text-white',
+  'bg-blue-100 text-[#0e59f9]',
+  'bg-sky-100 text-sky-800',
+  'bg-blue-50 text-blue-700',
 ];
 
 function getAvatarColor(seed: string): string {
@@ -1426,11 +1428,11 @@ export function TransactionHistory({
           <div className="mt-6 flex items-end justify-between gap-2">
             <div className="min-w-0">
               <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">
-                TOTAL MENU TERJUAL
+                TOTAL PRODUK TERJUAL
               </span>
               <div className="text-2xl sm:text-[26px] font-semibold text-slate-900 tracking-tight leading-none whitespace-nowrap flex items-baseline gap-1.5">
                 <span>{totalItemsSold.toLocaleString('id-ID')}</span>
-                <span className="text-xs sm:text-sm font-normal text-slate-400">Porsi</span>
+                <span className="text-xs sm:text-sm font-normal text-slate-400">Item</span>
               </div>
             </div>
             <div className="flex-shrink-0 pb-0.5">
@@ -2719,7 +2721,7 @@ export function TransactionHistory({
                     id="voidReason"
                     value={voidReason}
                     onChange={(e) => setVoidReason(e.target.value)}
-                    placeholder="Contoh: Pelanggan salah pesan menu, pembayaran gagal/double, salah input kasir..."
+                    placeholder="Contoh: Pelanggan salah pilih produk, pembayaran gagal/double, salah input kasir..."
                     rows={3}
                     className="text-xs resize-none rounded-2xl border-none bg-white shadow-sm-md focus-visible:ring-2 focus-visible:ring-[#0e59f9] p-3 text-slate-800"
                     required

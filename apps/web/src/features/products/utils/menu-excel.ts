@@ -2,7 +2,7 @@ import * as XLSX from 'xlsx';
 import { ProductDto } from '@menuin/types';
 
 export interface MenuTemplateRow {
-  'Nama Menu *': string;
+  'Nama Produk *': string;
   'Kategori': string;
   'Harga Jual *': number | string;
   'Harga Modal': number | string;
@@ -11,7 +11,7 @@ export interface MenuTemplateRow {
   'Lacak Stok (YA/TIDAK)': string;
   'SKU': string;
   'Barcode': string;
-  'Menu Unggulan (YA/TIDAK)': string;
+  'Produk Unggulan (YA/TIDAK)': string;
   'Deskripsi': string;
 }
 
@@ -20,7 +20,7 @@ export interface MenuTemplateRow {
  */
 const SAMPLE_TEMPLATE_DATA: MenuTemplateRow[] = [
   {
-    'Nama Menu *': 'Es Kopi Susu Gula Aren',
+    'Nama Produk *': 'Es Kopi Susu Gula Aren',
     'Kategori': 'Minuman Kopi',
     'Harga Jual *': 22000,
     'Harga Modal': 11000,
@@ -29,11 +29,11 @@ const SAMPLE_TEMPLATE_DATA: MenuTemplateRow[] = [
     'Lacak Stok (YA/TIDAK)': 'YA',
     'SKU': 'KOP-001',
     'Barcode': '899100100001',
-    'Menu Unggulan (YA/TIDAK)': 'YA',
+    'Produk Unggulan (YA/TIDAK)': 'YA',
     'Deskripsi': 'Espresso double shot dipadukan dengan susu segar dan sirup gula aren murni.',
   },
   {
-    'Nama Menu *': 'Nasi Goreng Spesial Menuin',
+    'Nama Produk *': 'Nasi Goreng Spesial Menuin',
     'Kategori': 'Makanan Utama',
     'Harga Jual *': 35000,
     'Harga Modal': 18000,
@@ -42,11 +42,11 @@ const SAMPLE_TEMPLATE_DATA: MenuTemplateRow[] = [
     'Lacak Stok (YA/TIDAK)': 'YA',
     'SKU': 'NAS-002',
     'Barcode': '899100100002',
-    'Menu Unggulan (YA/TIDAK)': 'YA',
+    'Produk Unggulan (YA/TIDAK)': 'YA',
     'Deskripsi': 'Nasi goreng harum bumbu rempah pilihan, dilengkapi telur mata sapi, ayam suwir, dan kerupuk.',
   },
   {
-    'Nama Menu *': 'Croissant Butter Crispy',
+    'Nama Produk *': 'Croissant Butter Crispy',
     'Kategori': 'Pastry & Roti',
     'Harga Jual *': 28000,
     'Harga Modal': 14000,
@@ -55,11 +55,11 @@ const SAMPLE_TEMPLATE_DATA: MenuTemplateRow[] = [
     'Lacak Stok (YA/TIDAK)': 'YA',
     'SKU': 'PAS-003',
     'Barcode': '899100100003',
-    'Menu Unggulan (YA/TIDAK)': 'TIDAK',
+    'Produk Unggulan (YA/TIDAK)': 'TIDAK',
     'Deskripsi': 'Croissant renyah berlapis dengan aroma butter Prancis yang wangi dan gurih.',
   },
   {
-    'Nama Menu *': 'Matcha Latte Ice',
+    'Nama Produk *': 'Matcha Latte Ice',
     'Kategori': 'Non-Kopi',
     'Harga Jual *': 26000,
     'Harga Modal': 13000,
@@ -68,17 +68,17 @@ const SAMPLE_TEMPLATE_DATA: MenuTemplateRow[] = [
     'Lacak Stok (YA/TIDAK)': 'YA',
     'SKU': 'MAT-004',
     'Barcode': '',
-    'Menu Unggulan (YA/TIDAK)': 'TIDAK',
+    'Produk Unggulan (YA/TIDAK)': 'TIDAK',
     'Deskripsi': 'Bubuk matcha murni berkualitas tinggi dengan susu creamy dingin.',
   },
 ];
 
 const GUIDE_DATA = [
   {
-    'Nama Kolom': 'Nama Menu *',
+    'Nama Kolom': 'Nama Produk *',
     'Wajib': 'WAJIB',
     'Tipe Data': 'Teks',
-    'Keterangan & Contoh': 'Nama item menu yang akan tampil di kasir dan menu digital. Contoh: "Es Kopi Susu"',
+    'Keterangan & Contoh': 'Nama item produk yang akan tampil di kasir dan katalog produk. Contoh: "Es Kopi Susu"',
   },
   {
     'Nama Kolom': 'Kategori',
@@ -129,16 +129,16 @@ const GUIDE_DATA = [
     'Keterangan & Contoh': 'Kode barcode fisik produk (misal EAN-13). Jika kosong, sistem otomatis membuat barcode acak.',
   },
   {
-    'Nama Kolom': 'Menu Unggulan (YA/TIDAK)',
+    'Nama Kolom': 'Produk Unggulan (YA/TIDAK)',
     'Wajib': 'Opsional',
     'Tipe Data': 'YA / TIDAK',
-    'Keterangan & Contoh': 'Isi YA jika menu ini merupakan Best Seller / menu unggulan. Default: TIDAK',
+    'Keterangan & Contoh': 'Isi YA jika produk ini merupakan Best Seller / produk unggulan. Default: TIDAK',
   },
   {
     'Nama Kolom': 'Deskripsi',
     'Wajib': 'Opsional',
     'Tipe Data': 'Teks',
-    'Keterangan & Contoh': 'Penjelasan singkat mengenai komposisi atau rasa menu.',
+    'Keterangan & Contoh': 'Penjelasan singkat mengenai komposisi atau detail produk.',
   },
 ];
 
@@ -153,7 +153,7 @@ export function downloadMenuTemplate(format: 'xlsx' | 'csv' = 'xlsx') {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', 'Template_Import_Menu_Menuin.csv');
+    link.setAttribute('download', 'Template_Import_Produk_Menuin.csv');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -164,12 +164,12 @@ export function downloadMenuTemplate(format: 'xlsx' | 'csv' = 'xlsx') {
   // Buat workbook dengan 2 sheet
   const wb = XLSX.utils.book_new();
 
-  // Sheet 1: Template Menu
+  // Sheet 1: Template Produk
   const wsTemplate = XLSX.utils.json_to_sheet(SAMPLE_TEMPLATE_DATA);
   
   // Atur lebar kolom agar rapi
   wsTemplate['!cols'] = [
-    { wch: 30 }, // Nama Menu
+    { wch: 30 }, // Nama Produk
     { wch: 20 }, // Kategori
     { wch: 15 }, // Harga Jual
     { wch: 15 }, // Harga Modal
@@ -178,11 +178,11 @@ export function downloadMenuTemplate(format: 'xlsx' | 'csv' = 'xlsx') {
     { wch: 22 }, // Lacak Stok
     { wch: 15 }, // SKU
     { wch: 20 }, // Barcode
-    { wch: 25 }, // Menu Unggulan
+    { wch: 25 }, // Produk Unggulan
     { wch: 50 }, // Deskripsi
   ];
 
-  XLSX.utils.book_append_sheet(wb, wsTemplate, 'Template Menu');
+  XLSX.utils.book_append_sheet(wb, wsTemplate, 'Template Produk');
 
   // Sheet 2: Petunjuk Pengisian
   const wsGuide = XLSX.utils.json_to_sheet(GUIDE_DATA);
@@ -195,15 +195,15 @@ export function downloadMenuTemplate(format: 'xlsx' | 'csv' = 'xlsx') {
   XLSX.utils.book_append_sheet(wb, wsGuide, 'Petunjuk Pengisian');
 
   // Unduh file
-  XLSX.writeFile(wb, 'Template_Import_Menu_Menuin.xlsx');
+  XLSX.writeFile(wb, 'Template_Import_Produk_Menuin.xlsx');
 }
 
 /**
- * Ekspor daftar menu saat ini ke Excel (.xlsx)
+ * Ekspor daftar produk saat ini ke Excel (.xlsx)
  */
 export function exportProductsToExcel(productsList: ProductDto[], outletName?: string) {
   const dataToExport = productsList.map((item) => ({
-    'Nama Menu': item.name,
+    'Nama Produk': item.name,
     'Kategori': item.categoryName || 'Tanpa Kategori',
     'Harga Jual': parseFloat(item.price || '0'),
     'Harga Modal': parseFloat(item.costPrice || '0'),
@@ -213,7 +213,7 @@ export function exportProductsToExcel(productsList: ProductDto[], outletName?: s
     'SKU': item.sku || '',
     'Barcode': item.barcode || '',
     'Status': item.isActive !== false ? 'Aktif' : 'Nonaktif',
-    'Menu Unggulan': item.isFeatured ? 'YA' : 'TIDAK',
+    'Produk Unggulan': item.isFeatured ? 'YA' : 'TIDAK',
     'Deskripsi': item.description || '',
   }));
 
@@ -222,7 +222,7 @@ export function exportProductsToExcel(productsList: ProductDto[], outletName?: s
 
   // Auto lebar kolom
   ws['!cols'] = [
-    { wch: 30 }, // Nama Menu
+    { wch: 30 }, // Nama Produk
     { wch: 20 }, // Kategori
     { wch: 15 }, // Harga Jual
     { wch: 15 }, // Harga Modal
@@ -232,25 +232,25 @@ export function exportProductsToExcel(productsList: ProductDto[], outletName?: s
     { wch: 18 }, // SKU
     { wch: 20 }, // Barcode
     { wch: 12 }, // Status
-    { wch: 15 }, // Menu Unggulan
+    { wch: 15 }, // Produk Unggulan
     { wch: 45 }, // Deskripsi
   ];
 
-  XLSX.utils.book_append_sheet(wb, ws, 'Daftar Menu');
+  XLSX.utils.book_append_sheet(wb, ws, 'Daftar Produk');
 
   const sanitizedOutlet = (outletName || 'Outlet').replace(/[^a-zA-Z0-9_-]/g, '_');
   const dateStr = new Date().toISOString().split('T')[0];
-  const filename = `Menu_${sanitizedOutlet}_${dateStr}.xlsx`;
+  const filename = `Produk_${sanitizedOutlet}_${dateStr}.xlsx`;
 
   XLSX.writeFile(wb, filename);
 }
 
 /**
- * Ekspor daftar menu ke format CSV (.csv)
+ * Ekspor daftar produk ke format CSV (.csv)
  */
 export function exportProductsToCsv(productsList: ProductDto[], outletName?: string) {
   const dataToExport = productsList.map((item) => ({
-    'Nama Menu': item.name,
+    'Nama Produk': item.name,
     'Kategori': item.categoryName || 'Tanpa Kategori',
     'Harga Jual': parseFloat(item.price || '0'),
     'Harga Modal': parseFloat(item.costPrice || '0'),
@@ -260,7 +260,7 @@ export function exportProductsToCsv(productsList: ProductDto[], outletName?: str
     'SKU': item.sku || '',
     'Barcode': item.barcode || '',
     'Status': item.isActive !== false ? 'Aktif' : 'Nonaktif',
-    'Menu Unggulan': item.isFeatured ? 'YA' : 'TIDAK',
+    'Produk Unggulan': item.isFeatured ? 'YA' : 'TIDAK',
     'Deskripsi': item.description || '',
   }));
 
@@ -273,7 +273,7 @@ export function exportProductsToCsv(productsList: ProductDto[], outletName?: str
   
   const sanitizedOutlet = (outletName || 'Outlet').replace(/[^a-zA-Z0-9_-]/g, '_');
   const dateStr = new Date().toISOString().split('T')[0];
-  link.setAttribute('download', `Menu_${sanitizedOutlet}_${dateStr}.csv`);
+  link.setAttribute('download', `Produk_${sanitizedOutlet}_${dateStr}.csv`);
   
   document.body.appendChild(link);
   link.click();

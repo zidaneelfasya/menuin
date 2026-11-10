@@ -5,6 +5,7 @@ import { getCurrentUser } from '@/lib/actions/auth';
 import { PaymentGate } from '@/components/payment-gate';
 import { getReportsOverview } from '@/lib/actions/reports';
 import { DashboardOverviewClient } from '@/features/dashboard/components/dashboard-overview-client';
+import { DashboardSkeleton } from '@/features/dashboard/components/dashboard-skeleton';
 
 type Props = {
   params: Promise<{ outletKey: string }>;
@@ -32,7 +33,7 @@ async function DashboardDataWrapper({ params }: Props) {
 
   if (!res.success || !res.data) {
     return (
-      <div className="p-8 text-center text-slate-500 bg-white rounded-2xl border border-slate-200">
+      <div className="p-8 text-center text-slate-500 bg-white rounded-2xl border-none shadow-sm-md">
         {res.error || 'Gagal memuat dashboard outlet.'}
       </div>
     );
@@ -47,23 +48,7 @@ async function DashboardDataWrapper({ params }: Props) {
 
 export default function Page({ params }: Props) {
   return (
-    <Suspense
-      fallback={
-        <div className="p-6 space-y-6 max-w-7xl mx-auto animate-pulse">
-          <div className="h-44 bg-slate-100 rounded-2xl" />
-          <div className="h-16 bg-slate-100 rounded-2xl" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-44 bg-slate-100 rounded-2xl" />
-            ))}
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 h-72 bg-slate-100 rounded-2xl" />
-            <div className="lg:col-span-1 h-72 bg-slate-100 rounded-2xl" />
-          </div>
-        </div>
-      }
-    >
+    <Suspense fallback={<DashboardSkeleton />}>
       <DashboardDataWrapper params={params} />
     </Suspense>
   );

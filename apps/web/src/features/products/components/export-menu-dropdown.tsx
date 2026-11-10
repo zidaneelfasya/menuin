@@ -36,17 +36,17 @@ export function ExportMenuDropdown({
 
   const handleExportAll = (format: 'xlsx' | 'csv') => {
     if (products.length === 0) {
-      toast.error('Tidak ada data menu untuk diekspor');
+      toast.error('Tidak ada data produk untuk diekspor');
       return;
     }
 
     try {
       if (format === 'xlsx') {
         exportProductsToExcel(products, outletName);
-        toast.success(`Berhasil mengekspor ${products.length} menu ke Excel`);
+        toast.success(`Berhasil mengekspor ${products.length} produk ke Excel`);
       } else {
         exportProductsToCsv(products, outletName);
-        toast.success(`Berhasil mengekspor ${products.length} menu ke CSV`);
+        toast.success(`Berhasil mengekspor ${products.length} produk ke CSV`);
       }
     } catch (e: any) {
       toast.error('Gagal mengekspor data: ' + (e?.message || 'Terjadi kesalahan'));
@@ -55,17 +55,17 @@ export function ExportMenuDropdown({
 
   const handleExportSelected = (format: 'xlsx' | 'csv') => {
     if (selectedProducts.length === 0) {
-      toast.error('Pilih minimal satu menu untuk diekspor');
+      toast.error('Pilih minimal satu produk untuk diekspor');
       return;
     }
 
     try {
       if (format === 'xlsx') {
         exportProductsToExcel(selectedProducts, `${outletName || 'Outlet'}_Terpilih`);
-        toast.success(`Berhasil mengekspor ${selectedProducts.length} menu terpilih ke Excel`);
+        toast.success(`Berhasil mengekspor ${selectedProducts.length} produk terpilih ke Excel`);
       } else {
         exportProductsToCsv(selectedProducts, `${outletName || 'Outlet'}_Terpilih`);
-        toast.success(`Berhasil mengekspor ${selectedProducts.length} menu terpilih ke CSV`);
+        toast.success(`Berhasil mengekspor ${selectedProducts.length} produk terpilih ke CSV`);
       }
     } catch (e: any) {
       toast.error('Gagal mengekspor data: ' + (e?.message || 'Terjadi kesalahan'));
@@ -86,7 +86,7 @@ export function ExportMenuDropdown({
       <DropdownMenuTrigger asChild>
         <Button variant={variant} size={size} className={className || "rounded-full gap-2 font-medium shadow-md bg-white hover:bg-slate-100 text-slate-700 border-none h-10 px-4"}>
           <Download className="w-4 h-4 text-slate-600" />
-          <span>Export Menu</span>
+          <span>Export Produk</span>
           <ChevronDown className="w-3.5 h-3.5 opacity-60 ml-0.5" />
         </Button>
       </DropdownMenuTrigger>
@@ -94,7 +94,7 @@ export function ExportMenuDropdown({
         {hasSelection && (
           <>
             <DropdownMenuLabel className="text-[11px] font-semibold text-muted-foreground px-2 py-1 uppercase tracking-wider">
-              Menu Terpilih ({selectedProducts.length})
+              Produk Terpilih ({selectedProducts.length})
             </DropdownMenuLabel>
             <DropdownMenuItem 
               onClick={() => handleExportSelected('xlsx')}
@@ -115,7 +115,7 @@ export function ExportMenuDropdown({
         )}
 
         <DropdownMenuLabel className="text-[11px] font-semibold text-muted-foreground px-2 py-1 uppercase tracking-wider">
-          Semua Menu ({products.length})
+          Semua Produk ({products.length})
         </DropdownMenuLabel>
         <DropdownMenuItem 
           onClick={() => handleExportAll('xlsx')}

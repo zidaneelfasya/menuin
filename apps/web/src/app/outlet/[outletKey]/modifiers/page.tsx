@@ -6,7 +6,7 @@ import ModifiersLoading from './loading';
 import { connection } from "next/server";
 import { requireFeature } from '@/lib/actions/auth-context';
 
-export const metadata: Metadata = { title: 'Topping & Varian - Menuin' };
+export const metadata: Metadata = { title: 'Modifier - Menuin' };
 
 async function ModifierDataWrapper() {
   await connection();

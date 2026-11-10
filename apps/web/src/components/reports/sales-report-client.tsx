@@ -1017,7 +1017,7 @@ function ProductTableView({
       <table className="w-full text-left border-collapse min-w-[360px] h-full">
         <thead>
           <tr className="border-b border-slate-100 text-[11px] font-medium text-slate-400 h-[30px]">
-            <th className="pb-2 px-2 text-left font-medium">Nama Menu</th>
+            <th className="pb-2 px-2 text-left font-medium">Nama Produk</th>
             <th className="pb-2 px-2 text-center font-medium">Kategori</th>
             <th className="pb-2 px-2 text-right font-medium">Terjual</th>
             <th className="pb-2 px-2 text-right font-medium">Omzet</th>
@@ -1041,7 +1041,7 @@ function ProductTableView({
                 key={p.id}
                 className="hover:bg-slate-50/60 transition-colors text-xs group h-[58px]"
               >
-                {/* 1. Nama Menu & Harga */}
+                {/* 1. Nama Produk & Harga */}
                 <td className="py-2 px-2 align-middle">
                   <div className="flex items-center gap-2 min-w-0">
                     {theme && (
@@ -1439,7 +1439,7 @@ export function SalesReportClient({ initialData, outletKey }: SalesReportClientP
         { Indikator: "Pertumbuhan Penjualan (%)", Nilai: `${data.kpis.netSalesGrowth.toFixed(1)}%` },
         { Indikator: "Total Pesanan (Total Orders)", Nilai: data.kpis.totalOrders },
         { Indikator: "Rata-rata Order (AOV)", Nilai: Math.round(data.kpis.aov) },
-        { Indikator: "Total Menu Terjual (Qty)", Nilai: data.kpis.totalItemsSold || 0 },
+        { Indikator: "Total Produk Terjual (Qty)", Nilai: data.kpis.totalItemsSold || 0 },
         { Indikator: "Penjualan Kotor (Gross Sales)", Nilai: Math.round(data.kpis.grossSales) },
         { Indikator: "Total Potongan (Diskon & MDR)", Nilai: Math.round(data.kpis.totalDeductions) },
         { Indikator: "Estimasi Laba Kotor (Gross Profit)", Nilai: Math.round(data.kpis.grossProfit) },
@@ -1463,11 +1463,11 @@ export function SalesReportClient({ initialData, outletKey }: SalesReportClientP
       trendSheet["!cols"] = [{ wch: 18 }, { wch: 15 }, { wch: 22 }, { wch: 22 }, { wch: 16 }, { wch: 15 }, { wch: 24 }];
       XLSX.utils.book_append_sheet(workbook, trendSheet, "Tren Penjualan");
 
-      // Sheet 3: Menu Terlaris & Kurang Laku
+      // Sheet 3: Produk Terlaris & Kurang Laku
       const bestRows = (data.topProducts || []).map((p, idx) => ({
         Status: "Terlaris (Top Selling)",
         Peringkat: idx + 1,
-        "Nama Menu": p.name,
+        "Nama Produk": p.name,
         Kategori: p.categoryName,
         "Jumlah Terjual (Qty)": p.totalQty,
         "Harga Satuan (Rp)": Math.round(p.price),
@@ -1476,7 +1476,7 @@ export function SalesReportClient({ initialData, outletKey }: SalesReportClientP
       const worstRows = (data.bottomProducts || []).map((p, idx) => ({
         Status: "Perlu Evaluasi (Kurang Laku)",
         Peringkat: idx + 1,
-        "Nama Menu": p.name,
+        "Nama Produk": p.name,
         Kategori: p.categoryName,
         "Jumlah Terjual (Qty)": p.totalQty,
         "Harga Satuan (Rp)": Math.round(p.price),
@@ -1484,18 +1484,18 @@ export function SalesReportClient({ initialData, outletKey }: SalesReportClientP
       }));
       const productSheet = XLSX.utils.json_to_sheet([...bestRows, ...worstRows]);
       productSheet["!cols"] = [{ wch: 28 }, { wch: 10 }, { wch: 28 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 22 }];
-      XLSX.utils.book_append_sheet(workbook, productSheet, "Performa Menu");
+      XLSX.utils.book_append_sheet(workbook, productSheet, "Performa Produk");
 
       // Sheet 4: Kategori & Kanal
       const categoryRows = (data.topCategories || []).map((cat) => ({
         Kategori: cat.name,
-        "Porsi Terjual (Qty)": cat.totalQty,
+        "Jumlah Terjual (Qty)": cat.totalQty,
         "Total Omzet (Rp)": Math.round(cat.totalRevenue),
         "Kontribusi Omzet (%)": `${cat.percentage.toFixed(1)}%`,
       }));
       const categorySheet = XLSX.utils.json_to_sheet(categoryRows);
       categorySheet["!cols"] = [{ wch: 25 }, { wch: 20 }, { wch: 22 }, { wch: 22 }];
-      XLSX.utils.book_append_sheet(workbook, categorySheet, "Kategori Menu");
+      XLSX.utils.book_append_sheet(workbook, categorySheet, "Kategori Produk");
 
       const safePeriodLabel = data.period.formattedStart.replace(/[\/\s]/g, "-");
       const fileName = `Laporan_Penjualan_${data.tenant.name.replace(/\s+/g, "_")}_${safePeriodLabel}.xlsx`;
@@ -1730,7 +1730,7 @@ export function SalesReportClient({ initialData, outletKey }: SalesReportClientP
       {
         id: "gross",
         name: "Gross Sales",
-        desc: "Total menu \u00d7 harga (sebelum diskon)",
+        desc: "Total produk \u00d7 harga (sebelum diskon)",
         amount: grossVal,
         formattedAmount: formatRupiah(grossVal),
         pct: grossVal > 0 ? "100.0%" : "0.0%",
@@ -2287,10 +2287,10 @@ export function SalesReportClient({ initialData, outletKey }: SalesReportClientP
             <div className="mt-8 flex items-end justify-between gap-3">
               <div className="min-w-0">
                 <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
-                  Total Menu Terjual
+                  Total Produk Terjual
                 </span>
                 <div className="text-xl sm:text-2xl font-semibold text-slate-900 tracking-tight whitespace-nowrap mt-1">
-                  {formatNumber(kpis.totalItemsSold || 0)} <span className="text-sm font-normal text-slate-400">Porsi</span>
+                  {formatNumber(kpis.totalItemsSold || 0)} <span className="text-sm font-normal text-slate-400">Item</span>
                 </div>
               </div>
               <div className="flex-shrink-0 pb-0.5">
@@ -2915,7 +2915,7 @@ export function SalesReportClient({ initialData, outletKey }: SalesReportClientP
                   Kategori Terlaris
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  {categoryMetric === "revenue" ? "Porsi omzet per kategori menu" : "Porsi kuantitas produk keluar"}
+                  {categoryMetric === "revenue" ? "Porsi omzet per kategori produk" : "Porsi kuantitas produk keluar"}
                 </p>
               </div>
 
@@ -2943,7 +2943,7 @@ export function SalesReportClient({ initialData, outletKey }: SalesReportClientP
                       : "text-slate-500 hover:text-slate-900"
                   )}
                 >
-                  Porsi
+                  Kuantitas
                 </button>
               </div>
             </div>
@@ -2951,7 +2951,7 @@ export function SalesReportClient({ initialData, outletKey }: SalesReportClientP
             <div className="space-y-4 pt-3">
               {(!sortedCategories || sortedCategories.length === 0) ? (
                 <div className="py-12 text-center text-xs text-slate-400">
-                  Belum ada data kategori menu terjual.
+                  Belum ada data kategori produk terjual.
                 </div>
               ) : (
                 sortedCategories.slice(0, 5).map((cat, idx) => {
@@ -3080,13 +3080,13 @@ export function SalesReportClient({ initialData, outletKey }: SalesReportClientP
                 products={sortedTopProducts}
                 metric={topMenuMetric}
                 rankThemes={RANK_THEMES}
-                emptyMessage="Belum ada menu terjual pada periode ini."
+                emptyMessage="Belum ada produk terjual pada periode ini."
               />
             ) : (
               <div className="divide-y divide-slate-100 pt-1 min-h-[320px] flex flex-col justify-between">
                 {(!sortedTopProducts || sortedTopProducts.length === 0) ? (
                   <div className="text-center text-xs text-slate-400 min-h-[320px] flex items-center justify-center">
-                    Belum ada menu terjual pada periode ini.
+                    Belum ada produk terjual pada periode ini.
                   </div>
                 ) : (
                   (() => {
@@ -3136,7 +3136,7 @@ export function SalesReportClient({ initialData, outletKey }: SalesReportClientP
 
                             <div className="text-right flex-shrink-0">
                               <div className="text-xs font-semibold text-slate-900">
-                                {topMenuMetric === "revenue" ? formatRupiah(p.totalRevenue) : `${formatNumber(p.totalQty)} porsi`}
+                                {topMenuMetric === "revenue" ? formatRupiah(p.totalRevenue) : `${formatNumber(p.totalQty)} item`}
                                 <span className="text-slate-400 font-normal ml-1">
                                   ({pct.toFixed(1)}%)
                                 </span>
@@ -3149,7 +3149,7 @@ export function SalesReportClient({ initialData, outletKey }: SalesReportClientP
                                     </span>
                                   ) : (
                                     <span className="text-[11px] text-slate-500 font-medium">
-                                      {formatNumber(p.totalQty)} porsi terjual
+                                      {formatNumber(p.totalQty)} item terjual
                                     </span>
                                   )
                                 ) : (
@@ -3184,18 +3184,18 @@ export function SalesReportClient({ initialData, outletKey }: SalesReportClientP
           <div className="pt-3 border-t border-slate-100 mt-2 flex items-center justify-between text-[11px] text-slate-500">
             <span>Dihitung dari transaksi yang selesai</span>
             <span className="text-[#0e59f9] font-medium hover:underline inline-flex items-center gap-0.5 cursor-pointer">
-              Lihat Semua Menu <ChevronRight className="w-3 h-3" />
+              Lihat Semua Produk <ChevronRight className="w-3 h-3" />
             </span>
           </div>
         </div>
 
-        {/* Card 2: ⚠️ Menu Perlu Evaluasi (Worst Selling) */}
+        {/* Card 2: ⚠️ Produk Perlu Evaluasi (Worst Selling) */}
         <div className="bg-white rounded-2xl border-none p-5 sm:p-6 shadow-sm-md hover:shadow-md transition-all flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div>
                 <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-                  Menu Perlu Evaluasi
+                  Produk Perlu Evaluasi
                 </h3>
               </div>
 

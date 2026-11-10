@@ -27,6 +27,7 @@ import {
 	Store,
 	ChefHat,
 	SlidersHorizontal,
+	Boxes,
 	Smartphone,
 	ShieldCheck,
 } from "lucide-react";
@@ -59,13 +60,13 @@ const getNavItems = (outletKey: string) => [
 		roles: ["OWNER", "MANAGER", "CASHIER"],
 	},
 	{
-		name: "Katalog Menu",
+		name: "Katalog Produk",
 		href: `/outlet/${outletKey}/katalog`,
 		icon: Store,
 		roles: ["OWNER", "MANAGER"],
 	},
 	{
-		name: "Daftar Menu",
+		name: "Daftar Produk",
 		href: `/outlet/${outletKey}/items`,
 		icon: Package,
 		roles: ["OWNER", "MANAGER"],
@@ -77,9 +78,15 @@ const getNavItems = (outletKey: string) => [
 		roles: ["OWNER", "MANAGER"],
 	},
 	{
-		name: "Topping & Varian",
+		name: "Modifier",
 		href: `/outlet/${outletKey}/modifiers`,
 		icon: SlidersHorizontal,
+		roles: ["OWNER", "MANAGER"],
+	},
+	{
+		name: "Stok Bahan",
+		href: `/outlet/${outletKey}/materials`,
+		icon: Boxes,
 		roles: ["OWNER", "MANAGER"],
 	},
 	{
@@ -157,7 +164,7 @@ function SidebarContent({
 		(item) => !item.roles || item.roles.includes(user.role as any),
 	);
 
-	// Determine if the current page has a sub-sidebar (e.g. Katalog Menu, Shift Kasir, Settings, Reports, or Verification)
+	// Determine if the current page has a sub-sidebar (e.g. Katalog Produk, Shift Kasir, Settings, Reports, or Verification)
 	const hasSubSidebar =
 		pathname.includes("/katalog") ||
 		pathname.includes("/shifts") ||

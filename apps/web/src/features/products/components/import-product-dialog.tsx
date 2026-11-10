@@ -170,7 +170,7 @@ export function ImportProductDialog() {
         }, 1800);
       } else {
         setErrorMsg(res.error || 'Terjadi kesalahan saat mengimpor data');
-        toast.error(res.error || 'Gagal mengimpor menu');
+        toast.error(res.error || 'Gagal mengimpor produk');
       }
     });
   };
@@ -192,10 +192,10 @@ export function ImportProductDialog() {
             <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center">
               <FileSpreadsheet className="w-4 h-4" />
             </div>
-            <span>Import Menu dari Excel / CSV</span>
+            <span>Import Produk dari Excel / CSV</span>
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground mt-1">
-            Unggah file spreadsheet untuk menambahkan banyak menu sekaligus. Kategori, Barcode, & SKU otomatis dilengkapi.
+            Unggah file spreadsheet untuk menambahkan banyak produk sekaligus. Kategori, Barcode, & SKU otomatis dilengkapi.
           </DialogDescription>
         </DialogHeader>
 
@@ -209,7 +209,7 @@ export function ImportProductDialog() {
                   Gunakan Template Standar Menuin
                 </span>
                 <p className="text-[11px] text-muted-foreground leading-relaxed">
-                  Agar proses import berjalan mulus, silakan unduh format template kami yang telah disertai contoh data menu dan petunjuk pengisian.
+                  Agar proses import berjalan mulus, silakan unduh format template kami yang telah disertai contoh data produk dan petunjuk pengisian.
                 </p>
               </div>
             </div>
@@ -297,7 +297,7 @@ export function ImportProductDialog() {
                 <Table className="w-full text-left text-xs">
                   <TableHeader>
                     <TableRow className="border-none bg-slate-50 hover:bg-slate-50">
-                      <TableHead className="py-2 px-3 font-semibold">Nama Menu</TableHead>
+                      <TableHead className="py-2 px-3 font-semibold">Nama Produk</TableHead>
                       <TableHead className="py-2 px-3 font-semibold">Kategori</TableHead>
                       <TableHead className="py-2 px-3 font-semibold text-right">Harga Jual</TableHead>
                       <TableHead className="py-2 px-3 font-semibold text-right">Stok</TableHead>
@@ -361,11 +361,11 @@ export function ImportProductDialog() {
           >
             {isPending ? (
               <span className="flex items-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin" /> Mengimpor Menu...
+                <Loader2 className="w-4 h-4 animate-spin" /> Mengimpor Produk...
               </span>
             ) : (
               <span className="flex items-center gap-1.5">
-                <Upload className="w-4 h-4" /> Mulai Import ({totalParsedRows || 0} Menu)
+                <Upload className="w-4 h-4" /> Mulai Import ({totalParsedRows || 0} Produk)
               </span>
             )}
           </Button>
