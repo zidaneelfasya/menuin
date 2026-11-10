@@ -13,6 +13,8 @@ export interface CartItem {
   notes?: string;
 }
 
+export type PosDisplayMode = 'image' | 'color' | 'side-image';
+
 interface CartStore {
   items: CartItem[];
   discount: number;
@@ -21,9 +23,10 @@ interface CartStore {
   customerName: string;
   tableNumber: string;
   appliedPromo: { id: string; code?: string; name: string; discountAmount: number } | null;
-  displayMode: 'image' | 'color';
-  setDisplayMode: (mode: 'image' | 'color') => void;
+  displayMode: PosDisplayMode;
+  setDisplayMode: (mode: PosDisplayMode) => void;
   addItem: (item: Omit<CartItem, 'id' | 'quantity'>) => void;
+  decreaseItemByProductId: (productId: string) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   setDiscount: (amount: number) => void;
@@ -103,6 +106,24 @@ export const useCartStore = create<CartStore>()(
           }
           return {
             items: [...state.items, { ...newItem, id: uniqueId, quantity: 1 }],
+          };
+        });
+      },
+
+      decreaseItemByProductId: (productId) => {
+        set((state) => {
+          const matching = state.items.filter((i) => i.productId === productId);
+          if (matching.length === 0) return state;
+          const target = matching[matching.length - 1];
+          if (target.quantity > 1) {
+            return {
+              items: state.items.map((i) =>
+                i.id === target.id ? { ...i, quantity: i.quantity - 1 } : i
+              ),
+            };
+          }
+          return {
+            items: state.items.filter((i) => i.id !== target.id),
           };
         });
       },

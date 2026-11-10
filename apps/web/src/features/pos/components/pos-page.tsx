@@ -277,10 +277,10 @@ export function POSPage({
         </div>
 
         {/* Mobile Cart Floating Bottom Bar */}
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 p-3 bg-background/95 backdrop-blur-sm border-t border-[#EAEFF8] z-20 shadow-xs">
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 p-3 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border-t border-slate-100 dark:border-slate-800 z-20 shadow-md">
           <Drawer open={isMobileCartOpen} onOpenChange={setIsMobileCartOpen}>
             <DrawerTrigger asChild>
-              <button className="w-full h-12 bg-[#0e59f9] hover:bg-[#0b4de0] text-white rounded-xl flex items-center justify-between px-4 font-semibold shadow-xs active:scale-[0.98] transition-transform cursor-pointer">
+              <button className="w-full h-12 bg-[#0e59f9] hover:bg-[#0b4de0] text-white rounded-full flex items-center justify-between px-5 font-semibold shadow-md active:scale-[0.98] transition-transform cursor-pointer">
                 <div className="flex items-center">
                   <div className="relative">
                     <ShoppingBag size={18} />

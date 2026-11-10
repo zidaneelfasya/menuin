@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Plus, Search, Power, PowerOff, CheckCircle2, SlidersHorizontal, Package, X, Image as ImageIcon, Palette, ThumbsUp } from 'lucide-react';
+import { Plus, Search, Power, PowerOff, CheckCircle2, SlidersHorizontal, Package, X, Image as ImageIcon, Palette, ThumbsUp, Columns2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import {
   DropdownMenu,
@@ -65,7 +65,7 @@ export function ProductCatalog({
   React.useEffect(() => {
     try {
       const saved = localStorage.getItem('menuin_pos_display_mode');
-      if (saved === 'color' || saved === 'image') {
+      if (saved === 'color' || saved === 'image' || saved === 'side-image') {
         setDisplayMode(saved);
       }
     } catch {
@@ -73,7 +73,7 @@ export function ProductCatalog({
     }
   }, [setDisplayMode]);
 
-  const handleSetDisplayMode = (mode: 'image' | 'color') => {
+  const handleSetDisplayMode = (mode: 'image' | 'color' | 'side-image') => {
     setDisplayMode(mode);
   };
 
@@ -89,6 +89,7 @@ export function ProductCatalog({
   }, [categories]);
 
   const addItem = useCartStore((state) => state.addItem);
+  const decreaseItemByProductId = useCartStore((state) => state.decreaseItemByProductId);
   const cartItems = useCartStore((state) => state.items);
 
   const cartCounts = React.useMemo(() => {
@@ -451,11 +452,11 @@ export function ProductCatalog({
       {/* Search Bar + Compact Settings Dropdown (Tampilan & Ketersediaan) */}
       <div className="flex items-center gap-2 shrink-0">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
           <Input
             ref={searchInputRef}
             placeholder="Cari produk atau scan barcode..."
-            className="pl-9 pr-8 h-9 text-xs rounded-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-slate-200 dark:focus-visible:border-slate-800 focus-visible:outline-none shadow-2xs"
+            className="pl-10 pr-9 h-10 text-xs sm:text-sm rounded-full bg-white dark:bg-slate-900 border-none shadow-sm-md hover:shadow-md focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-none focus-visible:outline-none transition-all placeholder:text-slate-400 font-medium"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={handleSearchKeyDown}
@@ -467,7 +468,7 @@ export function ProductCatalog({
                 setSearchQuery('');
                 searchInputRef.current?.focus();
               }}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer p-1 rounded-full transition-colors"
               title="Hapus pencarian"
             >
               <X className="w-3.5 h-3.5" />
@@ -475,14 +476,14 @@ export function ProductCatalog({
           )}
         </div>
 
-        {/* Dropdown Pengaturan Tampilan & Ketersediaan (Single Compact Icon Button 36x36px, 100% matching Kanban Board) */}
+        {/* Dropdown Pengaturan Tampilan & Ketersediaan */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               type="button"
               variant="outline"
               size="icon"
-              className="relative h-9 w-9 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-2xs shrink-0 rounded-xl cursor-pointer"
+              className="relative h-10 w-10 border-none bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-sm-md hover:shadow-md shrink-0 rounded-full cursor-pointer transition-all"
               title="Pengaturan Tampilan & Ketersediaan"
             >
               <SlidersHorizontal className="w-4 h-4 text-slate-500 shrink-0" />
@@ -491,7 +492,7 @@ export function ProductCatalog({
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="end"
-            className="w-56 p-2 rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl space-y-0.5"
+            className="w-56 p-2 rounded-2xl border-none bg-white dark:bg-slate-900 shadow-2xl space-y-0.5"
           >
             {/* Seksi 1: Mode Tampilan */}
             <div className="px-3 py-1 text-xs font-medium text-slate-500 dark:text-slate-400">
@@ -514,6 +515,25 @@ export function ProductCatalog({
                   )}
                 />
                 <span>Gambar</span>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleSetDisplayMode('side-image')}
+              className={cn(
+                "text-xs px-3 py-2 cursor-pointer rounded-full font-medium flex items-center transition-colors",
+                displayMode === 'side-image'
+                  ? "bg-blue-600 text-white font-semibold shadow-2xs hover:bg-blue-500 focus:bg-blue-500 focus:text-white data-[highlighted]:bg-blue-500 data-[highlighted]:text-white"
+                  : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 hover:text-slate-900 focus:bg-slate-100 focus:text-slate-900 data-[highlighted]:bg-slate-100 data-[highlighted]:text-slate-900 dark:hover:bg-slate-800 dark:focus:bg-slate-800 dark:data-[highlighted]:bg-slate-800"
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <Columns2
+                  className={cn(
+                    "w-3.5 h-3.5",
+                    displayMode === 'side-image' ? "text-white" : "text-slate-500"
+                  )}
+                />
+                <span>Gambar Samping</span>
               </div>
             </DropdownMenuItem>
             <DropdownMenuItem
@@ -608,7 +628,7 @@ export function ProductCatalog({
                 <span>{tab.label}</span>
                 <span
                   className={cn(
-                    "text-xs px-2 py-0.5 rounded-lg font-medium transition-colors tabular-nums",
+                    "text-xs px-2 py-0.5 rounded-full font-medium transition-colors tabular-nums",
                     isActive
                       ? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300"
                       : "text-slate-400 dark:text-slate-500 bg-slate-100/70 dark:bg-slate-800/50"
@@ -665,7 +685,7 @@ export function ProductCatalog({
                     isAvailable
                       ? isInCart
                         ? "cursor-pointer group shadow-xs active:scale-[0.98]"
-                        : "cursor-pointer group shadow-sm hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98]"
+                        : "cursor-pointer group shadow-sm-md active:scale-[0.98]"
                       : "opacity-40 grayscale-[30%] bg-slate-100 cursor-not-allowed pointer-events-none shadow-none"
                   )}
                   onClick={() => {
@@ -696,30 +716,32 @@ export function ProductCatalog({
                     </div>
                   ) : null}
 
-                  {/* Top Row: Food Icon + Recommendation Badge */}
+                  {/* Top Row: Food Icon + Recommendation Badge & Minus Button */}
                   <div className="flex items-center justify-between gap-1.5">
                     <div
                       style={{
                         backgroundColor: isAvailable ? palette.iconBgHex : undefined,
                         color: isAvailable ? palette.iconColorHex : undefined,
                       }}
-                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105"
+                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                     >
                       <FoodIcon className="w-5 h-5" />
                     </div>
 
-                    {product.isFeatured && (
-                      <div
-                        style={{
-                          backgroundColor: isAvailable ? palette.iconBgHex : undefined,
-                          color: isAvailable ? palette.iconColorHex : undefined,
-                        }}
-                        className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105"
-                        title="Menu Rekomendasi"
-                      >
-
-                      </div>
-                    )}
+                    <div className="flex items-center gap-1.5">
+                      {product.isFeatured && (
+                        <div
+                          style={{
+                            backgroundColor: isAvailable ? palette.iconBgHex : undefined,
+                            color: isAvailable ? palette.iconColorHex : undefined,
+                          }}
+                          className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+                          title="Menu Rekomendasi"
+                        >
+                          <ThumbsUp className="w-4 h-4" />
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Middle: Product Name */}
@@ -780,6 +802,148 @@ export function ProductCatalog({
               </div>
             )}
           </div>
+        ) : displayMode === 'side-image' ? (
+          /* ================= SIDE-IMAGE / COMPACT SPLIT MODE (REFERENSI GAMBAR 3) ================= */
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 auto-rows-[195px] sm:auto-rows-[205px] gap-3.5 sm:gap-4">
+            {filteredProducts.slice(0, visibleCount).map((product, productIndex) => {
+              const isActive = product.isActive !== false;
+              const isOutOfStock = product.trackStock !== false && product.stock <= 0;
+              const isAvailable = isActive && !isOutOfStock;
+              const cartQuantity = cartCounts[product.id] || 0;
+              const isInCart = cartQuantity > 0;
+
+              return (
+                <div
+                  key={product.id}
+                  className={cn(
+                    "bg-white dark:bg-slate-900 rounded-2xl p-3.5 sm:p-4 flex items-stretch justify-between relative select-none border-none h-[195px] sm:h-[205px] overflow-hidden gap-3",
+                    isAvailable
+                      ? isInCart
+                        ? "cursor-pointer ring-2 ring-[#0e59f9] shadow-xs active:scale-[0.98]"
+                        : "cursor-pointer shadow-sm-md active:scale-[0.98]"
+                      : "opacity-40 grayscale-[30%] bg-slate-100 dark:bg-slate-900/60 shadow-none cursor-not-allowed pointer-events-none"
+                  )}
+                  onClick={() => {
+                    if (isAvailable) {
+                      const colorIdx = productIndexMap.get(product.id) ?? productIndex;
+                      if (product.modifierGroupIds && product.modifierGroupIds.length > 0) {
+                        setSelectedProductForModal({ ...product, colorIndex: colorIdx } as any);
+                        setIsModalOpen(true);
+                      } else {
+                        handleAddToCart(product, [], '', 1, colorIdx);
+                      }
+                    }
+                  }}
+                >
+                  {/* Status Overlay for Inactive or Out of Stock */}
+                  {!isActive ? (
+                    <div className="absolute inset-0 bg-slate-950/70 z-20 flex flex-col items-center justify-center p-2 text-center rounded-2xl backdrop-blur-[1px]">
+                      <span className="text-white text-[11px] font-semibold tracking-wider uppercase bg-rose-600/95 px-2.5 py-1 rounded-md shadow-xs">
+                        TIDAK TERSEDIA
+                      </span>
+                      <span className="text-[10px] text-slate-300 mt-1 font-medium">Menu Dinonaktifkan</span>
+                    </div>
+                  ) : isOutOfStock ? (
+                    <div className="absolute inset-0 bg-slate-950/60 z-20 flex flex-col items-center justify-center p-2 text-center rounded-2xl backdrop-blur-[1px]">
+                      <span className="text-white text-[11px] font-semibold tracking-wider uppercase bg-amber-600/95 px-2.5 py-1 rounded-md shadow-xs">
+                        STOK HABIS
+                      </span>
+                    </div>
+                  ) : null}
+
+                  {/* Sisi Kiri: Icon Rekomendasi, Nama Produk, Kategori, Plus/Qty & Harga */}
+                  <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                    {/* Top Row: Icon Rekomendasi Jempol Tanpa Background */}
+                    <div className="h-6 flex items-center mb-1">
+                      {product.isFeatured && (
+                        <span title="Menu Rekomendasi" className="flex items-center text-[#0e59f9]">
+                          <ThumbsUp className="w-4 h-4 shrink-0" />
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Middle: Nama Produk & Kategori di bawahnya (Ukuran Standar Mode Gambar) */}
+                    <div className="my-auto py-1">
+                      <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100 leading-snug line-clamp-2">
+                        {product.name}
+                      </h3>
+                      <p className="text-[11px] text-slate-400 font-normal truncate mt-0.5">
+                        {product.categoryName || 'Menu'}
+                      </p>
+                    </div>
+
+                    {/* Bottom: Icon Plus Bulat / Angka Qty + Harga di sampingnya (Ukuran Standar Mode Gambar) */}
+                    <div className="mt-auto pt-2 flex items-center gap-2">
+                      {isInCart ? (
+                        <span
+                          className="w-6 h-6 rounded-full bg-[#0e59f9] text-white flex items-center justify-center font-semibold text-[11px] font-financial tabular-nums shadow-xs select-none shrink-0"
+                        >
+                          {cartQuantity}
+                        </span>
+                      ) : (
+                        <span
+                          className="w-6 h-6 rounded-full bg-[#0e59f9] text-white flex items-center justify-center shadow-xs shrink-0"
+                        >
+                          <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                        </span>
+                      )}
+
+                      <span className="font-semibold text-sm text-slate-900 dark:text-slate-100 tracking-tight font-financial tabular-nums">
+                        {formatCurrency(parseFloat(product.price))}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Sisi Kanan: Gambar Produk Dipersempit dengan Placeholder Inisial */}
+                  <div className="w-[84px] sm:w-[90px] md:w-[96px] h-full self-stretch shrink-0 rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-800 relative flex items-center justify-center">
+                    {product.imageUrl ? (
+                      <>
+                        <img
+                          src={product.imageUrl}
+                          alt={product.name}
+                          loading="lazy"
+                          className="w-full h-full object-cover rounded-xl"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                            e.currentTarget.nextElementSibling?.classList.add('flex');
+                          }}
+                        />
+                        <div className="hidden w-full h-full items-center justify-center text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 text-3xl font-semibold select-none rounded-xl">
+                          {product.name.charAt(0).toUpperCase()}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 text-3xl font-semibold select-none rounded-xl">
+                        {product.name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+
+            {filteredProducts.length === 0 && (
+              <div className="col-span-full py-16 text-center text-muted-foreground flex flex-col items-center justify-center">
+                <Package className="w-10 h-10 mb-2.5 opacity-30 text-muted-foreground" />
+                <p className="text-sm font-semibold text-foreground">Tidak ada produk ditemukan</p>
+                <p className="text-xs text-muted-foreground mt-1">Coba kata kunci lain atau ubah kategori pilihan</p>
+                {(searchQuery || activeCategory !== 'Semua') && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setActiveCategory('Semua');
+                    }}
+                    className="mt-3 text-xs rounded-xl"
+                  >
+                    Tampilkan Semua Produk
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
         ) : (
           /* ================= IMAGE MODE ================= */
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
@@ -798,7 +962,7 @@ export function ProductCatalog({
                     isAvailable
                       ? isInCart
                         ? "cursor-pointer group ring-2 ring-[#0e59f9] shadow-xs active:scale-[0.98]"
-                        : "cursor-pointer group shadow-sm hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98]"
+                        : "cursor-pointer group shadow-sm-md active:scale-[0.98]"
                       : "opacity-40 grayscale-[30%] bg-slate-100 dark:bg-slate-900/60 shadow-none cursor-not-allowed pointer-events-none"
                   )}
                   onClick={() => {
@@ -841,7 +1005,7 @@ export function ProductCatalog({
                           src={product.imageUrl}
                           alt={product.name}
                           loading="lazy"
-                          className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                          className="object-cover w-full h-full"
                           onError={(e) => {
                             e.currentTarget.style.display = 'none';
                             e.currentTarget.nextElementSibling?.classList.remove('hidden');
@@ -901,26 +1065,45 @@ export function ProductCatalog({
         {visibleCount < filteredProducts.length && (
           <div ref={observerTarget} className={cn(
             "mt-4 py-2",
-            displayMode === 'color'
+            displayMode === 'side-image'
+              ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 auto-rows-[195px] sm:auto-rows-[205px] gap-3.5 sm:gap-4"
+              : displayMode === 'color'
               ? "grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4"
               : "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
           )}>
             {Array.from({ length: 6 }).map((_, idx) => (
-              displayMode === 'color' ? (
-                <div key={idx} className="bg-muted/40 border border-border/60 rounded-2xl h-[150px] animate-pulse p-4 flex flex-col justify-between">
-                  <div className="w-9 h-9 bg-muted rounded-xl"></div>
-                  <div className="space-y-1.5 my-auto">
-                    <div className="h-4 w-3/4 bg-muted rounded"></div>
-                    <div className="h-3 w-1/2 bg-muted rounded"></div>
+              displayMode === 'side-image' ? (
+                <div key={idx} className="bg-white dark:bg-slate-900 border-none rounded-2xl h-[195px] sm:h-[205px] shadow-sm-md animate-pulse p-3.5 sm:p-4 flex items-stretch justify-between gap-3">
+                  <div className="flex-1 flex flex-col justify-between py-0.5">
+                    <div className="h-6 flex items-center mb-1">
+                      <div className="w-5 h-5 bg-slate-100 dark:bg-slate-800 rounded"></div>
+                    </div>
+                    <div className="space-y-1.5 my-auto py-1">
+                      <div className="h-4 w-4/5 bg-slate-100 dark:bg-slate-800 rounded"></div>
+                      <div className="h-3 w-1/2 bg-slate-100 dark:bg-slate-800 rounded"></div>
+                    </div>
+                    <div className="flex items-center gap-2 mt-auto pt-2">
+                      <div className="w-6 h-6 bg-slate-100 dark:bg-slate-800 rounded-full"></div>
+                      <div className="h-4 w-16 bg-slate-100 dark:bg-slate-800 rounded"></div>
+                    </div>
                   </div>
-                  <div className="h-3.5 w-1/3 bg-muted rounded"></div>
+                  <div className="w-[84px] sm:w-[90px] md:w-[96px] h-full bg-slate-100 dark:bg-slate-800 rounded-xl"></div>
+                </div>
+              ) : displayMode === 'color' ? (
+                <div key={idx} className="bg-white dark:bg-slate-900 border-none rounded-2xl h-[150px] shadow-sm-md animate-pulse p-4 flex flex-col justify-between">
+                  <div className="w-9 h-9 bg-slate-100 dark:bg-slate-800 rounded-xl"></div>
+                  <div className="space-y-1.5 my-auto">
+                    <div className="h-4 w-3/4 bg-slate-100 dark:bg-slate-800 rounded"></div>
+                    <div className="h-3 w-1/2 bg-slate-100 dark:bg-slate-800 rounded"></div>
+                  </div>
+                  <div className="h-3.5 w-1/3 bg-slate-100 dark:bg-slate-800 rounded"></div>
                 </div>
               ) : (
-                <div key={idx} className="bg-card border border-border/60 rounded-2xl h-44 animate-pulse p-3 flex flex-col justify-between">
-                  <div className="w-full h-24 bg-muted/60 rounded-xl"></div>
+                <div key={idx} className="bg-white dark:bg-slate-900 border-none rounded-2xl h-44 shadow-sm-md animate-pulse p-3 flex flex-col justify-between">
+                  <div className="w-full h-24 bg-slate-100 dark:bg-slate-800 rounded-xl"></div>
                   <div className="space-y-1.5 mt-2">
-                    <div className="h-3.5 w-3/4 bg-muted/60 rounded"></div>
-                    <div className="h-3 w-1/2 bg-muted/60 rounded"></div>
+                    <div className="h-3.5 w-3/4 bg-slate-100 dark:bg-slate-800 rounded"></div>
+                    <div className="h-3 w-1/2 bg-slate-100 dark:bg-slate-800 rounded"></div>
                   </div>
                 </div>
               )
@@ -942,25 +1125,25 @@ export function ProductCatalog({
 
       {/* Quick Availability Modal in POS */}
       <Dialog open={isAvailabilityModalOpen} onOpenChange={setIsAvailabilityModalOpen}>
-        <DialogContent className="max-w-lg p-0 overflow-hidden rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl">
+        <DialogContent className="max-w-lg p-0 overflow-hidden rounded-2xl border-none bg-white dark:bg-slate-950 shadow-2xl">
           <DialogHeader className="p-5 pb-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50">
             <DialogTitle className="text-lg font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
               <Power className="w-5 h-5 text-emerald-600" />
-              Kelola Ketersediaan Menu Kasir
+              Kelola Ketersediaan Produk Kasir
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-              Matikan menu yang habis atau tidak dapat disajikan agar kasir dan pelanggan tidak memesannya.
+              Nonaktifkan produk yang habis atau tidak tersedia agar kasir dan pelanggan tidak memesannya.
             </DialogDescription>
           </DialogHeader>
 
           <div className="p-4 border-b border-slate-100 dark:border-slate-800">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
               <Input
                 placeholder="Cari item yang ingin diubah..."
                 value={availabilitySearch}
                 onChange={(e) => setAvailabilitySearch(e.target.value)}
-                className="pl-8 h-9 text-xs rounded-xl"
+                className="pl-9 h-9 text-xs rounded-full border-none shadow-sm-md bg-white dark:bg-slate-900 focus-visible:ring-1 focus-visible:ring-[#0e59f9]"
               />
             </div>
           </div>

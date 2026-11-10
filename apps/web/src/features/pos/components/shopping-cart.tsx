@@ -192,14 +192,64 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
 
   if (!mounted) {
     return (
-      <div className="flex flex-col h-full bg-card border border-border/80 rounded-2xl shadow-xs p-4 animate-pulse">
-        <div className="h-9 bg-muted rounded-xl w-full mb-3"></div>
-        <div className="h-8 bg-muted rounded-xl w-3/4 mb-4"></div>
-        <div className="flex-1 space-y-3">
-          <div className="h-14 bg-muted rounded-xl w-full"></div>
-          <div className="h-14 bg-muted rounded-xl w-full"></div>
+      <div className="flex flex-col h-full bg-white dark:bg-slate-900 rounded-2xl shadow-md border-none overflow-hidden animate-pulse select-none">
+        {/* Order Header / Switcher */}
+        <div className="p-3 sm:p-3.5 bg-white dark:bg-slate-900 space-y-2.5 border-b border-slate-100 dark:border-slate-800">
+          <div className="grid grid-cols-3 p-1 bg-slate-50 dark:bg-slate-950 rounded-full gap-1 shadow-xs border-none">
+            <div className="h-7 rounded-full bg-slate-200 dark:bg-slate-800" />
+            <div className="h-7 rounded-full bg-transparent" />
+            <div className="h-7 rounded-full bg-transparent" />
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-9 w-24 sm:w-28 rounded-full bg-slate-100 dark:bg-slate-800 shadow-sm-md shrink-0" />
+            <div className="h-9 flex-1 rounded-full bg-slate-100 dark:bg-slate-800 shadow-sm-md" />
+          </div>
+          <div className="flex items-center justify-between pt-1">
+            <div className="h-4 w-20 rounded-md bg-slate-200 dark:bg-slate-800" />
+            <div className="h-3.5 w-10 rounded-md bg-slate-100 dark:bg-slate-800" />
+          </div>
         </div>
-        <div className="h-32 bg-muted rounded-xl w-full mt-4"></div>
+
+        {/* Cart Item Rows */}
+        <div className="flex-1 overflow-hidden p-3.5 space-y-3">
+          {[1, 2, 3].map((j) => (
+            <div key={j} className="flex gap-3 py-1.5 items-center">
+              <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 shrink-0" />
+              <div className="flex-1 space-y-1.5 min-w-0">
+                <div className="h-3.5 w-3/4 rounded-md bg-slate-200 dark:bg-slate-800" />
+                <div className="h-3 w-1/3 rounded-md bg-slate-100 dark:bg-slate-800/60" />
+              </div>
+              <div className="flex flex-col items-end gap-1 shrink-0">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800" />
+                  <div className="w-3 h-3 rounded bg-slate-200 dark:bg-slate-800" />
+                  <div className="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800" />
+                </div>
+                <div className="h-3.5 w-14 rounded-md bg-slate-200 dark:bg-slate-800" />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Footer / Summary */}
+        <div className="p-3.5 sm:p-4 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 space-y-2.5">
+          <div className="h-8 w-full rounded-full bg-slate-100 dark:bg-slate-800" />
+          <div className="space-y-1.5 pt-1">
+            <div className="flex justify-between">
+              <div className="h-3 w-20 rounded bg-slate-100 dark:bg-slate-800" />
+              <div className="h-3 w-16 rounded bg-slate-100 dark:bg-slate-800" />
+            </div>
+            <div className="flex justify-between">
+              <div className="h-3 w-16 rounded bg-slate-100 dark:bg-slate-800" />
+              <div className="h-3 w-12 rounded bg-slate-100 dark:bg-slate-800" />
+            </div>
+          </div>
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
+            <div className="h-4 w-24 rounded bg-slate-200 dark:bg-slate-800" />
+            <div className="h-5 w-24 rounded bg-slate-200 dark:bg-slate-800" />
+          </div>
+          <div className="h-11 w-full rounded-full bg-slate-200 dark:bg-slate-800 mt-1" />
+        </div>
       </div>
     );
   }
@@ -392,7 +442,7 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
               <ShoppingBag size={22} />
             </div>
             <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">Pesanan masih kosong</p>
-            <p className="text-[11px] text-slate-400 mt-0.5 font-normal">Pilih menu dari katalog untuk mulai mencatat</p>
+            <p className="text-[11px] text-slate-400 mt-0.5 font-normal">Pilih produk dari katalog untuk mulai mencatat</p>
           </div>
         ) : (
           items.map((item) => (
@@ -413,7 +463,7 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
                     type="button"
                     onClick={() => removeItem(item.id)}
                     className="text-slate-400 hover:text-destructive transition-colors p-0.5 cursor-pointer shrink-0"
-                    title="Hapus menu"
+                    title="Hapus produk"
                   >
                     <Trash2 size={15} />
                   </button>
@@ -562,8 +612,8 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
 
       {/* 4. ACTIVE PROMO SELECTOR MODAL */}
       <Dialog open={isPromoModalOpen} onOpenChange={setIsPromoModalOpen}>
-        <DialogContent className="max-w-md p-0 overflow-hidden rounded-2xl bg-white border border-[#EAEFF8] shadow-xl">
-          <DialogHeader className="p-4 pb-3 border-b border-[#EAEFF8] bg-slate-50/70">
+        <DialogContent className="max-w-md p-0 overflow-hidden rounded-2xl bg-white border-none shadow-2xl">
+          <DialogHeader className="p-4 pb-3 border-b border-slate-100 bg-slate-50/70">
             <DialogTitle className="text-base font-semibold text-slate-900 flex items-center gap-2">
               <Tag className="w-4 h-4 text-[#0e59f9]" />
               Kelola Diskon & Promo Transaksi
@@ -622,8 +672,8 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
                       className={cn(
                         "w-full text-left p-3 rounded-xl border transition-all flex flex-col justify-between cursor-pointer",
                         !isEligible
-                          ? "opacity-60 bg-muted/30 border-dashed border-[#EAEFF8] cursor-not-allowed"
-                          : "bg-white hover:bg-blue-50/40 hover:border-[#0e59f9]/40 border-[#EAEFF8] active:scale-[0.99]"
+                          ? "opacity-60 bg-muted/30 border-dashed border-slate-200 cursor-not-allowed"
+                          : "bg-white hover:bg-blue-50/40 hover:border-[#0e59f9]/40 border-slate-100 shadow-xs active:scale-[0.99]"
                       )}
                     >
                       <div className="flex items-start justify-between gap-2">
@@ -657,7 +707,7 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
           ) : (
             <div className="p-4 space-y-4">
               {/* Diskon Manual Kasir */}
-              <div className="space-y-3 p-3.5 rounded-xl border border-[#EAEFF8] bg-slate-50/50">
+              <div className="space-y-3 p-3.5 rounded-xl border-none shadow-xs bg-slate-50/70">
                 <span className="text-xs font-semibold text-slate-800 block">
                   Potongan Diskon Manual Kasir
                 </span>
@@ -694,14 +744,14 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
                     value={manualDiscountValue}
                     onChange={(e) => setManualDiscountValue(e.target.value)}
                     placeholder={manualDiscountType === 'FIXED' ? 'Misal: 10000' : 'Misal: 10'}
-                    className="h-9 text-xs bg-white border-[#EAEFF8] font-financial tabular-nums"
+                    className="h-9 text-xs bg-white rounded-full border-none shadow-sm-md font-financial tabular-nums px-3.5"
                   />
                   <Button 
                     type="button"
                     size="sm"
                     onClick={handleApplyManualDiscount}
                     disabled={!manualDiscountValue.trim()}
-                    className="h-9 px-3.5 text-xs bg-[#0e59f9] hover:bg-[#0b4de0] text-white shrink-0 font-semibold shadow-xs"
+                    className="h-9 px-3.5 text-xs bg-[#0e59f9] hover:bg-[#0b4de0] text-white shrink-0 font-semibold shadow-xs rounded-full"
                   >
                     Terapkan
                   </Button>
@@ -709,7 +759,7 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
               </div>
 
               {/* Atau Pakai Kode Promo Khusus */}
-              <div className="space-y-2 pt-1 border-t border-[#EAEFF8]">
+              <div className="space-y-2 pt-2 border-t border-slate-100">
                 <span className="text-xs font-semibold text-slate-800 block">
                   Atau Input Kode Promo Khusus
                 </span>
@@ -724,7 +774,7 @@ export function ShoppingCart({ posSettings, onCheckout, isProcessing }: Shopping
                       }
                     }}
                     placeholder="Masukkan kode promo (misal: HEMAT50)"
-                    className="h-9 text-xs font-mono uppercase bg-white border-[#EAEFF8]"
+                    className="h-9 text-xs font-mono uppercase bg-white rounded-full border-none shadow-sm-md px-3.5"
                   />
                   <Button
                     type="button"
@@ -755,7 +805,7 @@ function CartItemThumbnail({
   src?: string | null; 
   alt: string; 
   fallbackName: string;
-  displayMode?: 'image' | 'color';
+  displayMode?: 'image' | 'color' | 'side-image';
   colorIndex?: number;
 }) {
   const [error, setError] = React.useState(false);
