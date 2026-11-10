@@ -288,7 +288,7 @@ export function PricingCards() {
                       Tingkatkan ke Pro
                     </span>
                     <h4 className="mt-2 text-[17px] font-medium leading-snug text-white">
-                      Ingin Scan AI Product & Manajemen Modifier?
+                      Ingin Scan AI, Kelola Stok Bahan & Modifier?
                     </h4>
                   
                   </div>

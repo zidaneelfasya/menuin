@@ -28,7 +28,7 @@ describe('getEntitlements', () => {
   it('treats a missing period end as no expiry (admin grant)', () => {
     expect(getEntitlements({ status: 'ACTIVE', plan: 'BASIC', currentPeriodEnd: null }, now)).toMatchObject({
       isLocked: false,
-      features: ['POS', 'CATALOG', 'INVENTORY'],
+      features: ['POS', 'CATALOG'],
     });
   });
 
