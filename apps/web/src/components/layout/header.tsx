@@ -1,10 +1,9 @@
 'use client';
 
 import * as React from 'react';
-import { Bell, Wifi, MonitorSmartphone, Menu, ChevronDown, Store } from 'lucide-react';
+import { Menu, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UserProfile } from '@/lib/actions/auth';
-import { ThemeSwitcher } from '@/components/theme-switcher';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -22,22 +21,7 @@ import {
 import { createAvatar } from '@dicebear/core';
 import { openPeeps } from '@dicebear/collection';
 import { usePageTransition } from '@/components/providers/page-transition-provider';
-
-function HeaderClock() {
-  const [time, setTime] = React.useState<Date | null>(null);
-
-  React.useEffect(() => {
-    setTime(new Date());
-    const timer = setInterval(() => setTime(new Date()), 15000); // 15s interval is optimal for HH:mm
-    return () => clearInterval(timer);
-  }, []);
-
-  return (
-    <div className="hidden sm:block text-sm font-medium text-muted-foreground bg-muted/30 px-3 py-1.5 rounded-lg border border-border/30">
-      {time ? time.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '...'}
-    </div>
-  );
-}
+import { NotificationPopover } from './notification-popover';
 
 export function Header({ 
   collapsed,
@@ -154,42 +138,31 @@ export function Header({
       </div>
 
       {/* Right section: Info & Actions */}
-      <div className="flex items-center space-x-2 md:space-x-4">
-        {/* User Info */}
-        <div className="hidden md:flex items-center px-3 py-1.5 bg-muted/50 rounded-lg text-sm border border-border/50">
+      <div className="flex items-center gap-3">
+        {/* User Info (Standar Menuin: clean, no background box, borderless) */}
+        <div className="hidden md:flex items-center gap-2.5 text-sm select-none">
           {userAvatarUri ? (
             <img 
               src={userAvatarUri} 
               alt={user.name} 
-              className="h-6 w-6 rounded-full mr-2 bg-blue-50/50 border border-blue-200/80 dark:border-blue-900/60 object-cover shrink-0 select-none shadow-xs" 
+              className="h-8 w-8 rounded-full bg-blue-50/50 object-cover shrink-0 select-none shadow-xs" 
             />
           ) : (
-            <div className="h-6 w-6 rounded-full mr-2 bg-blue-100 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800/80 text-blue-600 dark:text-blue-300 font-medium text-[10px] flex items-center justify-center shrink-0">
+            <div className="h-8 w-8 rounded-full bg-blue-100 text-blue-600 font-semibold text-xs flex items-center justify-center shrink-0">
               {user.name.charAt(0).toUpperCase()}
             </div>
           )}
-          <div className="flex flex-col">
-            <span className="font-semibold text-xs leading-none">{user.name}</span>
-            <span className="text-[10px] text-muted-foreground mt-0.5">{user.role}</span>
+          <div className="flex flex-col text-left">
+            <span className="font-semibold text-xs leading-tight text-slate-800">{user.name}</span>
+            <span className="text-[11px] font-medium text-slate-400 capitalize mt-0.5">{user.role?.toLowerCase() || 'staf'}</span>
           </div>
         </div>
 
-        {/* Time */}
-        <HeaderClock />
-
-        {/* Network Status */}
-        <div className="hidden sm:flex text-success items-center justify-center h-10 w-10 rounded-full hover:bg-success/10 transition-colors cursor-help" title="Online">
-          <Wifi className="h-5 w-5" />
-        </div>
-
-        {/* Theme Switcher */}
-        <ThemeSwitcher />
-
-        {/* Notifications */}
-        <button className="relative text-muted-foreground hover:text-foreground h-10 w-10 flex items-center justify-center rounded-full hover:bg-muted transition-colors">
-          <Bell className="h-5 w-5" />
-          <span className="absolute top-2 right-2 h-2 w-2 bg-destructive rounded-full border-2 border-card"></span>
-        </button>
+        {/* Notifications Popover */}
+        <NotificationPopover 
+          tenantId={user.tenantId || ''} 
+          outletKey={user.outletKey || ''} 
+        />
       </div>
     </header>
   );
