@@ -172,9 +172,9 @@ type Stage = {
 const stages: Stage[] = [
   {
     label: "Scan QR",
-    who: "Tamu & outlet",
-    title: "Pindai QR. Menu langsung terbuka.",
-    body: "Setiap meja punya QR sendiri yang dibuat dari menu Meja & QR Code. Tamu memindainya, katalog terbuka di browser ponsel, dan nomor meja terisi otomatis saat checkout.",
+    who: "Pelanggan & outlet",
+    title: "Pindai QR. Katalog langsung terbuka.",
+    body: "Setiap meja punya QR sendiri yang dibuat dari fitur Meja & QR Code. Pelanggan memindainya, katalog terbuka di browser ponsel, dan nomor meja terisi otomatis saat checkout.",
     visual: (
       <div className="grid grid-cols-1 items-end gap-5 sm:grid-cols-[150px_minmax(0,1fr)]">
         <PhoneMockup className="mx-auto !w-[150px] sm:mx-0">
@@ -183,7 +183,7 @@ const stages: Stage[] = [
         <BrowserMockup
           src="/img/landing/journey/outlet-meja-qr.webp"
           alt="Halaman Meja & QR Code di dashboard Menuin"
-          url="Katalog Menu · Meja & QR Code"
+          url="Katalog Produk · Meja & QR Code"
           width={1140}
           height={620}
         />
@@ -192,18 +192,18 @@ const stages: Stage[] = [
   },
   {
     label: "Pesan",
-    who: "Tamu",
-    title: "Pesan tanpa memanggil pelayan.",
-    body: "Tamu memilih dine-in atau bawa pulang, menambah varian seperti level pedas dan topping, lalu menulis catatan untuk dapur. Semua dari ponselnya sendiri.",
+    who: "Pelanggan",
+    title: "Pesan langsung secara mandiri.",
+    body: "Pelanggan memilih jenis pesanan, memilih opsi modifier dan spesifikasi, serta catatan pesanan khusus bila diperlukan. Semua dari ponselnya sendiri.",
     visual: (
       <PhoneMockup className="mx-auto">
-        <PhoneShot src="/img/landing/journey/tamu-keranjang.webp" alt="Keranjang pesanan tamu di katalog Menuin" />
+        <PhoneShot src="/img/landing/journey/tamu-keranjang.webp" alt="Keranjang pesanan pelanggan di katalog Menuin" />
       </PhoneMockup>
     ),
   },
   {
     label: "Bayar",
-    who: "Tamu",
+    who: "Pelanggan",
     title: "Bayar dari meja, atau nanti di kasir.",
     body: "Pilih Bayar Online Instan lewat QRIS, e-wallet, virtual account, atau kartu, atau pilih Bayar di Kasir. Pajak dihitung otomatis, jadi total sudah jelas sebelum lanjut.",
     visual: (
@@ -229,9 +229,9 @@ const stages: Stage[] = [
   },
   {
     label: "Disajikan",
-    who: "Dapur & pelayan",
+    who: "Operasional & staf",
     title: "Siapkan, sajikan, selesaikan.",
-    body: "Kartu pesanan bergeser ke Sedang Disiapkan lalu Siap Disajikan. Pelayan tahu harus mengantar ke meja mana, lalu menekan Selesaikan. Tamu memantau statusnya dari ponsel.",
+    body: "Kartu pesanan bergeser ke Sedang Disiapkan lalu Siap Disajikan. Staf langsung memproses dan menyelesaikan pesanan. Pelanggan memantau statusnya dari ponsel.",
     visual: (
       <div className="grid grid-cols-1 items-end gap-5 sm:grid-cols-[minmax(0,1fr)_150px]">
         <BrowserMockup

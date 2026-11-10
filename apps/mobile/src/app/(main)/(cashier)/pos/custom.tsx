@@ -26,10 +26,10 @@ import { Button } from '@/components/ui';
 
 const PRESET_NAMES = [
   'Item Kustom',
-  'Minuman Khusus',
-  'Makanan Khusus',
-  'Extra Topping',
-  'Catering Box',
+  'Layanan Khusus',
+  'Produk Khusus',
+  'Modifier Tambahan',
+  'Paket Bundling',
 ];
 
 export default function CustomOrdersScreen() {

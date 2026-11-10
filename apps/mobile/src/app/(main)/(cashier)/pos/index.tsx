@@ -822,7 +822,7 @@ export default function PosScreen() {
               <View className="flex-1 mr-3">
                 <View className="flex-row items-center gap-2">
                   <Text className="text-lg font-black text-gray-900">
-                    Ketersediaan Menu
+                    Ketersediaan Produk
                   </Text>
                   {inactiveProductsCount > 0 && (
                     <View className="bg-rose-100 px-2 py-0.5 rounded-md">
@@ -833,7 +833,7 @@ export default function PosScreen() {
                   )}
                 </View>
                 <Text className="text-xs text-gray-500 mt-0.5">
-                  Aktifkan atau matikan menu yang habis agar tidak dapat dipesan
+                  Aktifkan atau matikan produk yang habis agar tidak dapat dipesan
                 </Text>
               </View>
               <TouchableOpacity

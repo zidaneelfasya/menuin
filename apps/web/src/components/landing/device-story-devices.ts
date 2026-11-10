@@ -8,8 +8,8 @@ export const PREVIEW_DEVICES = [
     bezel: 5.5,
     rim: 3.6,
     crop: [1, 1],
-    caption: "Storefront — pesan langsung dari ponsel tamu.",
-    description: ["Tamu menjelajahi menu dan membuat pesanan melalui storefront.", "Pilihan menu, keranjang, dan status pesanan tersedia dalam satu alur."],
+    caption: "Storefront — pesan langsung dari ponsel pelanggan.",
+    description: ["Pelanggan menjelajahi katalog produk dan membuat pesanan melalui storefront.", "Katalog produk, keranjang, dan status pesanan tersedia dalam satu alur."],
   },
   {
     label: "Tab",
@@ -21,7 +21,7 @@ export const PREVIEW_DEVICES = [
     rim: 2.6,
     crop: [0.928, 0.904],
     caption: "POS kasir — kelola pesanan di layar tablet.",
-    description: ["Kasir memilih menu, mengatur pesanan, dan memproses pembayaran.", "Layar yang lebih luas membantu tim melayani transaksi di outlet."],
+    description: ["Kasir memilih produk, mengatur pesanan, dan memproses pembayaran.", "Layar yang lebih luas membantu tim melayani transaksi di outlet."],
   },
   {
     label: "Laptop",
@@ -33,7 +33,7 @@ export const PREVIEW_DEVICES = [
     rim: 2.2,
     crop: [1, 1],
     caption: "Dashboard — lihat gambaran bisnis dari laptop.",
-    description: ["Pantau ringkasan penjualan, transaksi, dan menu terlaris.", "Dashboard menyatukan informasi operasional agar pemilik dapat mengikuti perkembangan outlet."],
+    description: ["Pantau ringkasan penjualan, transaksi, dan produk terlaris.", "Dashboard menyatukan informasi operasional agar pemilik dapat mengikuti perkembangan outlet."],
   },
 ] as const;
 

@@ -284,7 +284,7 @@ export async function updateOrderItemStatus(itemId: string, isCompleted: boolean
     return { success: true };
   } catch (error) {
     console.error("Failed to update order item status:", error);
-    return { error: "Gagal memperbarui status menu." };
+    return { error: "Gagal memperbarui status produk." };
   }
 }
 

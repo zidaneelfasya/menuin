@@ -79,7 +79,7 @@ export function OutletDetailModal({
         if (navigator.share) {
           await navigator.share({
             title: tenant.name,
-            text: tenant.storeDescription || `Pesan menu dari ${tenant.name}`,
+            text: tenant.storeDescription || `Pesan produk dari ${tenant.name}`,
             url: window.location.href,
           });
         } else {
@@ -129,24 +129,24 @@ export function OutletDetailModal({
         : 'QRIS Dinamis & Pembayaran di Kasir',
     },
     {
-      title: 'Sinkronisasi Dapur Cepat',
-      desc: 'Pesanan langsung masuk ke sistem dan disiapkan kru dapur',
+      title: 'Sinkronisasi Operasional Cepat',
+      desc: 'Pesanan langsung masuk ke sistem dan disiapkan kru operasional',
     },
     {
       title: 'Kustomisasi Catatan Pesanan',
-      desc: 'Bebas request varian rasa, level pedas, es, dan catatan khusus',
+      desc: 'Bebas memilih opsi modifier, ukuran, spesifikasi, dan catatan khusus',
     },
     {
       title: 'Struk & Ringkasan Digital',
       desc: 'Bukti pembayaran digital serta cetak struk kasir resmi',
     },
     {
-      title: 'Kenyamanan Tempat Santap',
-      desc: 'Area meja bersih, nyaman, dan ramah pengunjung',
+      title: 'Kenyamanan Layanan',
+      desc: 'Area layanan bersih, nyaman, dan ramah pengunjung',
     },
     {
       title: 'Harga Transparan',
-      desc: 'Sesuai harga menu resmi tanpa biaya aplikasi tersembunyi',
+      desc: 'Sesuai harga produk resmi tanpa biaya aplikasi tersembunyi',
     },
   ];
 
@@ -328,7 +328,7 @@ export function OutletDetailModal({
               {/* 3. Aktivitas Resto */}
               <div>
                 <h3 className="text-xs font-semibold text-slate-900 mb-2.5">
-                  Aktivitas Resto
+                  Aktivitas Outlet
                 </h3>
 
                 <div className="grid grid-cols-2 gap-3 py-1">
@@ -346,7 +346,7 @@ export function OutletDetailModal({
                       {totalProducts > 0 ? `${totalProducts}` : '18+'}
                     </div>
                     <div className="text-[11px] font-normal text-slate-500 mt-0.5">
-                      Pilihan Menu Aktif
+                      Pilihan Produk Aktif
                     </div>
                   </div>
                 </div>

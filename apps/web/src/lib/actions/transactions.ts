@@ -356,7 +356,7 @@ export async function getTransactionDetails(transactionId: string) {
       data: {
         transaction: trx,
         items: items.map(it => ({
-          name: it.productName || 'Item Menu',
+          name: it.productName || 'Item Produk',
           quantity: it.quantity,
           price: parseFloat(it.price || '0'),
           subtotal: parseFloat(it.subtotal || '0'),

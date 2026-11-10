@@ -33,7 +33,7 @@ describe("extended device story transitions", () => {
 
   it.each([
     { start: 0.64, duration: 0.12, outgoing: "gridAlpha", title: "teaserTitle", content: "teaserContent", incoming: "teaserAlpha" },
-    { start: 0.86, duration: 0.10, outgoing: "teaserAlpha", title: "pricingTitle", content: "pricingContent", incoming: "pricingAlpha" },
+    { start: 0.86, duration: 0.14, outgoing: "teaserAlpha", title: "pricingTitle", content: "pricingContent", incoming: "pricingAlpha" },
   ] as const)("uses the same overlapping rise for the transition at $start", ({ start, duration, outgoing, title, content, incoming }) => {
     const before = sampleExtendedStory(start - 0.001);
     const early = sampleExtendedStory(start + duration * 0.2);
@@ -52,7 +52,7 @@ describe("extended device story transitions", () => {
   });
 
   it("is continuous and reversible across the transition boundaries", () => {
-    for (const boundary of [0.64, 0.646, 0.7036, 0.76, 0.86, 0.865, 0.913, 0.96]) {
+    for (const boundary of [0.64, 0.646, 0.7036, 0.76, 0.86, 0.865, 0.913, 0.97, 1]) {
       const before = sampleExtendedStory(boundary - 0.00001);
       const after = sampleExtendedStory(boundary + 0.00001);
       for (const key of ["gridAlpha", "teaserTitle", "teaserContent", "pricingTitle", "pricingContent"] as const) {

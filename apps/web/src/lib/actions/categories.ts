@@ -145,6 +145,6 @@ export async function getCategoryProducts(categoryId: string): Promise<{
     return { success: true, data };
   } catch (error) {
     console.error('Error fetching category products:', error);
-    return { success: false, error: 'Gagal mengambil menu produk kategori' };
+    return { success: false, error: 'Gagal mengambil produk kategori' };
   }
 }

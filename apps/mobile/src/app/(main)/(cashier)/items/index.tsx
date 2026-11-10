@@ -196,7 +196,7 @@ export default function ItemsListScreen() {
                     product.isActive !== false ? 'text-emerald-800' : 'text-rose-800'
                   }`}
                 >
-                  {product.isActive !== false ? 'Menu Tersedia' : 'Menu Tidak Tersedia'}
+                  {product.isActive !== false ? 'Produk Tersedia' : 'Produk Tidak Tersedia'}
                 </Text>
               </View>
               <Text className="text-[11px] text-gray-600 leading-snug">
@@ -265,10 +265,10 @@ export default function ItemsListScreen() {
           )}
         </View>
 
-        {/* Modifier Groups / Toppings */}
+        {/* Modifier Groups */}
         <View className="mb-6">
           <Text className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">
-            Pilihan Variasi / Topping ({productModifiers.length})
+            Pilihan Modifier ({productModifiers.length})
           </Text>
           {productModifiers.length > 0 ? (
             <View>
@@ -339,7 +339,7 @@ export default function ItemsListScreen() {
             </View>
           ) : (
             <Text className="text-xs text-gray-400 italic py-1">
-              Produk ini tidak memiliki opsi modifier atau topping tambahan.
+              Produk ini tidak memiliki opsi modifier tambahan.
             </Text>
           )}
         </View>
@@ -512,8 +512,8 @@ export default function ItemsListScreen() {
               </View>
             ) : filteredProducts.length === 0 ? (
               <EmptyState
-                title="Item Tidak Ditemukan"
-                description="Tidak ada item yang cocok dengan kata kunci atau filter kategori."
+                title="Produk Tidak Ditemukan"
+                description="Tidak ada produk yang cocok dengan kata kunci atau filter kategori."
                 icon={<Package size={32} color="#9ca3af" />}
               />
             ) : (
@@ -629,7 +629,7 @@ export default function ItemsListScreen() {
           )}
         </View>
       ) : (
-        /* TAB MODIFIERS: PENGELOLAAN STOK BAHAN & TOPPING UNTUK KASIR */
+        /* TAB MODIFIERS: PENGELOLAAN MODIFIER UNTUK KASIR */
         <View className="flex-1 p-4 bg-gray-50">
           {/* Search Modifier */}
           <View className="flex-row items-center bg-white border border-gray-200/90 rounded-xl px-3.5 py-2.5 shadow-2xs mb-3">
@@ -637,7 +637,7 @@ export default function ItemsListScreen() {
             <TextInput
               value={modifierSearchQuery}
               onChangeText={setModifierSearchQuery}
-              placeholder="Cari topping / bahan (misal: Boba, Oat Milk)..."
+              placeholder="Cari modifier (misal: Ukuran, Warna, Opsi Tambahan)..."
               placeholderTextColor="#9ca3af"
               className="flex-1 text-xs text-gray-900 p-0"
             />
@@ -653,13 +653,13 @@ export default function ItemsListScreen() {
             <View className="flex-row items-center flex-1 mr-2">
               <View className="w-2 h-2 rounded-full bg-blue-500 mr-2" />
               <Text className="text-xs text-blue-900 font-medium leading-tight">
-                Matikan bahan yang habis. Menu di POS Kasir & Web langsung otomatis terkunci.
+                Nonaktifkan modifier yang habis. Produk di POS Kasir & Web langsung otomatis terkunci.
               </Text>
             </View>
             {outOfStockModifiersCount > 0 ? (
               <View className="px-2 py-0.5 bg-rose-100 rounded-full border border-rose-200">
                 <Text className="text-[10px] font-black text-rose-700">
-                  {outOfStockModifiersCount} Bahan Habis
+                  {outOfStockModifiersCount} Modifier Habis
                 </Text>
               </View>
             ) : (
@@ -675,12 +675,12 @@ export default function ItemsListScreen() {
           {isLoading ? (
             <View className="flex-1 items-center justify-center py-12">
               <ActivityIndicator size="small" color="#014FFD" />
-              <Text className="text-xs text-gray-400 mt-2 font-medium">Memuat bahan & modifier...</Text>
+              <Text className="text-xs text-gray-400 mt-2 font-medium">Memuat modifier...</Text>
             </View>
           ) : filteredModifierGroups.length === 0 ? (
             <EmptyState
-              title="Bahan Tidak Ditemukan"
-              description="Tidak ada grup atau opsi bahan yang cocok dengan pencarian."
+              title="Modifier Tidak Ditemukan"
+              description="Tidak ada grup atau opsi modifier yang cocok dengan pencarian."
               icon={<Layers size={32} color="#9ca3af" />}
             />
           ) : (

@@ -56,7 +56,7 @@ export function ModifierDecreaseModal({
                 Kurangi {product.name}
               </h3>
               <p className="text-xs text-gray-500 mt-0.5">
-                Pilih variasi yang ingin dikurangi
+                Pilih kombinasi modifier yang ingin dikurangi
               </p>
             </div>
           </div>
@@ -86,7 +86,7 @@ export function ModifierDecreaseModal({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs font-semibold text-gray-900">
-                      Variasi {idx + 1}: {modSummary}
+                      Modifier {idx + 1}: {modSummary}
                     </span>
                     <span className="text-[10px] font-medium text-gray-700 bg-gray-100 px-2 py-0.5 rounded-md">
                       x{item.quantity}
@@ -108,7 +108,7 @@ export function ModifierDecreaseModal({
                     }
                   }}
                   className="px-3 py-2 rounded-xl bg-gray-100 hover:bg-red-50 hover:text-red-600 text-gray-700 font-semibold text-xs shadow-2xs flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shrink-0 border border-gray-200 hover:border-red-200"
-                  aria-label={`Kurangi variasi ${idx + 1}`}
+                  aria-label={`Kurangi modifier ${idx + 1}`}
                 >
                   {item.quantity <= 1 ? (
                     <>

@@ -137,7 +137,7 @@ export function AppearanceClient({ initialSettings }: AppearanceClientProps) {
               id="storeDescription"
               value={storeDescription}
               onChange={(e) => setStoreDescription(e.target.value)}
-              placeholder="Deskripsikan cita rasa khas, keunggulan menu, atau suasana tempat Anda..."
+              placeholder="Deskripsikan keunggulan produk, layanan, atau keunikan outlet Anda..."
               className="resize-none rounded-2xl bg-white border-none shadow-sm-md p-3 text-xs focus-visible:ring-blue-600"
               rows={3}
             />

@@ -724,7 +724,7 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                         : "text-slate-700 hover:bg-slate-100"
                     )}
                   >
-                    <span>Semua Menu</span>
+                    <span>Semua Produk</span>
                     {scopeFilter === 'cart' && <Check className="w-3.5 h-3.5 text-[#0e59f9]" />}
                   </DropdownMenuItem>
                   <DropdownMenuItem
@@ -942,11 +942,11 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                                     onClick={() => handleOpenDetailModal(promo, 'products')}
                                     className="text-xs font-medium text-amber-700 hover:underline cursor-pointer"
                                   >
-                                    Khusus {appProductIds.length} Menu
+                                    Khusus {appProductIds.length} Produk
                                   </button>
                                 ) : (
                                   <span className="text-xs font-medium text-slate-600">
-                                    Semua Menu Outlet
+                                    Semua Produk Outlet
                                   </span>
                                 )}
                               </div>
@@ -1791,15 +1791,15 @@ export function PromotionsClient({ initialPromotions }: { initialPromotions: Pro
                 </div>
 
                 <div className="p-4 rounded-2xl border-none bg-slate-50/70 shadow-sm-md">
-                  <span className="text-[11px] font-medium text-slate-400 block mb-1">Cakupan Menu</span>
+                  <span className="text-[11px] font-medium text-slate-400 block mb-1">Cakupan Produk</span>
                   <span className="text-base font-semibold text-slate-900 block leading-tight">
                     {selectedPromoForHistory?.targetType === 'SPECIFIC_PRODUCTS'
-                      ? `Khusus ${eligibleProductsForDetail.length} Menu`
-                      : 'Semua Menu'}
+                      ? `Khusus ${eligibleProductsForDetail.length} Produk`
+                      : 'Semua Produk'}
                   </span>
                   <span className="text-[10px] text-slate-400 block mt-1">
                     {selectedPromoForHistory?.targetType === 'SPECIFIC_PRODUCTS'
-                      ? `Min. ${selectedPromoForHistory?.minProductQty || 1} pcs per menu`
+                      ? `Min. ${selectedPromoForHistory?.minProductQty || 1} pcs per produk`
                       : 'Semua katalog outlet'}
                   </span>
                 </div>

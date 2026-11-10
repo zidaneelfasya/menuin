@@ -7,22 +7,22 @@ export const faqData: FAQItem[] = [
   {
     question: 'Apakah pelanggan harus mengunduh aplikasi untuk memesan?',
     answer:
-      'Tidak. Pelanggan cukup mengarahkan kamera ponsel ke kode QR di meja, dan menu digital langsung terbuka di browser mereka. Tidak ada aplikasi yang perlu dipasang dan tidak ada pendaftaran akun.',
+      'Tidak. Pelanggan cukup mengarahkan kamera ponsel ke kode QR di meja, dan katalog produk digital langsung terbuka di browser mereka. Tidak ada aplikasi yang perlu dipasang dan tidak ada pendaftaran akun.',
   },
   {
     question: 'Bisakah Menuin dipakai dengan printer kasir yang sudah saya miliki?',
     answer:
-      'Bisa, selama printer termal Anda memakai koneksi Bluetooth atau jaringan LAN/WiFi dengan kertas 58 mm atau 80 mm. Struk tamu dan tiket dapur bisa dicetak otomatis.',
+      'Bisa, selama printer termal Anda memakai koneksi Bluetooth atau jaringan LAN/WiFi dengan kertas 58 mm atau 80 mm. Struk pelanggan dan tiket operasional bisa dicetak otomatis.',
   },
   {
     question: 'Bagaimana jika pelanggan ingin membayar tunai di kasir?',
     answer:
-      'Tamu bebas memilih. Mereka dapat memesan lewat QR lalu membayar tunai di kasir, atau kasir yang menginput pesanan langsung lewat POS Menuin.',
+      'Pelanggan bebas memilih. Mereka dapat memesan lewat QR lalu membayar tunai di kasir, atau kasir yang menginput pesanan langsung lewat POS Menuin.',
   },
   {
-    question: 'Apakah ada batasan jumlah menu atau transaksi harian?',
+    question: 'Apakah ada batasan jumlah produk atau transaksi harian?',
     answer:
-      'Tidak ada batasan jumlah menu maupun jumlah transaksi pada paket Pro. Biaya berlangganan dihitung per outlet per bulan, bukan per transaksi.',
+      'Tidak ada batasan jumlah produk maupun jumlah transaksi pada paket Pro. Biaya berlangganan dihitung per outlet per bulan, bukan per transaksi.',
   },
   {
     question: 'Bagaimana dana dari pembayaran QRIS dicairkan?',

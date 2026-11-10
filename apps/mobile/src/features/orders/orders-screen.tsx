@@ -270,7 +270,7 @@ const OrderCardItem = React.memo(function OrderCardItem({
       <View className="bg-slate-50/90 rounded-xl p-2.5 border border-slate-100/90 mb-3">
         <View className="flex-row justify-between items-center mb-1.5 pb-1 border-b border-slate-200/50">
           <Text className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
-            Item Menu
+            Item Produk
           </Text>
           <Text className="text-[10px] font-semibold text-slate-500">
             {completedItemsCount}/{totalItemsCount} Siap
@@ -1233,7 +1233,7 @@ export function OrdersScreen() {
                 {/* Items Preview */}
                 <View className="bg-slate-50/80 rounded-xl p-3 border border-slate-100 max-h-36">
                   <Text className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                    Daftar Menu ({orderToPrepare?.items?.length || 0})
+                    Daftar Produk ({orderToPrepare?.items?.length || 0})
                   </Text>
                   <ScrollView nestedScrollEnabled className="max-h-28">
                     {orderToPrepare?.items?.map((item, idx) => (
@@ -1590,7 +1590,7 @@ export function OrdersScreen() {
                 {/* Items List */}
                 <View className="mb-3">
                   <View className="flex-row items-center justify-between mb-2">
-                    <Text className="text-xs font-semibold text-slate-900">Daftar Item Menu</Text>
+                    <Text className="text-xs font-semibold text-slate-900">Daftar Item Produk</Text>
                     <Text className="text-[11px] text-slate-400 font-semibold">
                       {selectedOrder?.items?.filter((i) => i.isCompleted).length} dari{' '}
                       {selectedOrder?.items?.length || 0} siap

@@ -211,7 +211,7 @@ function CustomDrawerContent(props: any) {
         </Text>
         <DrawerNavItem
           icon={<Package />}
-          label="Katalog Menu & Item"
+          label="Katalog Produk & Item"
           isCompact={isPhoneLandscape}
           isActive={pathname.includes('/items')}
           onPress={() => navigateTo('/(main)/(cashier)/items')}

@@ -921,7 +921,7 @@ export async function getDashboardDataForTenant(
       insights.push({
         id: 'insight-champion',
         type: 'champion',
-        text: `Menu Unggulan: ${topProducts[0].name} menjadi kontributor volume tertinggi (${topProducts[0].totalSold} porsi terjual). Pertimbangkan paket bundling atau variasi topping tambahan.`,
+        text: `Produk Unggulan: ${topProducts[0].name} menjadi kontributor volume tertinggi (${topProducts[0].totalSold} item terjual). Pertimbangkan paket bundling atau opsi modifier tambahan.`,
       });
     }
 

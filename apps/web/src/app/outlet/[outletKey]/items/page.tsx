@@ -10,7 +10,7 @@ import { requireFeature } from '@/lib/actions/auth-context';
 import ItemsLoading from './loading';
 
 export const metadata: Metadata = {
-  title: 'Daftar Menu - Menuin',
+  title: 'Daftar Produk - Menuin',
 };
 
 async function ProductsDataWrapper() {

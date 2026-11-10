@@ -280,7 +280,7 @@ export function CheckoutClient({
           isSpecific: true,
           discountedItemNames: [],
           isValid: false,
-          error: "Menu promo tidak ada dalam keranjang",
+          error: "Produk promo tidak ada dalam keranjang",
         };
       }
 
@@ -296,7 +296,7 @@ export function CheckoutClient({
           isSpecific: true,
           discountedItemNames: eligibleItems.map((i) => i.name),
           isValid: false,
-          error: `Minimal ${minQty} porsi menu promo untuk menggunakan promo ini`,
+          error: `Minimal ${minQty} item produk promo untuk menggunakan promo ini`,
         };
       }
     }
@@ -316,7 +316,7 @@ export function CheckoutClient({
         isSpecific,
         discountedItemNames: [],
         isValid: false,
-        error: "Menu promo tidak memenuhi syarat",
+        error: "Produk promo tidak memenuhi syarat",
       };
     }
 
@@ -542,7 +542,7 @@ export function CheckoutClient({
             <Link
               href={`/store/${tenantSlug}${tableNumber ? `?table=${tableNumber}` : ''}`}
               className="w-9 h-9 -ml-1 flex items-center justify-center rounded-full text-slate-800 hover:text-slate-900 hover:bg-slate-100 active:scale-95 transition-all cursor-pointer"
-              aria-label="Kembali ke Menu"
+              aria-label="Kembali ke Katalog"
             >
               <ArrowLeft className="w-5 h-5 stroke-[2.2]" />
             </Link>
@@ -566,7 +566,7 @@ export function CheckoutClient({
             <div className="space-y-1 max-w-sm">
               <h2 className="text-base sm:text-lg font-semibold text-slate-900">Keranjang Masih Kosong</h2>
               <p className="text-xs sm:text-sm text-slate-500">
-                Belum ada menu yang dipilih. Silakan kembali ke menu untuk memilih pesanan Anda.
+                Belum ada produk yang dipilih. Silakan kembali ke katalog untuk memilih produk Anda.
               </p>
             </div>
             <Link
@@ -574,7 +574,7 @@ export function CheckoutClient({
               className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full bg-catalog-primary text-white font-semibold text-xs sm:text-sm hover:bg-catalog-primary/90 transition-all shadow-sm-md active:scale-98 cursor-pointer mt-2"
               style={{ backgroundColor: themeColor }}
             >
-              <span>Pilih Menu Sekarang</span>
+              <span>Pilih Produk Sekarang</span>
             </Link>
           </div>
         ) : (
@@ -788,12 +788,12 @@ export function CheckoutClient({
               </div>
             </div>
 
-            {/* 2. DAFTAR MENU YANG DIPILIH */}
+            {/* 2. DAFTAR PRODUK YANG DIPILIH */}
             <div className="space-y-2 pt-6 border-t border-slate-200/80">
               <div className="flex items-center justify-between pb-3 border-b border-slate-200/80">
                 <div>
                   <h3 className="font-semibold text-base sm:text-lg text-slate-900 tracking-tight">
-                    Daftar Menu Dipilih
+                    Daftar Produk Dipilih
                   </h3>
                   <span className="text-xs text-slate-400 font-normal">
                     {items.reduce((acc, i) => acc + i.quantity, 0)} item dalam keranjang
@@ -932,7 +932,7 @@ export function CheckoutClient({
 
               <div className="space-y-2 text-xs sm:text-sm pt-1">
                 <div className="flex justify-between text-slate-600">
-                  <span>Subtotal ({items.reduce((acc, i) => acc + i.quantity, 0)} menu)</span>
+                  <span>Subtotal ({items.reduce((acc, i) => acc + i.quantity, 0)} produk)</span>
                   <span className="font-semibold text-slate-900 font-numeric tabular-nums">
                     {formatCurrency(subTotal)}
                   </span>
@@ -945,7 +945,7 @@ export function CheckoutClient({
                         <Tag className="w-3.5 h-3.5 text-emerald-600" />
                         <span>
                           {promoCalculation.isSpecific
-                            ? `Diskon Menu Promo (${appliedPromo?.name})`
+                            ? `Diskon Produk Promo (${appliedPromo?.name})`
                             : `Diskon Global (${appliedPromo?.name})`}
                         </span>
                       </span>
@@ -957,7 +957,7 @@ export function CheckoutClient({
                         <div className="flex items-center justify-between font-semibold">
                           <span className="flex items-center gap-1">
                             <Check className="w-3.5 h-3.5 text-emerald-600" />
-                            <span>Khusus menu promo:</span>
+                            <span>Khusus produk promo:</span>
                           </span>
                           <span className="font-numeric tabular-nums">-{formatCurrency(promoDiscount)}</span>
                         </div>

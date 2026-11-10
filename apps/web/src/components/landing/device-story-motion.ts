@@ -233,7 +233,7 @@ export function sampleExtendedStory(scrollProgress: number): ExtendedStoryFrame 
   const teaserVisible = s >= 0.64 && teaserAlpha > 0;
   const teaserInteractive = s >= 0.75 && s < 0.87;
 
-  const pricingEnter = clamp((s - 0.86) / 0.10);
+  const pricingEnter = clamp((s - 0.86) / 0.14);
   const pricingTitle = phase(pricingEnter, 0, 0.79);
   const pricingContent = phase(pricingEnter, 0.105, 1);
   const pricingVisible = s >= 0.86;

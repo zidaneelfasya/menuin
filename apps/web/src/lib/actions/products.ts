@@ -193,10 +193,10 @@ export async function createProduct(formData: z.infer<typeof productSchema>) {
     if (error && typeof error === 'object' && 'code' in error && (error as any).code === '23505') {
       const detail = (error as any).detail || '';
       if (detail.includes('barcode')) {
-        return { success: false, error: 'Barcode sudah digunakan oleh menu lain. Barcode harus unik.' };
+        return { success: false, error: 'Barcode sudah digunakan oleh produk lain. Barcode harus unik.' };
       }
       if (detail.includes('sku')) {
-        return { success: false, error: 'SKU sudah digunakan oleh menu lain. SKU harus unik.' };
+        return { success: false, error: 'SKU sudah digunakan oleh produk lain. SKU harus unik.' };
       }
       return { success: false, error: 'Data produk duplikat dengan produk lain.' };
     }
@@ -277,10 +277,10 @@ export async function updateProduct(id: string, formData: z.infer<typeof product
     if (error && typeof error === 'object' && 'code' in error && (error as any).code === '23505') {
       const detail = (error as any).detail || '';
       if (detail.includes('barcode')) {
-        return { success: false, error: 'Barcode sudah digunakan oleh menu lain. Barcode harus unik.' };
+        return { success: false, error: 'Barcode sudah digunakan oleh produk lain. Barcode harus unik.' };
       }
       if (detail.includes('sku')) {
-        return { success: false, error: 'SKU sudah digunakan oleh menu lain. SKU harus unik.' };
+        return { success: false, error: 'SKU sudah digunakan oleh produk lain. SKU harus unik.' };
       }
       return { success: false, error: 'Data produk duplikat dengan produk lain.' };
     }

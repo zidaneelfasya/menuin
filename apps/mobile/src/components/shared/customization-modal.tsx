@@ -133,9 +133,9 @@ export function CustomizationModal({ isOpen, onClose, product, modifierGroups, o
           <ScrollView className="flex-1 p-4">
             {unavailableRequiredGroup && (
               <View className="p-3.5 mb-4 rounded-2xl bg-amber-50 border border-amber-200">
-                <Text className="text-xs font-bold text-amber-900 mb-0.5">Bahan Utama Tidak Tersedia</Text>
+                <Text className="text-xs font-bold text-amber-900 mb-0.5">Opsi Wajib Tidak Tersedia</Text>
                 <Text className="text-[11px] text-amber-700 leading-snug">
-                  Bahan untuk pilihan wajib ({unavailableRequiredGroup.name}) sedang habis. Menu ini sementara tidak dapat dipesan.
+                  Pilihan wajib ({unavailableRequiredGroup.name}) sedang tidak tersedia. Produk ini sementara tidak dapat dipesan.
                 </Text>
               </View>
             )}

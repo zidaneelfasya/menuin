@@ -17,7 +17,7 @@ async function CatalogDataWrapper() {
       <div>
         <h2 className="text-xl font-semibold">Status & Overview</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Aktifkan website katalog menu untuk pelanggan Anda.
+          Aktifkan website katalog produk untuk pelanggan Anda.
         </p>
       </div>
 

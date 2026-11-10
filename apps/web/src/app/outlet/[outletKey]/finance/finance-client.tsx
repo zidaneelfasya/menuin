@@ -339,7 +339,7 @@ export function FinanceClient({ initialData }: { initialData: FinancialData }) {
                 Rp {summary.totalHpp.toLocaleString('id-ID')}
               </div>
               <div className="text-xs text-muted-foreground mt-1">
-                Akumulasi harga modal pokok menu terjual
+                Akumulasi harga modal pokok produk terjual
               </div>
             </div>
           </CardContent>

@@ -50,7 +50,7 @@ export function calculatePromoDiscount(promo: any, subtotal: number, items?: Car
       if (matchingItems.length === 0) {
         return {
           isValid: false,
-          error: 'Promo ini hanya berlaku untuk menu tertentu yang belum ada di keranjang Anda.',
+          error: 'Promo ini hanya berlaku untuk produk tertentu yang belum ada di keranjang Anda.',
           discountAmount: 0,
           eligibleSubtotal: 0,
           targetType: promo.targetType,

@@ -44,7 +44,7 @@ export const STEP_SHOWCASE_ITEMS: StepShowcaseItem[] = [
     number: "01",
     title: "Tampilan Storefront & Katalog Meja",
     subtitle:
-      "Pelanggan scan QR di meja dan langsung memilih menu favorit tanpa aplikasi.",
+      "Pelanggan scan QR di meja dan langsung memilih produk favorit tanpa aplikasi.",
     deviceType: "phone",
     imageSrc: "/menuin-vert-white.png",
     imageAlt: "Tampilan Storefront Menuin di Smartphone",
@@ -80,7 +80,7 @@ export const STEP_SHOWCASE_ITEMS: StepShowcaseItem[] = [
     number: "03",
     title: "Halaman Status Pesanan Real-Time",
     subtitle:
-      "Pantau progres pesanan dari diterima kasir, disiapkan dapur, hingga siap disajikan.",
+      "Pantau progres pesanan dari diterima kasir, diproses, hingga siap diserahkan.",
     deviceType: "phone",
     imageSrc: "/menuin-vert-white.png",
     imageAlt: "Halaman Status Pesanan Menuin di Smartphone",

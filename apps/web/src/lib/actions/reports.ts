@@ -307,7 +307,7 @@ export const getSalesReport = cache(async (outletKey: string, params?: DateFilte
         }
 
         const pId = it.productId || 'unknown';
-        const pName = it.productName || 'Menu Tanpa Nama';
+        const pName = it.productName || 'Produk Tanpa Nama';
         const catName = it.categoryName || 'Lainnya';
 
         if (!productSalesMap[pId]) {
@@ -1175,7 +1175,7 @@ export const getOperationsReport = cache(async (outletKey: string, params?: Date
         if (!prodMap[pId]) {
           prodMap[pId] = {
             id: pId,
-            name: row.productName || 'Menu Tanpa Nama',
+            name: row.productName || 'Produk Tanpa Nama',
             categoryName: row.categoryName || 'Lainnya',
             totalQty: 0,
             totalRevenue: 0,
@@ -2317,7 +2317,7 @@ export const getReportsOverview = cache(async (outletKey: string, params?: DateF
     const topItems = topItemsResult.status === 'fulfilled' ? topItemsResult.value : [];
     const topProducts = topItems.map((item) => ({
       id: item.productId || '',
-      name: item.productName || 'Menu Tanpa Nama',
+      name: item.productName || 'Produk Tanpa Nama',
       categoryName: item.categoryName || 'Lainnya',
       totalQty: Number(item.totalQty) || 0,
       totalRevenue: Number(item.totalRevenue) || 0,

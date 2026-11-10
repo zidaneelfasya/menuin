@@ -16,9 +16,9 @@ import { cn } from "@/lib/utils";
 import styles from "./device-export-story.module.css";
 
 const SCREEN_COPY = [
-  ["Menu digital tersedia langsung di ponsel tamu.", "Tamu dapat menjelajahi pilihan menu dan menambahkan pesanan tanpa perlu menunggu staf."],
-  ["Semua pilihan terkumpul dalam satu keranjang.", "Tamu dapat memeriksa rincian, menyesuaikan pesanan, dan mengisi data sebelum melanjutkan pembayaran."],
-  ["Pantau perjalanan pesanan secara langsung.", "Tamu dapat melihat setiap tahap, dari pesanan diterima dan disiapkan hingga selesai."],
+  ["Katalog produk digital tersedia langsung di ponsel pelanggan.", "Pelanggan dapat menjelajahi katalog produk dan menambahkan pesanan tanpa perlu menunggu staf."],
+  ["Semua pilihan terkumpul dalam satu keranjang.", "Pelanggan dapat memeriksa rincian, memilih modifier, dan mengisi data sebelum melanjutkan pembayaran."],
+  ["Pantau perjalanan pesanan secara langsung.", "Pelanggan dapat melihat setiap tahap, dari pesanan diterima dan disiapkan hingga selesai."],
 ];
 
 export default function DeviceExportStory() {

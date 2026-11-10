@@ -7,7 +7,7 @@ export default function ExperimentCta() {
     <section className={styles.section} aria-labelledby="experiment-cta-heading">
       <div className={styles.inner}>
         <div className={styles.copy}>
-          <h2 id="experiment-cta-heading">Jam sibuk berikutnya,<br /><span>biar Menuin yang atur.</span></h2>
+          <h2 id="experiment-cta-heading">Jam sibuk berikutnya<br /><span>biar Menuin yang atur.</span></h2>
           <p>QR di meja, kasir, papan pesanan, dan laporan dalam satu sistem. Coba 14 hari, tanpa kartu kredit.</p>
           <Link href="/auth/signup" className={styles.button}>
             <span>Mulai uji coba gratis</span>

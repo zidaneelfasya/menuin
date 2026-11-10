@@ -36,19 +36,19 @@ export const MENUIN_FEATURES: SystemFeature[] = [
     id: "qr-order",
     label: "QR Self-Order",
     icon: QrCode,
-    headline: "Tamu pesan dan bayar dari meja tanpa antre di kasir",
+    headline: "Pelanggan pesan dan bayar dari meja tanpa antre di kasir",
     ctaText: "Lihat cara kerja QR meja",
     ctaHref: "/fitur#self-order",
     items: [
       {
         title: "Scan & Pesan Instan (Zero App Installation)",
         description:
-          "Tamu cukup memindai stiker QR di meja menggunakan kamera ponsel. Katalog menu langsung terbuka di browser tanpa perlu unduh aplikasi atau registrasi yang merepotkan.",
+          "Pelanggan cukup memindai stiker QR di meja menggunakan kamera ponsel. Katalog produk langsung terbuka di browser tanpa perlu unduh aplikasi atau registrasi yang merepotkan.",
       },
       {
         title: "Kustomisasi Modifier & Bayar Langsung QRIS",
         description:
-          "Tamu bebas memilih level gula, es, opsi susu, topping, serta catatan khusus koki. Pembayaran QRIS dinamis langsung terverifikasi seketika dan pesanan terkirim ke dapur tanpa memanggil pelayan.",
+          "Pelanggan bebas memilih modifier ukuran, variasi, spesifikasi, serta catatan khusus. Pembayaran QRIS dinamis langsung terverifikasi seketika dan pesanan terkirim ke sistem operasional tanpa memanggil staf.",
       },
     ],
   },
@@ -116,19 +116,19 @@ export const MENUIN_FEATURES: SystemFeature[] = [
     id: "stock",
     label: "Stok & HPP",
     icon: Package,
-    headline: "Ketahui modal riil setiap porsi dan kontrol bahan baku secara akurat",
+    headline: "Ketahui modal riil setiap produk dan kontrol inventori secara akurat",
     ctaText: "Lihat kontrol stok & HPP",
     ctaHref: "/fitur#stok",
     items: [
       {
-        title: "Pengurangan Stok Otomatis Berbasis Resep",
+        title: "Pengurangan Stok Otomatis Berbasis Komposisi",
         description:
-          "Setiap menu terjual otomatis memotong gramatur stok bahan baku di gudang. Notifikasi stok menipis (low-stock alert) mencegah restoran kehabisan bahan di tengah jam sibuk.",
+          "Setiap produk terjual otomatis memotong stok inventori di gudang. Notifikasi stok menipis (low-stock alert) mencegah outlet kehabisan persediaan di tengah jam sibuk.",
       },
       {
         title: "Kalkulasi HPP & Margin Laba Kotor",
         description:
-          "Hitung harga pokok penjualan (HPP/COGS) nyata per hidangan. Ketahui menu paling menguntungkan (Star items) dan menu yang membebani modal bahan baku (Dogs).",
+          "Hitung harga pokok penjualan (HPP/COGS) nyata per produk. Ketahui produk paling menguntungkan (Star items) dan produk yang membebani modal inventori (Dogs).",
       },
     ],
   },
@@ -168,7 +168,7 @@ export const MENUIN_FEATURES: SystemFeature[] = [
       {
         title: "Jadwal Happy Hour & Multi-Kanal",
         description:
-          "Jadwalkan promo otomatis pada jam sepi pengunjung (misal 14.00–16.00). Promo otomatis teraplikasi serentak di kasir POS dan menu pemesanan QR pelanggan.",
+          "Jadwalkan promo otomatis pada jam sepi pengunjung (misal 14.00–16.00). Promo otomatis teraplikasi serentak di kasir POS dan katalog pemesanan QR pelanggan.",
       },
     ],
   },

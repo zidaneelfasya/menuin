@@ -122,7 +122,7 @@ export function getEntitlements(subscription: any, now: Date = new Date()) {
   if (subscription && (subscription.status === 'ACTIVE' || subscription.status === 'TRIALING') && withinPeriod) {
     isLocked = false;
     if (subscription.plan === 'FREE' || subscription.plan === 'BASIC') {
-      features = ['POS', 'CATALOG', 'INVENTORY'];
+      features = ['POS', 'CATALOG'];
     } else if (subscription.plan === 'PRO') {
       features = ['POS', 'CATALOG', 'INVENTORY', 'REPORTS', 'FINANCE', 'TEAM'];
     }

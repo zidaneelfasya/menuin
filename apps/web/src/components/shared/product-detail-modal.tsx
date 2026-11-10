@@ -119,7 +119,7 @@ export function ProductDetailModal({
             {/* Description Section */}
             <div className="space-y-1.5 pt-1 border-t border-gray-100">
               <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                Deskripsi Menu
+                Deskripsi Produk
               </h4>
               {product.description && product.description.trim() !== '' ? (
                 <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
@@ -127,7 +127,7 @@ export function ProductDetailModal({
                 </p>
               ) : (
                 <p className="text-sm text-gray-400 italic">
-                  Belum ada deskripsi khusus untuk item ini. Dibuat dengan bahan-bahan pilihan berkualitas.
+                  Belum ada deskripsi khusus untuk produk ini.
                 </p>
               )}
             </div>
@@ -136,7 +136,7 @@ export function ProductDetailModal({
             {hasModifiers && (
               <div className="flex items-center gap-2 p-3 rounded-xl bg-gray-50 border border-gray-200/70 text-xs text-gray-600">
                 <SlidersHorizontal className="w-4 h-4 text-gray-500 shrink-0" />
-                <span>Menu ini dapat disesuaikan dengan pilihan ukuran, suhu, susu, atau topping tambahan.</span>
+                <span>Produk ini dapat disesuaikan dengan pilihan modifier atau opsi tambahan.</span>
               </div>
             )}
           </div>
@@ -155,7 +155,7 @@ export function ProductDetailModal({
                 <div className="flex items-center gap-2 min-w-0 text-left">
                   <SlidersHorizontal className="w-4 h-4 stroke-[2.5] shrink-0 opacity-90" />
                   <span className="text-xs sm:text-sm font-semibold tracking-tight truncate">
-                    Pilih Varian
+                    Pilih Modifier
                   </span>
                 </div>
                 <div className="shrink-0 pl-2.5 border-l border-white/25 flex items-center">

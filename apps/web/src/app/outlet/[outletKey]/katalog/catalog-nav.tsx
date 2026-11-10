@@ -25,7 +25,7 @@ export function CatalogNav() {
       {/* Desktop Header */}
       <div className="hidden md:flex items-center gap-2.5 px-2 py-2 mb-2 border-b border-slate-100">
         <div className="min-w-0">
-          <h2 className="text-base font-semibold text-slate-900 truncate">Katalog Menu</h2>
+          <h2 className="text-base font-semibold text-slate-900 truncate">Katalog Produk</h2>
           <p className="text-[11px] text-slate-500 truncate">Toko Online & Self QR</p>
         </div>
       </div>

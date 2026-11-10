@@ -678,7 +678,7 @@ export function CreateTenantClient({ account: _account, isAdmin: _isAdmin }: Cre
                       <span className="w-4 h-4 rounded-full bg-blue-50 text-[#0055D6] text-[10px] font-semibold flex items-center justify-center flex-shrink-0 mt-0.5">
                         2
                       </span>
-                      <span>Gunakan nama yang mudah diingat pelanggan pada struk pembayaran dan menu QR digital.</span>
+                      <span>Gunakan nama yang mudah diingat pelanggan pada struk pembayaran dan katalog QR digital.</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="w-4 h-4 rounded-full bg-blue-50 text-[#0055D6] text-[10px] font-semibold flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -699,7 +699,7 @@ export function CreateTenantClient({ account: _account, isAdmin: _isAdmin }: Cre
                       <span className="w-4 h-4 rounded-full bg-blue-50 text-[#0055D6] text-[10px] font-semibold flex items-center justify-center flex-shrink-0 mt-0.5">
                         2
                       </span>
-                      <span>Kode ini akan dicetak otomatis di bagian atas nomor struk kasir dan tiket pesanan dapur (#KSR-001).</span>
+                      <span>Kode ini akan dicetak otomatis di bagian atas nomor struk kasir dan tiket pesanan operasional (#KSR-001).</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="w-4 h-4 rounded-full bg-blue-50 text-[#0055D6] text-[10px] font-semibold flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -737,7 +737,7 @@ export function CreateTenantClient({ account: _account, isAdmin: _isAdmin }: Cre
             <div className="p-3 rounded-[4px] bg-slate-50 border border-slate-100 text-[11px] text-slate-500">
               <span className="font-semibold text-slate-700 block mb-0.5">Catatan:</span>
               {currentStep === 1
-                ? 'Nama tidak boleh mengandung simbol khusus agar tautan menu tetap rapi.'
+                ? 'Nama tidak boleh mengandung simbol khusus agar tautan katalog tetap rapi.'
                 : currentStep === 2
                 ? 'Kode nota hanya berlaku khusus untuk gerai ini dan dapat disesuaikan kembali nanti.'
                 : 'Ukuran file maksimal 12 MB dengan format gambar JPG, PNG, atau WebP.'}

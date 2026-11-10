@@ -262,7 +262,7 @@ export async function importProducts(formData: FormData) {
     if (productsToInsert.length === 0) {
       return { 
         success: false, 
-        error: 'Tidak ditemukan baris menu yang valid dalam file Excel. Pastikan kolom Nama Menu dan Harga Jual terisi.' 
+        error: 'Tidak ditemukan baris produk yang valid dalam file Excel. Pastikan kolom Nama Produk dan Harga Jual terisi.' 
       };
     }
 
@@ -284,7 +284,7 @@ export async function importProducts(formData: FormData) {
     }
 
     const catCount = newCategoriesToInsert.size;
-    let message = `Berhasil mengimpor ${productsToInsert.length} item menu.`;
+    let message = `Berhasil mengimpor ${productsToInsert.length} item produk.`;
     if (catCount > 0) {
       message += ` (${catCount} kategori baru otomatis dibuat)`;
     }

@@ -116,7 +116,7 @@ export default function CartScreen() {
         <EmptyState
           icon={<ShoppingBag size={32} color="#9ca3af" />}
           title="Keranjang Kosong"
-          description="Belum ada item yang ditambahkan. Silakan pilih menu pada kasir."
+          description="Belum ada item yang ditambahkan. Silakan pilih produk pada kasir."
           actionTitle="Kembali ke POS"
           onAction={() => router.back()}
           className="flex-1"

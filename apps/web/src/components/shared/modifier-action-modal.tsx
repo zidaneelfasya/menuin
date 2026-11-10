@@ -119,7 +119,7 @@ export function ModifierActionModal({
                             }
                           }}
                           className="w-7 h-7 rounded-full bg-white text-slate-900 hover:bg-slate-50 border border-slate-700 shadow-sm-md flex items-center justify-center active:scale-90 transition-all cursor-pointer"
-                          aria-label={`Kurangi variasi ${idx + 1}`}
+                          aria-label={`Kurangi modifier ${idx + 1}`}
                         >
                           <Minus className="w-3.5 h-3.5 stroke-[2.2] text-slate-700" />
                         </button>
@@ -135,7 +135,7 @@ export function ModifierActionModal({
                           }}
                           className="w-7 h-7 rounded-full bg-catalog-primary hover:bg-catalog-primary/90 text-white shadow-sm-md flex items-center justify-center active:scale-90 transition-all cursor-pointer border-none"
                           style={{ backgroundColor: themeColor }}
-                          aria-label={`Tambah variasi ${idx + 1}`}
+                          aria-label={`Tambah modifier ${idx + 1}`}
                         >
                           <Plus className="w-3.5 h-3.5 stroke-[2.2]" />
                         </button>

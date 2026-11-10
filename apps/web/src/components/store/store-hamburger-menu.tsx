@@ -117,7 +117,7 @@ export function StoreHamburgerMenu({
         if (navigator.share) {
           await navigator.share({
             title: tenant.name,
-            text: tenant.storeDescription || `Pesan menu lezat di ${tenant.name}`,
+            text: tenant.storeDescription || `Pesan produk di ${tenant.name}`,
             url: window.location.href,
           });
         } else {

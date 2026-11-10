@@ -7,7 +7,7 @@ import OperationsLoading from "./loading";
 
 export const metadata: Metadata = {
   title: "Laporan Operasional & Peak Hours - MENUIN",
-  description: "Heatmap jam ramai, distribusi pesanan, dan menu terlaris.",
+  description: "Heatmap jam ramai, distribusi pesanan, dan produk terlaris.",
 };
 
 async function OperationsReportDataWrapper({ outletKey }: { outletKey: string }) {

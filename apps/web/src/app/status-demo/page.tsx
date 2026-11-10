@@ -507,7 +507,7 @@ export default function StatusDemoPage() {
                   {/* 5. Subtotal Breakdown */}
                   <div className="space-y-1.5 text-xs text-left">
                     <div className="flex justify-between text-gray-500">
-                      <span>Subtotal (2 menu)</span>
+                      <span>Subtotal (2 produk)</span>
                       <span className="font-semibold text-gray-800">Rp 48.000</span>
                     </div>
                     <div className="flex justify-between text-gray-500">

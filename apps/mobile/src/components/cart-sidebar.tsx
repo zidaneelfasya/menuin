@@ -109,7 +109,7 @@ export function CartSidebar() {
         <EmptyState
           icon={<ShoppingBag size={28} color="#9ca3af" />}
           title="Keranjang Kosong"
-          description="Pilih menu di samping untuk menambahkan item ke transaksi."
+          description="Pilih produk di samping untuk menambahkan item ke transaksi."
           className="flex-1"
         />
       </View>

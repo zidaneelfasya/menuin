@@ -286,9 +286,9 @@ const features: {
     title: "Pelanggan walk-in? Beberapa ketukan, struk tercetak.",
     body: "Tunai, QRIS, debit, kartu, dan transfer di satu layar. Pajak dihitung otomatis dan struk langsung keluar dari printer termal yang sudah Anda punya.",
     points: [
-      "Cari produk, pilih varian, bayar",
+      "Cari produk, pilih modifier, bayar",
       "Printer Bluetooth & LAN, 58 dan 80 mm",
-      "Pesanan kasir langsung masuk antrean dapur",
+      "Pesanan kasir langsung masuk antrean operasional",
     ],
     visual: { kind: "device", src: "/img/landing/pos-ipad.webp", alt: "Kasir POS Menuin di layar tablet", w: 1800, h: 1382 },
   },
@@ -309,7 +309,7 @@ const features: {
     id: "stock",
     tab: "Stok & HPP",
     icon: Package,
-    title: "Tahu modal setiap menu, bukan cuma harga jualnya.",
+    title: "Tahu modal setiap produk, bukan cuma harga jualnya.",
     body: "Stok berkurang otomatis setiap ada penjualan, dan produk yang menyentuh batas minimum langsung ditandai. Dari harga modal, laba kotor terhitung sendiri.",
     points: [
       "Stok berkurang otomatis saat terjual",
@@ -349,10 +349,10 @@ const features: {
     tab: "Multi-Outlet",
     icon: Building2,
     title: "Buka cabang kedua tanpa mulai dari nol.",
-    body: "Kelola beberapa outlet dari satu akun. Tiap outlet punya menu, tim, dan laporannya sendiri, dan pindah antar-outlet cukup satu klik.",
+    body: "Kelola beberapa outlet dari satu akun. Tiap outlet punya katalog produk, tim, dan laporannya sendiri, dan pindah antar-outlet cukup satu klik.",
     points: [
       "Pindah outlet dalam satu klik",
-      "Menu, tim, dan laporan per cabang",
+      "Katalog produk, tim, dan laporan per cabang",
       "Data tiap outlet tersimpan terpisah",
     ],
     visual: { kind: "outlet" },

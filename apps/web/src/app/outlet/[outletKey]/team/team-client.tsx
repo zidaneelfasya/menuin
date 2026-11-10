@@ -674,7 +674,7 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
                       <div className="flex flex-col text-xs min-w-0">
                         <span className="font-semibold text-slate-900">Manager</span>
                         <span className="text-[11px] text-slate-500 mt-0.5 break-words">
-                          Akses dashboard, kelola tim, menu katalog, dan lihat laporan omzet.
+                          Akses dashboard, kelola tim, katalog produk, dan lihat laporan omzet.
                         </span>
                       </div>
                     </label>
@@ -1318,7 +1318,7 @@ export function TeamClient({ initialMembers, initialPending }: TeamClientProps) 
                 <RadioGroupItem value="MANAGER" id="cr-manager" className="mt-0.5 text-[#0e59f9]" />
                 <div className="flex flex-col text-xs min-w-0">
                   <span className="font-semibold text-slate-900">Manager</span>
-                  <span className="text-[11px] text-slate-500 break-words">Akses dashboard, menu katalog, dan laporan omzet</span>
+                  <span className="text-[11px] text-slate-500 break-words">Akses dashboard, katalog produk, dan laporan omzet</span>
                 </div>
               </label>
 

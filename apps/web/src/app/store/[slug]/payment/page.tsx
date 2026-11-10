@@ -185,7 +185,7 @@ export default function OnlinePaymentPage({
             asChild
             className="w-full bg-catalog-primary hover:bg-catalog-primary/90 text-white rounded-xl h-12 font-semibold text-sm cursor-pointer"
           >
-            <Link href={`/store/${unwrappedParams.slug}`}>Kembali ke Menu</Link>
+            <Link href={`/store/${unwrappedParams.slug}`}>Kembali ke Katalog</Link>
           </Button>
         </div>
       </div>
@@ -208,7 +208,7 @@ export default function OnlinePaymentPage({
                 order.tableNumber ? `?table=${order.tableNumber}` : ""
               }`}
               className="w-9 h-9 -ml-1 flex items-center justify-center rounded-full text-gray-800 hover:text-gray-900 hover:bg-gray-100 active:scale-95 transition-all cursor-pointer"
-              aria-label="Kembali ke Menu"
+              aria-label="Kembali ke Katalog"
             >
               <ArrowLeft className="w-5 h-5 stroke-[2.2]" />
             </Link>
@@ -286,11 +286,11 @@ export default function OnlinePaymentPage({
             </div>
           </div>
 
-          {/* 2. DAFTAR MENU DIPILIH (TANPA TOMBOL EDIT/TAMBAH/STEPPER) */}
+          {/* 2. DAFTAR PRODUK DIPILIH (TANPA TOMBOL EDIT/TAMBAH/STEPPER) */}
           <div className="space-y-1 pt-2 border-t border-gray-100">
             <div className="pb-2.5 border-b border-gray-100">
               <div className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                Daftar Menu ({totalItemsCount} item)
+                Daftar Produk ({totalItemsCount} item)
               </div>
             </div>
 
@@ -355,7 +355,7 @@ export default function OnlinePaymentPage({
             </div>
           </div>
 
-          {/* 3. SUBTOTAL MENU & RINCIAN PEMBAYARAN */}
+          {/* 3. SUBTOTAL PRODUK & RINCIAN PEMBAYARAN */}
           <div className="space-y-3 pt-3 border-t border-gray-100">
             <h3 className="font-semibold text-sm sm:text-base text-gray-900 tracking-tight">
               Rincian Pembayaran
@@ -363,7 +363,7 @@ export default function OnlinePaymentPage({
 
             <div className="space-y-2 text-xs sm:text-sm pt-0.5">
               <div className="flex justify-between text-gray-600">
-                <span>Subtotal ({totalItemsCount} menu)</span>
+                <span>Subtotal ({totalItemsCount} produk)</span>
                 <span className="font-semibold text-gray-800">
                   {formatCurrency(Number(order.totalAmount))}
                 </span>

@@ -13,7 +13,7 @@ export default function ManageScreen() {
           <View className="flex-row items-center justify-between mb-3 px-1">
             <View className="flex-row items-center">
               <Coffee size={18} color="#2563eb" className="mr-2" />
-              <Text className="font-semibold text-gray-900">Katalog & Menu</Text>
+              <Text className="font-semibold text-gray-900">Katalog Produk</Text>
             </View>
             <TouchableOpacity className="bg-blue-50 px-3 py-1 rounded-full flex-row items-center">
               <Plus size={14} color="#2563eb" />
@@ -22,8 +22,8 @@ export default function ManageScreen() {
           </View>
           <View className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
             <ManageItem title="Kelola Kategori" subtitle="Atur kategori produk" />
-            <ManageItem title="Kelola Item" subtitle="Tambah/edit produk dan harga" />
-            <ManageItem title="Kelola Modifier" subtitle="Topping, ukuran, varian" isLast />
+            <ManageItem title="Kelola Produk" subtitle="Tambah/edit produk dan harga" />
+            <ManageItem title="Kelola Modifier" subtitle="Ukuran, opsi, kustomisasi" isLast />
           </View>
         </View>
 

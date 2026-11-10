@@ -993,7 +993,7 @@ export function SettingsClient({
                 <div className="p-4.5 rounded-2xl border-none bg-slate-50/80 shadow-sm-md flex items-center justify-between gap-4">
                   <div className="space-y-0.5">
                     <Label htmlFor="posPinBestSellers" className="text-sm font-semibold text-slate-900">
-                      Sematkan Menu Terlaris di Paling Atas
+                      Sematkan Produk Terlaris di Paling Atas
                     </Label>
                     <p className="text-xs text-slate-500 leading-relaxed">
                       Tampilkan produk dengan riwayat penjualan tertinggi di deretan pertama katalog kasir.

@@ -206,7 +206,7 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
             <Link
               href={`/store/${unwrappedParams.slug}${order?.tableNumber ? `?table=${order.tableNumber}` : ""}`}
               className="w-9 h-9 -ml-1 flex items-center justify-center rounded-full text-slate-800 hover:text-slate-900 hover:bg-slate-100 active:scale-95 transition-all cursor-pointer"
-              aria-label="Kembali ke Menu"
+              aria-label="Kembali ke Katalog"
             >
               <ArrowLeft className="w-5 h-5 stroke-[2.2]" />
             </Link>
@@ -434,11 +434,11 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
                 );
               })()}
 
-              {/* 3. DAFTAR MENU DIPESAN */}
+              {/* 3. DAFTAR PRODUK DIPESAN */}
               <div className="space-y-3 pt-6 border-t border-slate-200/80">
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold text-base sm:text-lg text-slate-900 tracking-tight">
-                    Daftar Menu Dipesan
+                    Daftar Produk Dipesan
                   </h3>
                   <span className="text-xs text-slate-400 font-normal">
                     {totalItemsCount} item
@@ -522,7 +522,7 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
 
                 <div className="space-y-2 text-xs sm:text-sm pt-1">
                   <div className="flex justify-between text-slate-600">
-                    <span>Subtotal ({totalItemsCount} menu)</span>
+                    <span>Subtotal ({totalItemsCount} produk)</span>
                     <span className="font-semibold text-slate-900 font-numeric tabular-nums">
                       {formatCurrency(Number(order.totalAmount))}
                     </span>
@@ -617,7 +617,7 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
                 className="h-11 sm:h-12 px-6 rounded-full bg-catalog-primary hover:bg-catalog-primary/90 text-white font-semibold text-xs sm:text-sm shadow-sm-md active:scale-[0.98] transition-all cursor-pointer border-none flex items-center justify-center"
                 style={{ backgroundColor: outletPrimaryColor }}
               >
-                <span>Pesan Menu Lain</span>
+                <span>Pesan Produk Lain</span>
               </Link>
             )}
           </div>

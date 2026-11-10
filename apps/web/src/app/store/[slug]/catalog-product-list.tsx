@@ -471,7 +471,7 @@ export function CatalogProductList({
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gray-50 p-2 text-center">
               <Utensils className="w-6 h-6 text-gray-300 mb-1" />
-              <span className="text-[11px] font-medium text-gray-400">Menu Pilihan</span>
+              <span className="text-[11px] font-medium text-gray-400">Produk Pilihan</span>
             </div>
           )}
 
@@ -664,7 +664,7 @@ export function CatalogProductList({
                     Best Seller Kami
                   </h3>
                   <span className="text-xs font-semibold text-gray-400">
-                    {displayBestSellers.length} Menu
+                    {displayBestSellers.length} Produk
                   </span>
                 </div>
 
@@ -684,7 +684,7 @@ export function CatalogProductList({
                     </h3>
                   </div>
                   <span className="text-xs font-semibold text-gray-400">
-                    {actualRecommended.length} Menu
+                    {actualRecommended.length} Produk
                   </span>
                 </div>
 
@@ -708,7 +708,7 @@ export function CatalogProductList({
                         {cat.name}
                       </h3>
                       <span className="text-xs font-semibold text-gray-400">
-                        {catProducts.length} menu
+                        {catProducts.length} produk
                       </span>
                     </div>
 

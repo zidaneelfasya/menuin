@@ -264,7 +264,7 @@ export function StoreHeroHeader({
               </>
             )}
             <span>
-              {totalProducts > 0 ? `${totalProducts} Pilihan Menu` : 'Menu Lengkap'}
+              {totalProducts > 0 ? `${totalProducts} Pilihan Produk` : 'Katalog Produk Lengkap'}
             </span>
           </div>
 
